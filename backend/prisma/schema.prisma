@@ -11,8 +11,10 @@ model User {
   id        String   @id @default(uuid())
   email     String   @unique
   realName  String?  @map("real_name")
+  password  String?
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  avatarUrl String?  @map("avatar_url")
 
   @@map("user")
 }
