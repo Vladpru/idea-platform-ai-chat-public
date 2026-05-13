@@ -1,17 +1,21 @@
 import { useId, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Eye, EyeOff } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Input, Label, Separator } from "@/shared/ui";
 import { loginSchema, type LoginValues } from "../model/login-schema";
 import { GoogleLoginButton } from "./GoogleAuthButton";
-import { ThemeToggle } from "@/features/theme/ThemeToggle";
+
+import { login as loginUser } from "../api/auth";
+import { getApiErrorMessage } from "@/shared/api/api-error";
 
 export function LoginForm() {
+  const navigate = useNavigate();
   const emailId = useId();
   const passwordId = useId();
   const [showPassword, setShowPassword] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const {
     register,
@@ -26,12 +30,25 @@ export function LoginForm() {
   });
 
   const onSubmit = async (data: LoginValues) => {
-    console.log("Login data:", data);
+    setSubmitError(null);
+    try {
+      await loginUser({ email: data.email, password: data.password });
+      await navigate({ to: "/", replace: true });
+    } catch (e) {
+      setSubmitError(
+        getApiErrorMessage(e, {
+          invalidCredentialsMessage: "Email or password is incorrect",
+        }),
+      );
+    }
   };
 
   return (
     <div className="mt-6 w-full space-y-6">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {submitError && (
+          <p className="text-destructive text-sm font-medium">{submitError}</p>
+        )}
         <div className="space-y-2">
           <Label htmlFor={emailId}>EMAIL</Label>
           <Input
@@ -105,7 +122,7 @@ export function LoginForm() {
           <Separator className="flex-1" />
         </div>
 
-        <GoogleLoginButton mode={"signup"} />
+        <GoogleLoginButton mode={"signin"} />
       </form>
 
       <p className="text-muted-foreground pt-2 text-center text-sm">
@@ -117,7 +134,6 @@ export function LoginForm() {
           SIGN UP
         </Link>
       </p>
-      <ThemeToggle />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useId, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Eye, EyeOff } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -7,13 +7,17 @@ import { Button, Input, Label, Separator } from "@/shared/ui";
 
 import { registerSchema, type RegisterValues } from "../model/register-schema";
 import { GoogleLoginButton } from "./GoogleAuthButton";
+import { register as registerUser } from "../api/auth";
+import { getApiErrorMessage } from "@/shared/api/api-error";
 
 export function RegisterForm() {
+  const navigate = useNavigate();
   const emailId = useId();
   const passwordId = useId();
   const confirmPasswordId = useId();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const {
     register,
@@ -29,12 +33,21 @@ export function RegisterForm() {
   });
 
   const onSubmit = async (data: RegisterValues) => {
-    console.log("Register data:", data);
+    setSubmitError(null);
+    try {
+      await registerUser({ email: data.email, password: data.password });
+      await navigate({ to: "/", replace: true });
+    } catch (e) {
+      setSubmitError(getApiErrorMessage(e, { invalidCredentialsMessage: "Sign up failed" }));
+    }
   };
 
   return (
     <div className="mt-6 w-full space-y-6">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {submitError && (
+          <p className="text-destructive text-sm font-medium">{submitError}</p>
+        )}
         <div className="space-y-2">
           <Label htmlFor={emailId}>EMAIL</Label>
           <Input
@@ -135,7 +148,7 @@ export function RegisterForm() {
           <Separator className="flex-1" />
         </div>
 
-        <GoogleLoginButton mode={"signin"} />
+        <GoogleLoginButton mode={"signup"} />
       </form>
 
       <p className="text-muted-foreground pt-2 text-center text-sm">
