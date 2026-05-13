@@ -5,10 +5,6 @@ import { Bell, Search, ChevronDown } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { HEADER_ACTION_BUTTON_CLASS } from "@/widgets/header/lib/header-action-button-class";
 import { MobileMenu } from "./MobileMenu";
-import {
-  useAuthSessionStore,
-  nameInitial,
-} from "@/features/auth/model/auth-session-store";
 
 import {
   DropdownMenu,
@@ -21,7 +17,6 @@ const navLinkClass =
   "text-sm font-semibold uppercase tracking-wide text-white/90 transition-colors hover:text-white";
 
 export function AppHeader() {
-  const user = useAuthSessionStore((s) => s.user);
   return (
     <header className="flex items-center justify-between px-4 py-3 sm:px-6 bg-primary text-white">
       <div className="flex items-center gap-6 sm:gap-10">
