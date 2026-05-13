@@ -14,7 +14,6 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as AuthIndexRouteImport } from './routes/_auth/index'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
-import { Route as AuthAboutRouteImport } from './routes/_auth/about'
 
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
@@ -40,23 +39,16 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthAboutRoute = AuthAboutRouteImport.update({
-  id: '/about',
-  path: '/about',
-  getParentRoute: () => AuthRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthIndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/about': typeof AuthAboutRoute
   '/auth/callback': typeof AuthCallbackRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/about': typeof AuthAboutRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/': typeof AuthIndexRoute
 }
@@ -65,21 +57,19 @@ export interface FileRoutesById {
   '/_auth': typeof AuthRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/_auth/about': typeof AuthAboutRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/_auth/': typeof AuthIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/register' | '/about' | '/auth/callback'
+  fullPaths: '/' | '/login' | '/register' | '/auth/callback'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/register' | '/about' | '/auth/callback' | '/'
+  to: '/login' | '/register' | '/auth/callback' | '/'
   id:
     | '__root__'
     | '/_auth'
     | '/login'
     | '/register'
-    | '/_auth/about'
     | '/auth/callback'
     | '/_auth/'
   fileRoutesById: FileRoutesById
@@ -128,23 +118,14 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_auth/about': {
-      id: '/_auth/about'
-      path: '/about'
-      fullPath: '/about'
-      preLoaderRoute: typeof AuthAboutRouteImport
-      parentRoute: typeof AuthRoute
-    }
   }
 }
 
 interface AuthRouteChildren {
-  AuthAboutRoute: typeof AuthAboutRoute
   AuthIndexRoute: typeof AuthIndexRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
-  AuthAboutRoute: AuthAboutRoute,
   AuthIndexRoute: AuthIndexRoute,
 }
 
