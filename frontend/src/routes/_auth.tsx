@@ -1,5 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { hasStoredAuthToken } from "@/shared/lib/auth-token";
+import { Outlet } from "@tanstack/react-router";
+import { AppHeader } from "@/widgets/header";
 
 export const Route = createFileRoute("/_auth")({
   beforeLoad: () => {
@@ -7,5 +9,10 @@ export const Route = createFileRoute("/_auth")({
       throw redirect({ to: "/login" });
     }
   },
+  component: () => (
+    <>
+      <AppHeader />
+      <Outlet />
+    </>
+  ),
 });
-
