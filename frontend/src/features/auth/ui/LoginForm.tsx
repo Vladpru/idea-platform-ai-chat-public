@@ -1,0 +1,123 @@
+import { useId, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { Eye, EyeOff } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Button, Input, Label, Separator } from "@/shared/ui";
+import { loginSchema, type LoginValues } from "../model/login-schema";
+import { GoogleLoginButton } from "./GoogleAuthButton";
+import { ThemeToggle } from "@/features/theme/ThemeToggle";
+
+export function LoginForm() {
+  const emailId = useId();
+  const passwordId = useId();
+  const [showPassword, setShowPassword] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  const onSubmit = async (data: LoginValues) => {
+    console.log("Login data:", data);
+  };
+
+  return (
+    <div className="mt-6 w-full space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor={emailId}>EMAIL</Label>
+          <Input
+            id={emailId}
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            placeholder="you@example.com"
+            className="h-11 py-2.5"
+            {...register("email")}
+          />
+          {errors.email && (
+            <p className="text-destructive text-xs font-medium">
+              {errors.email.message}
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor={passwordId}>PASSWORD</Label>
+          <div className="relative">
+            <Input
+              id={passwordId}
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              placeholder="••••••••"
+              className="h-11 py-2.5 pr-10"
+              {...register("password")}
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              type="button"
+              className="text-muted-foreground hover:text-foreground absolute right-1 top-1/2 h-9 w-9 -translate-y-1/2"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+          {errors.password && (
+            <p className="text-destructive text-xs font-medium">
+              {errors.password.message}
+            </p>
+          )}
+
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              variant="ghost"
+              className="text-muted-foreground hover:text-foreground h-auto px-0 py-0 text-xs font-medium"
+            >
+              FORGOT PASSWORD?
+            </Button>
+          </div>
+        </div>
+
+        <Button type="submit" disabled={isSubmitting} className="h-11 w-full">
+          SIGN IN
+        </Button>
+
+        <div className="flex items-center gap-3">
+          <Separator className="flex-1" />
+          <span className="text-muted-foreground text-[11px] font-medium">
+            OR
+          </span>
+          <Separator className="flex-1" />
+        </div>
+
+        <GoogleLoginButton mode={"signup"} />
+      </form>
+
+      <p className="text-muted-foreground pt-2 text-center text-sm">
+        Don&apos;t have an account?{" "}
+        <Link
+          to="/register"
+          className="text-primary font-semibold underline underline-offset-4"
+        >
+          SIGN UP
+        </Link>
+      </p>
+      <ThemeToggle />
+    </div>
+  );
+}
