@@ -9,19 +9,33 @@ import { hash, verify } from 'argon2';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { isUniqueConstraintError } from '../shared/utils/is-unique-error.util';
+import { LocalAvatarStorageService } from '../storage/local-avatar-storage.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import type { UpsertOAuthUserInput } from './dto/upsert-oauth-user.dto';
+
+const USER_PUBLIC_SELECT = {
+  id: true,
+  email: true,
+  realName: true,
+  avatarUrl: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly avatarStorage: LocalAvatarStorageService,
+  ) {}
 
   async create(dto: CreateUserDto) {
     if (await this.getByEmail(dto.email)) {
       throw new ConflictException('User with this email already exists');
     }
     if (!dto.password) {
-      throw new BadRequestException('Password is required');
+      throw new BadRequestException('Password must be provided');
     }
     try {
       const hashedPassword = await hash(dto.password);
@@ -52,7 +66,7 @@ export class UserService {
     return { ...user };
   }
 
-  async upsertOAuthUser(dto: CreateUserDto) {
+  async upsertOAuthUser(dto: UpsertOAuthUserInput) {
     return await this.prisma.user.upsert({
       where: { email: dto.email },
       update: {
@@ -84,6 +98,45 @@ export class UserService {
       throw new NotFoundException(`User with id ${id} not found`);
     }
     return user;
+  }
+
+  async getProfileForUser(id: string) {
+    if (!id) {
+      throw new BadRequestException('Id required');
+    }
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: USER_PUBLIC_SELECT,
+    });
+    if (!user) {
+      throw new NotFoundException(`User with id ${id} not found`);
+    }
+    return user;
+  }
+
+  async finalizeAvatarUpload(
+    userId: string,
+    storedFilename: string | undefined,
+  ) {
+    if (!storedFilename) {
+      throw new BadRequestException('Missing file (use form field "file").');
+    }
+    await this.findOne(userId);
+    await this.avatarStorage.removeStaleAvatarVariants(userId, storedFilename);
+    const avatarUrl = this.avatarStorage.publicUrlForFilename(storedFilename);
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl },
+      select: USER_PUBLIC_SELECT,
+    });
+  }
+
+  async setAvatarUrl(id: string, avatarUrl: string) {
+    await this.findOne(id);
+    return this.prisma.user.update({
+      where: { id },
+      data: { avatarUrl },
+    });
   }
 
   async update(id: string, dto: UpdateUserDto) {

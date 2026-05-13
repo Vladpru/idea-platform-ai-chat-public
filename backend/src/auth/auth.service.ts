@@ -1,13 +1,10 @@
-import {
-  BadRequestException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 
 import type { User } from '../../generated/prisma/client';
 import { TokenService } from '../token/token.service';
 import { CreateUserDto } from '../user/dto/create-user.dto';
 import { UserService } from '../user/user.service';
+import { LoginDto } from './dto/login.dto';
 
 type GoogleProfileRaw = {
   email?: string;
@@ -29,10 +26,7 @@ export class AuthService {
     return this.finalizeAuth(user);
   }
 
-  async login(dto: CreateUserDto) {
-    if (!dto.password) {
-      throw new BadRequestException('Password required');
-    }
+  async login(dto: LoginDto) {
     const user = await this.userService.verifyUser(dto.email, dto.password);
 
     return this.finalizeAuth(user);
@@ -88,7 +82,7 @@ export class AuthService {
   private async finalizeAuth(user: User) {
     const tokens = this.tokenService.issueTokens(user.id);
 
-    const userProfile = await this.userService.findOne(user.id);
+    const userProfile = await this.userService.getProfileForUser(user.id);
 
     return {
       user: userProfile,

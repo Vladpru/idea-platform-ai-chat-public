@@ -1,13 +1,15 @@
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
+import { join } from 'path';
 
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   const config = app.get(ConfigService);
 
@@ -24,6 +26,12 @@ async function bootstrap() {
   });
 
   app.use(cookieParser());
+
+  const avatarsPath = join(process.cwd(), 'storage', 'avatars');
+  app.useStaticAssets(avatarsPath, {
+    prefix: '/files/avatars/',
+    index: false,
+  });
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Idea platform api')
