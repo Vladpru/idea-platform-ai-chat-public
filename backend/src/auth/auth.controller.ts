@@ -4,6 +4,7 @@ import type { Response } from 'express';
 import { TokenService } from '../token/token.service';
 import { CreateUserDto } from '../user/dto/create-user.dto';
 import { AuthService } from './auth.service';
+import { LoginDto } from './dto/login.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -25,7 +26,7 @@ export class AuthController {
 
   @Post('login')
   async login(
-    @Body() dto: CreateUserDto,
+    @Body() dto: LoginDto,
     @Res({ passthrough: true }) res: Response,
   ) {
     const { user, accessToken, refreshToken } =

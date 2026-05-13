@@ -1,16 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
-import type { Request } from 'express';
 import { ExtractJwt, Strategy, type StrategyOptions } from 'passport-jwt';
 
-import { UserService } from '../../user/user.service';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt-strategy') {
   constructor(
     private readonly config: ConfigService,
-    private readonly userService: UserService,
+    private readonly prisma: PrismaService,
   ) {
     const jwtSecretRaw = config.get<string>('JWT_SECRET');
     if (jwtSecretRaw === undefined || jwtSecretRaw === '') {
@@ -26,6 +25,10 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt-strategy') {
   }
 
   async validate({ id }: { id: string }) {
-    return await this.userService.findOne(id);
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      throw new UnauthorizedException();
+    }
+    return user;
   }
 }
