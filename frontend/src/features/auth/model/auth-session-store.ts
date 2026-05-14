@@ -9,6 +9,8 @@ import {
 export type SessionUser = {
   id: string;
   email: string;
+  firstName: string;
+  lastName: string;
   name: string;
   picture: string | null;
 };
@@ -24,17 +26,22 @@ type AuthSessionState = {
 function parseSessionUser(raw: unknown): SessionUser | null {
   if (!raw || typeof raw !== 'object') return null;
   const u = raw as Record<string, unknown>;
+
   if (typeof u.id !== 'string' || typeof u.email !== 'string') return null;
-  const realName = typeof u.realName === 'string' ? u.realName : null;
+
+  const firstName = typeof u.firstName === 'string' ? u.firstName : '';
+  const lastName = typeof u.lastName === 'string' ? u.lastName : '';
   const avatarUrl = typeof u.avatarUrl === 'string' ? u.avatarUrl : null;
   const email = u.email;
-  const name =
-    realName?.trim() ||
-    (typeof email === 'string' ? email.split('@')[0] : '') ||
-    'User';
+
+  const fullName = `${firstName} ${lastName}`.trim();
+  const name = fullName || email.split('@')[0] || 'User';
+
   return {
     id: u.id,
     email,
+    firstName,
+    lastName,
     name,
     picture: avatarUrl,
   };

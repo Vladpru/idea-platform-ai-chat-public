@@ -5,7 +5,8 @@ import { api } from '@/shared/api/http';
 export type AuthDto = {
   email: string;
   password?: string;
-  realName?: string;
+  firstName?: string;
+  lastName?: string;
 };
 
 export type AuthResponse<TUser = unknown> = {

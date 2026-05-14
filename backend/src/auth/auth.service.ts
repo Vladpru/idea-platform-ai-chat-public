@@ -1,6 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 
-import type { User } from '../../generated/prisma/client';
+import type { UserPublic } from '../shared/types/user.types';
 import { TokenService } from '../token/token.service';
 import { CreateUserDto } from '../user/dto/create-user.dto';
 import { UserService } from '../user/user.service';
@@ -10,6 +10,7 @@ type GoogleProfileRaw = {
   email?: string;
   name?: string;
   given_name?: string;
+  family_name?: string;
   picture?: string;
 };
 
@@ -22,13 +23,11 @@ export class AuthService {
 
   async register(dto: CreateUserDto) {
     const user = await this.userService.create(dto);
-
     return this.finalizeAuth(user);
   }
 
   async login(dto: LoginDto) {
     const user = await this.userService.verifyUser(dto.email, dto.password);
-
     return this.finalizeAuth(user);
   }
 
@@ -41,23 +40,26 @@ export class AuthService {
 
     const raw = await this.fetchGoogleProfile(googleToken.trim());
     const email = raw.email;
+
     if (!email) {
       throw new UnauthorizedException(
         'Google token is invalid or email is missing',
       );
     }
 
-    const realName =
-      typeof raw.name === 'string'
-        ? raw.name
-        : typeof raw.given_name === 'string'
-          ? raw.given_name
-          : undefined;
+    const firstName =
+      raw.given_name || (raw.name ? raw.name.split(' ')[0] : undefined);
+    const lastName =
+      raw.family_name ||
+      (raw.name && raw.name.includes(' ')
+        ? raw.name.substring(raw.name.indexOf(' ') + 1)
+        : undefined);
 
     const user = await this.userService.upsertOAuthUser({
       email,
-      realName,
-      avatar_url: typeof raw.picture === 'string' ? raw.picture : undefined,
+      firstName,
+      lastName,
+      avatarUrl: typeof raw.picture === 'string' ? raw.picture : undefined,
     });
 
     return this.finalizeAuth(user);
@@ -79,10 +81,11 @@ export class AuthService {
     );
   }
 
-  private async finalizeAuth(user: User) {
+  private async finalizeAuth(user: { id: string }) {
     const tokens = this.tokenService.issueTokens(user.id);
-
-    const userProfile = await this.userService.getProfileForUser(user.id);
+    const userProfile: UserPublic = await this.userService.getProfileForUser(
+      user.id,
+    );
 
     return {
       user: userProfile,
