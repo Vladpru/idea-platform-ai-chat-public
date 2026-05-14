@@ -44,6 +44,33 @@
   --color-Grey-200: var(--Grey-200);
   --color-brand-accent: var(--brand-accent);
 
+  /* Brand palette */
+  --color-brand-orange: var(--brand-orange);
+  --color-brand-white: var(--brand-white);
+  --color-brand-light-blue: var(--brand-light-blue);
+  --color-brand-cool-gray-1: var(--brand-cool-gray-1);
+  --color-brand-cool-gray-2: var(--brand-cool-gray-2);
+  --color-brand-cool-gray-3: var(--brand-cool-gray-3);
+  --color-brand-cool-gray-4: var(--brand-cool-gray-4);
+  --color-brand-extra-black: var(--brand-extra-black);
+  --color-brand-black: var(--brand-black);
+  --color-brand-dark-blue: var(--brand-dark-blue);
+  --color-brand-neutral: var(--brand-neutral);
+  --color-brand-gray-900: var(--brand-gray-900);
+  --color-brand-gray-700: var(--brand-gray-700);
+  --color-brand-gray-600: var(--brand-gray-600);
+  --color-brand-gray-400: var(--brand-gray-400);
+  --color-brand-gray-200: var(--brand-gray-200);
+  --color-brand-gray-100: var(--brand-gray-100);
+
+  --color-idea-ideation: var(--idea-ideation);
+  --color-idea-prototyping: var(--idea-prototyping);
+  --color-idea-completed: var(--idea-completed);
+  --color-idea-archived: var(--idea-archived);
+  --color-idea-paused: var(--idea-paused);
+
+  --shadow-shadow-soft: var(--shadow-soft);
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -61,6 +88,38 @@
   --brand-accent: hsl(30 100% 44%);
 
   --Grey-200: hsla(210, 17%, 91%, 1);
+
+  /* Brand palette — light theme */
+  --brand-orange: #e10600;
+  --brand-white: #ffffff;
+  --brand-light-blue: #c6dae7;
+  --brand-cool-gray-4: #959595;
+  --brand-cool-gray-3: #e8e8e8;
+  --brand-cool-gray-2: #d0d0ce;
+  --brand-cool-gray-1: #a8a8a8;
+  --brand-gray-900: #1a1e22;
+  --brand-gray-700: #4d565e;
+  --brand-gray-600: #6a737c;
+  --brand-gray-400: #a8b0b9;
+  --brand-gray-200: #e4e8ec;
+  --brand-gray-100: #f5f7fa;
+  --brand-extra-black: #000000;
+  --brand-black: #101820;
+  --brand-dark-blue: #003057;
+  --brand-neutral: #f9f9f9;
+
+  /* IDEA STEP status */
+  --idea-ideation: #ffa900;
+  --idea-prototyping: #2b787c;
+  --idea-completed: #2b787c;
+  --idea-archived: #8c3890;
+  --idea-paused: #4e6374;
+
+  --shadow-soft:
+    0px 3px 6px rgba(145, 145, 145, 0.1),
+    0px 10px 10px rgba(145, 145, 145, 0.09),
+    0px 23px 14px rgba(145, 145, 145, 0.05),
+    0px 41px 16px rgba(145, 145, 145, 0.01);
 
   --active-background: hsl(216 33% 97%);
   --non-active-background: hsla(0, 0%, 100%, 1);

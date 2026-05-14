@@ -7,7 +7,7 @@ export type CardProps = React.HTMLAttributes<HTMLDivElement>;
 export function Card({ className, ...props }: CardProps) {
   return (
     <div
-      className={cn('text-card-foreground rounded-xl md:shadow-lg', className)}
+      className={cn('text-card-foreground rounded-xl', className)}
       {...props}
     />
   );
