@@ -4,9 +4,8 @@ services:
     runtime: node
     rootDir: backend
     branch: develop
-    buildCommand: yarn install --frozen-lockfile && yarn build
-    startCommand: node dist/main
-    preDeployCommand: yarn prisma migrate deploy
+    buildCommand: yarn install && yarn build
+    startCommand: yarn prisma migrate deploy && node dist/src/main.js
     envVars:
       - key: NODE_ENV
         value: development
@@ -30,9 +29,8 @@ services:
     runtime: node
     rootDir: backend
     branch: staging
-    buildCommand: yarn install --frozen-lockfile && yarn build
-    startCommand: node dist/main
-    preDeployCommand: yarn prisma migrate deploy
+    buildCommand: yarn install && yarn build
+    startCommand: yarn prisma migrate deploy && node dist/src/main.js
     envVars:
       - key: NODE_ENV
         value: production
