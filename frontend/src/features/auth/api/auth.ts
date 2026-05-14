@@ -4,7 +4,8 @@ import { useAuthSessionStore } from "@/features/auth/model/auth-session-store";
 export type AuthDto = {
   email: string;
   password?: string;
-  realName?: string;
+  firstName?: string;
+  lastName?: string;
 };
 
 export type AuthResponse<TUser = unknown> = {

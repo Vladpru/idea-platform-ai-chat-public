@@ -67,7 +67,7 @@ export class TokenService {
     }
   }
 
-  issueTokens(userId: string) {
+  issueTokens(userId: string): { accessToken: string; refreshToken: string } {
     try {
       const payload = { id: userId };
       const accessToken = this.jwt.sign(payload, {
