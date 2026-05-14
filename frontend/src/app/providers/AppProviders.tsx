@@ -1,6 +1,7 @@
-import { ThemeToggle } from '@/features/theme';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
+
+import { ThemeToggle } from '@/features/theme';
 
 import { SonnerProvider } from './sonner-provider';
 import { ThemeProvider } from './theme-provider';
