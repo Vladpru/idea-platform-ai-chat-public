@@ -143,14 +143,18 @@ export class UserService {
   }
 
   async update(id: string, dto: UpdateUserDto) {
-    const { ...safeData } = dto as UpdateUserDto & {
-      password?: string;
-    };
+    const data: { firstName?: string; lastName?: string } = {};
+    if (dto.firstName !== undefined) data.firstName = dto.firstName;
+    if (dto.lastName !== undefined) data.lastName = dto.lastName;
+
+    if (Object.keys(data).length === 0) {
+      return this.findOne(id);
+    }
 
     try {
       return await this.prisma.user.update({
         where: { id },
-        data: safeData,
+        data,
         select: USER_PUBLIC_SELECT,
       });
     } catch (error: unknown) {
