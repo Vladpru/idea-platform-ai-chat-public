@@ -59,7 +59,7 @@ services:
       - key: VITE_ENV
         value: development
       - key: VITE_API_URL
-        value: https://idea-platform-team-2-develop.onrender.com/api
+        value: https://idea-platform-team-2-develop.onrender.com
       - key: VITE_GOOGLE_CLIENT_ID
         sync: false
 
@@ -73,6 +73,6 @@ services:
       - key: VITE_ENV
         value: staging
       - key: VITE_API_URL
-        value: https://idea-platform-team-2-staging.onrender.com/api
+        value: https://idea-platform-team-2-staging.onrender.com
       - key: VITE_GOOGLE_CLIENT_ID
         sync: false
