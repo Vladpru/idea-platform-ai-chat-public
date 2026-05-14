@@ -53,7 +53,7 @@ services:
     name: idea-platform-team-2-frontend-develop
     rootDir: frontend
     branch: develop
-    buildCommand: yarn install --immutable && yarn build
+    buildCommand: corepack enable && yarn install --immutable && yarn build
     staticPublishPath: dist
     envVars:
       - key: VITE_ENV
@@ -67,7 +67,7 @@ services:
     name: idea-platform-team-2-frontend-staging
     rootDir: frontend
     branch: staging
-    buildCommand: yarn install --immutable && yarn build
+    buildCommand: corepack enable && yarn install --immutable && yarn build
     staticPublishPath: dist
     envVars:
       - key: VITE_ENV
