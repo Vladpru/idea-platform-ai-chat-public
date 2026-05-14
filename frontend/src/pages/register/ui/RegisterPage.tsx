@@ -1,18 +1,22 @@
-import { RegisterForm } from "@/features/auth";
-import { Card, CardContent, CardHeader } from "@/shared/ui";
+import PolycodersLogo from '@/assets/svg/polycodersLogo.svg';
+import { RegisterForm } from '@/features/auth';
+
+import { Card, CardContent, CardHeader } from '@/shared/ui';
 
 export function RegisterPage() {
   return (
-    <div className="bg-muted/30 min-h-[100svh] px-4 py-10  flex flex-col justify-center">
+    <div className="bg-muted/30 flex min-h-[100svh] flex-col justify-center px-4 py-10">
       <div className="mx-auto w-full max-w-sm">
-        <Card className="border-0 shadow-none bg-transparent md:border md:shadow-lg md:bg-card md:rounded-2xl">
+        <Card className="md:bg-card border-0 bg-transparent shadow-none md:rounded-2xl md:border md:shadow-lg">
           <CardHeader className="pt-8">
             <div className="text-center">
-              <div className="text-muted-foreground text-xs font-semibold tracking-[0.22em]">
-                LOGO
-              </div>
-              <h1 className="mt-3 text-xl font-semibold tracking-tight">
-                SIGN UP
+              <img
+                src={PolycodersLogo}
+                alt="Polycoders Logo"
+                className="h-8 w-auto shrink-0 object-contain transition-transform hover:scale-105"
+              />
+              <h1 className="mt-3 text-xl font-semibold tracking-tight uppercase">
+                Sign up
               </h1>
               <p className="text-muted-foreground mt-2 text-sm">
                 Create your account to get started.

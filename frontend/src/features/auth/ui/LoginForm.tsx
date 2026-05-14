@@ -1,14 +1,15 @@
-import { useId, useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { Eye, EyeOff } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Input, Label, Separator } from "@/shared/ui";
-import { loginSchema, type LoginValues } from "../model/login-schema";
-import { GoogleLoginButton } from "./GoogleAuthButton";
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Link, useNavigate } from '@tanstack/react-router';
+import { Eye, EyeOff } from 'lucide-react';
+import { useId, useState } from 'react';
+import { useForm } from 'react-hook-form';
 
-import { login as loginUser } from "../api/auth";
-import { getApiErrorMessage } from "@/shared/api/api-error";
+import { getApiErrorMessage } from '@/shared/api/api-error';
+import { Button, Input, Label, Separator } from '@/shared/ui';
+
+import { login as loginUser } from '../api/auth';
+import { type LoginValues, loginSchema } from '../model/login-schema';
+import { GoogleLoginButton } from './GoogleAuthButton';
 
 export function LoginForm() {
   const navigate = useNavigate();
@@ -24,8 +25,8 @@ export function LoginForm() {
   } = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "",
-      password: "",
+      email: '',
+      password: '',
     },
   });
 
@@ -33,11 +34,11 @@ export function LoginForm() {
     setSubmitError(null);
     try {
       await loginUser({ email: data.email, password: data.password });
-      await navigate({ to: "/", replace: true });
+      await navigate({ to: '/', replace: true });
     } catch (e) {
       setSubmitError(
         getApiErrorMessage(e, {
-          invalidCredentialsMessage: "Email or password is incorrect",
+          invalidCredentialsMessage: 'Email or password is incorrect',
         }),
       );
     }
@@ -58,7 +59,7 @@ export function LoginForm() {
             autoComplete="email"
             placeholder="you@example.com"
             className="h-11 py-2.5"
-            {...register("email")}
+            {...register('email')}
           />
           {errors.email && (
             <p className="text-destructive text-xs font-medium">
@@ -72,19 +73,19 @@ export function LoginForm() {
           <div className="relative">
             <Input
               id={passwordId}
-              type={showPassword ? "text" : "password"}
+              type={showPassword ? 'text' : 'password'}
               autoComplete="current-password"
               placeholder="••••••••"
               className="h-11 py-2.5 pr-10"
-              {...register("password")}
+              {...register('password')}
             />
             <Button
               variant="ghost"
               size="icon"
               type="button"
-              className="text-muted-foreground hover:text-foreground absolute right-1 top-1/2 h-9 w-9 -translate-y-1/2"
-              onClick={() => setShowPassword((v) => !v)}
-              aria-label={showPassword ? "Hide password" : "Show password"}
+              className="text-muted-foreground hover:text-foreground absolute top-1/2 right-1 h-9 w-9 -translate-y-1/2"
+              onClick={() => setShowPassword(v => !v)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
               {showPassword ? (
                 <EyeOff className="h-4 w-4" />
@@ -122,11 +123,11 @@ export function LoginForm() {
           <Separator className="flex-1" />
         </div>
 
-        <GoogleLoginButton mode={"signin"} />
+        <GoogleLoginButton mode={'signin'} />
       </form>
 
       <p className="text-muted-foreground pt-2 text-center text-sm">
-        Don&apos;t have an account?{" "}
+        Don&apos;t have an account?{' '}
         <Link
           to="/register"
           className="text-primary font-semibold underline underline-offset-4"

@@ -1,14 +1,15 @@
-import { useId, useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { Eye, EyeOff } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Input, Label, Separator } from "@/shared/ui";
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Link, useNavigate } from '@tanstack/react-router';
+import { Eye, EyeOff } from 'lucide-react';
+import { useId, useState } from 'react';
+import { useForm } from 'react-hook-form';
 
-import { registerSchema, type RegisterValues } from "../model/register-schema";
-import { GoogleLoginButton } from "./GoogleAuthButton";
-import { register as registerUser } from "../api/auth";
-import { getApiErrorMessage } from "@/shared/api/api-error";
+import { getApiErrorMessage } from '@/shared/api/api-error';
+import { Button, Input, Label, Separator } from '@/shared/ui';
+
+import { register as registerUser } from '../api/auth';
+import { type RegisterValues, registerSchema } from '../model/register-schema';
+import { GoogleLoginButton } from './GoogleAuthButton';
 
 export function RegisterForm() {
   const navigate = useNavigate();
@@ -26,9 +27,9 @@ export function RegisterForm() {
   } = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      email: "",
-      password: "",
-      confirmPassword: "",
+      email: '',
+      password: '',
+      confirmPassword: '',
     },
   });
 
@@ -36,9 +37,11 @@ export function RegisterForm() {
     setSubmitError(null);
     try {
       await registerUser({ email: data.email, password: data.password });
-      await navigate({ to: "/profile", replace: true });
+      await navigate({ to: '/profile', replace: true });
     } catch (e) {
-      setSubmitError(getApiErrorMessage(e, { invalidCredentialsMessage: "Sign up failed" }));
+      setSubmitError(
+        getApiErrorMessage(e, { invalidCredentialsMessage: 'Sign up failed' }),
+      );
     }
   };
 
@@ -57,7 +60,7 @@ export function RegisterForm() {
             autoComplete="email"
             placeholder="you@example.com"
             className="h-11 py-2.5"
-            {...register("email")}
+            {...register('email')}
           />
           {errors.email && (
             <p className="text-destructive text-xs font-medium">
@@ -71,19 +74,19 @@ export function RegisterForm() {
           <div className="relative">
             <Input
               id={passwordId}
-              type={showPassword ? "text" : "password"}
+              type={showPassword ? 'text' : 'password'}
               autoComplete="new-password"
               placeholder="Create password"
               className="h-11 py-2.5 pr-10"
-              {...register("password")}
+              {...register('password')}
             />
             <Button
               variant="ghost"
               size="icon"
               type="button"
-              className="text-muted-foreground hover:text-foreground absolute right-1 top-1/2 h-9 w-9 -translate-y-1/2"
-              onClick={() => setShowPassword((v) => !v)}
-              aria-label={showPassword ? "Hide password" : "Show password"}
+              className="text-muted-foreground hover:text-foreground absolute top-1/2 right-1 h-9 w-9 -translate-y-1/2"
+              onClick={() => setShowPassword(v => !v)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
               {showPassword ? (
                 <EyeOff className="h-4 w-4" />
@@ -104,22 +107,22 @@ export function RegisterForm() {
           <div className="relative">
             <Input
               id={confirmPasswordId}
-              type={showConfirmPassword ? "text" : "password"}
+              type={showConfirmPassword ? 'text' : 'password'}
               autoComplete="new-password"
               placeholder="Confirm password"
               className="h-11 py-2.5 pr-10"
-              {...register("confirmPassword")}
+              {...register('confirmPassword')}
             />
             <Button
               variant="ghost"
               size="icon"
               type="button"
-              className="text-muted-foreground hover:text-foreground absolute right-1 top-1/2 h-9 w-9 -translate-y-1/2"
-              onClick={() => setShowConfirmPassword((v) => !v)}
+              className="text-muted-foreground hover:text-foreground absolute top-1/2 right-1 h-9 w-9 -translate-y-1/2"
+              onClick={() => setShowConfirmPassword(v => !v)}
               aria-label={
                 showConfirmPassword
-                  ? "Hide confirm password"
-                  : "Show confirm password"
+                  ? 'Hide confirm password'
+                  : 'Show confirm password'
               }
             >
               {showConfirmPassword ? (
@@ -148,11 +151,11 @@ export function RegisterForm() {
           <Separator className="flex-1" />
         </div>
 
-        <GoogleLoginButton mode={"signup"} />
+        <GoogleLoginButton mode={'signup'} />
       </form>
 
       <p className="text-muted-foreground pt-2 text-center text-sm">
-        Already have an account?{" "}
+        Already have an account?{' '}
         <Link
           to="/login"
           className="text-primary font-semibold underline underline-offset-4"

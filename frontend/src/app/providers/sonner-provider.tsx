@@ -1,9 +1,10 @@
-import type { ReactNode } from "react";
-import { Toaster } from "sonner";
-import { useThemeStore } from "@/shared/lib/theme-store";
+import type { ReactNode } from 'react';
+import { Toaster } from 'sonner';
+
+import { useThemeStore } from '@/shared/lib/theme-store';
 
 export function SonnerProvider({ children }: { children: ReactNode }) {
-  const theme = useThemeStore((s) => s.theme);
+  const theme = useThemeStore(s => s.theme);
 
   return (
     <>

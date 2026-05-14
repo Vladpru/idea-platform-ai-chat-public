@@ -1,8 +1,9 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { ReactNode } from "react";
-import { ThemeToggle } from "@/features/theme/ThemeToggle";
-import { SonnerProvider } from "./sonner-provider";
-import { ThemeProvider } from "./theme-provider";
+import { ThemeToggle } from '@/features/theme/ThemeToggle';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
+
+import { SonnerProvider } from './sonner-provider';
+import { ThemeProvider } from './theme-provider';
 
 const queryClient = new QueryClient();
 

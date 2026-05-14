@@ -1,22 +1,24 @@
-import { useState } from "react";
-import { Link } from "@tanstack/react-router";
-import { LogOut, User } from "lucide-react";
+import {
+  nameInitial,
+  useAuthSessionStore,
+} from '@/features/auth/model/auth-session-store';
+import { Link } from '@tanstack/react-router';
+import { LogOut, User } from 'lucide-react';
+import { useState } from 'react';
+
+import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/shared/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
-import { LogoutConfirmDialog } from "./LogoutConfirmDialog";
-import {
-  nameInitial,
-  useAuthSessionStore,
-} from "@/features/auth/model/auth-session-store";
+} from '@/shared/ui/dropdown-menu';
+
+import { LogoutConfirmDialog } from './LogoutConfirmDialog';
 
 const linkRowClassName =
-  "flex w-full cursor-pointer items-center py-3 px-4 text-base";
+  'flex w-full cursor-pointer items-center py-3 px-4 text-base';
 
 export interface UserNavProps {
   triggerClassName: string;
@@ -24,7 +26,7 @@ export interface UserNavProps {
 
 export function UserNav({ triggerClassName }: UserNavProps) {
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
-  const user = useAuthSessionStore((s) => s.user);
+  const user = useAuthSessionStore(s => s.user);
 
   return (
     <>
@@ -38,10 +40,10 @@ export function UserNav({ triggerClassName }: UserNavProps) {
             <Avatar className="h-8 w-8">
               <AvatarImage
                 src={user?.picture ?? undefined}
-                alt={user?.name || "User"}
+                alt={user?.name || 'User'}
               />
               <AvatarFallback className="bg-slate-200 text-xs font-medium text-slate-800">
-                {nameInitial(user?.name ?? "")}
+                {nameInitial(user?.name ?? '')}
               </AvatarFallback>
             </Avatar>
           </button>
@@ -61,7 +63,7 @@ export function UserNav({ triggerClassName }: UserNavProps) {
           <DropdownMenuItem
             variant="destructive"
             className="flex cursor-pointer items-center px-4 py-3 text-base"
-            onSelect={(event) => {
+            onSelect={event => {
               event.preventDefault();
               setLogoutDialogOpen(true);
             }}

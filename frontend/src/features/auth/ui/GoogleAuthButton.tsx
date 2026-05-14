@@ -1,12 +1,14 @@
-import { useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
-import { loginWithGoogleAccessToken } from "../api/auth";
-import { requestGoogleAccessToken } from "../api/google-auth";
-import { Button } from "@/shared/ui";
-import { GoogleIcon } from "@/shared/ui/icons";
+import { useNavigate } from '@tanstack/react-router';
+import { useState } from 'react';
+
+import { Button } from '@/shared/ui';
+import { GoogleIcon } from '@/shared/ui/icons';
+
+import { loginWithGoogleAccessToken } from '../api/auth';
+import { requestGoogleAccessToken } from '../api/google-auth';
 
 interface Props {
-  mode: "signin" | "signup";
+  mode: 'signin' | 'signup';
 }
 
 export function GoogleLoginButton({ mode }: Props) {
@@ -21,11 +23,11 @@ export function GoogleLoginButton({ mode }: Props) {
       const googleToken = await requestGoogleAccessToken();
       await loginWithGoogleAccessToken(googleToken);
       await navigate({
-        to: mode === "signup" ? "/profile" : "/",
+        to: mode === 'signup' ? '/profile' : '/',
         replace: true,
       });
     } catch (e) {
-      setError((e as Error)?.message ?? "Google sign-in failed");
+      setError((e as Error)?.message ?? 'Google sign-in failed');
     } finally {
       setIsBusy(false);
     }
@@ -36,15 +38,17 @@ export function GoogleLoginButton({ mode }: Props) {
       <Button
         type="button"
         variant="outline"
-        className="h-10 w-full border-primary text-primary"
+        className="border-primary text-primary h-10 w-full"
         isLoading={isBusy}
         onClick={() => void handleLogin()}
       >
         <GoogleIcon className="h-4 w-4" />
-        {mode === "signin" ? "SIGN IN WITH GOOGLE" : "SIGN UP WITH GOOGLE"}
+        {mode === 'signin' ? 'SIGN IN WITH GOOGLE' : 'SIGN UP WITH GOOGLE'}
       </Button>
       {error && (
-        <p className="text-destructive text-center text-xs font-medium">{error}</p>
+        <p className="text-destructive text-center text-xs font-medium">
+          {error}
+        </p>
       )}
     </div>
   );

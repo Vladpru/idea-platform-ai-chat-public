@@ -1,11 +1,12 @@
-import { LoginForm } from "@/features/auth";
-import { Card, CardContent, CardHeader } from "@/shared/ui";
+import { LoginForm } from '@/features/auth';
+
+import { Card, CardContent, CardHeader } from '@/shared/ui';
 
 export function LoginPage() {
   return (
-    <div className="bg-muted/30 md:bg-muted/30 min-h-[100svh] flex flex-col justify-center px-4 py-12">
+    <div className="bg-muted/30 md:bg-muted/30 flex min-h-[100svh] flex-col justify-center px-4 py-12">
       <div className="mx-auto w-full max-w-sm">
-        <Card className="border-0 shadow-none bg-transparent md:border md:shadow-lg md:bg-card md:rounded-2xl">
+        <Card className="md:bg-card border-0 bg-transparent shadow-none md:rounded-2xl md:border md:shadow-lg">
           <CardHeader className="pt-8">
             <div className="text-center">
               <div className="text-muted-foreground text-xs font-semibold tracking-[0.22em]">
