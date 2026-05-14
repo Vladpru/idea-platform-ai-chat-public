@@ -1,14 +1,10 @@
 import { FileInterceptor } from '@nestjs/platform-express';
-import type { Request } from 'express';
-import { diskStorage } from 'multer';
-import { join } from 'path';
+import { memoryStorage } from 'multer';
 
 import {
   AVATAR_MAX_BYTES,
   extensionForAvatarMime,
 } from '../utils/avatar-upload.util';
-
-const avatarsFolder = () => join(process.cwd(), 'storage', 'avatars');
 
 export function AvatarUploadInterceptor() {
   return FileInterceptor('file', {
@@ -21,17 +17,7 @@ export function AvatarUploadInterceptor() {
         cb(err as Error, false);
       }
     },
-    storage: diskStorage({
-      destination: (_req, _file, cb) => cb(null, avatarsFolder()),
-      filename: (req, file, cb) => {
-        try {
-          const id = (req as Request & { user: { id: string } }).user.id;
-          const ext = extensionForAvatarMime(file.mimetype);
-          cb(null, `${id}.${ext}`);
-        } catch (err) {
-          cb(err as Error, '');
-        }
-      },
-    }),
+
+    storage: memoryStorage(),
   });
 }

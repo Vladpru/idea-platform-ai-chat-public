@@ -7,7 +7,9 @@ import {
 } from '@nestjs/common';
 import { hash, verify } from 'argon2';
 
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { PrismaService } from '../prisma/prisma.service';
+import type { UserPublic } from '../shared/types/user.types';
 import { isUniqueConstraintError } from '../shared/utils/is-unique-error.util';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -25,33 +27,42 @@ const USER_PUBLIC_SELECT = {
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cloudinary: CloudinaryService,
+  ) {}
 
   async create(dto: CreateUserDto) {
-    const existing = await this.getByEmail(dto.email);
-    if (existing) {
-      throw new ConflictException('User with this email already exists');
-    }
-
     if (!dto.password) {
       throw new BadRequestException('Password must be provided');
     }
 
     const hashedPassword = await hash(dto.password);
 
-    return this.prisma.user.create({
-      data: {
-        email: dto.email,
-        firstName: dto.firstName,
-        lastName: dto.lastName,
-        password: hashedPassword,
-      },
-      select: USER_PUBLIC_SELECT,
-    });
+    try {
+      return await this.prisma.user.create({
+        data: {
+          email: dto.email,
+          firstName: dto.firstName,
+          lastName: dto.lastName,
+          password: hashedPassword,
+        },
+        select: USER_PUBLIC_SELECT,
+      });
+    } catch (error: unknown) {
+      if (isUniqueConstraintError(error)) {
+        throw new ConflictException('User with this email already exists');
+      }
+      throw error;
+    }
   }
 
   async verifyUser(email: string, password: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: { id: true, email: true, password: true },
+    });
+
     const invalid = new UnauthorizedException('Invalid email or password');
 
     if (!user || !user.password) throw invalid;
@@ -85,7 +96,7 @@ export class UserService {
     });
   }
 
-  async findOne(id: string) {
+  async findOne(id: string): Promise<UserPublic> {
     const user = await this.prisma.user.findUnique({
       where: { id },
       select: USER_PUBLIC_SELECT,
@@ -94,11 +105,36 @@ export class UserService {
     return user;
   }
 
-  getProfileForUser(id: string) {
+  getProfileForUser(id: string): Promise<UserPublic> {
     return this.findOne(id);
   }
 
+  async finalizeAvatarUpload(userId: string, file: Express.Multer.File) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    if (user.avatarUrl) {
+      await this.cloudinary.deleteAvatar(user.avatarUrl);
+    }
+
+    const secureUrl = await this.cloudinary.uploadAvatar(file);
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl: secureUrl },
+      select: USER_PUBLIC_SELECT,
+    });
+  }
+
   async removeAvatar(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user) throw new NotFoundException('User not found');
+
+    if (user.avatarUrl) {
+      await this.cloudinary.deleteAvatar(user.avatarUrl);
+    }
+
     return this.prisma.user.update({
       where: { id: userId },
       data: { avatarUrl: null },
@@ -107,10 +143,14 @@ export class UserService {
   }
 
   async update(id: string, dto: UpdateUserDto) {
+    const { ...safeData } = dto as UpdateUserDto & {
+      password?: string;
+    };
+
     try {
       return await this.prisma.user.update({
         where: { id },
-        data: dto,
+        data: safeData,
         select: USER_PUBLIC_SELECT,
       });
     } catch (error: unknown) {
