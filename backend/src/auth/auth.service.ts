@@ -1,5 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 
+import type { UserPublic } from '../shared/types/user.types';
 import { TokenService } from '../token/token.service';
 import { CreateUserDto } from '../user/dto/create-user.dto';
 import { UserService } from '../user/user.service';
@@ -58,7 +59,7 @@ export class AuthService {
       email,
       firstName,
       lastName,
-      avatar_url: typeof raw.picture === 'string' ? raw.picture : undefined,
+      avatarUrl: typeof raw.picture === 'string' ? raw.picture : undefined,
     });
 
     return this.finalizeAuth(user);
@@ -82,7 +83,9 @@ export class AuthService {
 
   private async finalizeAuth(user: { id: string }) {
     const tokens = this.tokenService.issueTokens(user.id);
-    const userProfile = await this.userService.getProfileForUser(user.id);
+    const userProfile: UserPublic = await this.userService.getProfileForUser(
+      user.id,
+    );
 
     return {
       user: userProfile,
