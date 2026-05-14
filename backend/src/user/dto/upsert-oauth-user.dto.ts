@@ -1,5 +1,6 @@
 export type UpsertOAuthUserInput = {
   email: string;
-  realName?: string;
-  avatar_url?: string;
+  firstName?: string;
+  lastName?: string;
+  avatarUrl?: string;
 };

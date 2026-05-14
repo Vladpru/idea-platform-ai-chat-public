@@ -14,11 +14,17 @@ export class CreateUserDto {
   @IsEmail({}, { message: 'Email must be valid' })
   email!: string;
 
-  @ApiPropertyOptional({ example: 'John Doe', maxLength: 255 })
+  @ApiPropertyOptional({ example: 'John', maxLength: 50 })
   @IsOptional()
   @IsString()
-  @MaxLength(255)
-  realName?: string;
+  @MaxLength(50)
+  firstName?: string;
+
+  @ApiPropertyOptional({ example: 'Doe', maxLength: 50 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  lastName?: string;
 
   @ApiPropertyOptional({ example: 'secret123', minLength: 8 })
   @IsOptional()
@@ -26,8 +32,8 @@ export class CreateUserDto {
   @MinLength(8, { message: 'Password must be at least 8 characters' })
   password?: string;
 
-  @ApiPropertyOptional({ example: 'http://google.com/avatar' })
+  @ApiPropertyOptional({ example: 'https://res.cloudinary.com/.../avatar.jpg' })
   @IsOptional()
   @IsString()
-  avatar_url?: string;
+  avatarUrl?: string;
 }

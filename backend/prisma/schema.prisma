@@ -10,7 +10,8 @@ datasource db {
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
-  realName  String?  @map("real_name")
+  firstName String?  @map("first_name")
+  lastName  String?  @map("last_name")
   password  String?
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
