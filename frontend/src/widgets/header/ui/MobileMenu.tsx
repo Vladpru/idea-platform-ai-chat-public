@@ -147,7 +147,7 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
                   My Ideas, Joins & Drafts
                 </Link>
                 <Link
-                  to="/settings"
+                  to="/profile"
                   className={navLinkClass}
                   activeProps={{
                     className: "bg-active-background text-primary",
