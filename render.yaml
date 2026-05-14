@@ -29,7 +29,7 @@ services:
     runtime: node
     rootDir: backend
     branch: staging
-    buildCommand: yarn install && yarn prisma generate && yarn build
+    buildCommand: yarn install --production=false && yarn prisma generate && yarn build
     startCommand: yarn prisma migrate deploy && node dist/src/main.js
     envVars:
       - key: NODE_ENV
