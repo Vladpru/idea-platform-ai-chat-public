@@ -1,5 +1,4 @@
 import { APP_NAME } from "@/shared/config/constants";
-import { Link } from "@tanstack/react-router";
 
 export function HomePage() {
   return (
