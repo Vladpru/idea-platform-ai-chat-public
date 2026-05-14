@@ -15,10 +15,8 @@ import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as AuthIndexRouteImport } from './routes/_auth/index'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as AuthStatisticsRouteImport } from './routes/_auth/statistics'
-import { Route as AuthSettingsRouteImport } from './routes/_auth/settings'
 import { Route as AuthProblemsRouteImport } from './routes/_auth/problems'
 import { Route as AuthIdeasRouteImport } from './routes/_auth/ideas'
-import { Route as AuthBillingRouteImport } from './routes/_auth/billing'
 import { Route as AuthProfileRouteRouteImport } from './routes/_auth/profile/route'
 import { Route as AuthProfileIndexRouteImport } from './routes/_auth/profile/index'
 import { Route as AuthProfileProblemsRouteImport } from './routes/_auth/profile/problems'
@@ -53,11 +51,6 @@ const AuthStatisticsRoute = AuthStatisticsRouteImport.update({
   path: '/statistics',
   getParentRoute: () => AuthRoute,
 } as any)
-const AuthSettingsRoute = AuthSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AuthRoute,
-} as any)
 const AuthProblemsRoute = AuthProblemsRouteImport.update({
   id: '/problems',
   path: '/problems',
@@ -66,11 +59,6 @@ const AuthProblemsRoute = AuthProblemsRouteImport.update({
 const AuthIdeasRoute = AuthIdeasRouteImport.update({
   id: '/ideas',
   path: '/ideas',
-  getParentRoute: () => AuthRoute,
-} as any)
-const AuthBillingRoute = AuthBillingRouteImport.update({
-  id: '/billing',
-  path: '/billing',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthProfileRouteRoute = AuthProfileRouteRouteImport.update({
@@ -99,10 +87,8 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/profile': typeof AuthProfileRouteRouteWithChildren
-  '/billing': typeof AuthBillingRoute
   '/ideas': typeof AuthIdeasRoute
   '/problems': typeof AuthProblemsRoute
-  '/settings': typeof AuthSettingsRoute
   '/statistics': typeof AuthStatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/profile/ideas': typeof AuthProfileIdeasRoute
@@ -112,10 +98,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/billing': typeof AuthBillingRoute
   '/ideas': typeof AuthIdeasRoute
   '/problems': typeof AuthProblemsRoute
-  '/settings': typeof AuthSettingsRoute
   '/statistics': typeof AuthStatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/': typeof AuthIndexRoute
@@ -129,10 +113,8 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/_auth/profile': typeof AuthProfileRouteRouteWithChildren
-  '/_auth/billing': typeof AuthBillingRoute
   '/_auth/ideas': typeof AuthIdeasRoute
   '/_auth/problems': typeof AuthProblemsRoute
-  '/_auth/settings': typeof AuthSettingsRoute
   '/_auth/statistics': typeof AuthStatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/_auth/': typeof AuthIndexRoute
@@ -147,10 +129,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/profile'
-    | '/billing'
     | '/ideas'
     | '/problems'
-    | '/settings'
     | '/statistics'
     | '/auth/callback'
     | '/profile/ideas'
@@ -160,10 +140,8 @@ export interface FileRouteTypes {
   to:
     | '/login'
     | '/register'
-    | '/billing'
     | '/ideas'
     | '/problems'
-    | '/settings'
     | '/statistics'
     | '/auth/callback'
     | '/'
@@ -176,10 +154,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/_auth/profile'
-    | '/_auth/billing'
     | '/_auth/ideas'
     | '/_auth/problems'
-    | '/_auth/settings'
     | '/_auth/statistics'
     | '/auth/callback'
     | '/_auth/'
@@ -239,13 +215,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthStatisticsRouteImport
       parentRoute: typeof AuthRoute
     }
-    '/_auth/settings': {
-      id: '/_auth/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AuthSettingsRouteImport
-      parentRoute: typeof AuthRoute
-    }
     '/_auth/problems': {
       id: '/_auth/problems'
       path: '/problems'
@@ -258,13 +227,6 @@ declare module '@tanstack/react-router' {
       path: '/ideas'
       fullPath: '/ideas'
       preLoaderRoute: typeof AuthIdeasRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/billing': {
-      id: '/_auth/billing'
-      path: '/billing'
-      fullPath: '/billing'
-      preLoaderRoute: typeof AuthBillingRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/profile': {
@@ -315,20 +277,16 @@ const AuthProfileRouteRouteWithChildren =
 
 interface AuthRouteChildren {
   AuthProfileRouteRoute: typeof AuthProfileRouteRouteWithChildren
-  AuthBillingRoute: typeof AuthBillingRoute
   AuthIdeasRoute: typeof AuthIdeasRoute
   AuthProblemsRoute: typeof AuthProblemsRoute
-  AuthSettingsRoute: typeof AuthSettingsRoute
   AuthStatisticsRoute: typeof AuthStatisticsRoute
   AuthIndexRoute: typeof AuthIndexRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthProfileRouteRoute: AuthProfileRouteRouteWithChildren,
-  AuthBillingRoute: AuthBillingRoute,
   AuthIdeasRoute: AuthIdeasRoute,
   AuthProblemsRoute: AuthProblemsRoute,
-  AuthSettingsRoute: AuthSettingsRoute,
   AuthStatisticsRoute: AuthStatisticsRoute,
   AuthIndexRoute: AuthIndexRoute,
 }
