@@ -1,8 +1,5 @@
 import { api } from "@/shared/api/http";
-import {
-  clearStoredAuthToken,
-  setStoredAuthToken,
-} from "@/shared/lib/auth-token";
+import { useAuthSessionStore } from "@/features/auth/model/auth-session-store";
 
 export type AuthDto = {
   email: string;
@@ -17,13 +14,13 @@ export type AuthResponse<TUser = unknown> = {
 
 export async function login<TUser = unknown>(dto: AuthDto): Promise<TUser> {
   const { data } = await api.post<AuthResponse<TUser>>("/auth/login", dto);
-  setStoredAuthToken(data.accessToken);
+  useAuthSessionStore.getState().setSession(data.user, data.accessToken);
   return data.user;
 }
 
 export async function register<TUser = unknown>(dto: AuthDto): Promise<TUser> {
   const { data } = await api.post<AuthResponse<TUser>>("/auth/register", dto);
-  setStoredAuthToken(data.accessToken);
+  useAuthSessionStore.getState().setSession(data.user, data.accessToken);
   return data.user;
 }
 
@@ -33,7 +30,7 @@ export async function loginWithGoogleAccessToken<TUser = unknown>(
   const { data } = await api.post<AuthResponse<TUser>>("/auth/google", {
     token: googleAccessToken,
   });
-  setStoredAuthToken(data.accessToken);
+  useAuthSessionStore.getState().setSession(data.user, data.accessToken);
   return data.user;
 }
 
@@ -41,6 +38,6 @@ export async function logout(): Promise<void> {
   try {
     await api.post("/auth/logout");
   } finally {
-    clearStoredAuthToken();
+    useAuthSessionStore.getState().clearSession();
   }
 }

@@ -14,6 +14,15 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as AuthIndexRouteImport } from './routes/_auth/index'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
+import { Route as AuthStatisticsRouteImport } from './routes/_auth/statistics'
+import { Route as AuthSettingsRouteImport } from './routes/_auth/settings'
+import { Route as AuthProblemsRouteImport } from './routes/_auth/problems'
+import { Route as AuthIdeasRouteImport } from './routes/_auth/ideas'
+import { Route as AuthBillingRouteImport } from './routes/_auth/billing'
+import { Route as AuthProfileRouteRouteImport } from './routes/_auth/profile/route'
+import { Route as AuthProfileIndexRouteImport } from './routes/_auth/profile/index'
+import { Route as AuthProfileProblemsRouteImport } from './routes/_auth/profile/problems'
+import { Route as AuthProfileIdeasRouteImport } from './routes/_auth/profile/ideas'
 
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
@@ -39,39 +48,144 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthStatisticsRoute = AuthStatisticsRouteImport.update({
+  id: '/statistics',
+  path: '/statistics',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthSettingsRoute = AuthSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthProblemsRoute = AuthProblemsRouteImport.update({
+  id: '/problems',
+  path: '/problems',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthIdeasRoute = AuthIdeasRouteImport.update({
+  id: '/ideas',
+  path: '/ideas',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthBillingRoute = AuthBillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthProfileRouteRoute = AuthProfileRouteRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthProfileIndexRoute = AuthProfileIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthProfileRouteRoute,
+} as any)
+const AuthProfileProblemsRoute = AuthProfileProblemsRouteImport.update({
+  id: '/problems',
+  path: '/problems',
+  getParentRoute: () => AuthProfileRouteRoute,
+} as any)
+const AuthProfileIdeasRoute = AuthProfileIdeasRouteImport.update({
+  id: '/ideas',
+  path: '/ideas',
+  getParentRoute: () => AuthProfileRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthIndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/profile': typeof AuthProfileRouteRouteWithChildren
+  '/billing': typeof AuthBillingRoute
+  '/ideas': typeof AuthIdeasRoute
+  '/problems': typeof AuthProblemsRoute
+  '/settings': typeof AuthSettingsRoute
+  '/statistics': typeof AuthStatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/profile/ideas': typeof AuthProfileIdeasRoute
+  '/profile/problems': typeof AuthProfileProblemsRoute
+  '/profile/': typeof AuthProfileIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/billing': typeof AuthBillingRoute
+  '/ideas': typeof AuthIdeasRoute
+  '/problems': typeof AuthProblemsRoute
+  '/settings': typeof AuthSettingsRoute
+  '/statistics': typeof AuthStatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/': typeof AuthIndexRoute
+  '/profile/ideas': typeof AuthProfileIdeasRoute
+  '/profile/problems': typeof AuthProfileProblemsRoute
+  '/profile': typeof AuthProfileIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_auth': typeof AuthRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/_auth/profile': typeof AuthProfileRouteRouteWithChildren
+  '/_auth/billing': typeof AuthBillingRoute
+  '/_auth/ideas': typeof AuthIdeasRoute
+  '/_auth/problems': typeof AuthProblemsRoute
+  '/_auth/settings': typeof AuthSettingsRoute
+  '/_auth/statistics': typeof AuthStatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/_auth/': typeof AuthIndexRoute
+  '/_auth/profile/ideas': typeof AuthProfileIdeasRoute
+  '/_auth/profile/problems': typeof AuthProfileProblemsRoute
+  '/_auth/profile/': typeof AuthProfileIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/register' | '/auth/callback'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/register'
+    | '/profile'
+    | '/billing'
+    | '/ideas'
+    | '/problems'
+    | '/settings'
+    | '/statistics'
+    | '/auth/callback'
+    | '/profile/ideas'
+    | '/profile/problems'
+    | '/profile/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/register' | '/auth/callback' | '/'
+  to:
+    | '/login'
+    | '/register'
+    | '/billing'
+    | '/ideas'
+    | '/problems'
+    | '/settings'
+    | '/statistics'
+    | '/auth/callback'
+    | '/'
+    | '/profile/ideas'
+    | '/profile/problems'
+    | '/profile'
   id:
     | '__root__'
     | '/_auth'
     | '/login'
     | '/register'
+    | '/_auth/profile'
+    | '/_auth/billing'
+    | '/_auth/ideas'
+    | '/_auth/problems'
+    | '/_auth/settings'
+    | '/_auth/statistics'
     | '/auth/callback'
     | '/_auth/'
+    | '/_auth/profile/ideas'
+    | '/_auth/profile/problems'
+    | '/_auth/profile/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -118,14 +232,104 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_auth/statistics': {
+      id: '/_auth/statistics'
+      path: '/statistics'
+      fullPath: '/statistics'
+      preLoaderRoute: typeof AuthStatisticsRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/settings': {
+      id: '/_auth/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthSettingsRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/problems': {
+      id: '/_auth/problems'
+      path: '/problems'
+      fullPath: '/problems'
+      preLoaderRoute: typeof AuthProblemsRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/ideas': {
+      id: '/_auth/ideas'
+      path: '/ideas'
+      fullPath: '/ideas'
+      preLoaderRoute: typeof AuthIdeasRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/billing': {
+      id: '/_auth/billing'
+      path: '/billing'
+      fullPath: '/billing'
+      preLoaderRoute: typeof AuthBillingRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/profile': {
+      id: '/_auth/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthProfileRouteRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/profile/': {
+      id: '/_auth/profile/'
+      path: '/'
+      fullPath: '/profile/'
+      preLoaderRoute: typeof AuthProfileIndexRouteImport
+      parentRoute: typeof AuthProfileRouteRoute
+    }
+    '/_auth/profile/problems': {
+      id: '/_auth/profile/problems'
+      path: '/problems'
+      fullPath: '/profile/problems'
+      preLoaderRoute: typeof AuthProfileProblemsRouteImport
+      parentRoute: typeof AuthProfileRouteRoute
+    }
+    '/_auth/profile/ideas': {
+      id: '/_auth/profile/ideas'
+      path: '/ideas'
+      fullPath: '/profile/ideas'
+      preLoaderRoute: typeof AuthProfileIdeasRouteImport
+      parentRoute: typeof AuthProfileRouteRoute
+    }
   }
 }
 
+interface AuthProfileRouteRouteChildren {
+  AuthProfileIdeasRoute: typeof AuthProfileIdeasRoute
+  AuthProfileProblemsRoute: typeof AuthProfileProblemsRoute
+  AuthProfileIndexRoute: typeof AuthProfileIndexRoute
+}
+
+const AuthProfileRouteRouteChildren: AuthProfileRouteRouteChildren = {
+  AuthProfileIdeasRoute: AuthProfileIdeasRoute,
+  AuthProfileProblemsRoute: AuthProfileProblemsRoute,
+  AuthProfileIndexRoute: AuthProfileIndexRoute,
+}
+
+const AuthProfileRouteRouteWithChildren =
+  AuthProfileRouteRoute._addFileChildren(AuthProfileRouteRouteChildren)
+
 interface AuthRouteChildren {
+  AuthProfileRouteRoute: typeof AuthProfileRouteRouteWithChildren
+  AuthBillingRoute: typeof AuthBillingRoute
+  AuthIdeasRoute: typeof AuthIdeasRoute
+  AuthProblemsRoute: typeof AuthProblemsRoute
+  AuthSettingsRoute: typeof AuthSettingsRoute
+  AuthStatisticsRoute: typeof AuthStatisticsRoute
   AuthIndexRoute: typeof AuthIndexRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
+  AuthProfileRouteRoute: AuthProfileRouteRouteWithChildren,
+  AuthBillingRoute: AuthBillingRoute,
+  AuthIdeasRoute: AuthIdeasRoute,
+  AuthProblemsRoute: AuthProblemsRoute,
+  AuthSettingsRoute: AuthSettingsRoute,
+  AuthStatisticsRoute: AuthStatisticsRoute,
   AuthIndexRoute: AuthIndexRoute,
 }
 

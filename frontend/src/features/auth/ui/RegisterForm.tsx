@@ -36,7 +36,7 @@ export function RegisterForm() {
     setSubmitError(null);
     try {
       await registerUser({ email: data.email, password: data.password });
-      await navigate({ to: "/", replace: true });
+      await navigate({ to: "/profile", replace: true });
     } catch (e) {
       setSubmitError(getApiErrorMessage(e, { invalidCredentialsMessage: "Sign up failed" }));
     }

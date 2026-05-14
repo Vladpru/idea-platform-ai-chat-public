@@ -1,11 +1,9 @@
 import axios, { type InternalAxiosRequestConfig } from "axios";
 
+import { useAuthSessionStore } from "@/features/auth/model/auth-session-store";
 import {
   getStoredAuthToken,
-  setStoredAuthToken,
-  clearStoredAuthToken,
 } from "@/shared/lib/auth-token";
-
 function getApiBaseUrl(): string {
   const base = import.meta.env.VITE_API_URL;
   if (typeof base !== "string" || base.length === 0) {
@@ -41,15 +39,14 @@ export async function refreshAccessToken(): Promise<string> {
     refreshInFlight = cleanApi
       .post<RefreshResponse>("/token/refresh")
       .then(({ data }) => {
-        setStoredAuthToken(data.accessToken);
+        useAuthSessionStore.getState().setAccessToken(data.accessToken);
         return data.accessToken;
       })
       .catch((error) => {
-        clearStoredAuthToken();
+        useAuthSessionStore.getState().clearSession();
         window.location.href = "/login";
         throw error;
-      })
-      .finally(() => {
+      })      .finally(() => {
         refreshInFlight = null;
       });
   }
