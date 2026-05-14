@@ -1,0 +1,80 @@
+services:
+  - type: web
+    name: idea-platform-team-2-develop
+    runtime: node
+    rootDir: backend
+    branch: develop
+    buildCommand: yarn install --frozen-lockfile && yarn build
+    startCommand: node dist/main
+    preDeployCommand: yarn prisma migrate deploy
+    envVars:
+      - key: NODE_ENV
+        value: development
+      - key: APP_ENV
+        value: development
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ACCESS_TOKEN_EXPIRE
+        value: 15m
+      - key: REFRESH_TOKEN_EXPIRE
+        value: 7d
+      - key: TOKEN_COOKIE_NAME
+        value: refreshToken
+      - key: SERVER_DOMAIN
+        sync: false
+
+  - type: web
+    name: idea-platform-team-2-staging
+    runtime: node
+    rootDir: backend
+    branch: staging
+    buildCommand: yarn install --frozen-lockfile && yarn build
+    startCommand: node dist/main
+    preDeployCommand: yarn prisma migrate deploy
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: APP_ENV
+        value: staging
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ACCESS_TOKEN_EXPIRE
+        value: 15m
+      - key: REFRESH_TOKEN_EXPIRE
+        value: 7d
+      - key: TOKEN_COOKIE_NAME
+        value: refreshToken
+      - key: SERVER_DOMAIN
+        sync: false
+
+  - type: static
+    name: idea-platform-team-2-frontend-develop
+    rootDir: frontend
+    branch: develop
+    buildCommand: yarn install --immutable && yarn build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_ENV
+        value: development
+      - key: VITE_API_URL
+        value: https://idea-platform-team-2-develop.onrender.com/api
+      - key: VITE_GOOGLE_CLIENT_ID
+        sync: false
+
+  - type: static
+    name: idea-platform-team-2-frontend-staging
+    rootDir: frontend
+    branch: staging
+    buildCommand: yarn install --immutable && yarn build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_ENV
+        value: staging
+      - key: VITE_API_URL
+        value: https://idea-platform-team-2-staging.onrender.com/api
+      - key: VITE_GOOGLE_CLIENT_ID
+        sync: false
