@@ -89,7 +89,7 @@ export function LoginForm() {
             <Button
               type="button"
               variant="ghost"
-              className="text-brand-dark-blue hover:text-brand-dark-blue/80 h-auto px-0 py-0 text-xs font-medium"
+              className="text-brand-dark-blue hover:text-brand-dark-blue/80 dark:text-brand-light-blue dark:hover:text-brand-light-blue/80 h-auto px-0 py-0 text-xs font-medium"
             >
               FORGOT PASSWORD?
             </Button>

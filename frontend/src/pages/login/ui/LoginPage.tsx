@@ -32,7 +32,7 @@ export function LoginPage() {
               Don&apos;t have an account?{' '}
               <Link
                 to="/register"
-                className="text-brand-dark-blue hover:text-brand-dark-blue/80 underline-none underline-none font-semibold hover:underline hover:underline-offset-2"
+                className="text-brand-dark-blue hover:text-brand-dark-blue/80 dark:text-brand-light-blue dark:hover:text-brand-light-blue/80 underline-none underline-none font-semibold hover:underline hover:underline-offset-2"
               >
                 SIGN UP
               </Link>

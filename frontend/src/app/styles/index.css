@@ -155,39 +155,59 @@
 }
 
 .dark {
-  --background: hsl(216 20% 11%);
-  --foreground: hsl(216 30% 90%);
-  --primary: hsl(207 70% 55%);
-  --primary-foreground: hsl(207 30% 10%);
+  --background: #12161c;
+  --foreground: #e8ecf1;
+  --primary: #5aa9e8;
+  --primary-foreground: #0c1118;
   --brand-accent: hsl(30 100% 55%);
 
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  /* Slightly lifted surface vs page (auth card) */
+  --card: #1a1f28;
+  --card-foreground: #e8ecf1;
+  --popover: #1a1f28;
+  --popover-foreground: #e8ecf1;
+  --secondary: #242b36;
+  --secondary-foreground: #e8ecf1;
+  --muted: #1e252f;
+  --muted-foreground: #9aa6b4;
+  --accent: #242b36;
+  --accent-foreground: #e8ecf1;
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --border: rgba(255, 255, 255, 0.12);
+  --input: rgba(255, 255, 255, 0.14);
+  --ring: #6d8aa8;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar: #1a1f28;
+  --sidebar-foreground: #e8ecf1;
   --sidebar-primary: oklch(0.488 0.243 264.376);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-accent: #242b36;
+  --sidebar-accent-foreground: #e8ecf1;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* Brand ramp — light text & borders on dark UI (auth forms, labels) */
+  --brand-gray-900: #e8ecf1;
+  --brand-gray-700: #b4bcc8;
+  --brand-gray-600: #9aa6b4;
+  --brand-gray-400: #7d8a99;
+  --brand-gray-200: rgba(255, 255, 255, 0.16);
+  --brand-gray-100: #222830;
+
+  --Grey-200: rgba(255, 255, 255, 0.12);
+
+  --shadow-soft:
+    0px 3px 8px rgba(0, 0, 0, 0.45),
+    0px 10px 16px rgba(0, 0, 0, 0.32),
+    0px 22px 20px rgba(0, 0, 0, 0.22),
+    0px 40px 24px rgba(0, 0, 0, 0.12);
+
+  --active-background: #161b22;
+  --non-active-background: #0e1217;
 }
 
 @layer base {
