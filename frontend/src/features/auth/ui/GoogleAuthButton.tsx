@@ -22,10 +22,7 @@ export function GoogleLoginButton({ mode }: Props) {
     try {
       const googleToken = await requestGoogleAccessToken();
       await loginWithGoogleAccessToken(googleToken);
-      await navigate({
-        to: mode === 'signup' ? '/profile' : '/',
-        replace: true,
-      });
+      await navigate({ to: '/profile', replace: true });
     } catch (e) {
       setError((e as Error)?.message ?? 'Google sign-in failed');
     } finally {

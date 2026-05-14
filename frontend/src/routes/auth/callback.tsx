@@ -22,7 +22,7 @@ function AuthCallbackPage() {
     const token = readTokenFromSearch();
     if (token) {
       localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
-      void navigate({ to: '/', replace: true });
+      void navigate({ to: '/profile', replace: true });
     } else {
       console.error('OAuth callback: missing token query parameter');
       void navigate({ to: '/login', replace: true });

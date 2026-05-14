@@ -31,7 +31,7 @@ export function LoginForm() {
     setSubmitError(null);
     try {
       await loginUser({ email: data.email, password: data.password });
-      await navigate({ to: '/', replace: true });
+      await navigate({ to: '/profile', replace: true });
     } catch (e) {
       setSubmitError(
         getApiErrorMessage(e, {
