@@ -29,6 +29,7 @@ import {
 import type { Request } from 'express';
 
 import { JwtAuth } from '../shared/decorators/jwt-auth.decorator';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AvatarUploadInterceptor } from './interceptors/avatar-upload.interceptor';
@@ -77,6 +78,22 @@ export class UserController {
   @ApiNoContentResponse({ description: 'Avatar removed' })
   removeMyAvatar(@Req() req: Request & { user: { id: string } }) {
     return this.userService.removeAvatar(req.user.id);
+  }
+
+  @Patch('me/password')
+  @JwtAuth()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Change current user password' })
+  @ApiBody({ type: ChangePasswordDto })
+  @ApiOkResponse({ description: 'Password updated successfully' })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized or wrong current password',
+  })
+  changeMyPassword(
+    @Body() dto: ChangePasswordDto,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    return this.userService.changePassword(req.user.id, dto);
   }
 
   @Post()
