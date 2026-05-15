@@ -1,5 +1,5 @@
 export const sectionTitleClass =
-  'text-brand-black text-2xl font-bold uppercase tracking-wide';
+  'text-brand-black dark:text-primary text-2xl font-bold uppercase tracking-wide';
 
 export const labelClass = 'text-brand-gray-900 text-sm font-semibold uppercase';
 

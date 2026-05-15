@@ -20,24 +20,30 @@ function NotFoundContent() {
   const ctaLabel = isAuthed ? 'Go to ideas' : 'Sign in';
 
   return (
-    <div className="bg-brand-neutral dark:bg-background flex flex-1 items-center justify-center py-8 md:min-w-4xl md:px-8">
+    <div className="bg-brand-gray-100 dark:bg-background flex flex-1 items-center justify-center py-8 md:min-w-4xl md:px-8">
       <Card
         className={cn(
           'mx-auto w-full border-0 bg-white px-6 py-12 text-center shadow-none',
           'flex flex-col justify-center md:h-[400px] md:max-w-[1680px]',
-          'bg-brand-white dark:bg-card md:px-16 md:py-16',
+          'dark:bg-card bg-brand-white md:px-16 md:py-16',
         )}
       >
         <h1 className={cn(sectionTitleClass, 'text-xl md:text-2xl')}>
           Sorry, this content isn&apos;t available
         </h1>
-        <p className="mx-auto mt-4 max-w-lg text-sm leading-relaxed md:text-base dark:text-slate-700">
+        <p className="dark:text-brand-gray-600 mx-auto mt-4 max-w-lg text-sm leading-relaxed md:text-base">
           The page or item you&apos;re trying to access can&apos;t be displayed
           right now. It may have been moved, deleted, or is temporarily
           unavailable.
         </p>
-        <div className="align-center flex justify-center pt-8">
-          <Link to={ctaTo} className={cn(primaryBtn, 'min-w-[160px] pt-2')}>
+        <div className="flex w-full justify-center pt-8">
+          <Link
+            to={ctaTo}
+            className={cn(
+              primaryBtn,
+              'dark:text-brand-gray-900 inline-flex min-w-[160px] items-center justify-center py-2',
+            )}
+          >
             {ctaLabel}
           </Link>
         </div>
