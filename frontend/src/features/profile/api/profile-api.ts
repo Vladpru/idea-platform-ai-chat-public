@@ -43,8 +43,17 @@ export type ChangePasswordPayload = {
   newPassword: string;
 };
 
+export type ChangePasswordResponse = {
+  message: string;
+};
+
 export async function changePassword(
   payload: ChangePasswordPayload,
-): Promise<void> {
-  await api.patch('/users/me/password', payload);
+): Promise<ChangePasswordResponse> {
+  const { data } = await api.patch<ChangePasswordResponse>(
+    '/users/me/password',
+    payload,
+    { skipAuthRefresh: true },
+  );
+  return data;
 }

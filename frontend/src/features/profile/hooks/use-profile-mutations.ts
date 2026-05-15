@@ -3,8 +3,8 @@ import { toast } from 'sonner';
 
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 
+import { submitChangePassword } from '../api/change-password-api';
 import {
-  changePassword,
   patchUser,
   removeMyAvatar,
   uploadMyAvatar,
@@ -63,6 +63,6 @@ export function useRemoveAvatarMutation() {
 
 export function useChangePasswordMutation() {
   return useMutation({
-    mutationFn: (payload: ChangePasswordPayload) => changePassword(payload),
+    mutationFn: (payload: ChangePasswordPayload) => submitChangePassword(payload),
   });
 }
