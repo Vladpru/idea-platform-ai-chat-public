@@ -1,7 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { HomePage } from "@/pages/home/components/HomePage";
+import { HomePage } from '@/pages/home';
+import { createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute("/_auth/")({
+export const Route = createFileRoute('/_auth/')({
   component: HomePage,
 });
-

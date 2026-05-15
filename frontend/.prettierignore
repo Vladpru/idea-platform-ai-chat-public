@@ -1,0 +1,6 @@
+node_modules
+dist
+.yarn
+coverage
+*.min.js
+routeTree.gen.ts

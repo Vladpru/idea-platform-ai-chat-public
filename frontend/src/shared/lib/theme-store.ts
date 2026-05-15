@@ -1,26 +1,26 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 import {
+  type StateStorage,
   createJSONStorage,
   persist,
-  type StateStorage,
-} from "zustand/middleware";
+} from 'zustand/middleware';
 
-export type Theme = "dark" | "light" | "system";
+export type Theme = 'dark' | 'light' | 'system';
 
-const STORAGE_KEY = "ui-theme";
+const STORAGE_KEY = 'ui-theme';
 
 const storage: StateStorage = {
-  getItem: (name) => {
+  getItem: name => {
     const raw = localStorage.getItem(name);
     if (raw == null) return null;
-    if (raw.startsWith("{")) return raw;
-    if (raw === "dark" || raw === "light" || raw === "system") {
+    if (raw.startsWith('{')) return raw;
+    if (raw === 'dark' || raw === 'light' || raw === 'system') {
       return JSON.stringify({ state: { theme: raw as Theme }, version: 0 });
     }
     return null;
   },
   setItem: (name, value) => localStorage.setItem(name, value),
-  removeItem: (name) => localStorage.removeItem(name),
+  removeItem: name => localStorage.removeItem(name),
 };
 
 type ThemeState = {
@@ -30,9 +30,9 @@ type ThemeState = {
 
 export const useThemeStore = create<ThemeState>()(
   persist(
-    (set) => ({
-      theme: "system",
-      setTheme: (next) => set({ theme: next }),
+    set => ({
+      theme: 'system',
+      setTheme: next => set({ theme: next }),
     }),
     {
       name: STORAGE_KEY,
@@ -42,7 +42,7 @@ export const useThemeStore = create<ThemeState>()(
 );
 
 export function useTheme() {
-  const theme = useThemeStore((s) => s.theme);
-  const setTheme = useThemeStore((s) => s.setTheme);
+  const theme = useThemeStore(s => s.theme);
+  const setTheme = useThemeStore(s => s.setTheme);
   return { theme, setTheme };
 }

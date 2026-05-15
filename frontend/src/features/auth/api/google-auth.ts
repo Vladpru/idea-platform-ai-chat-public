@@ -1,4 +1,4 @@
 export {
   loadGoogleGsiScript,
   requestGoogleAccessToken,
-} from "@/shared/lib/load-google-gsi";
+} from '@/shared/lib/load-google-gsi';

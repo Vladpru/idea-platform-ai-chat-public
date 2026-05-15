@@ -21,7 +21,9 @@ declare global {
     google?: {
       accounts: {
         oauth2: {
-          initTokenClient: (config: GoogleTokenClientConfig) => GoogleTokenClient;
+          initTokenClient: (
+            config: GoogleTokenClientConfig,
+          ) => GoogleTokenClient;
         };
       };
     };

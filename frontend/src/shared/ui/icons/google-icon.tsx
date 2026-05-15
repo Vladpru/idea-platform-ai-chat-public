@@ -1,7 +1,8 @@
-import type { ComponentPropsWithoutRef } from "react";
-import { cn } from "@/shared/lib/utils";
+import type { ComponentPropsWithoutRef } from 'react';
 
-export type GoogleIconProps = ComponentPropsWithoutRef<"svg">;
+import { cn } from '@/shared/lib/utils';
+
+export type GoogleIconProps = ComponentPropsWithoutRef<'svg'>;
 
 export function GoogleIcon({ className, ...props }: GoogleIconProps) {
   return (
@@ -30,4 +31,3 @@ export function GoogleIcon({ className, ...props }: GoogleIconProps) {
     </svg>
   );
 }
-

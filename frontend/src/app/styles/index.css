@@ -1,13 +1,13 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import '@fontsource-variable/geist';
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --font-heading: var(--font-sans);
-  --font-sans: "Geist Variable", sans-serif;
+  --font-sans: 'Geist Variable', sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -44,6 +44,33 @@
   --color-grey-200: var(--grey-200);
   --color-brand-accent: var(--brand-accent);
 
+  /* Brand palette */
+  --color-brand-orange: var(--brand-orange);
+  --color-brand-white: var(--brand-white);
+  --color-brand-light-blue: var(--brand-light-blue);
+  --color-brand-cool-gray-1: var(--brand-cool-gray-1);
+  --color-brand-cool-gray-2: var(--brand-cool-gray-2);
+  --color-brand-cool-gray-3: var(--brand-cool-gray-3);
+  --color-brand-cool-gray-4: var(--brand-cool-gray-4);
+  --color-brand-extra-black: var(--brand-extra-black);
+  --color-brand-black: var(--brand-black);
+  --color-brand-dark-blue: var(--brand-dark-blue);
+  --color-brand-neutral: var(--brand-neutral);
+  --color-brand-gray-900: var(--brand-gray-900);
+  --color-brand-gray-700: var(--brand-gray-700);
+  --color-brand-gray-600: var(--brand-gray-600);
+  --color-brand-gray-400: var(--brand-gray-400);
+  --color-brand-gray-200: var(--brand-gray-200);
+  --color-brand-gray-100: var(--brand-gray-100);
+
+  --color-idea-ideation: var(--idea-ideation);
+  --color-idea-prototyping: var(--idea-prototyping);
+  --color-idea-completed: var(--idea-completed);
+  --color-idea-archived: var(--idea-archived);
+  --color-idea-paused: var(--idea-paused);
+
+  --shadow-shadow-soft: var(--shadow-soft);
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -62,6 +89,38 @@
 
   --grey-200: hsla(210, 17%, 91%, 1);
   --grey-300: hsla(210, 33%, 99%, 1);
+
+  /* Brand palette — light theme */
+  --brand-orange: #e10600;
+  --brand-white: #ffffff;
+  --brand-light-blue: #c6dae7;
+  --brand-cool-gray-4: #959595;
+  --brand-cool-gray-3: #e8e8e8;
+  --brand-cool-gray-2: #d0d0ce;
+  --brand-cool-gray-1: #a8a8a8;
+  --brand-gray-900: #1a1e22;
+  --brand-gray-700: #4d565e;
+  --brand-gray-600: #6a737c;
+  --brand-gray-400: #a8b0b9;
+  --brand-gray-200: #e4e8ec;
+  --brand-gray-100: #f5f7fa;
+  --brand-extra-black: #000000;
+  --brand-black: #101820;
+  --brand-dark-blue: #003057;
+  --brand-neutral: #f9f9f9;
+
+  /* IDEA STEP status */
+  --idea-ideation: #ffa900;
+  --idea-prototyping: #2b787c;
+  --idea-completed: #2b787c;
+  --idea-archived: #8c3890;
+  --idea-paused: #4e6374;
+
+  --shadow-soft:
+    0px 3px 6px rgba(145, 145, 145, 0.1),
+    0px 10px 10px rgba(145, 145, 145, 0.09),
+    0px 23px 14px rgba(145, 145, 145, 0.05),
+    0px 41px 16px rgba(145, 145, 145, 0.01);
 
   --active-background: hsl(216 33% 97%);
   --non-active-background: hsla(0, 0%, 100%, 1);
@@ -97,39 +156,59 @@
 }
 
 .dark {
-  --background: hsl(216 20% 11%);
-  --foreground: hsl(216 30% 90%);
-  --primary: hsl(207 70% 55%);
-  --primary-foreground: hsl(207 30% 10%);
+  --background: #12161c;
+  --foreground: #e8ecf1;
+  --primary: #5aa9e8;
+  --primary-foreground: #0c1118;
   --brand-accent: hsl(30 100% 55%);
 
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  /* Slightly lifted surface vs page (auth card) */
+  --card: #1a1f28;
+  --card-foreground: #e8ecf1;
+  --popover: #1a1f28;
+  --popover-foreground: #e8ecf1;
+  --secondary: #242b36;
+  --secondary-foreground: #e8ecf1;
+  --muted: #1e252f;
+  --muted-foreground: #9aa6b4;
+  --accent: #242b36;
+  --accent-foreground: #e8ecf1;
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --border: rgba(255, 255, 255, 0.12);
+  --input: rgba(255, 255, 255, 0.14);
+  --ring: #6d8aa8;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar: #1a1f28;
+  --sidebar-foreground: #e8ecf1;
   --sidebar-primary: oklch(0.488 0.243 264.376);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-accent: #242b36;
+  --sidebar-accent-foreground: #e8ecf1;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* Brand ramp — light text & borders on dark UI (auth forms, labels) */
+  --brand-gray-900: #e8ecf1;
+  --brand-gray-700: #b4bcc8;
+  --brand-gray-600: #9aa6b4;
+  --brand-gray-400: #7d8a99;
+  --brand-gray-200: rgba(255, 255, 255, 0.16);
+  --brand-gray-100: #222830;
+
+  --Grey-200: rgba(255, 255, 255, 0.12);
+
+  --shadow-soft:
+    0px 3px 8px rgba(0, 0, 0, 0.45),
+    0px 10px 16px rgba(0, 0, 0, 0.32),
+    0px 22px 20px rgba(0, 0, 0, 0.22),
+    0px 40px 24px rgba(0, 0, 0, 0.12);
+
+  --active-background: #161b22;
+  --non-active-background: #0e1217;
 }
 
 @layer base {
