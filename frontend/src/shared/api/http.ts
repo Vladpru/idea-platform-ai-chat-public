@@ -64,10 +64,18 @@ api.interceptors.response.use(
 
     const status = error.response?.status;
     const original = error.config as
-      | (InternalAxiosRequestConfig & { _retry?: boolean })
+      | (InternalAxiosRequestConfig & {
+          _retry?: boolean;
+          skipAuthRefresh?: boolean;
+        })
       | undefined;
 
-    if (status !== 401 || !original || original._retry) {
+    if (
+      status !== 401 ||
+      !original ||
+      original._retry ||
+      original.skipAuthRefresh
+    ) {
       throw error;
     }
 

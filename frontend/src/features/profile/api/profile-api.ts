@@ -37,3 +37,23 @@ export async function removeMyAvatar(): Promise<UserPublic> {
   const { data } = await api.delete<UserPublic>('/users/me/avatar');
   return data;
 }
+
+export type ChangePasswordPayload = {
+  currentPassword: string;
+  newPassword: string;
+};
+
+export type ChangePasswordResponse = {
+  message: string;
+};
+
+export async function changePassword(
+  payload: ChangePasswordPayload,
+): Promise<ChangePasswordResponse> {
+  const { data } = await api.patch<ChangePasswordResponse>(
+    '/users/me/password',
+    payload,
+    { skipAuthRefresh: true },
+  );
+  return data;
+}

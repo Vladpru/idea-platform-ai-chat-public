@@ -1,8 +1,10 @@
 import { type SessionUser, nameInitial } from '@/features/auth';
+import { ChangePasswordModal } from '@/features/profile/ui/ChangePasswordModal';
 import {
   outlineBtn,
   primaryBtn,
 } from '@/features/profile/ui/profile-view-classes';
+import { useState } from 'react';
 
 import { cn } from '@/shared/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
@@ -19,6 +21,8 @@ export function ProfileDisplayPanel({
   displayName,
   onEdit,
 }: ProfileDisplayPanelProps) {
+  const [passwordOpen, setPasswordOpen] = useState(false);
+
   return (
     <div className="mt-8 flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
       <div className="flex items-center gap-4">
@@ -47,12 +51,13 @@ export function ProfileDisplayPanel({
           type="button"
           variant="outline"
           className={cn(outlineBtn, 'min-w-36')}
-          disabled
-          title="Not available yet"
+          onClick={() => setPasswordOpen(true)}
         >
           Change password
         </Button>
       </div>
+
+      <ChangePasswordModal open={passwordOpen} onOpenChange={setPasswordOpen} />
     </div>
   );
 }
