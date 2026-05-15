@@ -11,6 +11,7 @@ import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { PrismaService } from '../prisma/prisma.service';
 import type { UserPublic } from '../shared/types/user.types';
 import { isUniqueConstraintError } from '../shared/utils/is-unique-error.util';
+import { validateNewPassword } from '../shared/utils/validate-password.util';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -146,22 +147,18 @@ export class UserService {
   async changePassword(userId: string, dto: ChangePasswordDto) {
     const { currentPassword, newPassword } = dto;
 
-    if (
-      typeof currentPassword !== 'string' ||
-      !currentPassword ||
-      typeof newPassword !== 'string' ||
-      !newPassword
-    ) {
+    if (typeof currentPassword !== 'string' || !currentPassword) {
       throw new BadRequestException('Passwords are required');
     }
 
-    if (currentPassword.length > 150 || newPassword.length > 150) {
+    if (currentPassword.length > 150) {
       throw new BadRequestException('Password is too long');
     }
 
-    if (newPassword.length < 8) {
-      throw new BadRequestException('Password must be at least 8 characters');
-    }
+    const validatedNewPassword = validateNewPassword(
+      newPassword,
+      'New password',
+    );
 
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -182,13 +179,13 @@ export class UserService {
       throw invalid;
     }
 
-    if (currentPassword === newPassword) {
+    if (currentPassword === validatedNewPassword) {
       throw new BadRequestException(
         'New password must be different from the current password',
       );
     }
 
-    const hashedPassword = await hash(newPassword);
+    const hashedPassword = await hash(validatedNewPassword);
 
     await this.prisma.user.update({
       where: { id: userId },
