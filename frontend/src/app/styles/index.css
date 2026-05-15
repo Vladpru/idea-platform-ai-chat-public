@@ -41,7 +41,7 @@
   --color-background: var(--background);
   --color-active-background: var(--active-background);
   --color-non-active-background: var(--non-active-background);
-  --color-Grey-200: var(--Grey-200);
+  --color-grey-200: var(--grey-200);
   --color-brand-accent: var(--brand-accent);
 
   /* Brand palette */
@@ -87,7 +87,8 @@
   --primary-foreground: hsl(30 100% 44%);
   --brand-accent: hsl(30 100% 44%);
 
-  --Grey-200: hsla(210, 17%, 91%, 1);
+  --grey-200: hsla(210, 17%, 91%, 1);
+  --grey-300: hsla(210, 33%, 99%, 1);
 
   /* Brand palette — light theme */
   --brand-orange: #e10600;

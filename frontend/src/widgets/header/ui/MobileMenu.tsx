@@ -150,6 +150,7 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
                 <Link
                   to="/profile"
                   className={navLinkClass}
+                  activeOptions={{ exact: true }}
                   activeProps={{
                     className: 'bg-active-background text-primary',
                   }}
