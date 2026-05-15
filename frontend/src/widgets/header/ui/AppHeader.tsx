@@ -36,18 +36,10 @@ export function AppHeader() {
           <Link to="/problems" className={navLinkClass}>
             Problems
           </Link>
-          <Link
-            to="/ideas"
-            className={navLinkClass}
-            activeProps={activeLinkProps}
-          >
+          <Link to="/ideas" className={navLinkClass}>
             Ideas
           </Link>
-          <Link
-            to="/statistics"
-            className={navLinkClass}
-            activeProps={activeLinkProps}
-          >
+          <Link to="/statistics" className={navLinkClass}>
             Statistics
           </Link>
         </nav>
