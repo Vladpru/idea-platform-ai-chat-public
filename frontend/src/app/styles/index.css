@@ -41,7 +41,7 @@
   --color-background: var(--background);
   --color-active-background: var(--active-background);
   --color-non-active-background: var(--non-active-background);
-  --color-Grey-200: var(--Grey-200);
+  --color-grey-200: var(--grey-200);
   --color-brand-accent: var(--brand-accent);
 
   --radius-sm: calc(var(--radius) * 0.6);
@@ -60,7 +60,8 @@
   --primary-foreground: hsl(30 100% 44%);
   --brand-accent: hsl(30 100% 44%);
 
-  --Grey-200: hsla(210, 17%, 91%, 1);
+  --grey-200: hsla(210, 17%, 91%, 1);
+  --grey-300: hsla(210, 33%, 99%, 1);
 
   --active-background: hsl(216 33% 97%);
   --non-active-background: hsla(0, 0%, 100%, 1);

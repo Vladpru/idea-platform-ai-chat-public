@@ -14,11 +14,15 @@ import {
 } from "@/shared/ui/dropdown-menu";
 
 const navLinkClass =
-  "text-sm font-semibold uppercase tracking-wide text-white/90 transition-colors hover:text-white";
+  "text-sm  uppercase tracking-wide text-non-active-background/70 transition-colors hover:text-white/90";
+
+const activeLinkProps = {
+  className: "text-white",
+};
 
 export function AppHeader() {
   return (
-    <header className="flex items-center justify-between px-4 py-3 sm:px-6 bg-primary text-white">
+    <header className="flex items-center justify-between px-4 py-3 sm:px-6 bg-primary text-non-active-background/50">
       <div className="flex items-center gap-6 sm:gap-10">
         <Link to="/" aria-label="Home">
           <img
@@ -29,13 +33,25 @@ export function AppHeader() {
         </Link>
 
         <nav className="hidden lg:flex items-center gap-6" aria-label="Main">
-          <Link to="/problems" className={navLinkClass}>
+          <Link
+            to="/problems"
+            className={navLinkClass}
+            activeProps={activeLinkProps}
+          >
             Problems
           </Link>
-          <Link to="/ideas" className={navLinkClass}>
+          <Link
+            to="/ideas"
+            className={navLinkClass}
+            activeProps={activeLinkProps}
+          >
             Ideas
           </Link>
-          <Link to="/statistics" className={navLinkClass}>
+          <Link
+            to="/statistics"
+            className={navLinkClass}
+            activeProps={activeLinkProps}
+          >
             Statistics
           </Link>
         </nav>
