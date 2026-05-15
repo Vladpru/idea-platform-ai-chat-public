@@ -1,3 +1,4 @@
+import { NotFoundPage } from '@/pages/not-found';
 import { AppHeader } from '@/widgets/header';
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { Outlet } from '@tanstack/react-router';
@@ -16,4 +17,5 @@ export const Route = createFileRoute('/_auth')({
       <Outlet />
     </>
   ),
+  notFoundComponent: () => <NotFoundPage variant="content" />,
 });
