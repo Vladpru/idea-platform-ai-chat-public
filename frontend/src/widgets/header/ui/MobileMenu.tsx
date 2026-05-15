@@ -57,7 +57,7 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
       </SheetTrigger>
       <SheetContent
         side="right"
-        className="flex w-[300px] flex-col bg-white p-0 sm:w-[400px]"
+        className="bg-brand-gray-200 flex w-[300px] flex-col p-0 sm:w-[400px]"
       >
         <SheetHeader className="border-primary border-b p-4 text-left">
           <SheetTitle className="text-lg font-bold">Menu</SheetTitle>
@@ -120,7 +120,7 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
                       src={user?.picture ?? undefined}
                       alt={user?.name || 'User avatar'}
                     />
-                    <AvatarFallback className="bg-slate-200 text-xs font-medium text-slate-800">
+                    <AvatarFallback className="text-brand-gray-80 bg-slate-200 text-xs font-medium">
                       {nameInitial(user?.name ?? '')}
                     </AvatarFallback>
                   </Avatar>

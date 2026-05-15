@@ -57,6 +57,7 @@
   --color-brand-dark-blue: var(--brand-dark-blue);
   --color-brand-neutral: var(--brand-neutral);
   --color-brand-gray-900: var(--brand-gray-900);
+  --color-brand-gray-800: var(--brand-gray-800);
   --color-brand-gray-700: var(--brand-gray-700);
   --color-brand-gray-600: var(--brand-gray-600);
   --color-brand-gray-400: var(--brand-gray-400);
@@ -92,13 +93,14 @@
 
   /* Brand palette — light theme */
   --brand-orange: #e10600;
-  --brand-white: #ffffff;
+  --brand-white: #fafbfc;
   --brand-light-blue: #c6dae7;
   --brand-cool-gray-4: #959595;
   --brand-cool-gray-3: #e8e8e8;
   --brand-cool-gray-2: #d0d0ce;
   --brand-cool-gray-1: #a8a8a8;
   --brand-gray-900: #1a1e22;
+  --brand-gray-800: #2e3338;
   --brand-gray-700: #4d565e;
   --brand-gray-600: #6a737c;
   --brand-gray-400: #a8b0b9;
@@ -193,19 +195,19 @@
 
   /* Brand ramp — light text & borders on dark UI (auth forms, labels) */
   --brand-gray-900: #e8ecf1;
+  --brand-gray-800: #b0b3b8;
   --brand-gray-700: #b4bcc8;
   --brand-gray-600: #9aa6b4;
   --brand-gray-400: #7d8a99;
-  --brand-gray-200: rgba(255, 255, 255, 0.16);
+  --brand-gray-200: #ffffff29;
   --brand-gray-100: #222830;
 
+  --brand-white: #0c1118;
   --Grey-200: rgba(255, 255, 255, 0.12);
 
   --shadow-soft:
-    0px 3px 8px rgba(0, 0, 0, 0.45),
-    0px 10px 16px rgba(0, 0, 0, 0.32),
-    0px 22px 20px rgba(0, 0, 0, 0.22),
-    0px 40px 24px rgba(0, 0, 0, 0.12);
+    0px 3px 8px rgba(0, 0, 0, 0.45), 0px 10px 16px rgba(0, 0, 0, 0.32),
+    0px 22px 20px rgba(0, 0, 0, 0.22), 0px 40px 24px rgba(0, 0, 0, 0.12);
 
   --active-background: #161b22;
   --non-active-background: #0e1217;
