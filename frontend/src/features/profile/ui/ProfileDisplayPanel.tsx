@@ -1,5 +1,4 @@
 import { type SessionUser, nameInitial } from '@/features/auth';
-import { useChangePasswordMutation } from '@/features/profile/hooks/use-profile-mutations';
 import { ChangePasswordModal } from '@/features/profile/ui/ChangePasswordModal';
 import {
   outlineBtn,
@@ -7,7 +6,6 @@ import {
 } from '@/features/profile/ui/profile-view-classes';
 import { useState } from 'react';
 
-import { getApiErrorMessage } from '@/shared/api/api-error';
 import { cn } from '@/shared/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
@@ -24,7 +22,6 @@ export function ProfileDisplayPanel({
   onEdit,
 }: ProfileDisplayPanelProps) {
   const [passwordOpen, setPasswordOpen] = useState(false);
-  const changePasswordMutation = useChangePasswordMutation();
 
   return (
     <div className="mt-8 flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
@@ -60,21 +57,7 @@ export function ProfileDisplayPanel({
         </Button>
       </div>
 
-      <ChangePasswordModal
-        open={passwordOpen}
-        onOpenChange={setPasswordOpen}
-        onSubmit={async data => {
-          try {
-            await changePasswordMutation.mutateAsync(data);
-          } catch (err) {
-            throw new Error(
-              getApiErrorMessage(err, {
-                invalidCredentialsMessage: 'Current password is incorrect',
-              }),
-            );
-          }
-        }}
-      />
+      <ChangePasswordModal open={passwordOpen} onOpenChange={setPasswordOpen} />
     </div>
   );
 }
