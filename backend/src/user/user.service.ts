@@ -11,6 +11,7 @@ import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { PrismaService } from '../prisma/prisma.service';
 import type { UserPublic } from '../shared/types/user.types';
 import { isUniqueConstraintError } from '../shared/utils/is-unique-error.util';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import type { UpsertOAuthUserInput } from './dto/upsert-oauth-user.dto';
@@ -140,6 +141,61 @@ export class UserService {
       data: { avatarUrl: null },
       select: USER_PUBLIC_SELECT,
     });
+  }
+
+  async changePassword(userId: string, dto: ChangePasswordDto) {
+    const { currentPassword, newPassword } = dto;
+
+    if (
+      typeof currentPassword !== 'string' ||
+      !currentPassword ||
+      typeof newPassword !== 'string' ||
+      !newPassword
+    ) {
+      throw new BadRequestException('Passwords are required');
+    }
+
+    if (currentPassword.length > 150 || newPassword.length > 150) {
+      throw new BadRequestException('Password is too long');
+    }
+
+    if (newPassword.length < 8) {
+      throw new BadRequestException('Password must be at least 8 characters');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, password: true },
+    });
+
+    if (!user) throw new NotFoundException('User not found');
+
+    if (!user.password) {
+      throw new BadRequestException(
+        'This account has no password. Sign in with Google or set a password another way.',
+      );
+    }
+
+    const invalid = new UnauthorizedException('Current password is incorrect');
+
+    if (!(await verify(user.password, currentPassword))) {
+      throw invalid;
+    }
+
+    if (currentPassword === newPassword) {
+      throw new BadRequestException(
+        'New password must be different from the current password',
+      );
+    }
+
+    const hashedPassword = await hash(newPassword);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    return { message: 'Password updated successfully' };
   }
 
   async update(id: string, dto: UpdateUserDto) {
