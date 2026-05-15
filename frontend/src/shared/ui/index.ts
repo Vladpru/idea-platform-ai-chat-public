@@ -10,6 +10,18 @@ export { Input, type InputProps } from './input';
 export { Label, type LabelProps } from './label';
 export { Separator, type SeparatorProps } from './separator';
 export {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogOverlay,
+  DialogPortal,
+  DialogTitle,
+  DialogTrigger,
+} from './dialog';
+export {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
