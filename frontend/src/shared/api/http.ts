@@ -1,15 +1,14 @@
-import axios, { type InternalAxiosRequestConfig } from "axios";
+import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
+import axios, { type InternalAxiosRequestConfig } from 'axios';
 
-import { useAuthSessionStore } from "@/features/auth/model/auth-session-store";
-import {
-  getStoredAuthToken,
-} from "@/shared/lib/auth-token";
+import { getStoredAuthToken } from '@/shared/lib/auth-token';
+
 function getApiBaseUrl(): string {
   const base = import.meta.env.VITE_API_URL;
-  if (typeof base !== "string" || base.length === 0) {
-    throw new Error("VITE_API_URL is not set");
+  if (typeof base !== 'string' || base.length === 0) {
+    throw new Error('VITE_API_URL is not set');
   }
-  return base.replace(/\/$/, "");
+  return base.replace(/\/$/, '');
 }
 
 export const api = axios.create({
@@ -37,16 +36,17 @@ let refreshInFlight: Promise<string> | null = null;
 export async function refreshAccessToken(): Promise<string> {
   if (!refreshInFlight) {
     refreshInFlight = cleanApi
-      .post<RefreshResponse>("/token/refresh")
+      .post<RefreshResponse>('/token/refresh')
       .then(({ data }) => {
         useAuthSessionStore.getState().setAccessToken(data.accessToken);
         return data.accessToken;
       })
-      .catch((error) => {
+      .catch(error => {
         useAuthSessionStore.getState().clearSession();
-        window.location.href = "/login";
+        window.location.href = '/login';
         throw error;
-      })      .finally(() => {
+      })
+      .finally(() => {
         refreshInFlight = null;
       });
   }
@@ -58,7 +58,7 @@ export function isAxiosUnauthorized(error: unknown): boolean {
 }
 
 api.interceptors.response.use(
-  (response) => response,
+  response => response,
   async (error: unknown) => {
     if (!axios.isAxiosError(error)) throw error;
 

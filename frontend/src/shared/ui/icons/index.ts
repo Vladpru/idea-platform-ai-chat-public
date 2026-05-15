@@ -1,2 +1,1 @@
-export { GoogleIcon, type GoogleIconProps } from "./google-icon";
-
+export { GoogleIcon, type GoogleIconProps } from './google-icon';

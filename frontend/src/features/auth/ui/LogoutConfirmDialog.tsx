@@ -1,4 +1,7 @@
-import { X } from "lucide-react";
+import { useLogout } from '@/features/auth/lib/use-logout';
+import { X } from 'lucide-react';
+
+import { cn } from '@/shared/lib/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -7,9 +10,7 @@ import {
   AlertDialogDescription,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/shared/ui/alert-dialog";
-import { cn } from "@/shared/lib/utils";
-import { useLogout } from "@/features/auth/lib/use-logout";
+} from '@/shared/ui/alert-dialog';
 
 export interface LogoutConfirmDialogProps {
   open: boolean;
@@ -26,13 +27,13 @@ export function LogoutConfirmDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent
         className={cn(
-          "border-0 bg-white px-8 pb-8 pt-12 text-center text-foreground shadow-xl",
+          'text-foreground border-0 bg-white px-8 pt-12 pb-8 text-center shadow-xl',
         )}
       >
         <button
           type="button"
           className={cn(
-            "cursor-pointer absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-md border-0 bg-transparent text-foreground opacity-70 transition-colors hover:bg-muted hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+            'text-foreground hover:bg-muted focus-visible:ring-ring absolute top-3 right-3 inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent opacity-70 transition-colors hover:opacity-100 focus-visible:ring-2 focus-visible:ring-offset-2',
           )}
           aria-label="Close"
           onClick={() => {
@@ -45,7 +46,7 @@ export function LogoutConfirmDialog({
           <AlertDialogTitle className="text-xl font-semibold">
             Do you really want to Log out?
           </AlertDialogTitle>
-          <AlertDialogDescription className="text-base text-muted-foreground">
+          <AlertDialogDescription className="text-muted-foreground text-base">
             Remember, you can come back at any time.
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -53,7 +54,7 @@ export function LogoutConfirmDialog({
           <AlertDialogAction
             type="button"
             className={cn(
-              "inline-flex min-w-[154px] items-center justify-center rounded-sm border border-primary px-6 py-2.5 text-sm font-semibold uppercase tracking-wide text-primary outline-none transition-colors hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              'border-primary text-primary hover:bg-primary/10 focus-visible:ring-ring inline-flex min-w-[154px] items-center justify-center rounded-sm border px-6 py-2.5 text-sm font-semibold tracking-wide uppercase transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
             )}
             onClick={() => {
               logout();
@@ -64,7 +65,7 @@ export function LogoutConfirmDialog({
           <AlertDialogCancel
             type="button"
             className={cn(
-              "inline-flex min-w-[154px] items-center justify-center rounded-sm border border-primary  px-6 py-2.5 text-sm font-semibold uppercase tracking-wide text-primary outline-none transition-colors hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              'border-primary text-primary hover:bg-primary/10 focus-visible:ring-ring inline-flex min-w-[154px] items-center justify-center rounded-sm border px-6 py-2.5 text-sm font-semibold tracking-wide uppercase transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
             )}
           >
             NO
