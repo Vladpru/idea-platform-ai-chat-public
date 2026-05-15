@@ -37,3 +37,14 @@ export async function removeMyAvatar(): Promise<UserPublic> {
   const { data } = await api.delete<UserPublic>('/users/me/avatar');
   return data;
 }
+
+export type ChangePasswordPayload = {
+  currentPassword: string;
+  newPassword: string;
+};
+
+export async function changePassword(
+  payload: ChangePasswordPayload,
+): Promise<void> {
+  await api.patch('/users/me/password', payload);
+}

@@ -4,9 +4,11 @@ import { toast } from 'sonner';
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 
 import {
+  changePassword,
   patchUser,
   removeMyAvatar,
   uploadMyAvatar,
+  type ChangePasswordPayload,
   type PatchUserPayload,
   type UserPublic,
 } from '../api/profile-api';
@@ -56,5 +58,11 @@ export function useRemoveAvatarMutation() {
     onError: () => {
       toast.error('Could not remove photo');
     },
+  });
+}
+
+export function useChangePasswordMutation() {
+  return useMutation({
+    mutationFn: (payload: ChangePasswordPayload) => changePassword(payload),
   });
 }
