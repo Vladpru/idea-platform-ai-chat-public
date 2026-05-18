@@ -1,11 +1,11 @@
 import { LoginPage } from '@/pages/login';
 import { createFileRoute, redirect } from '@tanstack/react-router';
 
-import { hasStoredAuthToken } from '@/shared/lib/auth-token';
+import { hasValidSession } from '@/features/auth/model/auth-session-store';
 
 export const Route = createFileRoute('/login')({
   beforeLoad: () => {
-    if (hasStoredAuthToken()) {
+    if (hasValidSession()) {
       throw redirect({ to: '/profile' });
     }
   },

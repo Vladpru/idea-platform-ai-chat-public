@@ -6,7 +6,7 @@ import { ROUTES } from '@/routes/paths';
 import { AppHeader } from '@/widgets/header';
 import { Link } from '@tanstack/react-router';
 
-import { hasStoredAuthToken } from '@/shared/lib/auth-token';
+import { hasValidSession } from '@/features/auth/model/auth-session-store';
 import { cn } from '@/shared/lib/utils';
 import { Card } from '@/shared/ui/card';
 
@@ -15,7 +15,7 @@ type NotFoundPageProps = {
 };
 
 function NotFoundContent() {
-  const isAuthed = hasStoredAuthToken();
+  const isAuthed = hasValidSession();
   const ctaTo = isAuthed ? ROUTES.ideas : ROUTES.login;
   const ctaLabel = isAuthed ? 'Go to ideas' : 'Sign in';
 
@@ -53,7 +53,7 @@ function NotFoundContent() {
 }
 
 export function NotFoundPage({ variant = 'full' }: NotFoundPageProps) {
-  const isAuthed = hasStoredAuthToken();
+  const isAuthed = hasValidSession();
   const showHeader = variant === 'full' && isAuthed;
 
   if (showHeader) {

@@ -7,16 +7,16 @@ import { AppProviders } from '@/app/providers/AppProviders';
 import { router } from '@/app/router';
 import '@/app/styles/index.css';
 
-import { hasStoredAuthToken } from '@/shared/lib/auth-token';
+import { hasValidSession } from '@/features/auth/model/auth-session-store';
 
 useAuthSessionStore.persist.onFinishHydration(() => {
-  if (!hasStoredAuthToken()) {
+  if (!hasValidSession()) {
     useAuthSessionStore.getState().clearSession();
   }
 });
 
 function getIsAuthenticated(): boolean {
-  return Boolean(localStorage.getItem('auth_token'));
+  return hasValidSession();
 }
 
 const rootElement = document.getElementById('root')!;

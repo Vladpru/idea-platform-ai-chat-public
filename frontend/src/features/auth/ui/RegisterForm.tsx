@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import { Button, Input, Label, Separator } from '@/shared/ui';
 
+import { useAuthSessionStore } from '../model/auth-session-store';
 import { register as registerUser } from '../api/auth';
 import { type RegisterValues, registerSchema } from '../model/register-schema';
 import { GoogleLoginButton } from './GoogleAuthButton';
@@ -39,6 +40,7 @@ export function RegisterForm() {
       await registerUser({ email: data.email, password: data.password });
       await navigate({ to: '/profile', replace: true });
     } catch (e) {
+      useAuthSessionStore.getState().clearSession();
       setSubmitError(
         getApiErrorMessage(e, { invalidCredentialsMessage: 'Sign up failed' }),
       );

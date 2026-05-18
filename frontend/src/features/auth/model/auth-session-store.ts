@@ -54,6 +54,11 @@ export const useAuthSessionStore = create<AuthSessionState>()(
       accessToken: null,
       setSession: (apiUser, accessToken) => {
         const user = parseSessionUser(apiUser);
+        if (!user) {
+          clearStoredAuthToken();
+          set({ user: null, accessToken: null });
+          return;
+        }
         set({ user, accessToken });
         setStoredAuthToken(accessToken);
       },
@@ -72,11 +77,22 @@ export const useAuthSessionStore = create<AuthSessionState>()(
       storage: createJSONStorage(() => localStorage),
       partialize: s => ({ user: s.user, accessToken: s.accessToken }),
       onRehydrateStorage: () => state => {
-        if (state?.accessToken) setStoredAuthToken(state.accessToken);
+        if (state?.accessToken && state.user?.id) {
+          setStoredAuthToken(state.accessToken);
+        } else if (state) {
+          clearStoredAuthToken();
+          state.user = null;
+          state.accessToken = null;
+        }
       },
     },
   ),
 );
+
+export function hasValidSession(): boolean {
+  const { accessToken, user } = useAuthSessionStore.getState();
+  return Boolean(accessToken && user?.id);
+}
 
 export function nameInitial(name: string): string {
   const t = name.trim();
