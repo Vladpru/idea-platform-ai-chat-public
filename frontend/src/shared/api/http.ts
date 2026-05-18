@@ -31,6 +31,27 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 
 export type RefreshResponse = { accessToken: string };
 
+const AUTH_ROUTES_SKIP_REFRESH =
+  /^\/auth\/(login|register|google|forgot-password|reset-password)(\/|$)/;
+
+function isPublicAuthPage(): boolean {
+  const path = window.location.pathname;
+  return (
+    path === '/login' ||
+    path === '/register' ||
+    path === '/forgotPassword' ||
+    path.startsWith('/reset-password')
+  );
+}
+
+function shouldSkipAuthRefresh(
+  config: InternalAxiosRequestConfig & { skipAuthRefresh?: boolean },
+): boolean {
+  if (config.skipAuthRefresh) return true;
+  const url = config.url ?? '';
+  return AUTH_ROUTES_SKIP_REFRESH.test(url);
+}
+
 let refreshInFlight: Promise<string> | null = null;
 
 export async function refreshAccessToken(): Promise<string> {
@@ -43,7 +64,9 @@ export async function refreshAccessToken(): Promise<string> {
       })
       .catch(error => {
         useAuthSessionStore.getState().clearSession();
-        window.location.href = '/login';
+        if (!isPublicAuthPage()) {
+          window.location.assign('/login');
+        }
         throw error;
       })
       .finally(() => {
@@ -74,7 +97,7 @@ api.interceptors.response.use(
       status !== 401 ||
       !original ||
       original._retry ||
-      original.skipAuthRefresh
+      shouldSkipAuthRefresh(original)
     ) {
       throw error;
     }

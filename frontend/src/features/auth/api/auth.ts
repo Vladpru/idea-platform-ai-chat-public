@@ -15,6 +15,7 @@ export type AuthResponse<TUser = unknown> = {
 };
 
 export async function login<TUser = unknown>(dto: AuthDto): Promise<TUser> {
+  useAuthSessionStore.getState().clearSession();
   const { data } = await api.post<AuthResponse<TUser>>('/auth/login', dto, {
     skipAuthRefresh: true,
   });
@@ -23,6 +24,7 @@ export async function login<TUser = unknown>(dto: AuthDto): Promise<TUser> {
 }
 
 export async function register<TUser = unknown>(dto: AuthDto): Promise<TUser> {
+  useAuthSessionStore.getState().clearSession();
   const { data } = await api.post<AuthResponse<TUser>>('/auth/register', dto, {
     skipAuthRefresh: true,
   });

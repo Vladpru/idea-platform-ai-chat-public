@@ -37,7 +37,7 @@ export function LoginForm() {
       useAuthSessionStore.getState().clearSession();
       setSubmitError(
         getApiErrorMessage(e, {
-          invalidCredentialsMessage: 'Email or password is incorrect',
+          invalidCredentialsMessage: 'Invalid email or password',
         }),
       );
     }
