@@ -15,13 +15,17 @@ export type AuthResponse<TUser = unknown> = {
 };
 
 export async function login<TUser = unknown>(dto: AuthDto): Promise<TUser> {
-  const { data } = await api.post<AuthResponse<TUser>>('/auth/login', dto);
+  const { data } = await api.post<AuthResponse<TUser>>('/auth/login', dto, {
+    skipAuthRefresh: true,
+  });
   useAuthSessionStore.getState().setSession(data.user, data.accessToken);
   return data.user;
 }
 
 export async function register<TUser = unknown>(dto: AuthDto): Promise<TUser> {
-  const { data } = await api.post<AuthResponse<TUser>>('/auth/register', dto);
+  const { data } = await api.post<AuthResponse<TUser>>('/auth/register', dto, {
+    skipAuthRefresh: true,
+  });
   useAuthSessionStore.getState().setSession(data.user, data.accessToken);
   return data.user;
 }
@@ -29,9 +33,13 @@ export async function register<TUser = unknown>(dto: AuthDto): Promise<TUser> {
 export async function loginWithGoogleAccessToken<TUser = unknown>(
   googleAccessToken: string,
 ): Promise<TUser> {
-  const { data } = await api.post<AuthResponse<TUser>>('/auth/google', {
-    token: googleAccessToken,
-  });
+  const { data } = await api.post<AuthResponse<TUser>>(
+    '/auth/google',
+    {
+      token: googleAccessToken,
+    },
+    { skipAuthRefresh: true },
+  );
   useAuthSessionStore.getState().setSession(data.user, data.accessToken);
   return data.user;
 }

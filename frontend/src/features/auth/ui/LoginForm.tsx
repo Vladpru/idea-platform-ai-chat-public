@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import { Button, Input, Label, Separator } from '@/shared/ui';
 
+import { useAuthSessionStore } from '../model/auth-session-store';
 import { login as loginUser } from '../api/auth';
 import { type LoginValues, loginSchema } from '../model/login-schema';
 import { GoogleLoginButton } from './GoogleAuthButton';
@@ -33,6 +34,7 @@ export function LoginForm() {
       await loginUser({ email: data.email, password: data.password });
       await navigate({ to: '/profile', replace: true });
     } catch (e) {
+      useAuthSessionStore.getState().clearSession();
       setSubmitError(
         getApiErrorMessage(e, {
           invalidCredentialsMessage: 'Email or password is incorrect',
