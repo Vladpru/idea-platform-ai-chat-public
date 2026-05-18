@@ -2,7 +2,7 @@ import {
   primaryBtn,
   sectionTitleClass,
 } from '@/features/profile/ui/profile-view-classes';
-import { ROUTES } from '@/routes/paths';
+import { ROUTES } from '@/shared/config/paths';
 import { AppHeader } from '@/widgets/header';
 import { Link } from '@tanstack/react-router';
 

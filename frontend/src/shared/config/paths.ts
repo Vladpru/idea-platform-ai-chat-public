@@ -1,4 +1,3 @@
-/** App URL segments (see `routes/` for TanStack route files, `pages/` for screen UI). */
 export const ROUTES = {
   home: '/',
   login: '/login',
