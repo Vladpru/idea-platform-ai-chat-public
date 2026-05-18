@@ -1,4 +1,4 @@
-import PolycodersLogoWhiteText from '@/assets/svg/PolycodersLogoWhiteText.svg';
+import PolycodersLogoWhiteText from '@/assets/svg/polycodersLogoWhiteText.svg';
 import { UserNav } from '@/features/auth';
 import { HEADER_ACTION_BUTTON_CLASS } from '@/widgets/header/lib/header-action-button-class';
 import { Link } from '@tanstack/react-router';
