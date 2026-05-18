@@ -21,18 +21,35 @@ const cleanApi = axios.create({
   withCredentials: true,
 });
 
-api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  const token = getStoredAuthToken();
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+const AUTH_ROUTE_PATH =
+  /^\/auth\/(login|register|google|forgot-password|reset-password)(\/|$|\?)/;
+
+function getRequestPath(config: InternalAxiosRequestConfig): string {
+  const raw = config.url ?? '';
+  if (/^https?:\/\//i.test(raw)) {
+    try {
+      return new URL(raw).pathname;
+    } catch {
+      return raw;
+    }
   }
-  return config;
-});
+  return raw.startsWith('/') ? raw : `/${raw}`;
+}
 
-export type RefreshResponse = { accessToken: string };
+function isAuthRouteRequest(
+  config: InternalAxiosRequestConfig & { skipAuthRefresh?: boolean },
+): boolean {
+  return AUTH_ROUTE_PATH.test(getRequestPath(config));
+}
 
-const AUTH_ROUTES_SKIP_REFRESH =
-  /^\/auth\/(login|register|google|forgot-password|reset-password)(\/|$)/;
+let authRefreshSuppressed = 0;
+
+export function runWithoutAuthRefresh<T>(fn: () => Promise<T>): Promise<T> {
+  authRefreshSuppressed += 1;
+  return fn().finally(() => {
+    authRefreshSuppressed -= 1;
+  });
+}
 
 function isPublicAuthPage(): boolean {
   const path = window.location.pathname;
@@ -47,10 +64,24 @@ function isPublicAuthPage(): boolean {
 function shouldSkipAuthRefresh(
   config: InternalAxiosRequestConfig & { skipAuthRefresh?: boolean },
 ): boolean {
-  if (config.skipAuthRefresh) return true;
-  const url = config.url ?? '';
-  return AUTH_ROUTES_SKIP_REFRESH.test(url);
+  return (
+    authRefreshSuppressed > 0 ||
+    Boolean(config.skipAuthRefresh) ||
+    isAuthRouteRequest(config)
+  );
 }
+
+api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  if (!isAuthRouteRequest(config)) {
+    const token = getStoredAuthToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
+export type RefreshResponse = { accessToken: string };
 
 let refreshInFlight: Promise<string> | null = null;
 
@@ -104,7 +135,11 @@ api.interceptors.response.use(
 
     original._retry = true;
 
-    await refreshAccessToken();
-    return await api.request(original);
+    try {
+      await refreshAccessToken();
+      return await api.request(original);
+    } catch {
+      throw error;
+    }
   },
 );

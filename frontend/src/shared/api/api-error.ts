@@ -3,7 +3,7 @@ import axios from 'axios';
 const INVALID_CREDENTIALS = 'Invalid email or password';
 
 const TECHNICAL_AUTH_MESSAGE =
-  /refresh\s*token|access\s*token|bearer|jwt|token\s+missing|token\s+expired/i;
+  /refresh\s*token|access\s*token|bearer|jwt|token\s+missing|token\s+expired|^unauthorized$/i;
 
 function isUserFacingAuthMessage(message: string): boolean {
   const trimmed = message.trim();
