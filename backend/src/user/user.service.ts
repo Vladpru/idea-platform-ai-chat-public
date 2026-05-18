@@ -69,7 +69,7 @@ export class UserService {
     const invalid = new UnauthorizedException('Invalid email or password');
 
     if (!user || !user.password) throw invalid;
-    if (!(await verify(user.password, password))) throw invalid;
+    if (!(await verify(user.password, password.trim()))) throw invalid;
 
     return user;
   }

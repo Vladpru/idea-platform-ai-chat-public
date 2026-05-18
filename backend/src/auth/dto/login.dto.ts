@@ -10,6 +10,9 @@ export class LoginDto {
   email!: string;
 
   @ApiProperty({ example: 'secret12345' })
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
   @IsNotEmpty({ message: 'Password is required' })
   @IsString()
   @MaxLength(150, { message: 'Password is too long' })
