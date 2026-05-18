@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
@@ -86,13 +86,12 @@ export function LoginForm() {
             error={errors.password?.message}
           />
           <div className="flex h-18 items-start justify-end">
-            <Button
-              type="button"
-              variant="ghost"
-              className="text-brand-dark-blue hover:text-brand-dark-blue/80 dark:text-brand-light-blue dark:hover:text-brand-light-blue/80 h-auto px-0 py-0 text-xs font-medium"
+            <Link
+              to="/forgotPassword"
+              className="text-brand-dark-blue hover:text-brand-dark-blue/80 dark:text-brand-light-blue dark:hover:text-brand-light-blue/80 text-xs font-medium hover:underline hover:underline-offset-2"
             >
               FORGOT PASSWORD?
-            </Button>
+            </Link>
           </div>
         </div>
 
