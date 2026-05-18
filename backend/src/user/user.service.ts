@@ -60,8 +60,9 @@ export class UserService {
   }
 
   async verifyUser(email: string, password: string) {
+    const normalizedEmail = email.trim().toLowerCase();
     const user = await this.prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
       select: { id: true, email: true, password: true },
     });
 
