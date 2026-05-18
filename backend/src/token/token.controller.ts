@@ -20,7 +20,7 @@ export class TokenController {
   ) {
     const refreshToken = this.tokenService.getRefreshTokenFromCookie(req);
     if (!refreshToken) {
-      throw new UnauthorizedException('Refresh token missing');
+      throw new UnauthorizedException();
     }
     const { accessToken, refreshToken: newRefresh } =
       await this.tokenService.refreshWithRefreshToken(refreshToken);

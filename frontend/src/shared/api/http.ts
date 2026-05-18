@@ -21,10 +21,62 @@ const cleanApi = axios.create({
   withCredentials: true,
 });
 
+const AUTH_ROUTE_PATH =
+  /^\/auth\/(login|register|google|forgot-password|reset-password)(\/|$|\?)/;
+
+function getRequestPath(config: InternalAxiosRequestConfig): string {
+  const raw = config.url ?? '';
+  if (/^https?:\/\//i.test(raw)) {
+    try {
+      return new URL(raw).pathname;
+    } catch {
+      return raw;
+    }
+  }
+  return raw.startsWith('/') ? raw : `/${raw}`;
+}
+
+function isAuthRouteRequest(
+  config: InternalAxiosRequestConfig & { skipAuthRefresh?: boolean },
+): boolean {
+  return AUTH_ROUTE_PATH.test(getRequestPath(config));
+}
+
+let authRefreshSuppressed = 0;
+
+export function runWithoutAuthRefresh<T>(fn: () => Promise<T>): Promise<T> {
+  authRefreshSuppressed += 1;
+  return fn().finally(() => {
+    authRefreshSuppressed -= 1;
+  });
+}
+
+function isPublicAuthPage(): boolean {
+  const path = window.location.pathname;
+  return (
+    path === '/login' ||
+    path === '/register' ||
+    path === '/forgotPassword' ||
+    path.startsWith('/reset-password')
+  );
+}
+
+function shouldSkipAuthRefresh(
+  config: InternalAxiosRequestConfig & { skipAuthRefresh?: boolean },
+): boolean {
+  return (
+    authRefreshSuppressed > 0 ||
+    Boolean(config.skipAuthRefresh) ||
+    isAuthRouteRequest(config)
+  );
+}
+
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  const token = getStoredAuthToken();
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  if (!isAuthRouteRequest(config)) {
+    const token = getStoredAuthToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
   }
   return config;
 });
@@ -43,7 +95,9 @@ export async function refreshAccessToken(): Promise<string> {
       })
       .catch(error => {
         useAuthSessionStore.getState().clearSession();
-        window.location.href = '/login';
+        if (!isPublicAuthPage()) {
+          window.location.assign('/login');
+        }
         throw error;
       })
       .finally(() => {
@@ -74,14 +128,18 @@ api.interceptors.response.use(
       status !== 401 ||
       !original ||
       original._retry ||
-      original.skipAuthRefresh
+      shouldSkipAuthRefresh(original)
     ) {
       throw error;
     }
 
     original._retry = true;
 
-    await refreshAccessToken();
-    return await api.request(original);
+    try {
+      await refreshAccessToken();
+      return await api.request(original);
+    } catch {
+      throw error;
+    }
   },
 );

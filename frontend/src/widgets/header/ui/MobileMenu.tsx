@@ -1,10 +1,11 @@
-import { useLogout } from '@/features/auth/lib/use-logout';
+import { LogoutConfirmDialog } from '@/features/auth/ui/LogoutConfirmDialog';
 import {
   nameInitial,
   useAuthSessionStore,
 } from '@/features/auth/model/auth-session-store';
 import { Link } from '@tanstack/react-router';
 import { Menu } from 'lucide-react';
+import { useState } from 'react';
 
 import {
   Accordion,
@@ -12,17 +13,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/shared/ui/accordion';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/shared/ui/alert-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
 import {
@@ -41,7 +31,7 @@ const navLinkClass =
   'block px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:text-primary rounded-md';
 
 export function MobileMenu({ triggerClassName }: MobileMenuProps) {
-  const logout = useLogout();
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const user = useAuthSessionStore(s => s.user);
 
   return (
@@ -158,37 +148,19 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
                   Settings
                 </Link>
 
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <button
-                      type="button"
-                      className="text-brand-accent mt-2 px-3 text-left text-sm font-bold hover:opacity-80"
-                    >
-                      Log out
-                    </button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent className="w-[90%] rounded-md sm:max-w-[425px]">
-                    <AlertDialogHeader>
-                      <AlertDialogTitle className="text-primary text-center text-xl font-bold">
-                        Do you really want to Log out?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription className="text-center text-sm text-slate-500">
-                        Remember, you can come back at any time.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter className="flex-row items-center justify-center gap-3 sm:justify-center">
-                      <AlertDialogAction
-                        onClick={logout}
-                        className="text-primary w-24 hover:bg-slate-50"
-                      >
-                        YES
-                      </AlertDialogAction>
-                      <AlertDialogCancel className="border-primary text-primary mt-0 w-24">
-                        NO
-                      </AlertDialogCancel>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                <button
+                  type="button"
+                  className="text-brand-accent mt-2 px-3 text-left text-sm font-bold hover:opacity-80"
+                  onClick={() => {
+                    setLogoutDialogOpen(true);
+                  }}
+                >
+                  Log out
+                </button>
+                <LogoutConfirmDialog
+                  open={logoutDialogOpen}
+                  onOpenChange={setLogoutDialogOpen}
+                />
               </AccordionContent>
             </AccordionItem>
           </Accordion>

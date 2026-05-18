@@ -60,15 +60,16 @@ export class UserService {
   }
 
   async verifyUser(email: string, password: string) {
+    const normalizedEmail = email.trim().toLowerCase();
     const user = await this.prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
       select: { id: true, email: true, password: true },
     });
 
     const invalid = new UnauthorizedException('Invalid email or password');
 
     if (!user || !user.password) throw invalid;
-    if (!(await verify(user.password, password))) throw invalid;
+    if (!(await verify(user.password, password.trim()))) throw invalid;
 
     return user;
   }
