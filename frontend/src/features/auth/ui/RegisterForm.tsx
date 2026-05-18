@@ -10,6 +10,7 @@ import { register as registerUser } from '../api/auth';
 import { type RegisterValues, registerSchema } from '../model/register-schema';
 import { GoogleLoginButton } from './GoogleAuthButton';
 import { PasswordInput } from './PasswordInput';
+import { PasswordStrengthIndicator } from './PasswordStrengthIndicator';
 
 export function RegisterForm() {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ export function RegisterForm() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
@@ -28,6 +30,8 @@ export function RegisterForm() {
       confirmPassword: '',
     },
   });
+
+  const passwordValue = watch('password');
 
   const onSubmit = async (data: RegisterValues) => {
     setSubmitError(null);
@@ -79,16 +83,19 @@ export function RegisterForm() {
           )}
         </div>
 
-        <PasswordInput
-          id="register-password"
-          label="PASSWORD"
-          placeholder="Create password"
-          autoComplete="new-password"
-          registration={register('password')}
-          error={errors.password?.message}
-          passwordVisible={passwordsVisible}
-          onPasswordVisibleChange={setPasswordsVisible}
-        />
+        <div className="flex flex-col gap-1">
+          <PasswordInput
+            id="register-password"
+            label="PASSWORD"
+            placeholder="Create password"
+            autoComplete="new-password"
+            registration={register('password')}
+            error={errors.password?.message}
+            passwordVisible={passwordsVisible}
+            onPasswordVisibleChange={setPasswordsVisible}
+          />
+          <PasswordStrengthIndicator password={passwordValue} />
+        </div>
 
         <PasswordInput
           id="register-confirm-password"
