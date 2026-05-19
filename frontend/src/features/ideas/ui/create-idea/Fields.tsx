@@ -6,7 +6,7 @@ import {
   fieldErrorClass,
   fieldLabelClass,
   requiredMarkClass,
-} from './idea-creation-classes';
+} from '@/features/ideas/lib/styles';
 
 export function FieldLabel({
   htmlFor,

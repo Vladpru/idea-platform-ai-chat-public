@@ -4,7 +4,7 @@ import {
   type IdeaCreateFormValues,
   ideaCreateDraftSchema,
   ideaCreateSchema,
-} from '@/features/ideas/lib/idea-create-schema';
+} from '@/features/ideas/lib/create-idea';
 import { useCreateIdeaStore } from '@/features/ideas/store/create-idea.store';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useCallback, useEffect, useRef, useState } from 'react';

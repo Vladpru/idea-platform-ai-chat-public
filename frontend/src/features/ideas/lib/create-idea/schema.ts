@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { IDEA_STAGES } from './idea-stages';
+import { IDEA_STAGES } from '../stages';
 
 const ideaStageValues = IDEA_STAGES.map(stage => stage.value);
 

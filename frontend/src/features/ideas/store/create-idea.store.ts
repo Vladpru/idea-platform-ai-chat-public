@@ -1,15 +1,13 @@
 import {
+  draftToFormValues,
   EMPTY_CREATE_IDEA_DRAFT,
   EMPTY_CREATE_IDEA_FILES,
-} from '@/features/ideas/lib/create-idea-defaults';
-import {
-  draftToFormValues,
   formValuesToDraftPatch,
   formValuesToLocalFiles,
   ideaApiToDraft,
   ideaApiToRemoteMedia,
-} from '@/features/ideas/lib/create-idea-mappers';
-import type { IdeaCreateFormValues } from '@/features/ideas/lib/idea-create-schema';
+  type IdeaCreateFormValues,
+} from '@/features/ideas/lib/create-idea';
 import {
   type CreateIdeaDraft,
   type CreateIdeaLocalFiles,

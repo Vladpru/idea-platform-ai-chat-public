@@ -12,8 +12,10 @@ import {
   updateIdeaDraft,
   uploadIdeaMedia,
 } from '@/features/ideas/api/ideas.api';
-import { formValuesToSavePayload } from '@/features/ideas/lib/create-idea-mappers';
-import type { IdeaCreateFormValues } from '@/features/ideas/lib/idea-create-schema';
+import {
+  formValuesToSavePayload,
+  type IdeaCreateFormValues,
+} from '@/features/ideas/lib/create-idea';
 import { useCreateIdeaStore } from '@/features/ideas/store/create-idea.store';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';

@@ -1,16 +1,15 @@
 import type { SaveIdeaDraftPayload } from '@/features/ideas/api/ideas-api.types';
-import type { IdeaCreateFormValues } from '@/features/ideas/lib/idea-create-schema';
-import {
-  apiStageToFormStage,
-  formStageToApiStage,
-} from '@/features/ideas/lib/idea-stage-map';
-import { formatProblemIds, parseProblemIds } from '@/features/ideas/lib/mock-problems';
 import type {
   CreateIdeaDraft,
   CreateIdeaLocalFiles,
   IdeaApi,
   IdeaMediaItem,
 } from '@/features/ideas/model/idea.types';
+
+import { formatProblemIds, parseProblemIds } from '../problems';
+import { apiStageToFormStage, formStageToApiStage } from '../stages';
+import { formatTags, parseTags } from './tags';
+import type { IdeaCreateFormValues } from './schema';
 
 export function ideaApiToDraft(idea: IdeaApi): CreateIdeaDraft {
   return {
@@ -41,7 +40,7 @@ export function draftToFormValues(
     problemId: formatProblemIds(draft.problemIds),
     title: draft.title,
     description: draft.description,
-    tags: draft.tags.join(', '),
+    tags: formatTags(draft.tags),
     mainImage: localFiles.mainImage ?? undefined,
     files: localFiles.attachments,
   };
@@ -55,12 +54,7 @@ export function formValuesToDraftPatch(
     title: values.title,
     description: values.description,
     problemIds: parseProblemIds(values.problemId),
-    tags: values.tags
-      ? values.tags
-          .split(',')
-          .map(tag => tag.trim())
-          .filter(Boolean)
-      : [],
+    tags: parseTags(values.tags),
   };
 }
 
@@ -81,11 +75,6 @@ export function formValuesToSavePayload(
     title: values.title.trim() || null,
     description: values.description.trim() || null,
     problemIds: parseProblemIds(values.problemId),
-    tagLabels: values.tags
-      ? values.tags
-          .split(',')
-          .map(tag => tag.trim())
-          .filter(Boolean)
-      : [],
+    tagLabels: parseTags(values.tags),
   };
 }

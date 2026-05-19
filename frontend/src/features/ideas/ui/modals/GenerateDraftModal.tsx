@@ -1,13 +1,13 @@
-import { SparklesIcon } from '@/features/ideas/ui/SparklesIcon';
 import {
   GENERATE_DRAFT_SOON_TOOLTIP,
   fieldLabelClass,
   outlineBtnClass,
   publishBtnClass,
   textareaClass,
-} from '@/features/ideas/ui/idea-creation-classes';
+} from '@/features/ideas/lib/styles';
+import { SparklesIcon } from '@/features/ideas/ui/icons/SparklesIcon';
 import { X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
@@ -33,16 +33,17 @@ export function GenerateDraftModal({
   open,
   onOpenChange,
 }: GenerateDraftModalProps) {
-  const [description, setDescription] = useState<string>('');
+  const [description, setDescription] = useState('');
 
-  useEffect(() => {
-    if (!open) {
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
       setDescription('');
     }
-  }, [open]);
+    onOpenChange(nextOpen);
+  };
 
   const handleClose = () => {
-    onOpenChange(false);
+    handleOpenChange(false);
   };
 
   const handleSkip = () => {
@@ -57,7 +58,7 @@ export function GenerateDraftModal({
   const canGenerate = description.trim().length > 0;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         className={cn(
           'border-brand-gray-200 max-w-lg gap-0 rounded-lg border bg-white p-0 shadow-xl',

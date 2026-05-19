@@ -2,13 +2,13 @@ import {
   addProblemDefaultValues,
   addProblemSchema,
   type AddProblemValues,
-} from '@/features/ideas/lib/add-problem-schema';
+} from '@/features/ideas/lib/problems';
 import {
   fieldLabelClass,
   primaryBtnClass,
   publishBtnClass,
   textareaClass,
-} from '@/features/ideas/ui/idea-creation-classes';
+} from '@/features/ideas/lib/styles';
 import { cancelOutlineBtn } from '@/features/profile/ui/profile-view-classes';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { X } from 'lucide-react';

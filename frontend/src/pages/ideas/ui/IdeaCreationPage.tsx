@@ -1,12 +1,12 @@
 import { useState } from 'react';
 
 import { IdeaCreateForm } from '@/features/ideas';
-import { SparklesIcon } from '@/features/ideas/ui/SparklesIcon';
 import {
   GENERATE_DRAFT_SOON_TOOLTIP,
   pageTitleClass,
   primaryBtnClass,
-} from '@/features/ideas/ui/idea-creation-classes';
+} from '@/features/ideas/lib/styles';
+import { SparklesIcon } from '@/features/ideas/ui/icons/SparklesIcon';
 import { GenerateDraftModal } from '@/features/ideas/ui/modals/GenerateDraftModal';
 
 import { cn } from '@/shared/lib/utils';

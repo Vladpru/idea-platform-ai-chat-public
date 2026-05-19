@@ -1,5 +1,6 @@
 import type { ApiStage } from '@/features/ideas/model/idea.types';
-import type { IdeaStage } from '@/features/ideas/lib/idea-stages';
+
+import type { IdeaStage } from './stages';
 
 const API_TO_FORM: Record<ApiStage, IdeaStage> = {
   IDEATION: 'ideation',

@@ -1,10 +1,10 @@
-import type { IdeaCreateFormValues } from '@/features/ideas/lib/idea-create-schema';
+import type { IdeaCreateFormValues } from '@/features/ideas/lib/create-idea';
 import {
   MOCK_PROBLEMS,
   formatProblemIds,
   getProblemLabel,
   parseProblemIds,
-} from '@/features/ideas/lib/mock-problems';
+} from '@/features/ideas/lib/problems';
 import { Check, ChevronDown, Plus, Search, X } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { Control, FieldErrors } from 'react-hook-form';
@@ -13,10 +13,11 @@ import { Controller } from 'react-hook-form';
 import { cn } from '@/shared/lib/utils';
 import { Input } from '@/shared/ui/input';
 
-import { AddProblemModal } from './modals/AddProblemModal';
-import { ArrowLink } from './ArrowLink';
+import { selectClass } from '@/features/ideas/lib/styles';
+
+import { AddProblemModal } from '../modals/AddProblemModal';
+import { ArrowLink } from '../icons/ArrowLink';
 import { FieldError, FieldGroup, FieldLabel } from './Fields';
-import { selectClass } from './idea-creation-classes';
 
 interface ProblemSelectProps {
   formId: string;

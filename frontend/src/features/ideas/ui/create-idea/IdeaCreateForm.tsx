@@ -1,12 +1,12 @@
 import { useIdeaCreateForm } from '@/features/ideas/hooks/use-idea-create-form';
-import { IDEA_STAGES } from '@/features/ideas/lib/idea-stages';
-import { SparklesIcon } from '@/features/ideas/ui/SparklesIcon';
+import { IDEA_STAGES } from '@/features/ideas/lib/stages';
 import {
   outlineBtnClass,
   publishBtnClass,
   selectClass,
   textareaClass,
-} from '@/features/ideas/ui/idea-creation-classes';
+} from '@/features/ideas/lib/styles';
+import { SparklesIcon } from '@/features/ideas/ui/icons/SparklesIcon';
 import { useNavigate } from '@tanstack/react-router';
 import { ChevronDown, Upload } from 'lucide-react';
 import { useId, useRef } from 'react';
@@ -19,6 +19,7 @@ import { Input } from '@/shared/ui/input';
 
 import { FieldError, FieldGroup, FieldLabel } from './Fields';
 import ProblemSelect from './ProblemSelect';
+import { TagsInput } from './TagsInput';
 
 function AiAssistLink({
   children,
@@ -31,10 +32,12 @@ function AiAssistLink({
     <button
       type="button"
       onClick={onClick}
-      className="text-brand-dark-blue hover:text-brand-dark-blue/80 dark:text-brand-light-blue inline-flex items-center gap-1 text-xs font-semibold tracking-wide uppercase transition-colors"
+      className="group text-brand-dark-blue dark:text-brand-light-blue inline-flex items-center gap-1 text-xs font-semibold tracking-wide transition-colors"
     >
-      <SparklesIcon />
-      {children}
+      <SparklesIcon className="group-hover:text-brand-dark-blue/80 dark:group-hover:text-brand-light-blue/80 size-5 transition-colors" />
+      <span className="group-hover:text-brand-dark-blue/80 dark:group-hover:text-brand-light-blue/80 transition-colors">
+        {children}
+      </span>
     </button>
   );
 }
@@ -121,7 +124,7 @@ export function IdeaCreateForm() {
           <FieldLabel htmlFor={`${formId}-title`} required>
             Title
           </FieldLabel>
-          <AiAssistLink>Generate title from description</AiAssistLink>
+          <AiAssistLink>Re-Generate title from description</AiAssistLink>
         </div>
         <Input
           id={`${formId}-title`}
@@ -232,13 +235,20 @@ export function IdeaCreateForm() {
 
       <FieldGroup>
         <FieldLabel htmlFor={`${formId}-tags`}>Tags</FieldLabel>
-        <Input
-          id={`${formId}-tags`}
-          className="mt-2"
-          placeholder="Start typing to search tags, hit Enter to add"
-          disabled={isBusy}
-          {...register('tags')}
+        <Controller
+          name="tags"
+          control={control}
+          render={({ field }) => (
+            <TagsInput
+              id={`${formId}-tags`}
+              value={field.value ?? ''}
+              onChange={field.onChange}
+              disabled={isBusy}
+              aria-invalid={!!errors.tags}
+            />
+          )}
         />
+        <FieldError message={errors.tags?.message} />
       </FieldGroup>
 
       <FieldGroup>
@@ -278,7 +288,7 @@ export function IdeaCreateForm() {
           type="button"
           onClick={handleCancel}
           disabled={isBusy}
-          className="text-brand-accent hover:text-brand-accent/80 disabled:opacity-50 px-2 text-sm font-bold tracking-wide uppercase transition-colors"
+          className="text-brand-accent hover:text-brand-accent/80 px-2 text-sm font-bold tracking-wide uppercase transition-colors disabled:opacity-50"
         >
           Cancel
         </button>

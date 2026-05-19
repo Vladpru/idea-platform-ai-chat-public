@@ -1,13 +1,13 @@
-export { IdeaCreateForm } from './ui/IdeaCreateForm';
-export { SparklesIcon } from './ui/SparklesIcon';
+export { IdeaCreateForm } from './ui/create-idea';
+export { SparklesIcon, ArrowLink } from './ui/icons';
 export {
   ideaCreateSchema,
   ideaCreateDraftSchema,
   type IdeaCreateValues,
   type IdeaCreateDraftValues,
   type IdeaCreateFormValues,
-} from './lib/idea-create-schema';
-export { IDEA_STAGES, type IdeaStage } from './lib/idea-stages';
+} from './lib/create-idea';
+export { IDEA_STAGES, type IdeaStage } from './lib/stages';
 export {
   useCreateIdeaStore,
   hasPersistedDraftId,

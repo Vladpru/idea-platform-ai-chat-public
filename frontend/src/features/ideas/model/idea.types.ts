@@ -1,4 +1,4 @@
-import type { IdeaStage } from '@/features/ideas/lib/idea-stages';
+import type { IdeaStage } from '@/features/ideas/lib/stages';
 
 export const IDEA_STATUS = {
   DRAFT: 'DRAFT',
