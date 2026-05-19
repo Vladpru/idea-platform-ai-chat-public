@@ -13,7 +13,7 @@ export { RegisterForm } from './ui/RegisterForm';
 export { useLogout } from './lib/use-logout';
 export { ForgotPasswordForm } from './ui/ForgotPasswordForm';
 export { ResetPasswordForm } from './ui/ResetPasswordForm';
-export { UserNav, type UserNavProps } from './ui/UserNav';
+export { UserNav, type UserNavProps } from './ui/ProfileNavButton';
 export {
   LogoutConfirmDialog,
   type LogoutConfirmDialogProps,

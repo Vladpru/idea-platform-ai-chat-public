@@ -1,17 +1,16 @@
+import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
-
 import { submitChangePassword } from '../api/change-password-api';
 import {
-  patchUser,
-  removeMyAvatar,
-  uploadMyAvatar,
   type ChangePasswordPayload,
   type PatchUserPayload,
   type UserPublic,
-} from '../api/profile-api';
+  patchUser,
+  removeMyAvatar,
+  uploadMyAvatar,
+} from '../api/profile.api';
 
 function applyUserToSession(user: UserPublic) {
   const accessToken = useAuthSessionStore.getState().accessToken;
@@ -63,6 +62,7 @@ export function useRemoveAvatarMutation() {
 
 export function useChangePasswordMutation() {
   return useMutation({
-    mutationFn: (payload: ChangePasswordPayload) => submitChangePassword(payload),
+    mutationFn: (payload: ChangePasswordPayload) =>
+      submitChangePassword(payload),
   });
 }

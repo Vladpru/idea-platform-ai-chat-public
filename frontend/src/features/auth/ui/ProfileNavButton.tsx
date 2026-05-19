@@ -50,10 +50,10 @@ export function UserNav({ triggerClassName }: UserNavProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent
           align="end"
-          sideOffset={8}
-          className="w-64 py-3 text-base"
+          sideOffset={5}
+          className="w-50 text-base"
         >
-          <DropdownMenuItem asChild className="cursor-pointer p-0">
+          <DropdownMenuItem asChild className="cursor-pointer p-0 text-sm">
             <Link to="/profile" className={linkRowClassName}>
               <User className="mr-3 h-5 w-5 shrink-0" aria-hidden />
               <span>Profile</span>
@@ -62,7 +62,7 @@ export function UserNav({ triggerClassName }: UserNavProps) {
           <DropdownMenuSeparator />
           <DropdownMenuItem
             variant="destructive"
-            className="flex cursor-pointer items-center px-4 py-3 text-base"
+            className="flex cursor-pointer items-center px-4 py-3 text-sm"
             onSelect={event => {
               event.preventDefault();
               setLogoutDialogOpen(true);

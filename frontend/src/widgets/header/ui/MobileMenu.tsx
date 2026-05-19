@@ -3,6 +3,7 @@ import {
   nameInitial,
   useAuthSessionStore,
 } from '@/features/auth/model/auth-session-store';
+import { ROUTES } from '@/shared/config/paths';
 import { Link } from '@tanstack/react-router';
 import { Menu } from 'lucide-react';
 import { useState } from 'react';
@@ -173,9 +174,12 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
           >
             ADD NEW PROBLEM
           </Button>
-          <Button className="bg-brand-accent w-full text-xs font-bold tracking-wide text-white uppercase hover:opacity-90">
+          <Link
+            to={ROUTES.ideasNew}
+            className="bg-brand-accent inline-flex h-10 w-full items-center justify-center rounded-md text-xs font-bold tracking-wide text-white uppercase hover:opacity-90"
+          >
             ADD NEW IDEA
-          </Button>
+          </Link>
         </div>
       </SheetContent>
     </Sheet>

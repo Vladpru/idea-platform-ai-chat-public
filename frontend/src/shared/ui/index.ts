@@ -22,6 +22,12 @@ export {
   DialogTrigger,
 } from './dialog';
 export {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from './tooltip';
+export {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,

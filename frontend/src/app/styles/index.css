@@ -60,9 +60,13 @@
   --color-brand-gray-800: var(--brand-gray-800);
   --color-brand-gray-700: var(--brand-gray-700);
   --color-brand-gray-600: var(--brand-gray-600);
+  --color-brand-gray-500: var(--brand-gray-500);
   --color-brand-gray-400: var(--brand-gray-400);
   --color-brand-gray-200: var(--brand-gray-200);
   --color-brand-gray-100: var(--brand-gray-100);
+  --color-brand-hover-red-700: var(--brand-hover-red-700);
+  --color-brand-orange: var(--brand-orange);
+  --color-brand-orange-hover: var(--brand-orange-hover);
 
   --color-idea-ideation: var(--idea-ideation);
   --color-idea-prototyping: var(--idea-prototyping);
@@ -103,6 +107,7 @@
   --brand-gray-800: #2e3338;
   --brand-gray-700: #4d565e;
   --brand-gray-600: #6a737c;
+  --brand-gray-500: #88919a;
   --brand-gray-400: #a8b0b9;
   --brand-gray-200: #e4e8ec;
   --brand-gray-100: #f5f7fa;
@@ -110,6 +115,9 @@
   --brand-black: #101820;
   --brand-dark-blue: #003057;
   --brand-neutral: #f9f9f9;
+  --brand-hover-red-700: #b40500;
+  --brand-orange: #e17100;
+  --brand-orange-hover: #e17000aa;
 
   /* IDEA STEP status */
   --idea-ideation: #ffa900;

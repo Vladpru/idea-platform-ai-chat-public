@@ -18,11 +18,13 @@ import { Route as AuthIndexRouteImport } from './routes/_auth/index'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as AuthStatisticsRouteImport } from './routes/_auth/statistics'
 import { Route as AuthProblemsRouteImport } from './routes/_auth/problems'
-import { Route as AuthIdeasRouteImport } from './routes/_auth/ideas'
 import { Route as AuthProfileRouteRouteImport } from './routes/_auth/profile/route'
+import { Route as AuthIdeasRouteRouteImport } from './routes/_auth/ideas/route'
 import { Route as AuthProfileIndexRouteImport } from './routes/_auth/profile/index'
+import { Route as AuthIdeasIndexRouteImport } from './routes/_auth/ideas/index'
 import { Route as AuthProfileProblemsRouteImport } from './routes/_auth/profile/problems'
 import { Route as AuthProfileIdeasRouteImport } from './routes/_auth/profile/ideas'
+import { Route as AuthIdeasNewRouteImport } from './routes/_auth/ideas/new'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -68,20 +70,25 @@ const AuthProblemsRoute = AuthProblemsRouteImport.update({
   path: '/problems',
   getParentRoute: () => AuthRoute,
 } as any)
-const AuthIdeasRoute = AuthIdeasRouteImport.update({
-  id: '/ideas',
-  path: '/ideas',
-  getParentRoute: () => AuthRoute,
-} as any)
 const AuthProfileRouteRoute = AuthProfileRouteRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthIdeasRouteRoute = AuthIdeasRouteRouteImport.update({
+  id: '/ideas',
+  path: '/ideas',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthProfileIndexRoute = AuthProfileIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthProfileRouteRoute,
+} as any)
+const AuthIdeasIndexRoute = AuthIdeasIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthIdeasRouteRoute,
 } as any)
 const AuthProfileProblemsRoute = AuthProfileProblemsRouteImport.update({
   id: '/problems',
@@ -93,6 +100,11 @@ const AuthProfileIdeasRoute = AuthProfileIdeasRouteImport.update({
   path: '/ideas',
   getParentRoute: () => AuthProfileRouteRoute,
 } as any)
+const AuthIdeasNewRoute = AuthIdeasNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AuthIdeasRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthIndexRoute
@@ -100,13 +112,15 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/ideas': typeof AuthIdeasRouteRouteWithChildren
   '/profile': typeof AuthProfileRouteRouteWithChildren
-  '/ideas': typeof AuthIdeasRoute
   '/problems': typeof AuthProblemsRoute
   '/statistics': typeof AuthStatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/ideas/new': typeof AuthIdeasNewRoute
   '/profile/ideas': typeof AuthProfileIdeasRoute
   '/profile/problems': typeof AuthProfileProblemsRoute
+  '/ideas/': typeof AuthIdeasIndexRoute
   '/profile/': typeof AuthProfileIndexRoute
 }
 export interface FileRoutesByTo {
@@ -114,13 +128,14 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/ideas': typeof AuthIdeasRoute
   '/problems': typeof AuthProblemsRoute
   '/statistics': typeof AuthStatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/': typeof AuthIndexRoute
+  '/ideas/new': typeof AuthIdeasNewRoute
   '/profile/ideas': typeof AuthProfileIdeasRoute
   '/profile/problems': typeof AuthProfileProblemsRoute
+  '/ideas': typeof AuthIdeasIndexRoute
   '/profile': typeof AuthProfileIndexRoute
 }
 export interface FileRoutesById {
@@ -130,14 +145,16 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/_auth/ideas': typeof AuthIdeasRouteRouteWithChildren
   '/_auth/profile': typeof AuthProfileRouteRouteWithChildren
-  '/_auth/ideas': typeof AuthIdeasRoute
   '/_auth/problems': typeof AuthProblemsRoute
   '/_auth/statistics': typeof AuthStatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/_auth/': typeof AuthIndexRoute
+  '/_auth/ideas/new': typeof AuthIdeasNewRoute
   '/_auth/profile/ideas': typeof AuthProfileIdeasRoute
   '/_auth/profile/problems': typeof AuthProfileProblemsRoute
+  '/_auth/ideas/': typeof AuthIdeasIndexRoute
   '/_auth/profile/': typeof AuthProfileIndexRoute
 }
 export interface FileRouteTypes {
@@ -148,13 +165,15 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
-    | '/profile'
     | '/ideas'
+    | '/profile'
     | '/problems'
     | '/statistics'
     | '/auth/callback'
+    | '/ideas/new'
     | '/profile/ideas'
     | '/profile/problems'
+    | '/ideas/'
     | '/profile/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -162,13 +181,14 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
-    | '/ideas'
     | '/problems'
     | '/statistics'
     | '/auth/callback'
     | '/'
+    | '/ideas/new'
     | '/profile/ideas'
     | '/profile/problems'
+    | '/ideas'
     | '/profile'
   id:
     | '__root__'
@@ -177,14 +197,16 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
-    | '/_auth/profile'
     | '/_auth/ideas'
+    | '/_auth/profile'
     | '/_auth/problems'
     | '/_auth/statistics'
     | '/auth/callback'
     | '/_auth/'
+    | '/_auth/ideas/new'
     | '/_auth/profile/ideas'
     | '/_auth/profile/problems'
+    | '/_auth/ideas/'
     | '/_auth/profile/'
   fileRoutesById: FileRoutesById
 }
@@ -262,18 +284,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthProblemsRouteImport
       parentRoute: typeof AuthRoute
     }
-    '/_auth/ideas': {
-      id: '/_auth/ideas'
-      path: '/ideas'
-      fullPath: '/ideas'
-      preLoaderRoute: typeof AuthIdeasRouteImport
-      parentRoute: typeof AuthRoute
-    }
     '/_auth/profile': {
       id: '/_auth/profile'
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof AuthProfileRouteRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/ideas': {
+      id: '/_auth/ideas'
+      path: '/ideas'
+      fullPath: '/ideas'
+      preLoaderRoute: typeof AuthIdeasRouteRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/profile/': {
@@ -282,6 +304,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/profile/'
       preLoaderRoute: typeof AuthProfileIndexRouteImport
       parentRoute: typeof AuthProfileRouteRoute
+    }
+    '/_auth/ideas/': {
+      id: '/_auth/ideas/'
+      path: '/'
+      fullPath: '/ideas/'
+      preLoaderRoute: typeof AuthIdeasIndexRouteImport
+      parentRoute: typeof AuthIdeasRouteRoute
     }
     '/_auth/profile/problems': {
       id: '/_auth/profile/problems'
@@ -297,8 +326,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthProfileIdeasRouteImport
       parentRoute: typeof AuthProfileRouteRoute
     }
+    '/_auth/ideas/new': {
+      id: '/_auth/ideas/new'
+      path: '/new'
+      fullPath: '/ideas/new'
+      preLoaderRoute: typeof AuthIdeasNewRouteImport
+      parentRoute: typeof AuthIdeasRouteRoute
+    }
   }
 }
+
+interface AuthIdeasRouteRouteChildren {
+  AuthIdeasNewRoute: typeof AuthIdeasNewRoute
+  AuthIdeasIndexRoute: typeof AuthIdeasIndexRoute
+}
+
+const AuthIdeasRouteRouteChildren: AuthIdeasRouteRouteChildren = {
+  AuthIdeasNewRoute: AuthIdeasNewRoute,
+  AuthIdeasIndexRoute: AuthIdeasIndexRoute,
+}
+
+const AuthIdeasRouteRouteWithChildren = AuthIdeasRouteRoute._addFileChildren(
+  AuthIdeasRouteRouteChildren,
+)
 
 interface AuthProfileRouteRouteChildren {
   AuthProfileIdeasRoute: typeof AuthProfileIdeasRoute
@@ -316,16 +366,16 @@ const AuthProfileRouteRouteWithChildren =
   AuthProfileRouteRoute._addFileChildren(AuthProfileRouteRouteChildren)
 
 interface AuthRouteChildren {
+  AuthIdeasRouteRoute: typeof AuthIdeasRouteRouteWithChildren
   AuthProfileRouteRoute: typeof AuthProfileRouteRouteWithChildren
-  AuthIdeasRoute: typeof AuthIdeasRoute
   AuthProblemsRoute: typeof AuthProblemsRoute
   AuthStatisticsRoute: typeof AuthStatisticsRoute
   AuthIndexRoute: typeof AuthIndexRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
+  AuthIdeasRouteRoute: AuthIdeasRouteRouteWithChildren,
   AuthProfileRouteRoute: AuthProfileRouteRouteWithChildren,
-  AuthIdeasRoute: AuthIdeasRoute,
   AuthProblemsRoute: AuthProblemsRoute,
   AuthStatisticsRoute: AuthStatisticsRoute,
   AuthIndexRoute: AuthIndexRoute,
