@@ -1,7 +1,7 @@
 import {
-  changePassword,
   type ChangePasswordPayload,
-} from '@/features/profile/api/profile-api';
+  changePassword,
+} from '@/features/profile/api/profile.api';
 
 export type ChangePasswordRequest = ChangePasswordPayload;
 

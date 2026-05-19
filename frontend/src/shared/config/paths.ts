@@ -3,6 +3,7 @@ export const ROUTES = {
   login: '/login',
   register: '/register',
   ideas: '/ideas',
+  ideasNew: '/ideas/new',
   problems: '/problems',
   statistics: '/statistics',
   profile: '/profile',

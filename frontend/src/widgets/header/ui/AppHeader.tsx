@@ -1,6 +1,7 @@
 import PolycodersLogoWhiteText from '@/assets/svg/polycodersLogoWhiteText.svg';
 import { UserNav } from '@/features/auth';
 import { HEADER_ACTION_BUTTON_CLASS } from '@/widgets/header/lib/header-action-button-class';
+import { ROUTES } from '@/shared/config/paths';
 import { Link } from '@tanstack/react-router';
 import { Bell, ChevronDown, Search } from 'lucide-react';
 
@@ -53,12 +54,12 @@ export function AppHeader() {
         >
           ADD NEW PROBLEM
         </Button>
-        <Button
-          type="button"
-          className="bg-brand-accent hover:text-brand-accent border-brand-accent hidden h-9 rounded-sm border px-3 text-xs font-bold tracking-wide text-white uppercase transition-colors hover:bg-transparent sm:h-10 sm:px-4 sm:text-sm lg:inline-flex"
+        <Link
+          to={ROUTES.ideasNew}
+          className="bg-brand-accent hover:text-brand-accent border-brand-accent hidden h-9 items-center rounded-sm border px-3 text-xs font-bold tracking-wide text-white uppercase transition-colors hover:bg-transparent sm:h-10 sm:px-4 sm:text-sm lg:inline-flex"
         >
           ADD NEW IDEA
-        </Button>
+        </Link>
 
         <div className="lg:hidden">
           <DropdownMenu>
@@ -74,8 +75,8 @@ export function AppHeader() {
               <DropdownMenuItem className="cursor-pointer text-xs font-semibold uppercase">
                 Problem
               </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer text-xs font-semibold uppercase">
-                Idea
+              <DropdownMenuItem className="cursor-pointer text-xs font-semibold uppercase" asChild>
+                <Link to={ROUTES.ideasNew}>Idea</Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
