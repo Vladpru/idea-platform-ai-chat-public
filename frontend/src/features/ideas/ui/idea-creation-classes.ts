@@ -22,3 +22,6 @@ export const publishBtnClass =
   'bg-brand-light-blue text-brand-white h-10 rounded-sm px-5 text-xs font-bold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm';
 
 export const fieldErrorClass = 'text-destructive text-xs font-medium';
+
+export const GENERATE_DRAFT_SOON_TOOLTIP =
+  'This feature will be available soon.';

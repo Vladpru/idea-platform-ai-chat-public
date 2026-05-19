@@ -1,15 +1,26 @@
+import { useState } from 'react';
+
 import { IdeaCreateForm } from '@/features/ideas';
 import { SparklesIcon } from '@/features/ideas/ui/SparklesIcon';
 import {
+  GENERATE_DRAFT_SOON_TOOLTIP,
   pageTitleClass,
   primaryBtnClass,
 } from '@/features/ideas/ui/idea-creation-classes';
+import { GenerateDraftModal } from '@/features/ideas/ui/modals/GenerateDraftModal';
 
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/shared/ui/tooltip';
 
 export function IdeaCreationPage() {
+  const [generateDraftOpen, setGenerateDraftOpen] = useState(false);
+
   return (
     <main className="bg-brand-neutral min-h-[calc(100vh-56px)] px-4 md:px-8 lg:px-12">
       <div className="mx-auto max-w-5xl">
@@ -22,14 +33,31 @@ export function IdeaCreationPage() {
                 achievement&rdquo; &mdash; W. Clement Stone.
               </p>
             </div>
-            <Button type="button" className={cn(primaryBtnClass, 'shrink-0')}>
-              <SparklesIcon className="size-5" />
-              Generate draft with AI
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex shrink-0">
+                  <Button
+                    type="button"
+                    className={cn(primaryBtnClass, 'w-full')}
+                    onClick={() => setGenerateDraftOpen(true)}
+                  >
+                    <SparklesIcon className="size-5" />
+                    Generate draft
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                {GENERATE_DRAFT_SOON_TOOLTIP}
+              </TooltipContent>
+            </Tooltip>
           </div>
           <IdeaCreateForm />
         </Card>
       </div>
+      <GenerateDraftModal
+        open={generateDraftOpen}
+        onOpenChange={setGenerateDraftOpen}
+      />
     </main>
   );
 }
