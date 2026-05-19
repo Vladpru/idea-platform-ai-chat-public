@@ -8,7 +8,12 @@ import { ConfigService } from '@nestjs/config';
 import { v2 as cloudinary } from 'cloudinary';
 import { Readable } from 'stream';
 
-const UPLOAD_FOLDER = 'avatars';
+const AVATAR_UPLOAD_FOLDER = 'avatars';
+
+type CloudinaryUploadResult = {
+  url: string;
+  publicId: string;
+};
 
 @Injectable()
 export class CloudinaryService {
@@ -34,18 +39,57 @@ export class CloudinaryService {
   }
 
   async uploadAvatar(file: Express.Multer.File): Promise<string> {
+    const { url } = await this.uploadImage(file, AVATAR_UPLOAD_FOLDER);
+    return url;
+  }
+
+  async uploadIdeaMainImage(
+    file: Express.Multer.File,
+    ideaId: string,
+  ): Promise<CloudinaryUploadResult> {
+    return this.uploadImage(file, `ideas/${ideaId}/main`);
+  }
+
+  async deleteByPublicId(publicId: string): Promise<void> {
+    if (!publicId?.trim()) {
+      this.logger.warn('Cloudinary delete skipped: empty publicId');
+      return;
+    }
+
+    try {
+      const res = (await cloudinary.uploader.destroy(publicId.trim(), {
+        resource_type: 'image',
+      })) as { result: string };
+
+      if (res.result !== 'ok' && res.result !== 'not found') {
+        this.logger.warn(
+          `Cloudinary destroy returned unexpected result for public_id=${publicId}: ${String(res.result)}`,
+        );
+      }
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      this.logger.warn(
+        `Cloudinary destroy failed for public_id=${publicId}: ${message}`,
+      );
+    }
+  }
+
+  private async uploadImage(
+    file: Express.Multer.File,
+    folder: string,
+  ): Promise<CloudinaryUploadResult> {
     if (!file?.buffer || !Buffer.isBuffer(file.buffer)) {
       throw new BadRequestException(
-        'Avatar upload requires an in-memory file buffer (use Multer memory storage)',
+        'Image upload requires an in-memory file buffer (use Multer memory storage)',
       );
     }
 
     const source = Readable.from(file.buffer);
 
-    return await new Promise<string>((resolve, reject) => {
+    return await new Promise<CloudinaryUploadResult>((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
-          folder: UPLOAD_FOLDER,
+          folder,
           resource_type: 'image',
         },
         (err, result) => {
@@ -58,6 +102,7 @@ export class CloudinaryService {
             return;
           }
           const secureUrl = result?.secure_url;
+          const publicId = result?.public_id;
           if (typeof secureUrl !== 'string' || secureUrl.length === 0) {
             reject(
               new InternalServerErrorException(
@@ -66,7 +111,15 @@ export class CloudinaryService {
             );
             return;
           }
-          resolve(secureUrl);
+          if (typeof publicId !== 'string' || publicId.length === 0) {
+            reject(
+              new InternalServerErrorException(
+                'Cloudinary upload succeeded but returned no public_id',
+              ),
+            );
+            return;
+          }
+          resolve({ url: secureUrl, publicId });
         },
       );
 
@@ -92,21 +145,7 @@ export class CloudinaryService {
       return;
     }
 
-    try {
-      const res = await cloudinary.uploader.destroy(publicId, {
-        resource_type: 'image',
-      });
-      if (res.result !== 'ok' && res.result !== 'not found') {
-        this.logger.warn(
-          `Cloudinary destroy returned unexpected result for public_id=${publicId}: ${String(res.result)}`,
-        );
-      }
-    } catch (e) {
-      const message = e instanceof Error ? e.message : String(e);
-      this.logger.warn(
-        `Cloudinary destroy failed for public_id=${publicId}: ${message}`,
-      );
-    }
+    await this.deleteByPublicId(publicId);
   }
 
   /**
