@@ -47,13 +47,17 @@ export function IdeaCreateForm() {
   const {
     form,
     imageInputRef,
-    imagePreviewUrl,
+    displayImageUrl,
     isDraggingImage,
     setIsDraggingImage,
     setMainImage,
     onSaveDraft,
     onPublish,
     canPublish,
+    isBusy,
+    isHydrating,
+    error,
+    resetCreateIdea,
   } = useIdeaCreateForm();
 
   const {
@@ -62,8 +66,26 @@ export function IdeaCreateForm() {
     formState: { errors },
   } = form;
 
+  const handleCancel = () => {
+    resetCreateIdea();
+    void navigate({ to: ROUTES.ideas });
+  };
+
   return (
     <form id={formId} className="space-y-8" onSubmit={onPublish} noValidate>
+      {error ? (
+        <p
+          role="alert"
+          className="text-destructive rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm"
+        >
+          {error}
+        </p>
+      ) : null}
+
+      {isHydrating ? (
+        <p className="text-brand-gray-600 text-sm">Loading draft...</p>
+      ) : null}
+
       <div className="grid gap-6 md:grid-cols-2">
         <FieldGroup>
           <FieldLabel htmlFor={`${formId}-stage`} required>
@@ -74,6 +96,7 @@ export function IdeaCreateForm() {
               id={`${formId}-stage`}
               className={cn(selectClass, 'pr-9')}
               aria-invalid={!!errors.stage}
+              disabled={isBusy}
               {...register('stage')}
             >
               {IDEA_STAGES.map(stage => (
@@ -105,6 +128,7 @@ export function IdeaCreateForm() {
           className="mt-2 bg-white"
           placeholder="Type in the name of the idea..."
           aria-invalid={!!errors.title}
+          disabled={isBusy}
           {...register('title')}
         />
         <FieldError message={errors.title?.message} />
@@ -122,6 +146,7 @@ export function IdeaCreateForm() {
           className={cn(textareaClass, 'mt-2')}
           placeholder="Enter a description of the idea..."
           aria-invalid={!!errors.description}
+          disabled={isBusy}
           {...register('description')}
         />
         <FieldError message={errors.description?.message} />
@@ -180,9 +205,9 @@ export function IdeaCreateForm() {
                   errors.mainImage && 'border-destructive',
                 )}
               >
-                {imagePreviewUrl ? (
+                {displayImageUrl ? (
                   <img
-                    src={imagePreviewUrl}
+                    src={displayImageUrl}
                     alt="Selected idea preview"
                     className="max-h-48 max-w-full rounded object-contain"
                   />
@@ -211,6 +236,7 @@ export function IdeaCreateForm() {
           id={`${formId}-tags`}
           className="mt-2"
           placeholder="Start typing to search tags, hit Enter to add"
+          disabled={isBusy}
           {...register('tags')}
         />
       </FieldGroup>
@@ -250,8 +276,9 @@ export function IdeaCreateForm() {
       <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
         <button
           type="button"
-          onClick={() => void navigate({ to: ROUTES.ideas })}
-          className="text-brand-accent hover:text-brand-accent/80 px-2 text-sm font-bold tracking-wide uppercase transition-colors"
+          onClick={handleCancel}
+          disabled={isBusy}
+          className="text-brand-accent hover:text-brand-accent/80 disabled:opacity-50 px-2 text-sm font-bold tracking-wide uppercase transition-colors"
         >
           Cancel
         </button>
@@ -260,13 +287,15 @@ export function IdeaCreateForm() {
           variant="outline"
           className={outlineBtnClass}
           onClick={onSaveDraft}
+          disabled={isBusy}
+          isLoading={isBusy}
         >
           Save as draft
         </Button>
         <Button
           type="submit"
           className={publishBtnClass}
-          disabled={!canPublish}
+          disabled={!canPublish || isBusy}
         >
           Publish idea
         </Button>
