@@ -9,7 +9,8 @@ import {
 import { SparklesIcon } from '@/features/ideas/ui/icons/SparklesIcon';
 import { useNavigate } from '@tanstack/react-router';
 import { ChevronDown, Upload } from 'lucide-react';
-import { useId, useRef } from 'react';
+import { useId } from 'react';
+import { useDropzone } from 'react-dropzone';
 import { Controller } from 'react-hook-form';
 
 import { ROUTES } from '@/shared/config/paths';
@@ -18,6 +19,7 @@ import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 
 import { FieldError, FieldGroup, FieldLabel } from './Fields';
+import { IdeaFilesField } from './IdeaFilesField';
 import ProblemSelect from './ProblemSelect';
 import { TagsInput } from './TagsInput';
 
@@ -45,15 +47,12 @@ function AiAssistLink({
 export function IdeaCreateForm() {
   const navigate = useNavigate();
   const formId = useId();
-  const filesInputRef = useRef<HTMLInputElement>(null);
 
   const {
     form,
-    imageInputRef,
     displayImageUrl,
-    isDraggingImage,
-    setIsDraggingImage,
     setMainImage,
+    clearMainImage,
     onSaveDraft,
     onPublish,
     canPublish,
@@ -68,6 +67,16 @@ export function IdeaCreateForm() {
     control,
     formState: { errors },
   } = form;
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    accept: { 'image/*': [] },
+    maxFiles: 1,
+    disabled: isBusy,
+    onDrop: acceptedFiles => {
+      const file = acceptedFiles[0];
+      if (file) setMainImage(file);
+    },
+  });
 
   const handleCancel = () => {
     resetCreateIdea();
@@ -168,51 +177,22 @@ export function IdeaCreateForm() {
           name="mainImage"
           control={control}
           render={() => (
-            <>
-              <input
-                ref={imageInputRef}
-                type="file"
-                accept="image/*"
-                className="sr-only"
-                onChange={event => {
-                  const file = event.target.files?.[0] ?? null;
-                  setMainImage(file);
-                }}
-              />
+            <div className="flex flex-col">
               <div
-                role="button"
-                tabIndex={0}
-                onKeyDown={event => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    imageInputRef.current?.click();
-                  }
-                }}
-                onClick={() => imageInputRef.current?.click()}
-                onDragOver={event => {
-                  event.preventDefault();
-                  setIsDraggingImage(true);
-                }}
-                onDragLeave={() => setIsDraggingImage(false)}
-                onDrop={event => {
-                  event.preventDefault();
-                  setIsDraggingImage(false);
-                  const file = event.dataTransfer.files?.[0];
-                  if (file?.type.startsWith('image/')) {
-                    setMainImage(file);
-                  }
-                }}
+                {...getRootProps()}
                 className={cn(
-                  'border-brand-gray-200 hover:border-brand-dark-blue/40 focus-visible:ring-ring mt-2 flex min-h-[180px] cursor-pointer flex-col items-center justify-center rounded-md border border-dashed bg-white px-4 py-10 text-center transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-                  isDraggingImage && 'border-brand-dark-blue bg-brand-gray-100',
+                  'border-brand-gray-200 hover:border-brand-dark-blue/40 focus-visible:ring-ring mt-2 flex min-h-[180px] cursor-pointer flex-col items-center justify-center rounded-md border border-dashed bg-white px-4 py-4 text-center transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+                  isDragActive && 'border-brand-dark-blue bg-brand-gray-100',
                   errors.mainImage && 'border-destructive',
+                  isBusy && 'cursor-not-allowed opacity-50',
                 )}
               >
+                <input {...getInputProps()} />
                 {displayImageUrl ? (
                   <img
                     src={displayImageUrl}
                     alt="Selected idea preview"
-                    className="max-h-48 max-w-full rounded object-contain"
+                    className="max-h-80 max-w-full rounded object-contain"
                   />
                 ) : (
                   <>
@@ -227,7 +207,17 @@ export function IdeaCreateForm() {
                   </>
                 )}
               </div>
-            </>
+              {displayImageUrl ? (
+                <button
+                  type="button"
+                  onClick={clearMainImage}
+                  disabled={isBusy}
+                  className="text-brand-dark-blue hover:text-brand-dark-blue/80 mt-2 flex justify-end text-sm font-bold tracking-wide transition-colors disabled:opacity-50"
+                >
+                  Delete image
+                </button>
+              ) : null}
+            </div>
           )}
         />
         <FieldError message={errors.mainImage?.message} />
@@ -253,34 +243,8 @@ export function IdeaCreateForm() {
 
       <FieldGroup>
         <FieldLabel>Files</FieldLabel>
-        <Controller
-          name="files"
-          control={control}
-          render={({ field }) => (
-            <>
-              <input
-                ref={filesInputRef}
-                type="file"
-                multiple
-                className="sr-only"
-                onChange={event => {
-                  const list = event.target.files;
-                  field.onChange(list ? Array.from(list) : []);
-                }}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="border-brand-gray-200 text-brand-dark-blue mt-2 size-11 rounded-md"
-                aria-label="Upload files"
-                onClick={() => filesInputRef.current?.click()}
-              >
-                <Upload className="size-5" aria-hidden />
-              </Button>
-            </>
-          )}
-        />
+        <IdeaFilesField control={control} disabled={isBusy} />
+        <FieldError message={errors.files?.message} />
       </FieldGroup>
 
       <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
@@ -288,7 +252,7 @@ export function IdeaCreateForm() {
           type="button"
           onClick={handleCancel}
           disabled={isBusy}
-          className="text-brand-accent hover:text-brand-accent/80 px-2 text-sm font-bold tracking-wide uppercase transition-colors disabled:opacity-50"
+          className="text-brand-orange hover:text-brand-orange-hover px-2 text-sm font-bold tracking-wide uppercase transition-colors disabled:opacity-50"
         >
           Cancel
         </button>
@@ -302,13 +266,13 @@ export function IdeaCreateForm() {
         >
           Save as draft
         </Button>
-        <Button
+        <button
           type="submit"
           className={publishBtnClass}
-          disabled={!canPublish || isBusy}
+          disabled={!canPublish}
         >
           Publish idea
-        </Button>
+        </button>
       </div>
     </form>
   );

@@ -3,7 +3,7 @@ import { useSaveIdeaDraftMutation } from '@/features/ideas/hooks/use-idea-mutati
 import {
   type IdeaCreateFormValues,
   ideaCreateDraftSchema,
-  ideaCreateSchema,
+  validateForPublish,
 } from '@/features/ideas/lib/create-idea';
 import { useCreateIdeaStore } from '@/features/ideas/store/create-idea.store';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -32,7 +32,7 @@ export function useIdeaCreateForm() {
   const initializedRef = useRef(false);
 
   const form = useForm<IdeaCreateFormValues>({
-    resolver: zodResolver(ideaCreateSchema) as Resolver<IdeaCreateFormValues>,
+    resolver: zodResolver(ideaCreateDraftSchema) as Resolver<IdeaCreateFormValues>,
     defaultValues: getFormValues(),
     mode: 'onChange',
   });
@@ -99,14 +99,28 @@ export function useIdeaCreateForm() {
       });
 
       form.setValue('mainImage', file ?? undefined, {
-        shouldValidate: true,
+        shouldValidate: file !== null,
         shouldDirty: true,
       });
+
+      if (!file) {
+        form.clearErrors('mainImage');
+      }
 
       setLocalFiles({ mainImage: file });
     },
     [form, setLocalFiles],
   );
+
+  const clearMainImage = useCallback(() => {
+    setMainImage(null);
+    if (imageInputRef.current) {
+      imageInputRef.current.value = '';
+    }
+    useCreateIdeaStore.setState(state => ({
+      remoteMedia: state.remoteMedia.filter(media => media.kind !== 'main'),
+    }));
+  }, [setMainImage]);
 
   useEffect(() => {
     return () => {
@@ -121,12 +135,35 @@ export function useIdeaCreateForm() {
     saveDraftMutation.mutate(values);
   };
 
-  const onPublish = form.handleSubmit((values: IdeaCreateFormValues) => {
+  const onPublish = () => {
+    const values = form.getValues();
+    const hasRemoteMainImage = useCreateIdeaStore
+      .getState()
+      .remoteMedia.some(media => media.kind === 'main');
+    const result = validateForPublish(values, { hasRemoteMainImage });
+
+    if (!result.success) {
+      for (const issue of result.error.issues) {
+        const field = issue.path[0];
+        if (typeof field === 'string') {
+          form.setError(field as keyof IdeaCreateFormValues, {
+            type: 'manual',
+            message: issue.message,
+          });
+        }
+      }
+      return;
+    }
+
     syncFromForm(values);
     // TODO: wire publish API
-  });
+  };
 
   const isBusy = isHydrating || isSaving || saveDraftMutation.isPending;
+  const watchedValues = form.watch();
+  const canPublish = validateForPublish(watchedValues, {
+    hasRemoteMainImage: remoteMedia.some(media => media.kind === 'main'),
+  }).success;
 
   return {
     form,
@@ -135,9 +172,10 @@ export function useIdeaCreateForm() {
     isDraggingImage,
     setIsDraggingImage,
     setMainImage,
+    clearMainImage,
     onSaveDraft,
     onPublish,
-    canPublish: form.formState.isValid,
+    canPublish,
     isBusy,
     isHydrating,
     error,

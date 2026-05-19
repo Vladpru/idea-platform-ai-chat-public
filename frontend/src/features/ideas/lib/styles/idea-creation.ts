@@ -19,7 +19,7 @@ export const outlineBtnClass =
   'border-brand-dark-blue text-brand-dark-blue hover:bg-brand-dark-blue/10 h-10 rounded-sm border bg-white px-5 text-xs font-bold uppercase tracking-wide sm:text-sm';
 
 export const publishBtnClass =
-  'bg-brand-light-blue text-brand-white h-10 rounded-sm px-5 text-xs font-bold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm';
+  'bg-brand-dark-blue hover:bg-brand-dark-blue/90 cursor-pointer text-brand-white h-10 rounded-sm px-5 text-xs font-bold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm';
 
 export const fieldErrorClass = 'text-destructive text-xs font-medium';
 

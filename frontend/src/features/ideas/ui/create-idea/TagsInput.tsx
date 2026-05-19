@@ -40,7 +40,7 @@ export function TagsInput({
   };
 
   const removeTag = (tag: string) => {
-    commitTags(tags.filter(existing => existing !== tag));
+    commitTags(tags.filter(existingTag => existingTag !== tag));
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -66,7 +66,7 @@ export function TagsInput({
       )}
     >
       <div
-        className="flex min-w-0 flex-1 flex-nowrap items-center gap-1.5 overflow-x-auto overflow-y-hidden [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex min-w-0 flex-1 scrollbar-none flex-nowrap items-center gap-1.5 overflow-x-auto overflow-y-hidden [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
         onWheel={event => {
           event.currentTarget.scrollLeft += event.deltaY;
         }}
@@ -74,13 +74,13 @@ export function TagsInput({
         {tags.map(tag => (
           <span
             key={tag}
-            className="bg-brand-gray-100 text-brand-gray-900 inline-flex shrink-0 items-center gap-1 rounded-full py-0.5 pr-1 pl-2.5 text-xs whitespace-nowrap"
+            className="bg-brand-gray-100 text-brand-gray-900 inline-flex shrink-0 cursor-default items-center gap-1 rounded-full py-0.5 pr-1 pl-2.5 text-xs whitespace-nowrap"
+            onClick={() => removeTag(tag)}
           >
             <span>{tag}</span>
             <button
               type="button"
               disabled={disabled}
-              onClick={() => removeTag(tag)}
               className="text-brand-gray-600 hover:text-brand-gray-900 inline-flex size-4 shrink-0 items-center justify-center rounded-full transition-colors disabled:pointer-events-none"
               aria-label={`Remove tag ${tag}`}
             >

@@ -65,6 +65,8 @@
   --color-brand-gray-200: var(--brand-gray-200);
   --color-brand-gray-100: var(--brand-gray-100);
   --color-brand-hover-red-700: var(--brand-hover-red-700);
+  --color-brand-orange: var(--brand-orange);
+  --color-brand-orange-hover: var(--brand-orange-hover);
 
   --color-idea-ideation: var(--idea-ideation);
   --color-idea-prototyping: var(--idea-prototyping);
@@ -114,6 +116,8 @@
   --brand-dark-blue: #003057;
   --brand-neutral: #f9f9f9;
   --brand-hover-red-700: #b40500;
+  --brand-orange: #e17100;
+  --brand-orange-hover: #e17000aa;
 
   /* IDEA STEP status */
   --idea-ideation: #ffa900;
