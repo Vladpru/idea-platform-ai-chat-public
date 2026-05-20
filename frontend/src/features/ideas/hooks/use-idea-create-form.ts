@@ -5,7 +5,13 @@ import {
   ideaCreateDraftSchema,
   validateForPublish,
 } from '@/features/ideas/lib/create-idea';
+import {
+  type MockProblem,
+  formatProblemIds,
+  parseProblemIds,
+} from '@/features/ideas/lib/problems';
 import { useCreateIdeaStore } from '@/features/ideas/store/create-idea.store';
+import type { ProblemDraft } from '@/features/problems';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { type Resolver, useForm } from 'react-hook-form';
@@ -16,8 +22,8 @@ export function useIdeaCreateForm() {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [isDraggingImage, setIsDraggingImage] = useState(false);
-  const [hasStoreHydrated, setHasStoreHydrated] = useState(
-    () => useCreateIdeaStore.persist.hasHydrated(),
+  const [hasStoreHydrated, setHasStoreHydrated] = useState(() =>
+    useCreateIdeaStore.persist.hasHydrated(),
   );
 
   const isHydrating = useCreateIdeaStore(state => state.isHydrating);
@@ -30,9 +36,13 @@ export function useIdeaCreateForm() {
 
   const saveDraftMutation = useSaveIdeaDraftMutation();
   const initializedRef = useRef(false);
+  const formSyncEnabledRef = useRef(false);
+  const [createdProblems, setCreatedProblems] = useState<MockProblem[]>([]);
 
   const form = useForm<IdeaCreateFormValues>({
-    resolver: zodResolver(ideaCreateDraftSchema) as Resolver<IdeaCreateFormValues>,
+    resolver: zodResolver(
+      ideaCreateDraftSchema,
+    ) as Resolver<IdeaCreateFormValues>,
     defaultValues: getFormValues(),
     mode: 'onChange',
   });
@@ -78,6 +88,14 @@ export function useIdeaCreateForm() {
       }
 
       form.reset(useCreateIdeaStore.getState().getFormValues());
+
+      const restoredMainImage =
+        useCreateIdeaStore.getState().localFiles.mainImage;
+      if (restoredMainImage) {
+        setImagePreviewUrl(URL.createObjectURL(restoredMainImage));
+      }
+
+      formSyncEnabledRef.current = true;
     };
 
     void init();
@@ -85,6 +103,7 @@ export function useIdeaCreateForm() {
 
   useEffect(() => {
     const subscription = form.watch(values => {
+      if (!formSyncEnabledRef.current) return;
       syncFromForm(values as IdeaCreateFormValues);
     });
 
@@ -128,12 +147,38 @@ export function useIdeaCreateForm() {
     };
   }, [imagePreviewUrl]);
 
-  const onSaveDraft = () => {
+  const onSaveDraft = async (): Promise<boolean> => {
     const values = form.getValues();
     const result = ideaCreateDraftSchema.safeParse(values);
-    if (!result.success) return;
-    saveDraftMutation.mutate(values);
+    if (!result.success) return false;
+
+    try {
+      await saveDraftMutation.mutateAsync(values);
+      useCreateIdeaStore.getState().reset();
+      return true;
+    } catch {
+      return false;
+    }
   };
+
+  const onProblemDraftCreated = useCallback(
+    (problem: ProblemDraft) => {
+      setCreatedProblems(prev => {
+        if (prev.some(entry => entry.id === problem.id)) return prev;
+        return [{ id: problem.id, label: problem.title }, ...prev];
+      });
+
+      const currentIds = parseProblemIds(form.getValues('problemId'));
+      if (currentIds.includes(problem.id)) return;
+
+      form.setValue(
+        'problemId',
+        formatProblemIds([...currentIds, problem.id]),
+        { shouldValidate: true, shouldDirty: true },
+      );
+    },
+    [form],
+  );
 
   const onPublish = () => {
     const values = form.getValues();
@@ -167,6 +212,8 @@ export function useIdeaCreateForm() {
 
   return {
     form,
+    createdProblems,
+    onProblemDraftCreated,
     imageInputRef,
     displayImageUrl,
     isDraggingImage,

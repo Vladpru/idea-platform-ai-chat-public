@@ -35,6 +35,11 @@ type PublishValidationError = {
   message: string;
 };
 
+type IdeaTagPayload = {
+  tagIds?: string[];
+  tagLabels?: string[];
+};
+
 const IDEA_NOT_FOUND = 'Idea not found';
 
 const ALLOWED_UPLOAD_STATUSES: IdeaStatus[] = [
@@ -172,7 +177,10 @@ export class IdeaService {
       await this.cleanupOrphanedDraftProblems(tx, authorId, idsToRemove);
     }
 
-    if (dto.tagIds !== undefined) {
+    if (dto.tagIds !== undefined || 'tagLabels' in dto) {
+      const incomingTagIds =
+        dto.tagIds ?? (await this.resolveTagIdsByLabels(tx, dto));
+
       const currentTagLinks = await tx.ideaTag.findMany({
         where: { ideaId: id },
         select: { tagId: true },
@@ -180,9 +188,9 @@ export class IdeaService {
       const previousTagIds = currentTagLinks.map(l => l.tagId);
 
       const tagsToRemove = previousTagIds.filter(
-        tagId => !dto.tagIds!.includes(tagId),
+        tagId => !incomingTagIds.includes(tagId),
       );
-      const tagsToAdd = dto.tagIds.filter(
+      const tagsToAdd = incomingTagIds.filter(
         tagId => !previousTagIds.includes(tagId),
       );
 
@@ -229,16 +237,149 @@ export class IdeaService {
       );
     }
 
-    const idea = await this.prisma.idea.create({
-      data: {
-        authorId,
-        status: IdeaStatus.DRAFT,
-        ...(dto.stage !== undefined ? { stage: dto.stage } : {}),
-      },
-      include: IDEA_FORM_INCLUDE,
+    const idea = await this.prisma.$transaction(async tx => {
+      const created = await tx.idea.create({
+        data: {
+          authorId,
+          status: IdeaStatus.DRAFT,
+          ...(dto.stage !== undefined ? { stage: dto.stage } : {}),
+          ...(dto.title !== undefined ? { title: dto.title } : {}),
+          ...(dto.description !== undefined ? { description: dto.description } : {}),
+        },
+        include: IDEA_FORM_INCLUDE,
+      });
+
+      await this.applyIdeaUpdates(tx, created.id, authorId, dto);
+
+      const result = await tx.idea.findUnique({
+        where: { id: created.id },
+        include: IDEA_FORM_INCLUDE,
+      });
+
+      if (!result) {
+        throw new NotFoundException(IDEA_NOT_FOUND);
+      }
+
+      return result;
     });
 
     return toIdeaFormResponse(idea);
+  }
+
+  private async resolveTagIdsByLabels(
+    tx: Prisma.TransactionClient,
+    dto: IdeaTagPayload,
+  ): Promise<string[]> {
+    if (dto.tagLabels === undefined) {
+      return [];
+    }
+
+    const normalizedLabels = [...new Set(dto.tagLabels.map(label => label.trim()))]
+      .filter(Boolean)
+      .slice(0, 20);
+
+    if (normalizedLabels.length === 0) {
+      return [];
+    }
+
+    const existing = await tx.tag.findMany({
+      where: { name: { in: normalizedLabels } },
+      select: { id: true, name: true },
+    });
+    const existingByName = new Map(existing.map(tag => [tag.name, tag.id]));
+    const missingNames = normalizedLabels.filter(name => !existingByName.has(name));
+
+    if (missingNames.length > 0) {
+      const inserted = await Promise.all(
+        missingNames.map(name =>
+          tx.tag.upsert({
+            where: { name },
+            update: {},
+            create: { name, label: name },
+            select: { id: true, name: true },
+          }),
+        ),
+      );
+
+      for (const tag of inserted) {
+        existingByName.set(tag.name, tag.id);
+      }
+    }
+
+    return normalizedLabels
+      .map(name => existingByName.get(name))
+      .filter((tagId): tagId is string => Boolean(tagId));
+  }
+
+  async uploadAttachment(
+    id: string,
+    authorId: string,
+    file: Express.Multer.File,
+  ): Promise<IdeaFormResponse> {
+    const idea = await this.prisma.idea.findFirst({
+      where: { id, authorId },
+      select: { id: true, status: true },
+    });
+
+    if (!idea) {
+      throw new NotFoundException(IDEA_NOT_FOUND);
+    }
+
+    if (!ALLOWED_UPLOAD_STATUSES.includes(idea.status)) {
+      throw new BadRequestException(
+        'Attachment upload is only allowed for draft or published ideas',
+      );
+    }
+
+    const uploaded = await this.cloudinary.uploadIdeaAttachment(file, id);
+
+    try {
+      const existingCount = await this.prisma.ideaMedia.count({
+        where: { ideaId: id, kind: MediaKind.ATTACHMENT },
+      });
+
+      await this.prisma.ideaMedia.create({
+        data: {
+          ideaId: id,
+          kind: MediaKind.ATTACHMENT,
+          provider: MediaProvider.CLOUDINARY,
+          url: uploaded.url,
+          publicId: uploaded.publicId,
+          mimeType: file.mimetype,
+          byteSize: file.size,
+          originalFilename: file.originalname || 'attachment',
+          sortOrder: existingCount,
+        },
+      });
+    } catch (err) {
+      await this.cloudinary.deleteByPublicId(uploaded.publicId).catch(() => {});
+      throw err;
+    }
+
+    return this.findByIdSmart(id, authorId);
+  }
+
+  async deleteMedia(id: string, mediaId: string, authorId: string): Promise<void> {
+    const idea = await this.prisma.idea.findFirst({
+      where: { id, authorId },
+      select: { id: true },
+    });
+
+    if (!idea) {
+      throw new NotFoundException(IDEA_NOT_FOUND);
+    }
+
+    const media = await this.prisma.ideaMedia.findFirst({
+      where: { id: mediaId, ideaId: id },
+      select: { id: true, publicId: true },
+    });
+
+    if (!media) {
+      throw new NotFoundException('Media not found');
+    }
+
+    await this.prisma.ideaMedia.delete({ where: { id: mediaId } });
+    void this.cloudinary.deleteByPublicId(media.publicId);
   }
   async findAllPublic(query: GetIdeasQueryDto): Promise<IdeasFeedResponse> {
     const page = query.page ?? 1;

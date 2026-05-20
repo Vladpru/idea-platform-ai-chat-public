@@ -7,9 +7,11 @@ import {
   createIdeaDraft,
   deleteIdea,
   deleteIdeaMedia,
+  fetchIdeaById,
   publishIdea,
   updateIdea,
   updateIdeaDraft,
+  uploadIdeaMainImage,
   uploadIdeaMedia,
 } from '@/features/ideas/api/ideas.api';
 import {
@@ -53,11 +55,23 @@ export function useSaveIdeaDraftMutation() {
       const payload = formValuesToSavePayload(values);
       const ideaId = store.draft.id;
 
-      if (ideaId) {
-        return updateIdeaDraft(ideaId, payload);
+      const idea = ideaId
+        ? await updateIdeaDraft(ideaId, payload)
+        : await createIdeaDraft(payload);
+
+      if (values.mainImage) {
+        await uploadIdeaMainImage(idea.id, values.mainImage);
       }
 
-      return createIdeaDraft(payload);
+      if (values.files && values.files.length > 0) {
+        await Promise.all(
+          values.files.map(file =>
+            uploadIdeaMedia(idea.id, { file, kind: 'attachment' }),
+          ),
+        );
+      }
+
+      return fetchIdeaById(idea.id);
     },
     onMutate: () => {
       useCreateIdeaStore.getState().setSaving(true);

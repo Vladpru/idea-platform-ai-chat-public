@@ -1,23 +1,29 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
+  Query,
   Req,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiBody,
   ApiCreatedResponse,
+  ApiOkResponse,
   ApiOperation,
+  ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
 
+import { ProblemStatus } from '../../generated/prisma/client';
 import { JwtAuth } from '../shared/decorators/jwt-auth.decorator';
 import { CreateProblemDraftDto } from './dto/create-problem-draft.dto';
+import { GetMyProblemsQueryDto } from './dto/get-my-problems-query.dto';
 import { ProblemService } from './problem.service';
 
 type AuthenticatedRequest = Request & { user: { id: string } };
@@ -26,6 +32,20 @@ type AuthenticatedRequest = Request & { user: { id: string } };
 @Controller('problems')
 export class ProblemController {
   constructor(private readonly problemService: ProblemService) {}
+
+  @Get('mine')
+  @JwtAuth()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'List current user problems' })
+  @ApiQuery({ name: 'status', required: false, enum: ProblemStatus })
+  @ApiOkResponse({ description: 'All problems for the current user' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  findMine(
+    @Query() query: GetMyProblemsQueryDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.problemService.findMine(req.user.id, query);
+  }
 
   @Post('draft')
   @JwtAuth()

@@ -8,11 +8,11 @@ export const IDEA_STATUS = {
 export type IdeaStatus = (typeof IDEA_STATUS)[keyof typeof IDEA_STATUS];
 
 export const API_STAGE = {
-  IDEATION: 'IDEATION',
-  PROTOTYPING: 'PROTOTYPING',
-  COMPLETED: 'COMPLETED',
-  PAUSED: 'PAUSED',
-  ARCHIVED: 'ARCHIVED',
+  IDEATION: 'ideation',
+  PROTOTYPING: 'prototyping',
+  COMPLETED: 'completed',
+  PAUSED: 'paused',
+  ARCHIVED: 'archived',
 } as const;
 
 export type ApiStage = (typeof API_STAGE)[keyof typeof API_STAGE];

@@ -14,7 +14,7 @@ import { Stage } from '../enum/stage.enum';
 
 /**
  * Partial metadata update for a draft idea.
- * When `problemIds` or `tagIds` are sent, they replace existing links (replace semantics).
+ * When problem/tag fields are sent, they replace existing links (replace semantics).
  */
 export class UpdateIdeaDraftDto {
   @ApiPropertyOptional({ enum: Stage, example: Stage.IDEATION })
@@ -66,4 +66,16 @@ export class UpdateIdeaDraftDto {
   @ArrayMaxSize(20)
   @IsUUID('4', { each: true })
   tagIds?: string[];
+
+  @ApiPropertyOptional({
+    type: [String],
+    description: 'Tag labels; replaces current links when provided',
+    maxItems: 20,
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(20)
+  @IsString({ each: true })
+  @MaxLength(50, { each: true })
+  tagLabels?: string[];
 }

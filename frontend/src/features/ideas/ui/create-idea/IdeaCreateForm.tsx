@@ -18,10 +18,14 @@ import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 
+import DeleteImageButton from './DeleteImageButton';
 import { FieldError, FieldGroup, FieldLabel } from './Fields';
 import { IdeaFilesField } from './IdeaFilesField';
 import ProblemSelect from './ProblemSelect';
 import { TagsInput } from './TagsInput';
+
+const ALLOWED_MAIN_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
+const INVALID_MAIN_IMAGE_TYPE_MESSAGE = 'Main image must be PNG, JPEG, or WEBP';
 
 function AiAssistLink({
   children,
@@ -50,6 +54,8 @@ export function IdeaCreateForm() {
 
   const {
     form,
+    createdProblems,
+    onProblemDraftCreated,
     displayImageUrl,
     setMainImage,
     clearMainImage,
@@ -69,17 +75,42 @@ export function IdeaCreateForm() {
   } = form;
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    accept: { 'image/*': [] },
+    accept: {
+      'image/png': [],
+      'image/jpeg': [],
+      'image/webp': [],
+    },
     maxFiles: 1,
     disabled: isBusy,
     onDrop: acceptedFiles => {
       const file = acceptedFiles[0];
-      if (file) setMainImage(file);
+      if (!file) return;
+      if (!ALLOWED_MAIN_IMAGE_TYPES.includes(file.type)) {
+        form.setError('mainImage', {
+          type: 'manual',
+          message: INVALID_MAIN_IMAGE_TYPE_MESSAGE,
+        });
+        return;
+      }
+      form.clearErrors('mainImage');
+      setMainImage(file);
+    },
+    onDropRejected: () => {
+      form.setError('mainImage', {
+        type: 'manual',
+        message: INVALID_MAIN_IMAGE_TYPE_MESSAGE,
+      });
     },
   });
 
   const handleCancel = () => {
     resetCreateIdea();
+    void navigate({ to: ROUTES.ideas });
+  };
+
+  const handleSaveDraft = async () => {
+    const isSaved = await onSaveDraft();
+    if (!isSaved) return;
     void navigate({ to: ROUTES.ideas });
   };
 
@@ -125,7 +156,13 @@ export function IdeaCreateForm() {
           <FieldError message={errors.stage?.message} />
         </FieldGroup>
 
-        <ProblemSelect formId={formId} control={control} errors={errors} />
+        <ProblemSelect
+          formId={formId}
+          control={control}
+          errors={errors}
+          createdProblems={createdProblems}
+          onProblemDraftCreated={onProblemDraftCreated}
+        />
       </div>
 
       <FieldGroup>
@@ -185,15 +222,27 @@ export function IdeaCreateForm() {
                   isDragActive && 'border-brand-dark-blue bg-brand-gray-100',
                   errors.mainImage && 'border-destructive',
                   isBusy && 'cursor-not-allowed opacity-50',
+                  displayImageUrl && 'relative overflow-hidden p-0',
                 )}
               >
                 <input {...getInputProps()} />
                 {displayImageUrl ? (
-                  <img
-                    src={displayImageUrl}
-                    alt="Selected idea preview"
-                    className="max-h-80 max-w-full rounded object-contain"
-                  />
+                  <>
+                    <img
+                      src={displayImageUrl}
+                      alt="Selected idea preview"
+                      className="max-h-80 w-full rounded object-contain p-2"
+                    />
+                    <DeleteImageButton
+                      onClick={(
+                        event: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+                      ) => {
+                        event.stopPropagation();
+                        clearMainImage();
+                      }}
+                      isBusy={isBusy}
+                    />
+                  </>
                 ) : (
                   <>
                     <Upload
@@ -207,16 +256,6 @@ export function IdeaCreateForm() {
                   </>
                 )}
               </div>
-              {displayImageUrl ? (
-                <button
-                  type="button"
-                  onClick={clearMainImage}
-                  disabled={isBusy}
-                  className="text-brand-dark-blue hover:text-brand-dark-blue/80 mt-2 flex justify-end text-sm font-bold tracking-wide transition-colors disabled:opacity-50"
-                >
-                  Delete image
-                </button>
-              ) : null}
             </div>
           )}
         />
@@ -260,7 +299,7 @@ export function IdeaCreateForm() {
           type="button"
           variant="outline"
           className={outlineBtnClass}
-          onClick={onSaveDraft}
+          onClick={() => void handleSaveDraft()}
           disabled={isBusy}
           isLoading={isBusy}
         >

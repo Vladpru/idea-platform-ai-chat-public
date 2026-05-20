@@ -25,3 +25,11 @@ export {
   ideaApiToDraft,
   ideaApiToRemoteMedia,
 } from './mappers';
+export {
+  EMPTY_PERSISTED_LOCAL_FILES,
+  getLocalFilesKey,
+  localFilesToPersisted,
+  persistedToLocalFiles,
+  type PersistedFile,
+  type PersistedLocalFiles,
+} from './file-persistence';

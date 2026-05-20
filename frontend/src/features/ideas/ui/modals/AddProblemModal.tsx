@@ -4,6 +4,10 @@ import {
   type AddProblemValues,
 } from '@/features/ideas/lib/problems';
 import {
+  type ProblemDraft,
+  useCreateProblemDraftMutation,
+} from '@/features/problems';
+import {
   fieldLabelClass,
   primaryBtnClass,
   publishBtnClass,
@@ -38,9 +42,14 @@ const SAVE_TOOLTIP =
 type AddProblemModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onCreated?: (problem: ProblemDraft) => void;
 };
 
-export function AddProblemModal({ open, onOpenChange }: AddProblemModalProps) {
+export function AddProblemModal({
+  open,
+  onOpenChange,
+  onCreated,
+}: AddProblemModalProps) {
   const {
     register,
     handleSubmit,
@@ -52,6 +61,8 @@ export function AddProblemModal({ open, onOpenChange }: AddProblemModalProps) {
     mode: 'onChange',
   });
 
+  const createDraftMutation = useCreateProblemDraftMutation();
+
   useEffect(() => {
     if (!open) {
       reset(addProblemDefaultValues);
@@ -62,9 +73,19 @@ export function AddProblemModal({ open, onOpenChange }: AddProblemModalProps) {
     onOpenChange(false);
   };
 
-  const onSubmit = handleSubmit(() => {
-    // TODO: create problem and link to idea
-    handleClose();
+  const onSubmit = handleSubmit(values => {
+    createDraftMutation.mutate(
+      {
+        title: values.title.trim(),
+        description: values.description.trim(),
+      },
+      {
+        onSuccess: problem => {
+          onCreated?.(problem);
+          onOpenChange(false);
+        },
+      },
+    );
   });
 
   return (
@@ -143,8 +164,12 @@ export function AddProblemModal({ open, onOpenChange }: AddProblemModalProps) {
               </Button>
 
               {isValid ? (
-                <Button type="submit" className={primaryBtnClass}>
-                  Save &amp; link problem
+                <Button
+                  type="submit"
+                  className={primaryBtnClass}
+                  disabled={createDraftMutation.isPending}
+                >
+                  {createDraftMutation.isPending ? 'Saving…' : 'Save & link problem'}
                 </Button>
               ) : (
                 <Tooltip>
