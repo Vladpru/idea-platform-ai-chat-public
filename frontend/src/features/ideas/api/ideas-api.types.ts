@@ -14,8 +14,7 @@ export type IdeasListResponse = {
   limit: number;
 };
 
-export type CreateIdeaPayload = {
-  status?: IdeaStatus;
+export type IdeaWritePayload = {
   stage?: ApiStage | null;
   title?: string | null;
   description?: string | null;
@@ -23,7 +22,11 @@ export type CreateIdeaPayload = {
   tagLabels?: string[];
 };
 
-export type UpdateIdeaPayload = Partial<CreateIdeaPayload>;
+export type CreateIdeaPayload = IdeaWritePayload & {
+  isPublished: boolean;
+};
+
+export type UpdateIdeaPayload = IdeaWritePayload;
 
 /** Alias used by draft save flow. */
 export type SaveIdeaDraftPayload = UpdateIdeaPayload;

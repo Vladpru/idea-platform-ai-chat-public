@@ -2,14 +2,12 @@ import type {
   CreateIdeaPayload,
   IdeasListParams,
   IdeasListResponse,
-  PublishIdeaPayload,
   SaveIdeaDraftPayload,
   UpdateIdeaPayload,
   UploadIdeaMediaPayload,
 } from '@/features/ideas/api/ideas-api.types';
 import { IDEAS_ROUTES } from '@/features/ideas/api/ideas.routes';
 import type { IdeaApi, IdeaMediaItem } from '@/features/ideas/model/idea.types';
-import { IDEA_STATUS } from '@/features/ideas/model/idea.types';
 
 import { api } from '@/shared/api/http';
 
@@ -35,7 +33,13 @@ export async function createIdea(payload: CreateIdeaPayload): Promise<IdeaApi> {
 export async function createIdeaDraft(
   payload: SaveIdeaDraftPayload,
 ): Promise<IdeaApi> {
-  return createIdea({ status: IDEA_STATUS.DRAFT, ...payload });
+  return createIdea({ isPublished: false, ...payload });
+}
+
+export async function createPublishedIdea(
+  payload: SaveIdeaDraftPayload,
+): Promise<IdeaApi> {
+  return createIdea({ isPublished: true, ...payload });
 }
 
 export async function updateIdea(
@@ -53,14 +57,8 @@ export async function updateIdeaDraft(
   return updateIdea(ideaId, payload);
 }
 
-export async function publishIdea(
-  ideaId: string,
-  payload: PublishIdeaPayload,
-): Promise<IdeaApi> {
-  const { data } = await api.post<IdeaApi>(
-    IDEAS_ROUTES.publish(ideaId),
-    payload,
-  );
+export async function publishIdea(ideaId: string): Promise<IdeaApi> {
+  const { data } = await api.post<IdeaApi>(IDEAS_ROUTES.publish(ideaId));
   return data;
 }
 

@@ -17,7 +17,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateIdeaDto } from './dto/create-idea.dto';
 import { GetIdeasQueryDto } from './dto/get-ideas-query.dto';
 import { UpdateIdeaDraftDto } from './dto/update-idea-draft.dto';
-import { UpdatePublishedIdeaDto } from './dto/update-published-idea.dto';
 import { IDEA_FORM_INCLUDE } from './idea.constants';
 import { type IdeaFormRecord, toIdeaFormResponse } from './idea.mapper';
 import type {
@@ -114,7 +113,7 @@ export class IdeaService {
     tx: Prisma.TransactionClient,
     id: string,
     authorId: string,
-    dto: UpdateIdeaDraftDto | UpdatePublishedIdeaDto,
+    dto: UpdateIdeaDraftDto,
   ): Promise<void> {
     const scalarData: {
       stage?: UpdateIdeaDraftDto['stage'];
@@ -223,18 +222,22 @@ export class IdeaService {
     }
   }
 
-  async createDraft(
+  async create(
     authorId: string,
     dto: CreateIdeaDto,
   ): Promise<IdeaFormResponse> {
-    const currentDraftsCount = await this.prisma.idea.count({
-      where: { authorId, status: IdeaStatus.DRAFT },
-    });
+    const { isPublished, ...updateDto } = dto;
 
-    if (currentDraftsCount >= MAX_DRAFTS_PER_USER) {
-      throw new BadRequestException(
-        `Maximum limit of ${MAX_DRAFTS_PER_USER} drafts reached. Publish or delete existing drafts.`,
-      );
+    if (!isPublished) {
+      const currentDraftsCount = await this.prisma.idea.count({
+        where: { authorId, status: IdeaStatus.DRAFT },
+      });
+
+      if (currentDraftsCount >= MAX_DRAFTS_PER_USER) {
+        throw new BadRequestException(
+          `Maximum limit of ${MAX_DRAFTS_PER_USER} drafts reached. Publish or delete existing drafts.`,
+        );
+      }
     }
 
     const idea = await this.prisma.$transaction(async tx => {
@@ -242,22 +245,57 @@ export class IdeaService {
         data: {
           authorId,
           status: IdeaStatus.DRAFT,
-          ...(dto.stage !== undefined ? { stage: dto.stage } : {}),
-          ...(dto.title !== undefined ? { title: dto.title } : {}),
-          ...(dto.description !== undefined ? { description: dto.description } : {}),
+          ...(updateDto.stage !== undefined ? { stage: updateDto.stage } : {}),
+          ...(updateDto.title !== undefined ? { title: updateDto.title } : {}),
+          ...(updateDto.description !== undefined
+            ? { description: updateDto.description }
+            : {}),
         },
         include: IDEA_FORM_INCLUDE,
       });
 
-      await this.applyIdeaUpdates(tx, created.id, authorId, dto);
+      await this.applyIdeaUpdates(tx, created.id, authorId, updateDto);
 
-      const result = await tx.idea.findUnique({
+      let result = await tx.idea.findUnique({
         where: { id: created.id },
         include: IDEA_FORM_INCLUDE,
       });
 
       if (!result) {
         throw new NotFoundException(IDEA_NOT_FOUND);
+      }
+
+      if (isPublished) {
+        const errors = this.collectPublishValidationErrors(result);
+
+        if (errors.length > 0) {
+          throw new UnprocessableEntityException({ errors });
+        }
+
+        const linkedProblemIds = result.problems.map(link => link.problemId);
+        const publishedAt = new Date();
+
+        if (linkedProblemIds.length > 0) {
+          await tx.problem.updateMany({
+            where: {
+              id: { in: linkedProblemIds },
+              status: ProblemStatus.DRAFT,
+            },
+            data: {
+              status: ProblemStatus.PUBLISHED,
+              publishedAt,
+            },
+          });
+        }
+
+        result = await tx.idea.update({
+          where: { id: created.id },
+          data: {
+            status: IdeaStatus.PUBLISHED,
+            publishedAt,
+          },
+          include: IDEA_FORM_INCLUDE,
+        });
       }
 
       return result;
@@ -274,7 +312,9 @@ export class IdeaService {
       return [];
     }
 
-    const normalizedLabels = [...new Set(dto.tagLabels.map(label => label.trim()))]
+    const normalizedLabels = [
+      ...new Set(dto.tagLabels.map(label => label.trim())),
+    ]
       .filter(Boolean)
       .slice(0, 20);
 
@@ -287,7 +327,9 @@ export class IdeaService {
       select: { id: true, name: true },
     });
     const existingByName = new Map(existing.map(tag => [tag.name, tag.id]));
-    const missingNames = normalizedLabels.filter(name => !existingByName.has(name));
+    const missingNames = normalizedLabels.filter(
+      name => !existingByName.has(name),
+    );
 
     if (missingNames.length > 0) {
       const inserted = await Promise.all(
@@ -359,7 +401,11 @@ export class IdeaService {
     return this.findByIdSmart(id, authorId);
   }
 
-  async deleteMedia(id: string, mediaId: string, authorId: string): Promise<void> {
+  async deleteMedia(
+    id: string,
+    mediaId: string,
+    authorId: string,
+  ): Promise<void> {
     const idea = await this.prisma.idea.findFirst({
       where: { id, authorId },
       select: { id: true },
@@ -494,92 +540,6 @@ export class IdeaService {
     });
 
     return toIdeaFormResponse(idea);
-  }
-
-  async updatePublished(
-    id: string,
-    authorId: string,
-    dto: UpdatePublishedIdeaDto,
-  ): Promise<IdeaFormResponse> {
-    const updated = await this.prisma.$transaction(async tx => {
-      const existing = await tx.idea.findFirst({
-        where: { id, authorId },
-        include: IDEA_FORM_INCLUDE,
-      });
-
-      if (!existing) {
-        throw new NotFoundException(IDEA_NOT_FOUND);
-      }
-
-      if (existing.status !== IdeaStatus.PUBLISHED) {
-        throw new BadRequestException(
-          'Only published ideas can be updated via this endpoint',
-        );
-      }
-
-      const nextTitle =
-        typeof dto.title === 'string' ? dto.title : existing.title;
-      const nextDescription =
-        typeof dto.description === 'string'
-          ? dto.description
-          : existing.description;
-      const nextStage = dto.stage !== undefined ? dto.stage : existing.stage;
-      const nextProblemsCount = Array.isArray(dto.problemIds)
-        ? dto.problemIds.length
-        : existing.problems.length;
-
-      const errors: PublishValidationError[] = [];
-
-      if (!nextTitle || nextTitle.trim().length < IDEA_TITLE_MIN_LENGTH) {
-        errors.push({
-          field: 'title',
-          message: `Title is required and must be at least ${IDEA_TITLE_MIN_LENGTH} characters`,
-        });
-      }
-
-      if (
-        !nextDescription ||
-        nextDescription.trim().length < IDEA_DESCRIPTION_MIN_LENGTH
-      ) {
-        errors.push({
-          field: 'description',
-          message: `Description is required and must be at least ${IDEA_DESCRIPTION_MIN_LENGTH} characters`,
-        });
-      }
-
-      if (nextStage === null) {
-        errors.push({
-          field: 'stage',
-          message: 'Stage is required',
-        });
-      }
-
-      if (nextProblemsCount === 0) {
-        errors.push({
-          field: 'problems',
-          message: 'At least one linked problem is required',
-        });
-      }
-
-      if (errors.length > 0) {
-        throw new UnprocessableEntityException({ errors });
-      }
-
-      await this.applyIdeaUpdates(tx, id, authorId, dto);
-
-      const result = await tx.idea.findFirst({
-        where: { id, authorId },
-        include: IDEA_FORM_INCLUDE,
-      });
-
-      if (!result) {
-        throw new NotFoundException(IDEA_NOT_FOUND);
-      }
-
-      return result;
-    });
-
-    return toIdeaFormResponse(updated);
   }
 
   async uploadMainImage(

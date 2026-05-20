@@ -9,7 +9,7 @@ import {
 import { SparklesIcon } from '@/features/ideas/ui/icons/SparklesIcon';
 import { useNavigate } from '@tanstack/react-router';
 import { ChevronDown, Upload } from 'lucide-react';
-import { useId } from 'react';
+import { useId, type FormEvent } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Controller } from 'react-hook-form';
 
@@ -114,8 +114,20 @@ export function IdeaCreateForm() {
     void navigate({ to: ROUTES.ideas });
   };
 
+  const handlePublish = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const isPublished = await onPublish();
+    if (!isPublished) return;
+    void navigate({ to: ROUTES.ideas });
+  };
+
   return (
-    <form id={formId} className="space-y-8" onSubmit={onPublish} noValidate>
+    <form
+      id={formId}
+      className="space-y-8"
+      onSubmit={event => void handlePublish(event)}
+      noValidate
+    >
       {error ? (
         <p
           role="alert"
@@ -308,7 +320,7 @@ export function IdeaCreateForm() {
         <button
           type="submit"
           className={publishBtnClass}
-          disabled={!canPublish}
+          disabled={!canPublish || isBusy}
         >
           Publish idea
         </button>

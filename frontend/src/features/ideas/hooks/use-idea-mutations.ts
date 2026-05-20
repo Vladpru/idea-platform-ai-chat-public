@@ -1,10 +1,10 @@
 import {
   type CreateIdeaPayload,
-  type PublishIdeaPayload,
   type UpdateIdeaPayload,
   type UploadIdeaMediaPayload,
   createIdea,
   createIdeaDraft,
+  createPublishedIdea,
   deleteIdea,
   deleteIdeaMedia,
   fetchIdeaById,
@@ -15,8 +15,8 @@ import {
   uploadIdeaMedia,
 } from '@/features/ideas/api/ideas.api';
 import {
-  formValuesToSavePayload,
   type IdeaCreateFormValues,
+  formValuesToSavePayload,
 } from '@/features/ideas/lib/create-idea';
 import { useCreateIdeaStore } from '@/features/ideas/store/create-idea.store';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -149,25 +149,63 @@ export function useDeleteIdeaMutation() {
   });
 }
 
-type PublishIdeaVariables = {
-  ideaId: string;
-  payload: PublishIdeaPayload;
-};
+type PublishIdeaVariables = IdeaCreateFormValues;
 
 export function usePublishIdeaMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationKey: [...ideaMutationKeys.all, 'publish'],
-    mutationFn: ({ ideaId, payload }: PublishIdeaVariables) =>
-      publishIdea(ideaId, payload),
+    mutationFn: async (values: PublishIdeaVariables) => {
+      const store = useCreateIdeaStore.getState();
+      store.syncFromForm(values);
+
+      const payload = formValuesToSavePayload(values);
+      const ideaId = store.draft.id;
+
+      let idea: Awaited<ReturnType<typeof fetchIdeaById>>;
+
+      if (ideaId) {
+        await updateIdeaDraft(ideaId, payload);
+
+        if (values.mainImage) {
+          await uploadIdeaMainImage(ideaId, values.mainImage);
+        }
+
+        if (values.files && values.files.length > 0) {
+          await Promise.all(
+            values.files.map(file =>
+              uploadIdeaMedia(ideaId, { file, kind: 'attachment' }),
+            ),
+          );
+        }
+
+        idea = await publishIdea(ideaId);
+      } else {
+        idea = await createPublishedIdea(payload);
+
+        if (values.mainImage) {
+          await uploadIdeaMainImage(idea.id, values.mainImage);
+        }
+
+        if (values.files && values.files.length > 0) {
+          await Promise.all(
+            values.files.map(file =>
+              uploadIdeaMedia(idea.id, { file, kind: 'attachment' }),
+            ),
+          );
+        }
+      }
+
+      return fetchIdeaById(idea.id);
+    },
     onMutate: () => {
       useCreateIdeaStore.getState().setSaving(true);
       useCreateIdeaStore.getState().setError(null);
     },
-    onSuccess: (idea, { ideaId }) => {
+    onSuccess: idea => {
       useCreateIdeaStore.getState().applyServerIdea(idea);
-      invalidateIdeaQueries(queryClient, ideaId);
+      invalidateIdeaQueries(queryClient, idea.id);
       toast.success('Idea published');
     },
     onError: error => {

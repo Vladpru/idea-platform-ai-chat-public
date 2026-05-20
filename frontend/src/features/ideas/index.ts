@@ -25,6 +25,7 @@ export {
   fetchIdeaById,
   createIdea,
   createIdeaDraft,
+  createPublishedIdea,
   updateIdea,
   updateIdeaDraft,
   publishIdea,
