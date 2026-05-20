@@ -17,6 +17,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateIdeaDto } from './dto/create-idea.dto';
 import { GetIdeasQueryDto } from './dto/get-ideas-query.dto';
 import { UpdateIdeaDraftDto } from './dto/update-idea-draft.dto';
+import { UpdatePublishedIdeaDto } from './dto/update-published-idea.dto';
 import { IDEA_FORM_INCLUDE } from './idea.constants';
 import { type IdeaFormRecord, toIdeaFormResponse } from './idea.mapper';
 import type {
@@ -100,6 +101,45 @@ export class IdeaService {
     }
 
     if (idea.problems.length === 0) {
+      errors.push({
+        field: 'problems',
+        message: 'At least one linked problem is required',
+      });
+    }
+
+    return errors;
+  }
+
+  private collectPublishValidationErrorsFromValues(
+    title: string | null,
+    description: string | null,
+    stage: IdeaFormRecord['stage'],
+    problemsCount: number,
+  ): PublishValidationError[] {
+    const errors: PublishValidationError[] = [];
+
+    if (!title || title.length < IDEA_TITLE_MIN_LENGTH) {
+      errors.push({
+        field: 'title',
+        message: `Title is required and must be at least ${IDEA_TITLE_MIN_LENGTH} characters`,
+      });
+    }
+
+    if (!description || description.length < IDEA_DESCRIPTION_MIN_LENGTH) {
+      errors.push({
+        field: 'description',
+        message: `Description is required and must be at least ${IDEA_DESCRIPTION_MIN_LENGTH} characters`,
+      });
+    }
+
+    if (stage === null) {
+      errors.push({
+        field: 'stage',
+        message: 'Stage is required',
+      });
+    }
+
+    if (problemsCount === 0) {
       errors.push({
         field: 'problems',
         message: 'At least one linked problem is required',
@@ -540,6 +580,64 @@ export class IdeaService {
     });
 
     return toIdeaFormResponse(idea);
+  }
+
+  async updatePublished(
+    id: string,
+    authorId: string,
+    dto: UpdatePublishedIdeaDto,
+  ): Promise<IdeaFormResponse> {
+    const updated = await this.prisma.$transaction(async tx => {
+      const existing = await tx.idea.findFirst({
+        where: { id, authorId },
+        include: IDEA_FORM_INCLUDE,
+      });
+
+      if (!existing) {
+        throw new NotFoundException(IDEA_NOT_FOUND);
+      }
+
+      if (existing.status !== IdeaStatus.PUBLISHED) {
+        throw new BadRequestException(
+          'Only published ideas can be updated via this endpoint',
+        );
+      }
+
+      const nextTitle = dto.title !== undefined ? dto.title : existing.title;
+      const nextDescription =
+        dto.description !== undefined ? dto.description : existing.description;
+      const nextStage = dto.stage !== undefined ? dto.stage : existing.stage;
+      const nextProblemsCount =
+        dto.problemIds !== undefined
+          ? dto.problemIds.length
+          : existing.problems.length;
+
+      const errors = this.collectPublishValidationErrorsFromValues(
+        nextTitle,
+        nextDescription,
+        nextStage,
+        nextProblemsCount,
+      );
+
+      if (errors.length > 0) {
+        throw new UnprocessableEntityException({ errors });
+      }
+
+      await this.applyIdeaUpdates(tx, id, authorId, dto);
+
+      const result = await tx.idea.findFirst({
+        where: { id, authorId },
+        include: IDEA_FORM_INCLUDE,
+      });
+
+      if (!result) {
+        throw new NotFoundException(IDEA_NOT_FOUND);
+      }
+
+      return result;
+    });
+
+    return toIdeaFormResponse(updated);
   }
 
   async uploadMainImage(

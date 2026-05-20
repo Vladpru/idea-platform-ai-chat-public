@@ -62,6 +62,7 @@ export function IdeaCreateForm() {
     onSaveDraft,
     onPublish,
     canPublish,
+    isPublishedIdea,
     isBusy,
     isHydrating,
     error,
@@ -307,22 +308,24 @@ export function IdeaCreateForm() {
         >
           Cancel
         </button>
-        <Button
-          type="button"
-          variant="outline"
-          className={outlineBtnClass}
-          onClick={() => void handleSaveDraft()}
-          disabled={isBusy}
-          isLoading={isBusy}
-        >
-          Save as draft
-        </Button>
+        {!isPublishedIdea ? (
+          <Button
+            type="button"
+            variant="outline"
+            className={outlineBtnClass}
+            onClick={() => void handleSaveDraft()}
+            disabled={isBusy}
+            isLoading={isBusy}
+          >
+            Save as draft
+          </Button>
+        ) : null}
         <button
           type="submit"
           className={publishBtnClass}
           disabled={!canPublish || isBusy}
         >
-          Publish idea
+          {isPublishedIdea ? 'Save changes' : 'Publish idea'}
         </button>
       </div>
     </form>

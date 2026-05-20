@@ -14,6 +14,7 @@ import {
   parseProblemIds,
 } from '@/features/ideas/lib/problems';
 import { useCreateIdeaStore } from '@/features/ideas/store/create-idea.store';
+import { IDEA_STATUS } from '@/features/ideas/model/idea.types';
 import type { ProblemDraft } from '@/features/problems';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useCallback, useEffect, useRef, useState, type BaseSyntheticEvent } from 'react';
@@ -32,6 +33,7 @@ export function useIdeaCreateForm() {
   const isHydrating = useCreateIdeaStore(state => state.isHydrating);
   const isSaving = useCreateIdeaStore(state => state.isSaving);
   const error = useCreateIdeaStore(state => state.error);
+  const ideaStatus = useCreateIdeaStore(state => state.draft.status);
   const remoteMedia = useCreateIdeaStore(state => state.remoteMedia);
   const syncFromForm = useCreateIdeaStore(state => state.syncFromForm);
   const setLocalFiles = useCreateIdeaStore(state => state.setLocalFiles);
@@ -224,6 +226,7 @@ export function useIdeaCreateForm() {
   const canPublish = validateForPublish(watchedValues, {
     hasRemoteMainImage: remoteMedia.some(media => media.kind === 'main'),
   }).success;
+  const isPublishedIdea = ideaStatus === IDEA_STATUS.PUBLISHED;
 
   return {
     form,
@@ -238,6 +241,7 @@ export function useIdeaCreateForm() {
     onSaveDraft,
     onPublish,
     canPublish,
+    isPublishedIdea,
     isBusy,
     isHydrating,
     error,
