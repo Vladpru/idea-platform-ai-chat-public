@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 
-import { ProblemStatus } from '../../generated/prisma/client';
+import { type Problem, ProblemStatus } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProblemDraftDto } from './dto/create-problem-draft.dto';
+import { GetMyProblemsQueryDto } from './dto/get-my-problems-query.dto';
 
 @Injectable()
 export class ProblemService {
@@ -16,6 +17,19 @@ export class ProblemService {
         description: dto.description ?? '',
         status: ProblemStatus.DRAFT,
       },
+    });
+  }
+
+  async findMine(
+    authorId: string,
+    query: GetMyProblemsQueryDto,
+  ): Promise<Problem[]> {
+    return this.prisma.problem.findMany({
+      where: {
+        authorId,
+        ...(query.status !== undefined ? { status: query.status } : {}),
+      },
+      orderBy: { updatedAt: 'desc' },
     });
   }
 }
