@@ -5,7 +5,13 @@ import {
   ideaCreateDraftSchema,
   validateForPublish,
 } from '@/features/ideas/lib/create-idea';
+import {
+  formatProblemIds,
+  parseProblemIds,
+  type MockProblem,
+} from '@/features/ideas/lib/problems';
 import { useCreateIdeaStore } from '@/features/ideas/store/create-idea.store';
+import type { ProblemDraft } from '@/features/problems';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { type Resolver, useForm } from 'react-hook-form';
@@ -30,6 +36,7 @@ export function useIdeaCreateForm() {
 
   const saveDraftMutation = useSaveIdeaDraftMutation();
   const initializedRef = useRef(false);
+  const [createdProblems, setCreatedProblems] = useState<MockProblem[]>([]);
 
   const form = useForm<IdeaCreateFormValues>({
     resolver: zodResolver(ideaCreateDraftSchema) as Resolver<IdeaCreateFormValues>,
@@ -135,6 +142,25 @@ export function useIdeaCreateForm() {
     saveDraftMutation.mutate(values);
   };
 
+  const onProblemDraftCreated = useCallback(
+    (problem: ProblemDraft) => {
+      setCreatedProblems(prev => {
+        if (prev.some(entry => entry.id === problem.id)) return prev;
+        return [{ id: problem.id, label: problem.title }, ...prev];
+      });
+
+      const currentIds = parseProblemIds(form.getValues('problemId'));
+      if (currentIds.includes(problem.id)) return;
+
+      form.setValue(
+        'problemId',
+        formatProblemIds([...currentIds, problem.id]),
+        { shouldValidate: true, shouldDirty: true },
+      );
+    },
+    [form],
+  );
+
   const onPublish = () => {
     const values = form.getValues();
     const hasRemoteMainImage = useCreateIdeaStore
@@ -167,6 +193,8 @@ export function useIdeaCreateForm() {
 
   return {
     form,
+    createdProblems,
+    onProblemDraftCreated,
     imageInputRef,
     displayImageUrl,
     isDraggingImage,

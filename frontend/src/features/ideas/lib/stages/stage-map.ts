@@ -10,13 +10,7 @@ const API_TO_FORM: Record<ApiStage, IdeaStage> = {
   ARCHIVED: 'archived',
 };
 
-const FORM_TO_API: Record<IdeaStage, ApiStage> = {
-  ideation: 'IDEATION',
-  prototyping: 'PROTOTYPING',
-  completed: 'COMPLETED',
-  paused: 'PAUSED',
-  archived: 'ARCHIVED',
-};
+const FORM_TO_API = API_TO_FORM;
 
 export function apiStageToFormStage(stage: ApiStage | null): IdeaStage | null {
   if (!stage) return null;

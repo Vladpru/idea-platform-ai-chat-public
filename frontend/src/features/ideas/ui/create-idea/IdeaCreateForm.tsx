@@ -50,6 +50,8 @@ export function IdeaCreateForm() {
 
   const {
     form,
+    createdProblems,
+    onProblemDraftCreated,
     displayImageUrl,
     setMainImage,
     clearMainImage,
@@ -125,7 +127,13 @@ export function IdeaCreateForm() {
           <FieldError message={errors.stage?.message} />
         </FieldGroup>
 
-        <ProblemSelect formId={formId} control={control} errors={errors} />
+        <ProblemSelect
+          formId={formId}
+          control={control}
+          errors={errors}
+          createdProblems={createdProblems}
+          onProblemDraftCreated={onProblemDraftCreated}
+        />
       </div>
 
       <FieldGroup>
