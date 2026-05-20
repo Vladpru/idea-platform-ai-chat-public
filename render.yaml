@@ -5,7 +5,7 @@ services:
     rootDir: backend
     branch: develop
     buildCommand: yarn install && yarn prisma generate && yarn build
-    startCommand: yarn prisma migrate deploy && node dist/src/main.js
+    startCommand: yarn prisma migrate resolve --rolled-back 20260519145406_add_idea_fts_index; yarn prisma migrate deploy && node dist/src/main.js
     envVars:
       - key: NODE_ENV
         value: development
