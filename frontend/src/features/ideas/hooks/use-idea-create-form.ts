@@ -36,6 +36,7 @@ export function useIdeaCreateForm() {
 
   const saveDraftMutation = useSaveIdeaDraftMutation();
   const initializedRef = useRef(false);
+  const formSyncEnabledRef = useRef(false);
   const [createdProblems, setCreatedProblems] = useState<MockProblem[]>([]);
 
   const form = useForm<IdeaCreateFormValues>({
@@ -87,6 +88,14 @@ export function useIdeaCreateForm() {
       }
 
       form.reset(useCreateIdeaStore.getState().getFormValues());
+
+      const restoredMainImage =
+        useCreateIdeaStore.getState().localFiles.mainImage;
+      if (restoredMainImage) {
+        setImagePreviewUrl(URL.createObjectURL(restoredMainImage));
+      }
+
+      formSyncEnabledRef.current = true;
     };
 
     void init();
@@ -94,6 +103,7 @@ export function useIdeaCreateForm() {
 
   useEffect(() => {
     const subscription = form.watch(values => {
+      if (!formSyncEnabledRef.current) return;
       syncFromForm(values as IdeaCreateFormValues);
     });
 

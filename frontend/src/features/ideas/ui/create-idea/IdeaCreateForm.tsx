@@ -18,14 +18,14 @@ import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 
+import DeleteImageButton from './DeleteImageButton';
 import { FieldError, FieldGroup, FieldLabel } from './Fields';
 import { IdeaFilesField } from './IdeaFilesField';
 import ProblemSelect from './ProblemSelect';
 import { TagsInput } from './TagsInput';
 
 const ALLOWED_MAIN_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
-const INVALID_MAIN_IMAGE_TYPE_MESSAGE =
-  'Main image must be PNG, JPEG, or WEBP';
+const INVALID_MAIN_IMAGE_TYPE_MESSAGE = 'Main image must be PNG, JPEG, or WEBP';
 
 function AiAssistLink({
   children,
@@ -222,15 +222,27 @@ export function IdeaCreateForm() {
                   isDragActive && 'border-brand-dark-blue bg-brand-gray-100',
                   errors.mainImage && 'border-destructive',
                   isBusy && 'cursor-not-allowed opacity-50',
+                  displayImageUrl && 'relative overflow-hidden p-0',
                 )}
               >
                 <input {...getInputProps()} />
                 {displayImageUrl ? (
-                  <img
-                    src={displayImageUrl}
-                    alt="Selected idea preview"
-                    className="max-h-80 max-w-full rounded object-contain"
-                  />
+                  <>
+                    <img
+                      src={displayImageUrl}
+                      alt="Selected idea preview"
+                      className="max-h-80 w-full rounded object-contain p-2"
+                    />
+                    <DeleteImageButton
+                      onClick={(
+                        event: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+                      ) => {
+                        event.stopPropagation();
+                        clearMainImage();
+                      }}
+                      isBusy={isBusy}
+                    />
+                  </>
                 ) : (
                   <>
                     <Upload
@@ -244,16 +256,6 @@ export function IdeaCreateForm() {
                   </>
                 )}
               </div>
-              {displayImageUrl ? (
-                <button
-                  type="button"
-                  onClick={clearMainImage}
-                  disabled={isBusy}
-                  className="text-brand-dark-blue hover:text-brand-dark-blue/80 mt-2 flex justify-end text-sm font-bold tracking-wide transition-colors disabled:opacity-50"
-                >
-                  Delete image
-                </button>
-              ) : null}
             </div>
           )}
         />

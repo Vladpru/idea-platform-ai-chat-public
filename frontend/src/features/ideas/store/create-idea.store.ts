@@ -9,6 +9,13 @@ import {
   type IdeaCreateFormValues,
 } from '@/features/ideas/lib/create-idea';
 import {
+  EMPTY_PERSISTED_LOCAL_FILES,
+  getLocalFilesKey,
+  localFilesToPersisted,
+  persistedToLocalFiles,
+  type PersistedLocalFiles,
+} from '@/features/ideas/lib/create-idea/file-persistence';
+import {
   type CreateIdeaDraft,
   type CreateIdeaLocalFiles,
   IDEA_STATUS,
@@ -21,6 +28,8 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 type CreateIdeaState = {
   draft: CreateIdeaDraft;
   localFiles: CreateIdeaLocalFiles;
+  persistedLocalFiles: PersistedLocalFiles;
+  localFilesPersistenceKey: string;
   remoteMedia: IdeaMediaItem[];
   isHydrating: boolean;
   isSaving: boolean;
@@ -40,9 +49,17 @@ type CreateIdeaState = {
   markClean: () => void;
 };
 
+type PersistedCreateIdeaState = {
+  draft: CreateIdeaDraft;
+  remoteMedia: IdeaMediaItem[];
+  persistedLocalFiles: PersistedLocalFiles;
+};
+
 const initialState = {
   draft: EMPTY_CREATE_IDEA_DRAFT,
   localFiles: { ...EMPTY_CREATE_IDEA_FILES },
+  persistedLocalFiles: EMPTY_PERSISTED_LOCAL_FILES,
+  localFilesPersistenceKey: '',
   remoteMedia: [] as IdeaMediaItem[],
   isHydrating: false,
   isSaving: false,
@@ -50,15 +67,77 @@ const initialState = {
   error: null,
 };
 
+let localFilesPersistGeneration = 0;
+
+function scheduleLocalFilesPersistence(
+  localFiles: CreateIdeaLocalFiles,
+  localFilesPersistenceKey: string,
+) {
+  const generation = ++localFilesPersistGeneration;
+
+  void localFilesToPersisted(localFiles)
+    .then(persistedLocalFiles => {
+      if (generation !== localFilesPersistGeneration) return;
+
+      useCreateIdeaStore.setState({ persistedLocalFiles });
+    })
+    .catch(() => {
+      if (generation !== localFilesPersistGeneration) return;
+
+      useCreateIdeaStore.setState({
+        error: 'Could not save uploaded files for this session. They may be too large.',
+        localFilesPersistenceKey,
+      });
+    });
+}
+
+function applyLocalFilesUpdate(
+  set: (
+    partial:
+      | Partial<CreateIdeaState>
+      | ((state: CreateIdeaState) => Partial<CreateIdeaState>),
+  ) => void,
+  get: () => CreateIdeaState,
+  localFiles: CreateIdeaLocalFiles,
+) {
+  const nextKey = getLocalFilesKey(localFiles);
+  const currentKey = get().localFilesPersistenceKey;
+
+  set({
+    localFiles,
+    isDirty: true,
+    ...(nextKey !== currentKey
+      ? {
+          localFilesPersistenceKey: nextKey,
+          ...(localFiles.mainImage === null && localFiles.attachments.length === 0
+            ? {
+                persistedLocalFiles: EMPTY_PERSISTED_LOCAL_FILES,
+              }
+            : {}),
+        }
+      : {}),
+  });
+
+  if (nextKey === currentKey) return;
+
+  if (localFiles.mainImage === null && localFiles.attachments.length === 0) {
+    return;
+  }
+
+  scheduleLocalFilesPersistence(localFiles, nextKey);
+}
+
 export const useCreateIdeaStore = create<CreateIdeaState>()(
   persist(
     (set, get) => ({
       ...initialState,
 
       reset: () => {
+        localFilesPersistGeneration += 1;
         set({
           ...initialState,
           localFiles: { ...EMPTY_CREATE_IDEA_FILES },
+          persistedLocalFiles: EMPTY_PERSISTED_LOCAL_FILES,
         });
         void useCreateIdeaStore.persist.clearStorage();
       },
@@ -68,6 +147,8 @@ export const useCreateIdeaStore = create<CreateIdeaState>()(
           draft: ideaApiToDraft(idea),
           remoteMedia: ideaApiToRemoteMedia(idea),
           localFiles: { ...EMPTY_CREATE_IDEA_FILES },
+          persistedLocalFiles: EMPTY_PERSISTED_LOCAL_FILES,
+          localFilesPersistenceKey: '',
           isHydrating: false,
           isDirty: false,
           error: null,
@@ -92,18 +173,17 @@ export const useCreateIdeaStore = create<CreateIdeaState>()(
       },
 
       setLocalFiles: patch => {
-        set(state => ({
-          localFiles: { ...state.localFiles, ...patch },
-          isDirty: true,
-        }));
+        const localFiles = { ...get().localFiles, ...patch };
+        applyLocalFilesUpdate(set, get, localFiles);
       },
 
       syncFromForm: values => {
+        const localFiles = formValuesToLocalFiles(values);
         set(state => ({
           draft: { ...state.draft, ...formValuesToDraftPatch(values) },
-          localFiles: formValuesToLocalFiles(values),
           isDirty: true,
         }));
+        applyLocalFilesUpdate(set, get, localFiles);
       },
 
       getFormValues: () => {
@@ -122,10 +202,15 @@ export const useCreateIdeaStore = create<CreateIdeaState>()(
       partialize: state => ({
         draft: state.draft,
         remoteMedia: state.remoteMedia,
+        persistedLocalFiles: state.persistedLocalFiles,
       }),
       merge: (persisted, current) => {
-        const saved = persisted as Partial<CreateIdeaState> | undefined;
+        const saved = persisted as Partial<PersistedCreateIdeaState> | undefined;
         if (!saved?.draft) return current;
+
+        const persistedLocalFiles =
+          saved.persistedLocalFiles ?? EMPTY_PERSISTED_LOCAL_FILES;
+        const localFiles = persistedToLocalFiles(persistedLocalFiles);
 
         return {
           ...current,
@@ -135,6 +220,9 @@ export const useCreateIdeaStore = create<CreateIdeaState>()(
             status: saved.draft.status ?? IDEA_STATUS.DRAFT,
           },
           remoteMedia: saved.remoteMedia ?? [],
+          persistedLocalFiles,
+          localFiles,
+          localFilesPersistenceKey: getLocalFilesKey(localFiles),
         };
       },
     },

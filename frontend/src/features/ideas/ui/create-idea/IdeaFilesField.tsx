@@ -55,7 +55,7 @@ export function IdeaFilesField({ control, disabled = false }: IdeaFilesFieldProp
 
         return (
           <>
-            <div className="mt-2 flex flex-wrap items-start gap-3">
+            <div className="mt-2 flex flex-wrap items-start gap-3 pt-2 pr-2">
               {files.map(file => {
                 const key = getAttachmentFileKey(file);
                 return (
@@ -77,7 +77,7 @@ export function IdeaFilesField({ control, disabled = false }: IdeaFilesFieldProp
                         variant="outline"
                         size="icon"
                         disabled
-                        className="border-brand-gray-200 text-brand-dark-blue size-11 rounded-md"
+                        className="border-brand-dark-blue text-brand-dark-blue size-20 rounded-md"
                         tabIndex={-1}
                         aria-label="Add files"
                       >
@@ -95,7 +95,7 @@ export function IdeaFilesField({ control, disabled = false }: IdeaFilesFieldProp
                   variant="outline"
                   size="icon"
                   className={cn(
-                    'border-brand-gray-200 text-brand-dark-blue size-11 rounded-md',
+                    'border-brand-dark-blue text-brand-dark-blue size-20 rounded-md',
                   )}
                   aria-label="Add files"
                   disabled={disabled}
