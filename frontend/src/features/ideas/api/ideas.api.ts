@@ -2,7 +2,6 @@ import type {
   CreateIdeaPayload,
   IdeasListParams,
   IdeasListResponse,
-  PublishIdeaPayload,
   SaveIdeaDraftPayload,
   UpdateIdeaPayload,
   UploadIdeaMediaPayload,
@@ -58,14 +57,8 @@ export async function updateIdeaDraft(
   return updateIdea(ideaId, payload);
 }
 
-export async function publishIdea(
-  ideaId: string,
-  payload: PublishIdeaPayload,
-): Promise<IdeaApi> {
-  const { data } = await api.post<IdeaApi>(
-    IDEAS_ROUTES.publish(ideaId),
-    payload,
-  );
+export async function publishIdea(ideaId: string): Promise<IdeaApi> {
+  const { data } = await api.post<IdeaApi>(IDEAS_ROUTES.publish(ideaId));
   return data;
 }
 

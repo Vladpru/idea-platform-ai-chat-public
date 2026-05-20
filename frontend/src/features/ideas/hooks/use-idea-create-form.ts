@@ -1,5 +1,8 @@
 import { fetchIdeaById } from '@/features/ideas/api/ideas.api';
-import { useSaveIdeaDraftMutation } from '@/features/ideas/hooks/use-idea-mutations';
+import {
+  usePublishIdeaMutation,
+  useSaveIdeaDraftMutation,
+} from '@/features/ideas/hooks/use-idea-mutations';
 import {
   type IdeaCreateFormValues,
   ideaCreateDraftSchema,
@@ -13,7 +16,7 @@ import {
 import { useCreateIdeaStore } from '@/features/ideas/store/create-idea.store';
 import type { ProblemDraft } from '@/features/problems';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type BaseSyntheticEvent } from 'react';
 import { type Resolver, useForm } from 'react-hook-form';
 
 import { getApiErrorMessage } from '@/shared/api/api-error';
@@ -35,6 +38,7 @@ export function useIdeaCreateForm() {
   const getFormValues = useCreateIdeaStore(state => state.getFormValues);
 
   const saveDraftMutation = useSaveIdeaDraftMutation();
+  const publishMutation = usePublishIdeaMutation();
   const initializedRef = useRef(false);
   const formSyncEnabledRef = useRef(false);
   const [createdProblems, setCreatedProblems] = useState<MockProblem[]>([]);
@@ -180,7 +184,9 @@ export function useIdeaCreateForm() {
     [form],
   );
 
-  const onPublish = () => {
+  const onPublish = async (event?: BaseSyntheticEvent): Promise<boolean> => {
+    event?.preventDefault();
+
     const values = form.getValues();
     const hasRemoteMainImage = useCreateIdeaStore
       .getState()
@@ -197,14 +203,23 @@ export function useIdeaCreateForm() {
           });
         }
       }
-      return;
+      return false;
     }
 
-    syncFromForm(values);
-    // TODO: wire publish API
+    try {
+      await publishMutation.mutateAsync(values);
+      useCreateIdeaStore.getState().reset();
+      return true;
+    } catch {
+      return false;
+    }
   };
 
-  const isBusy = isHydrating || isSaving || saveDraftMutation.isPending;
+  const isBusy =
+    isHydrating ||
+    isSaving ||
+    saveDraftMutation.isPending ||
+    publishMutation.isPending;
   const watchedValues = form.watch();
   const canPublish = validateForPublish(watchedValues, {
     hasRemoteMainImage: remoteMedia.some(media => media.kind === 'main'),
