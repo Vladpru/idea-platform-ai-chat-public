@@ -172,6 +172,57 @@ export class IdeaController {
     return this.ideaService.uploadMainImage(id, req.user.id, file);
   }
 
+  @Post(':id/media')
+  @JwtAuth()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Upload an idea attachment' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { file: { type: 'string', format: 'binary' } },
+      required: ['file'],
+    },
+  })
+  @ApiOkResponse({ description: 'Attachment uploaded' })
+  @ApiNotFoundResponse({ description: 'Idea not found' })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: 10 * 1024 * 1024 },
+    }),
+  )
+  uploadAttachment(
+    @Param('id', ParseUUIDPipe) id: string,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new FileTypeValidator({
+            fileType: /image\/(jpeg|png|webp)|application\/pdf/,
+          }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.ideaService.uploadAttachment(id, req.user.id, file);
+  }
+
+  @Delete(':id/media/:mediaId')
+  @JwtAuth()
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiNoContentResponse({ description: 'Media deleted' })
+  @ApiNotFoundResponse({ description: 'Idea or media not found' })
+  deleteMedia(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('mediaId', ParseUUIDPipe) mediaId: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<void> {
+    return this.ideaService.deleteMedia(id, mediaId, req.user.id);
+  }
+
   @Delete(':id')
   @JwtAuth()
   @ApiBearerAuth()

@@ -3,14 +3,20 @@ import type { ApiStage } from '@/features/ideas/model/idea.types';
 import type { IdeaStage } from './stages';
 
 const API_TO_FORM: Record<ApiStage, IdeaStage> = {
-  IDEATION: 'ideation',
-  PROTOTYPING: 'prototyping',
-  COMPLETED: 'completed',
-  PAUSED: 'paused',
-  ARCHIVED: 'archived',
+  ideation: 'ideation',
+  prototyping: 'prototyping',
+  completed: 'completed',
+  paused: 'paused',
+  archived: 'archived',
 };
 
-const FORM_TO_API = API_TO_FORM;
+const FORM_TO_API: Record<IdeaStage, ApiStage> = {
+  ideation: 'ideation',
+  prototyping: 'prototyping',
+  completed: 'completed',
+  paused: 'paused',
+  archived: 'archived',
+};
 
 export function apiStageToFormStage(stage: ApiStage | null): IdeaStage | null {
   if (!stage) return null;

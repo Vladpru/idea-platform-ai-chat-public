@@ -70,11 +70,10 @@ export async function deleteIdea(ideaId: string): Promise<void> {
 
 export async function uploadIdeaMedia(
   ideaId: string,
-  { file, kind = 'attachment' }: UploadIdeaMediaPayload,
+  { file }: UploadIdeaMediaPayload,
 ): Promise<IdeaMediaItem> {
   const body = new FormData();
   body.append('file', file);
-  body.append('kind', kind);
 
   const { data } = await api.post<IdeaMediaItem>(
     IDEAS_ROUTES.media(ideaId),
@@ -83,6 +82,19 @@ export async function uploadIdeaMedia(
       headers: { 'Content-Type': 'multipart/form-data' },
     },
   );
+  return data;
+}
+
+export async function uploadIdeaMainImage(
+  ideaId: string,
+  file: File,
+): Promise<IdeaApi> {
+  const body = new FormData();
+  body.append('file', file);
+
+  const { data } = await api.put<IdeaApi>(IDEAS_ROUTES.mainImage(ideaId), body, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
   return data;
 }
 

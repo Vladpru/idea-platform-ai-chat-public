@@ -23,6 +23,10 @@ import { IdeaFilesField } from './IdeaFilesField';
 import ProblemSelect from './ProblemSelect';
 import { TagsInput } from './TagsInput';
 
+const ALLOWED_MAIN_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
+const INVALID_MAIN_IMAGE_TYPE_MESSAGE =
+  'Main image must be PNG, JPEG, or WEBP';
+
 function AiAssistLink({
   children,
   onClick,
@@ -71,17 +75,42 @@ export function IdeaCreateForm() {
   } = form;
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    accept: { 'image/*': [] },
+    accept: {
+      'image/png': [],
+      'image/jpeg': [],
+      'image/webp': [],
+    },
     maxFiles: 1,
     disabled: isBusy,
     onDrop: acceptedFiles => {
       const file = acceptedFiles[0];
-      if (file) setMainImage(file);
+      if (!file) return;
+      if (!ALLOWED_MAIN_IMAGE_TYPES.includes(file.type)) {
+        form.setError('mainImage', {
+          type: 'manual',
+          message: INVALID_MAIN_IMAGE_TYPE_MESSAGE,
+        });
+        return;
+      }
+      form.clearErrors('mainImage');
+      setMainImage(file);
+    },
+    onDropRejected: () => {
+      form.setError('mainImage', {
+        type: 'manual',
+        message: INVALID_MAIN_IMAGE_TYPE_MESSAGE,
+      });
     },
   });
 
   const handleCancel = () => {
     resetCreateIdea();
+    void navigate({ to: ROUTES.ideas });
+  };
+
+  const handleSaveDraft = async () => {
+    const isSaved = await onSaveDraft();
+    if (!isSaved) return;
     void navigate({ to: ROUTES.ideas });
   };
 
@@ -268,7 +297,7 @@ export function IdeaCreateForm() {
           type="button"
           variant="outline"
           className={outlineBtnClass}
-          onClick={onSaveDraft}
+          onClick={() => void handleSaveDraft()}
           disabled={isBusy}
           isLoading={isBusy}
         >
