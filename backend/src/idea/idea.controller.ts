@@ -40,6 +40,7 @@ import { JwtAuth } from '../shared/decorators/jwt-auth.decorator';
 import { CreateIdeaDto } from './dto/create-idea.dto';
 import { GetIdeasQueryDto } from './dto/get-ideas-query.dto';
 import { UpdateIdeaDraftDto } from './dto/update-idea-draft.dto';
+import { UpdatePublishedIdeaDto } from './dto/update-published-idea.dto';
 import { Stage } from './enum/stage.enum';
 import { IdeaService } from './idea.service';
 
@@ -238,6 +239,23 @@ export class IdeaController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.ideaService.publish(id, req.user.id);
+  }
+
+  @Patch(':id/publish')
+  @JwtAuth()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update a published idea (strict validation)' })
+  @ApiBody({ type: UpdatePublishedIdeaDto })
+  @ApiOkResponse({ description: 'Published idea updated' })
+  @ApiNotFoundResponse({ description: 'Idea not found' })
+  @ApiUnprocessableEntityResponse({ description: 'Update validation failed' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  updatePublished(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdatePublishedIdeaDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.ideaService.updatePublished(id, req.user.id, dto);
   }
 
   @Get(':id/similar')

@@ -28,6 +28,7 @@ export {
   createPublishedIdea,
   updateIdea,
   updateIdeaDraft,
+  updatePublishedIdea,
   publishIdea,
   deleteIdea,
   uploadIdeaMedia,

@@ -62,6 +62,17 @@ export async function publishIdea(ideaId: string): Promise<IdeaApi> {
   return data;
 }
 
+export async function updatePublishedIdea(
+  ideaId: string,
+  payload: SaveIdeaDraftPayload,
+): Promise<IdeaApi> {
+  const { data } = await api.patch<IdeaApi>(
+    IDEAS_ROUTES.publish(ideaId),
+    payload,
+  );
+  return data;
+}
+
 export async function deleteIdea(ideaId: string): Promise<void> {
   await api.delete(IDEAS_ROUTES.byId(ideaId));
 }
