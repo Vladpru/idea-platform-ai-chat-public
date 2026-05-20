@@ -25,6 +25,7 @@ import { Route as AuthIdeasIndexRouteImport } from './routes/_auth/ideas/index'
 import { Route as AuthProfileProblemsRouteImport } from './routes/_auth/profile/problems'
 import { Route as AuthProfileIdeasRouteImport } from './routes/_auth/profile/ideas'
 import { Route as AuthIdeasNewRouteImport } from './routes/_auth/ideas/new'
+import { Route as AuthIdeasIdeaIdRouteImport } from './routes/_auth/ideas/$ideaId'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -105,6 +106,11 @@ const AuthIdeasNewRoute = AuthIdeasNewRouteImport.update({
   path: '/new',
   getParentRoute: () => AuthIdeasRouteRoute,
 } as any)
+const AuthIdeasIdeaIdRoute = AuthIdeasIdeaIdRouteImport.update({
+  id: '/$ideaId',
+  path: '/$ideaId',
+  getParentRoute: () => AuthIdeasRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthIndexRoute
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/problems': typeof AuthProblemsRoute
   '/statistics': typeof AuthStatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/ideas/$ideaId': typeof AuthIdeasIdeaIdRoute
   '/ideas/new': typeof AuthIdeasNewRoute
   '/profile/ideas': typeof AuthProfileIdeasRoute
   '/profile/problems': typeof AuthProfileProblemsRoute
@@ -132,6 +139,7 @@ export interface FileRoutesByTo {
   '/statistics': typeof AuthStatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/': typeof AuthIndexRoute
+  '/ideas/$ideaId': typeof AuthIdeasIdeaIdRoute
   '/ideas/new': typeof AuthIdeasNewRoute
   '/profile/ideas': typeof AuthProfileIdeasRoute
   '/profile/problems': typeof AuthProfileProblemsRoute
@@ -151,6 +159,7 @@ export interface FileRoutesById {
   '/_auth/statistics': typeof AuthStatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/_auth/': typeof AuthIndexRoute
+  '/_auth/ideas/$ideaId': typeof AuthIdeasIdeaIdRoute
   '/_auth/ideas/new': typeof AuthIdeasNewRoute
   '/_auth/profile/ideas': typeof AuthProfileIdeasRoute
   '/_auth/profile/problems': typeof AuthProfileProblemsRoute
@@ -170,6 +179,7 @@ export interface FileRouteTypes {
     | '/problems'
     | '/statistics'
     | '/auth/callback'
+    | '/ideas/$ideaId'
     | '/ideas/new'
     | '/profile/ideas'
     | '/profile/problems'
@@ -185,6 +195,7 @@ export interface FileRouteTypes {
     | '/statistics'
     | '/auth/callback'
     | '/'
+    | '/ideas/$ideaId'
     | '/ideas/new'
     | '/profile/ideas'
     | '/profile/problems'
@@ -203,6 +214,7 @@ export interface FileRouteTypes {
     | '/_auth/statistics'
     | '/auth/callback'
     | '/_auth/'
+    | '/_auth/ideas/$ideaId'
     | '/_auth/ideas/new'
     | '/_auth/profile/ideas'
     | '/_auth/profile/problems'
@@ -333,15 +345,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthIdeasNewRouteImport
       parentRoute: typeof AuthIdeasRouteRoute
     }
+    '/_auth/ideas/$ideaId': {
+      id: '/_auth/ideas/$ideaId'
+      path: '/$ideaId'
+      fullPath: '/ideas/$ideaId'
+      preLoaderRoute: typeof AuthIdeasIdeaIdRouteImport
+      parentRoute: typeof AuthIdeasRouteRoute
+    }
   }
 }
 
 interface AuthIdeasRouteRouteChildren {
+  AuthIdeasIdeaIdRoute: typeof AuthIdeasIdeaIdRoute
   AuthIdeasNewRoute: typeof AuthIdeasNewRoute
   AuthIdeasIndexRoute: typeof AuthIdeasIndexRoute
 }
 
 const AuthIdeasRouteRouteChildren: AuthIdeasRouteRouteChildren = {
+  AuthIdeasIdeaIdRoute: AuthIdeasIdeaIdRoute,
   AuthIdeasNewRoute: AuthIdeasNewRoute,
   AuthIdeasIndexRoute: AuthIdeasIndexRoute,
 }

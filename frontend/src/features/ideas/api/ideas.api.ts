@@ -6,6 +6,7 @@ import type {
   UpdateIdeaPayload,
   UploadIdeaMediaPayload,
 } from '@/features/ideas/api/ideas-api.types';
+import type { IdeaFormResponseDto } from '@/features/ideas/api/idea-form-api.types';
 import { IDEAS_ROUTES } from '@/features/ideas/api/ideas.routes';
 import type { IdeaApi, IdeaMediaItem } from '@/features/ideas/model/idea.types';
 
@@ -22,6 +23,22 @@ export async function fetchIdeas(
 
 export async function fetchIdeaById(ideaId: string): Promise<IdeaApi> {
   const { data } = await api.get<IdeaApi>(IDEAS_ROUTES.byId(ideaId));
+  return data;
+}
+
+export async function fetchIdeaFormById(
+  ideaId: string,
+): Promise<IdeaFormResponseDto> {
+  const { data } = await api.get<IdeaFormResponseDto>(IDEAS_ROUTES.byId(ideaId));
+  return data;
+}
+
+export async function fetchSimilarIdeas(
+  ideaId: string,
+): Promise<IdeaFormResponseDto[]> {
+  const { data } = await api.get<IdeaFormResponseDto[]>(
+    IDEAS_ROUTES.similar(ideaId),
+  );
   return data;
 }
 
@@ -101,9 +118,13 @@ export async function uploadIdeaMainImage(
   const body = new FormData();
   body.append('file', file);
 
-  const { data } = await api.put<IdeaApi>(IDEAS_ROUTES.mainImage(ideaId), body, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  const { data } = await api.put<IdeaApi>(
+    IDEAS_ROUTES.mainImage(ideaId),
+    body,
+    {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    },
+  );
   return data;
 }
 
