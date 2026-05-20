@@ -23,6 +23,12 @@ services:
         value: refreshToken
       - key: SERVER_DOMAIN
         sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: GMAIL_SMTP_USER
+        sync: false
+      - key: GMAIL_SMTP_PASS
+        sync: false
 
   - type: web
     name: idea-platform-team-2-staging
@@ -47,6 +53,12 @@ services:
       - key: TOKEN_COOKIE_NAME
         value: refreshToken
       - key: SERVER_DOMAIN
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: GMAIL_SMTP_USER
+        sync: false
+      - key: GMAIL_SMTP_PASS
         sync: false
 
   - type: static

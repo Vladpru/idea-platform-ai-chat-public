@@ -4,17 +4,26 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Resend } from 'resend';
+import * as nodemailer from 'nodemailer';
+import type { Transporter } from 'nodemailer';
 
 import { buildPasswordResetEmail } from './templates/password-reset';
 
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
-  private readonly resend: Resend;
+  private readonly transporter: Transporter;
 
   constructor(private readonly config: ConfigService) {
-    this.resend = new Resend(this.config.getOrThrow<string>('RESEND_API_KEY'));
+    this.transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: this.config.getOrThrow<string>('GMAIL_SMTP_USER'),
+        pass: this.config.getOrThrow<string>('GMAIL_SMTP_PASS'),
+      },
+    });
   }
 
   async sendPasswordResetEmail(params: {
@@ -22,19 +31,19 @@ export class MailService {
     resetUrl: string;
     expiresMinutes: number;
   }) {
-    const from = this.config.getOrThrow<string>('RESEND_FROM_EMAIL');
+    const from = this.config.getOrThrow<string>('GMAIL_SMTP_USER');
     const { subject, text, html } = buildPasswordResetEmail(params);
 
-    const { error } = await this.resend.emails.send({
-      from,
-      to: params.to,
-      subject,
-      text,
-      html,
-    });
-
-    if (error) {
-      this.logger.error(`Resend failed: ${error.message}`, error);
+    try {
+      await this.transporter.sendMail({
+        from,
+        to: params.to,
+        subject,
+        text,
+        html,
+      });
+    } catch (error) {
+      this.logger.error('SMTP send failed', error);
       throw new InternalServerErrorException(
         'Unable to send email, try again later',
       );

@@ -37,6 +37,7 @@ Fullstack internship project (Team 2): idea & problem sharing platform built wit
    cp frontend/.env.example frontend/.env.development
    ```
    Fill in `DATABASE_URL` in `backend/.env.development` with the Neon development branch URL.
+   For password reset emails, set `GMAIL_SMTP_USER` and `GMAIL_SMTP_PASS` (Google App Password).
 
 4. **Generate Prisma client**
    ```bash
