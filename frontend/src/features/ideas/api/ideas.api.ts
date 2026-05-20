@@ -9,7 +9,6 @@ import type {
 } from '@/features/ideas/api/ideas-api.types';
 import { IDEAS_ROUTES } from '@/features/ideas/api/ideas.routes';
 import type { IdeaApi, IdeaMediaItem } from '@/features/ideas/model/idea.types';
-import { IDEA_STATUS } from '@/features/ideas/model/idea.types';
 
 import { api } from '@/shared/api/http';
 
@@ -35,7 +34,13 @@ export async function createIdea(payload: CreateIdeaPayload): Promise<IdeaApi> {
 export async function createIdeaDraft(
   payload: SaveIdeaDraftPayload,
 ): Promise<IdeaApi> {
-  return createIdea({ status: IDEA_STATUS.DRAFT, ...payload });
+  return createIdea({ isPublished: false, ...payload });
+}
+
+export async function createPublishedIdea(
+  payload: SaveIdeaDraftPayload,
+): Promise<IdeaApi> {
+  return createIdea({ isPublished: true, ...payload });
 }
 
 export async function updateIdea(
