@@ -1,3 +1,7 @@
+import {
+  PASSWORD_MAX_LENGTH,
+  passwordMaxLengthMessage,
+} from '@/shared/lib/password-rules';
 import { z } from 'zod';
 
 export const loginSchema = z.object({
@@ -10,7 +14,8 @@ export const loginSchema = z.object({
   password: z
     .string()
     .trim()
-    .min(1, { error: 'Password is required' }),
+    .min(1, { error: 'Password is required' })
+    .max(PASSWORD_MAX_LENGTH, { error: passwordMaxLengthMessage }),
 });
 
 export type LoginValues = z.infer<typeof loginSchema>;

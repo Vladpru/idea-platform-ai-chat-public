@@ -1,15 +1,13 @@
+import {
+  PASSWORD_MAX_LENGTH,
+  passwordMaxLengthMessage,
+  passwordMaxLengthRule,
+} from '@/shared/lib/password-rules';
 import { z } from 'zod';
 
-export const PASSWORD_MAX_LENGTH = 64;
+export { PASSWORD_MAX_LENGTH, passwordMaxLengthMessage, passwordMaxLengthRule };
 
 const SPECIAL_CHAR_REGEX = /[^A-Za-z0-9]/;
-
-export const passwordMaxLengthMessage = `Password must be at most ${PASSWORD_MAX_LENGTH} characters`;
-
-export const passwordMaxLengthRule = {
-  value: PASSWORD_MAX_LENGTH,
-  message: passwordMaxLengthMessage,
-} as const;
 
 const requiredPasswordString = (message: string) =>
   z
