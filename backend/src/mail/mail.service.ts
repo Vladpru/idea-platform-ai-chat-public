@@ -4,9 +4,11 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { render } from '@react-email/components';
 import * as nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
 
+import { WelcomeEmail } from './templates/WelcomeEmail';
 import { buildPasswordResetEmail } from './templates/password-reset';
 
 @Injectable()
@@ -26,6 +28,26 @@ export class MailService {
     });
   }
 
+  async sendWelcomeEmail(params: { to: string }) {
+    const from = this.config.getOrThrow<string>('GMAIL_SMTP_USER');
+    const subject = 'Welcome to The Idea Platform';
+
+    const html = await render(WelcomeEmail());
+    const text = await render(WelcomeEmail(), { plainText: true });
+
+    try {
+      await this.transporter.sendMail({
+        from,
+        to: params.to,
+        subject,
+        text,
+        html,
+      });
+    } catch (error) {
+      this.logger.error('SMTP send failed during welcome email', error);
+    }
+  }
+
   async sendPasswordResetEmail(params: {
     to: string;
     resetUrl: string;
@@ -43,7 +65,7 @@ export class MailService {
         html,
       });
     } catch (error) {
-      this.logger.error('SMTP send failed', error);
+      this.logger.error('SMTP send failed during password reset email', error);
       throw new InternalServerErrorException(
         'Unable to send email, try again later',
       );

@@ -1,5 +1,6 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 
+import { MailService } from '../mail/mail.service';
 import type { UserPublic } from '../shared/types/user.types';
 import { TokenService } from '../token/token.service';
 import { CreateUserDto } from '../user/dto/create-user.dto';
@@ -16,13 +17,22 @@ type GoogleProfileRaw = {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly userService: UserService,
     private readonly tokenService: TokenService,
+    private readonly mailService: MailService,
   ) {}
 
   async register(dto: CreateUserDto) {
     const user = await this.userService.create(dto);
+    void this.mailService.sendWelcomeEmail({ to: user.email }).catch(error => {
+      this.logger.error(
+        `Failed to send welcome email for user ${user.id}`,
+        error,
+      );
+    });
     return this.finalizeAuth(user);
   }
 
