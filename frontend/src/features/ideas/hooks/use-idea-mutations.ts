@@ -268,24 +268,32 @@ export function useDeleteIdeaMediaMutation() {
 }
 
 //TO DO: CREATE THIS FUNCTION IN ideas.api.ts
-type LinkProblemsVariables = {
-  ideaId: string;
-  problemIds: string[];
-};
+// type LinkProblemsVariables = {
+//   ideaId: string;
+//   problemIds: string[];
+// };
 
-export function useLinkProblemMutation() {
-  const queryClient = useQueryClient();
+// export function useLinkProblemMutation() {
+//   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationKey: [...ideaMutationKeys.all, 'link-problems'],
-    mutationFn: ({ ideaId, problemIds }: LinkProblemsVariables) =>
-      linkProblemsToIdea(ideaId, problemIds),
-    onSuccess: (_response, { ideaId }) => {
-      invalidateIdeaQueries(queryClient, ideaId);
-      toast.success('Problems linked successfully');
-    },
-    onError: error => {
-      toast.error(getApiErrorMessage(error));
-    },
-  });
+//   return useMutation({
+//     mutationKey: [...ideaMutationKeys.all, 'link-problems'],
+//     mutationFn: ({ ideaId, problemIds }: LinkProblemsVariables) =>
+//       linkProblemsToIdea(ideaId, problemIds),
+//     onSuccess: (_response, { ideaId }) => {
+//       invalidateIdeaQueries(queryClient, ideaId);
+//       toast.success('Problems linked successfully');
+//     },
+//     onError: error => {
+//       toast.error(getApiErrorMessage(error));
+//     },
+//   });
+// }
+
+//STUB
+export async function useLinkProblemMutation(
+  ideaId: string,
+  problemIds: string[],
+): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, 500));
 }
