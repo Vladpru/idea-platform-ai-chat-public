@@ -1,16 +1,17 @@
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useChangePasswordMutation } from '@/features/profile/hooks/use-profile-mutations';
 import {
+  type ChangePasswordFormValues,
   changePasswordDefaultValues,
   changePasswordSchema,
-  type ChangePasswordFormValues,
+  passwordMaxLengthRule,
 } from '@/features/profile/lib/change-password-schema';
 import { ChangePasswordField } from '@/features/profile/ui/change-password/ChangePasswordField';
 import {
   cancelOutlineBtn,
   primaryBtn,
 } from '@/features/profile/ui/profile-view-classes';
-import { useEffect, useId, useState } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useId, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
@@ -19,13 +20,11 @@ import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
 
 type ChangePasswordFormProps = {
-  open: boolean;
   onSuccess: () => void;
   onCancel: () => void;
 };
 
 export function ChangePasswordForm({
-  open,
   onSuccess,
   onCancel,
 }: ChangePasswordFormProps) {
@@ -36,20 +35,12 @@ export function ChangePasswordForm({
   const {
     register,
     handleSubmit,
-    reset,
     formState: { errors, isValid },
   } = useForm<ChangePasswordFormValues>({
     resolver: zodResolver(changePasswordSchema),
     defaultValues: changePasswordDefaultValues,
     mode: 'onChange',
   });
-
-  useEffect(() => {
-    if (!open) {
-      reset(changePasswordDefaultValues);
-      setGlobalError(null);
-    }
-  }, [open, reset]);
 
   const onSubmit = handleSubmit(async values => {
     setGlobalError(null);
@@ -89,28 +80,31 @@ export function ChangePasswordForm({
         label="Current password"
         placeholder="Enter current password"
         autoComplete="current-password"
-        registration={register('currentPassword')}
+        registration={register('currentPassword', {
+          maxLength: passwordMaxLengthRule,
+        })}
         error={errors.currentPassword?.message}
         autoFocus
-        resetVisibility={!open}
       />
       <ChangePasswordField
         id="change-password-new"
         label="New password"
         placeholder="Create new password"
         autoComplete="new-password"
-        registration={register('newPassword')}
+        registration={register('newPassword', {
+          maxLength: passwordMaxLengthRule,
+        })}
         error={errors.newPassword?.message}
-        resetVisibility={!open}
       />
       <ChangePasswordField
         id="change-password-confirm"
         label="Confirm password"
         placeholder="Confirm new password"
         autoComplete="new-password"
-        registration={register('confirmPassword')}
+        registration={register('confirmPassword', {
+          maxLength: passwordMaxLengthRule,
+        })}
         error={errors.confirmPassword?.message}
-        resetVisibility={!open}
       />
 
       <div className="mt-auto flex flex-col gap-4 pt-6 md:flex-row md:justify-between">

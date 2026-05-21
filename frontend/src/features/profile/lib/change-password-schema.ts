@@ -1,15 +1,27 @@
 import { z } from 'zod';
 
+export const PASSWORD_MAX_LENGTH = 64;
+
 const SPECIAL_CHAR_REGEX = /[^A-Za-z0-9]/;
 
-const requiredString = (message: string) =>
-  z.string().min(1, { error: message });
+export const passwordMaxLengthMessage = `Password must be at most ${PASSWORD_MAX_LENGTH} characters`;
+
+export const passwordMaxLengthRule = {
+  value: PASSWORD_MAX_LENGTH,
+  message: passwordMaxLengthMessage,
+} as const;
+
+const requiredPasswordString = (message: string) =>
+  z
+    .string()
+    .min(1, { error: message })
+    .max(PASSWORD_MAX_LENGTH, { error: passwordMaxLengthMessage });
 
 const newPasswordField = z
   .string()
   .min(1, { error: 'New password is required' })
   .min(8, { error: 'Password must be at least 8 characters' })
-  .max(64, { error: 'Password must be at most 64 characters' })
+  .max(PASSWORD_MAX_LENGTH, { error: passwordMaxLengthMessage })
   .refine(value => value === value.trim(), {
     error: 'Password cannot start or end with spaces',
   })
@@ -19,9 +31,11 @@ const newPasswordField = z
 
 export const changePasswordSchema = z
   .object({
-    currentPassword: requiredString('Please enter your current password'),
+    currentPassword: requiredPasswordString(
+      'Please enter your current password',
+    ),
     newPassword: newPasswordField,
-    confirmPassword: requiredString('Please confirm your password'),
+    confirmPassword: requiredPasswordString('Please confirm your password'),
   })
   .refine(data => data.newPassword !== data.currentPassword, {
     error: 'New password must be different from your current password',

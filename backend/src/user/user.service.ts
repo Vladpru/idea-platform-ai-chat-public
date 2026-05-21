@@ -11,7 +11,10 @@ import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { PrismaService } from '../prisma/prisma.service';
 import type { UserPublic } from '../shared/types/user.types';
 import { isUniqueConstraintError } from '../shared/utils/is-unique-error.util';
-import { validateNewPassword } from '../shared/utils/validate-password.util';
+import {
+  PASSWORD_MAX_LENGTH,
+  validateNewPassword,
+} from '../shared/utils/validate-password.util';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -152,8 +155,10 @@ export class UserService {
       throw new BadRequestException('Passwords are required');
     }
 
-    if (currentPassword.length > 150) {
-      throw new BadRequestException('Password is too long');
+    if (currentPassword.length > PASSWORD_MAX_LENGTH) {
+      throw new BadRequestException(
+        `Current password must be at most ${PASSWORD_MAX_LENGTH} characters`,
+      );
     }
 
     const validatedNewPassword = validateNewPassword(
