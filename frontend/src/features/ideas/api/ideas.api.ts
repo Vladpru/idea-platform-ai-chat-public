@@ -8,7 +8,11 @@ import type {
 } from '@/features/ideas/api/ideas-api.types';
 import type { IdeaFormResponseDto } from '@/features/ideas/api/idea-form-api.types';
 import { IDEAS_ROUTES } from '@/features/ideas/api/ideas.routes';
-import type { IdeaApi, IdeaMediaItem } from '@/features/ideas/model/idea.types';
+import {
+  IDEA_STATUS,
+  type IdeaApi,
+  type IdeaMediaItem,
+} from '@/features/ideas/model/idea.types';
 
 import { api } from '@/shared/api/http';
 
@@ -133,6 +137,43 @@ export async function deleteIdeaMedia(
   mediaId: string,
 ): Promise<void> {
   await api.delete(IDEAS_ROUTES.mediaById(ideaId, mediaId));
+}
+
+async function updateIdeaProblemLinks(
+  ideaId: string,
+  problemIds: string[],
+): Promise<IdeaFormResponseDto> {
+  const form = await fetchIdeaFormById(ideaId);
+  const payload = { problemIds };
+
+  if (form.status === IDEA_STATUS.PUBLISHED) {
+    await updatePublishedIdea(ideaId, payload);
+  } else {
+    await updateIdea(ideaId, payload);
+  }
+
+  return fetchIdeaFormById(ideaId);
+}
+
+export async function linkProblemsToIdea(
+  ideaId: string,
+  problemIds: string[],
+): Promise<IdeaFormResponseDto> {
+  const form = await fetchIdeaFormById(ideaId);
+  const existingIds = form.problems.map(problem => problem.id);
+  const mergedProblemIds = [...new Set([...existingIds, ...problemIds])];
+  return updateIdeaProblemLinks(ideaId, mergedProblemIds);
+}
+
+export async function unlinkProblemFromIdea(
+  ideaId: string,
+  problemId: string,
+): Promise<IdeaFormResponseDto> {
+  const form = await fetchIdeaFormById(ideaId);
+  const remainingProblemIds = form.problems
+    .map(problem => problem.id)
+    .filter(id => id !== problemId);
+  return updateIdeaProblemLinks(ideaId, remainingProblemIds);
 }
 
 export type {
