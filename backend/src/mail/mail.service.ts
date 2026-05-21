@@ -1,7 +1,9 @@
 import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { render } from '@react-email/components';
 import sgMail from '@sendgrid/mail';
 
+import { WelcomeEmail } from './templates/WelcomeEmail';
 import { buildPasswordResetEmail } from './templates/password-reset';
 
 @Injectable()
@@ -10,6 +12,26 @@ export class MailService {
 
   constructor(private readonly config: ConfigService) {
     sgMail.setApiKey(this.config.getOrThrow<string>('SENDGRID_API_KEY'));
+  }
+
+  async sendWelcomeEmail(params: { to: string }) {
+    const from = this.config.getOrThrow<string>('GMAIL_SMTP_USER');
+    const subject = 'Welcome to The Idea Platform';
+
+    const html = await render(WelcomeEmail());
+    const text = await render(WelcomeEmail(), { plainText: true });
+
+    try {
+      await this.transporter.sendMail({
+        from,
+        to: params.to,
+        subject,
+        text,
+        html,
+      });
+    } catch (error) {
+      this.logger.error('SMTP send failed during welcome email', error);
+    }
   }
 
   async sendPasswordResetEmail(params: {
