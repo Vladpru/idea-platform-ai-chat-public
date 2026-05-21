@@ -19,6 +19,7 @@ export type IdeaFormProblem = {
   description: string;
   status: ProblemStatus;
   isPrimary: boolean;
+  author: IdeaFormAuthor;
 };
 
 export type IdeaFormTag = {

@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
@@ -49,10 +50,29 @@ const ALLOWED_UPLOAD_STATUSES: IdeaStatus[] = [
 
 @Injectable()
 export class IdeaService {
+  private readonly logger = new Logger(IdeaService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly cloudinary: CloudinaryService,
   ) {}
+
+  private enqueueCloudinaryDeletes(publicIds: string[]): void {
+    if (publicIds.length === 0) {
+      return;
+    }
+
+    void Promise.allSettled(
+      publicIds.map(publicId => this.cloudinary.deleteByPublicId(publicId)),
+    ).then(results => {
+      const failedCount = results.filter(r => r.status === 'rejected').length;
+      if (failedCount > 0) {
+        this.logger.warn(
+          `Cloudinary cleanup failed for ${failedCount}/${publicIds.length} asset(s) after idea deletion`,
+        );
+      }
+    });
+  }
 
   private async cleanupOrphanedDraftProblems(
     tx: Prisma.TransactionClient,
@@ -285,10 +305,10 @@ export class IdeaService {
         data: {
           authorId,
           status: IdeaStatus.DRAFT,
-          ...(updateDto.stage !== undefined ? { stage: updateDto.stage } : {}),
-          ...(updateDto.title !== undefined ? { title: updateDto.title } : {}),
-          ...(updateDto.description !== undefined
-            ? { description: updateDto.description }
+          ...(dto.stage !== undefined ? { stage: dto.stage } : {}),
+          ...(dto.title !== undefined ? { title: dto.title } : {}),
+          ...(dto.description !== undefined
+            ? { description: dto.description }
             : {}),
         },
         include: IDEA_FORM_INCLUDE,
@@ -561,10 +581,6 @@ export class IdeaService {
         throw new NotFoundException(IDEA_NOT_FOUND);
       }
 
-      if (existing.status !== IdeaStatus.DRAFT) {
-        throw new BadRequestException('Only draft ideas can be updated');
-      }
-
       await this.applyIdeaUpdates(tx, id, authorId, dto);
 
       const updated = await tx.idea.findFirst({
@@ -724,46 +740,40 @@ export class IdeaService {
         throw new BadRequestException('Idea is already deleted');
       }
 
-      if (existing.status === IdeaStatus.DRAFT) {
-        const currentLinks = await tx.ideaProblem.findMany({
-          where: { ideaId: id },
-          select: { problemId: true },
-        });
-        const problemIdsToCleanup = currentLinks.map(l => l.problemId);
-
-        const media = await tx.ideaMedia.findMany({
-          where: { ideaId: id },
-          select: { publicId: true },
-        });
-        publicIdsToDelete = media.map(m => m.publicId);
-
-        await tx.ideaProblem.deleteMany({ where: { ideaId: id } });
-        await tx.idea.delete({ where: { id } });
-
-        await this.cleanupOrphanedDraftProblems(
-          tx,
-          authorId,
-          problemIdsToCleanup,
-        );
-      } else if (existing.status === IdeaStatus.PUBLISHED) {
-        await tx.idea.update({
-          where: { id },
-          data: { status: IdeaStatus.ARCHIVED },
-        });
-      } else {
+      if (
+        existing.status !== IdeaStatus.DRAFT &&
+        existing.status !== IdeaStatus.PUBLISHED
+      ) {
         throw new BadRequestException(
           `Cannot delete idea with status: ${existing.status as string}`,
         );
       }
+
+      const media = await tx.ideaMedia.findMany({
+        where: { ideaId: id },
+        select: { publicId: true },
+      });
+      publicIdsToDelete = media.map(record => record.publicId);
+
+      const problemLinks = await tx.ideaProblem.findMany({
+        where: { ideaId: id },
+        select: { problemId: true },
+      });
+      const problemIdsToCleanup = problemLinks.map(link => link.problemId);
+
+      await tx.ideaMedia.deleteMany({ where: { ideaId: id } });
+      await tx.ideaProblem.deleteMany({ where: { ideaId: id } });
+      await tx.ideaTag.deleteMany({ where: { ideaId: id } });
+      await tx.idea.delete({ where: { id } });
+
+      await this.cleanupOrphanedDraftProblems(
+        tx,
+        authorId,
+        problemIdsToCleanup,
+      );
     });
 
-    if (publicIdsToDelete.length > 0) {
-      Promise.allSettled(
-        publicIdsToDelete.map(publicId =>
-          this.cloudinary.deleteByPublicId(publicId),
-        ),
-      ).catch(() => {});
-    }
+    this.enqueueCloudinaryDeletes(publicIdsToDelete);
   }
 
   async publish(id: string, authorId: string): Promise<IdeaFormResponse> {

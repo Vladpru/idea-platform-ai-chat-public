@@ -63,6 +63,7 @@ export function toIdeaFormResponse(idea: IdeaFormRecord): IdeaFormResponse {
       description: problem.description,
       status: problem.status,
       isPrimary,
+      author: toIdeaAuthorResponse(problem.author),
     })),
     tags: idea.tags.map(({ tag }) => ({
       id: tag.id,
