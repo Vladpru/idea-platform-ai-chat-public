@@ -296,6 +296,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
                 <IdeaLinkedProblemsTab
                   ideaId={ideaId}
                   problems={visibleProblems}
+                  isAuthor={isAuthor}
                 />
               )}
             </>

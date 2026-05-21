@@ -1,5 +1,6 @@
 import type { IdeaDetails } from '@/features/idea-details/model/idea-details.types';
 import { LinkExistingProblemModal } from '@/features/idea-details/modals/LinkExistingProblemModal';
+import { useUnlinkProblemMutation } from '@/features/ideas/hooks/use-idea-mutations';
 import { outlineBtnClass } from '@/features/ideas/lib/styles';
 import { useState } from 'react';
 import {
@@ -26,6 +27,7 @@ import { getInitials } from '@/features/idea-details/lib/get-initials';
 type IdeaLinkedProblemsTabProps = {
   ideaId: string;
   problems: IdeaDetails['linkedProblems'];
+  isAuthor?: boolean;
 };
 
 const VISIBLE_TAG_COUNT = 2;
@@ -77,6 +79,9 @@ function LinkedProblemsHeader({
 
 type LinkedProblemCardProps = {
   problem: IdeaDetails['linkedProblems'][number];
+  canUnlink: boolean;
+  isUnlinking: boolean;
+  onUnlink: () => void;
 };
 
 function LinkedProblemMicroStats({
@@ -129,7 +134,12 @@ function LinkedProblemTags({ tags }: { tags: string[] }) {
   );
 }
 
-function LinkedProblemCard({ problem }: LinkedProblemCardProps) {
+function LinkedProblemCard({
+  problem,
+  canUnlink,
+  isUnlinking,
+  onUnlink,
+}: LinkedProblemCardProps) {
   return (
     <article className="flex flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm lg:flex-row">
       <div className="relative flex aspect-[16/10] w-full shrink-0 items-center justify-center bg-gradient-to-br from-slate-800 via-slate-900 to-indigo-950 lg:aspect-auto lg:min-h-[200px] lg:w-[240px]">
@@ -164,26 +174,29 @@ function LinkedProblemCard({ problem }: LinkedProblemCardProps) {
                 </span>
               ) : null}
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className="text-brand-gray-500 hover:bg-brand-gray-100 inline-flex size-8 shrink-0 items-center justify-center rounded-md border border-gray-200 bg-white transition-colors"
-                  aria-label={`Actions for ${problem.title}`}
-                >
-                  <MoreVertical className="size-4" aria-hidden />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40">
-                <DropdownMenuItem
-                  variant="destructive"
-                  className="cursor-pointer text-sm font-medium text-orange-600 focus:text-orange-600"
-                  onSelect={event => event.preventDefault()}
-                >
-                  Unlink problem
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {canUnlink ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="text-brand-gray-500 hover:bg-brand-gray-100 inline-flex size-8 shrink-0 items-center justify-center rounded-md border border-gray-200 bg-white transition-colors"
+                    aria-label={`Actions for ${problem.title}`}
+                  >
+                    <MoreVertical className="size-4" aria-hidden />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40">
+                  <DropdownMenuItem
+                    variant="destructive"
+                    className="cursor-pointer text-sm font-medium text-orange-600 focus:text-orange-600"
+                    disabled={isUnlinking}
+                    onSelect={() => onUnlink()}
+                  >
+                    {isUnlinking ? 'Unlinking…' : 'Unlink problem'}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
           </div>
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -223,9 +236,15 @@ function LinkedProblemCard({ problem }: LinkedProblemCardProps) {
 export function IdeaLinkedProblemsTab({
   ideaId,
   problems,
+  isAuthor = false,
 }: IdeaLinkedProblemsTabProps) {
   const [linkModalOpen, setLinkModalOpen] = useState(false);
+  const unlinkMutation = useUnlinkProblemMutation();
   const linkedProblemIds = problems.map(problem => problem.id);
+
+  const handleUnlink = (problemId: string) => {
+    unlinkMutation.mutate({ ideaId, problemId });
+  };
 
   return (
     <section className="space-y-6">
@@ -249,7 +268,15 @@ export function IdeaLinkedProblemsTab({
         <ul className="flex flex-col gap-5">
           {problems.map(problem => (
             <li key={problem.id}>
-              <LinkedProblemCard problem={problem} />
+              <LinkedProblemCard
+                problem={problem}
+                canUnlink={isAuthor}
+                isUnlinking={
+                  unlinkMutation.isPending &&
+                  unlinkMutation.variables?.problemId === problem.id
+                }
+                onUnlink={() => handleUnlink(problem.id)}
+              />
             </li>
           ))}
         </ul>
