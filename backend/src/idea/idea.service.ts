@@ -844,7 +844,7 @@ export class IdeaService {
 
     const scoredRecords = await this.prisma.$queryRaw<{ id: string }[]>`
       SELECT i.id
-      FROM "Idea" i
+      FROM "idea" i
       WHERE 
         i.status = 'PUBLISHED' 
         AND i.id != ${id}
@@ -853,7 +853,7 @@ export class IdeaService {
         setweight(to_tsvector('english', coalesce(i.title, '')), 'A') ||
         setweight(to_tsvector('english', coalesce(i.description, '')), 'B'),
         to_tsquery('english', ${searchQuery})
-      ) DESC, i."publishedAt" DESC
+      ) DESC, i."published_at" DESC
       LIMIT 3;
     `;
 
