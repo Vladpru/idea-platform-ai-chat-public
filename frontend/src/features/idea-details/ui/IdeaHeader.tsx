@@ -1,4 +1,4 @@
-import type { IdeaDetails } from '@/features/ideas/model/idea-details.types';
+import type { IdeaDetails } from '@/features/idea-details/model/idea-details.types';
 
 import { useDeleteIdea } from '@/features/ideas/hooks/use-delete-idea';
 
@@ -34,7 +34,7 @@ import {
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
 
-import { getInitials } from './lib/get-initials';
+import { getInitials } from '@/features/idea-details/lib/get-initials';
 
 import { StageChevronBadge } from '@/shared/ui/stage-chevron-badge';
 
@@ -131,10 +131,10 @@ export function IdeaHeader({
               </Button>
             </DropdownMenuTrigger>
 
-            <DropdownMenuContent align="end" className="w-44 p-0">
+            <DropdownMenuContent align="end" className="w-44 rounded p-2">
               {!isEditing ? (
                 <DropdownMenuItem
-                  className="cursor-pointer px-3.5 py-2.5 text-sm font-normal"
+                  className="focus:bg-brand-blue-700/10 hover:bg-brand-blue-700/10 cursor-pointer px-3 py-2 text-sm font-normal"
                   onSelect={event => {
                     event.preventDefault();
                     onStartEdit?.();
@@ -147,7 +147,7 @@ export function IdeaHeader({
               {!isEditing ? <DropdownMenuSeparator className="my-0" /> : null}
 
               <DropdownMenuItem
-                className="cursor-pointer px-3.5 py-2.5 text-sm font-normal text-amber-600 focus:text-amber-600 dark:text-amber-500"
+                className="focus:bg-brand-orange/10 hover:bg-brand-orange/10 cursor-pointer px-3 py-2 text-sm font-normal text-amber-600 focus:text-amber-600"
                 onSelect={event => {
                   event.preventDefault();
 

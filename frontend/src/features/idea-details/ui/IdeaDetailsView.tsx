@@ -19,9 +19,8 @@ import { useUpdateIdea } from '@/features/ideas/hooks/use-update-idea';
 import {
   useIdeaDetailsQuery,
   useSimilarIdeasQuery,
-} from '@/features/ideas/hooks/use-idea-details-queries';
-import type { IdeaDetails } from '@/features/ideas/model/idea-details.types';
-import type { IdeaTabId } from '@/features/ideas/model/idea-details.types';
+} from '@/features/idea-details/lib/use-idea-details-queries';
+import type { IdeaDetails, IdeaTabId } from '@/features/idea-details/model/idea-details.types';
 import { IdeaForm } from '@/features/ideas/ui/idea-form/IdeaForm';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';

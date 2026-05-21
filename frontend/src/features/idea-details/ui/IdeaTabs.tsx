@@ -1,7 +1,7 @@
 import type {
   IdeaDetailsCounts,
   IdeaTabId,
-} from '@/features/ideas/model/idea-details.types';
+} from '@/features/idea-details/model/idea-details.types';
 
 import { cn } from '@/shared/lib/utils';
 

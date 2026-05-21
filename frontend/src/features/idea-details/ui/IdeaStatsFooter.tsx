@@ -1,10 +1,10 @@
-import type { IdeaDetailsStats } from '@/features/ideas/model/idea-details.types';
+import type { IdeaDetailsStats } from '@/features/idea-details/model/idea-details.types';
 import { Eye, Heart, MessageCircle } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 import { cn } from '@/shared/lib/utils';
 
-import { formatIdeaDate } from './lib/format-idea-date';
+import { formatIdeaDate } from '@/features/idea-details/lib/format-idea-date';
 
 type IdeaStatsFooterProps = {
   createdAt: string;

@@ -1,5 +1,5 @@
 import type { IdeaFormResponseDto } from '@/features/ideas/api/idea-form-api.types';
-import type { IdeaDetails } from '@/features/ideas/model/idea-details.types';
+import type { IdeaDetails } from '@/features/idea-details/model/idea-details.types';
 import type { UpdateIdeaPayload } from '@/features/ideas/api/ideas-api.types';
 import type { ApiStage } from '@/features/ideas/model/idea.types';
 import { formatTags, parseTags } from '@/features/ideas/lib/create-idea/tags';

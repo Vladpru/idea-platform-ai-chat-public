@@ -47,7 +47,10 @@ export function ConfirmModal({
         <Button
           type="button"
           variant="outline"
-          className={cn(outlineBtn, 'w-full sm:w-auto')}
+          className={cn(
+            outlineBtn,
+            'text-brand-orange border-brand-orange hover:bg-brand-orange/10 w-full px-4 py-1 sm:w-auto md:h-11 md:w-39',
+          )}
           disabled={isPending}
           onClick={onConfirm}
           isLoading={isPending}
@@ -57,7 +60,10 @@ export function ConfirmModal({
         <Button
           type="button"
           variant="outline"
-          className={cn(outlineBtn, 'w-full sm:w-auto')}
+          className={cn(
+            outlineBtn,
+            'w-full px-4 py-1 sm:w-auto md:h-11 md:w-39',
+          )}
           disabled={isPending}
           onClick={handleCancel}
         >

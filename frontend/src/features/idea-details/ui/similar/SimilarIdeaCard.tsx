@@ -1,4 +1,4 @@
-import type { SimilarIdeaCard as SimilarIdeaCardModel } from '@/features/ideas/model/idea-details.types';
+import type { SimilarIdeaCard as SimilarIdeaCardModel } from '@/features/idea-details/model/idea-details.types';
 import { Link } from '@tanstack/react-router';
 import { Eye, Heart, MessageCircle } from 'lucide-react';
 
@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { StageChevronBadge } from '@/shared/ui/stage-chevron-badge';
 import { IdeaTagCloud } from '../IdeaTagCloud';
 
-import { getInitials } from '../lib/get-initials';
+import { getInitials } from '@/features/idea-details/lib/get-initials';
 
 type SimilarIdeaCardProps = {
   card: SimilarIdeaCardModel;

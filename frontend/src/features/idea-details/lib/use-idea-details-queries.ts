@@ -6,7 +6,7 @@ import { ideaMutationKeys } from '@/features/ideas/hooks/use-idea-mutations';
 import {
   toIdeaDetails,
   toSimilarIdeaCard,
-} from '@/features/ideas/model/idea-details.mapper';
+} from '@/features/idea-details/model/idea-details.mapper';
 import { useQuery } from '@tanstack/react-query';
 
 export function useIdeaDetailsQuery(ideaId: string) {

@@ -6,7 +6,7 @@ import {
   publishBtnClass,
   selectClass,
 } from '@/features/ideas/lib/styles';
-import { useLinkProblemMutation } from '@/features/ideas/hooks/use-idea-mutations';
+
 import { type ProblemDraft, useMyProblemsQuery } from '@/features/problems';
 import { cancelOutlineBtn } from '@/features/profile/ui/profile-view-classes';
 import { Check, ChevronDown, Search, X } from 'lucide-react';
@@ -23,7 +23,7 @@ import {
 } from '@/shared/ui/dialog';
 import { Input } from '@/shared/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip';
-
+import { useLinkProblemMutation } from '@/features/ideas/hooks/use-idea-mutations';
 const SAVE_TOOLTIP = 'Select at least one problem to link it to this idea.';
 
 type LinkExistingProblemModalProps = {
@@ -44,7 +44,6 @@ export function LinkExistingProblemModal({
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [search, setSearch] = useState('');
 
-  // Тепер це масив для підтримки кількох проблем
   const [selectedProblemIds, setSelectedProblemIds] = useState<string[]>([]);
 
   const [addProblemOpen, setAddProblemOpen] = useState(false);
@@ -109,7 +108,6 @@ export function LinkExistingProblemModal({
       });
   }, [dropdownOpen, addProblemOpen]);
 
-  // Тогл: якщо ID вже є — видаляємо, якщо немає — додаємо
   const handleToggleProblem = (problemId: string) => {
     setSelectedProblemIds(previous =>
       previous.includes(problemId)
@@ -121,7 +119,6 @@ export function LinkExistingProblemModal({
   const handleSave = () => {
     if (selectedProblemIds.length === 0) return;
 
-    // Зверни увагу: мутація тепер має очікувати масив problemIds
     linkMutation.mutate(
       { ideaId, problemIds: selectedProblemIds },
       {
@@ -194,19 +191,16 @@ export function LinkExistingProblemModal({
                     }}
                     className={cn(
                       selectClass,
-                      'relative min-h-10 cursor-pointer rounded-md pr-9 pl-2 text-left',
+                      // Додаємо h-auto, щоб перебити фіксовану висоту з selectClass, коли тегів стає багато
+                      'relative h-auto min-h-10 cursor-pointer rounded-md pr-9 pl-2 text-left',
                       dropdownOpen &&
                         'border-brand-light-blue ring-brand-light-blue/40 ring-2',
                     )}
                   >
-                    <div
-                      className="flex h-full scrollbar-none flex-nowrap items-center gap-1.5 overflow-x-auto overflow-y-hidden py-1.5 pr-1 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                      onWheel={event => {
-                        event.currentTarget.scrollLeft += event.deltaY;
-                      }}
-                    >
+                    {/* 1. Змінюємо контейнер на flex-wrap і вбиваємо милицю з onWheel */}
+                    <div className="flex flex-wrap items-center gap-1.5 py-1.5">
                       {selectedProblemIds.length === 0 ? (
-                        <span className="text-muted-foreground shrink-0 px-1 text-sm">
+                        <span className="text-muted-foreground px-1 text-sm">
                           Choose problems...
                         </span>
                       ) : (
@@ -219,7 +213,8 @@ export function LinkExistingProblemModal({
                           return (
                             <span
                               key={id}
-                              className="bg-brand-gray-100 text-brand-gray-900 inline-flex shrink-0 items-center gap-1 rounded-full py-0.5 pr-1 pl-2.5 text-xs whitespace-nowrap"
+                              // Прибрали зайві класи shrink-0 та whitespace-nowrap з контейнера пігулки
+                              className="bg-brand-gray-100 text-brand-gray-900 inline-flex items-center gap-1 rounded-full py-0.5 pr-1 pl-2.5 text-xs"
                             >
                               <span className="max-w-[150px] truncate sm:max-w-[200px]">
                                 {label}
@@ -244,9 +239,11 @@ export function LinkExistingProblemModal({
                         })
                       )}
                     </div>
+
+                    {/* 2. Прибираємо ганебний bg-white pl-1. Фіксуємо іконку зверху на випадок багаторядковості */}
                     <ChevronDown
                       className={cn(
-                        'text-brand-gray-600 pointer-events-none absolute top-1/2 right-3 z-10 size-4 -translate-y-1/2 bg-white pl-1 transition-transform',
+                        'text-brand-gray-600 pointer-events-none absolute top-3 right-3 z-10 size-4 transition-transform',
                         dropdownOpen && 'rotate-180',
                       )}
                       aria-hidden

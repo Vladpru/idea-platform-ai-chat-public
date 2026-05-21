@@ -1,5 +1,5 @@
-import type { IdeaDetails } from '@/features/ideas/model/idea-details.types';
-import { LinkExistingProblemModal } from '@/features/ideas/ui/modals/LinkExistingProblemModal';
+import type { IdeaDetails } from '@/features/idea-details/model/idea-details.types';
+import { LinkExistingProblemModal } from '@/features/idea-details/modals/LinkExistingProblemModal';
 import { outlineBtnClass } from '@/features/ideas/lib/styles';
 import { useState } from 'react';
 import {
@@ -21,7 +21,7 @@ import {
 } from '@/shared/ui/dropdown-menu';
 import { StageChevronBadge } from '@/shared/ui/stage-chevron-badge';
 
-import { getInitials } from '../lib/get-initials';
+import { getInitials } from '@/features/idea-details/lib/get-initials';
 
 type IdeaLinkedProblemsTabProps = {
   ideaId: string;

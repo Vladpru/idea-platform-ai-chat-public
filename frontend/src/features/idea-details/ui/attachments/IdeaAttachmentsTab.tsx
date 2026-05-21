@@ -1,9 +1,9 @@
-import type { IdeaDetails } from '@/features/ideas/model/idea-details.types';
+import type { IdeaDetails } from '@/features/idea-details/model/idea-details.types';
 
 import { cn } from '@/shared/lib/utils';
 
-import { formatFileSize } from '../lib/format-file-size';
-import { getAttachmentIcon } from '../lib/get-attachment-icon';
+import { formatFileSize } from '@/features/idea-details/lib/format-file-size';
+import { getAttachmentIcon } from '@/features/idea-details/lib/get-attachment-icon';
 
 type IdeaAttachmentsTabProps = {
   attachments: IdeaDetails['attachments'];

@@ -1,4 +1,4 @@
-import { IdeaDetailsView } from '@/features/ideas/ui/idea-details/IdeaDetailsView';
+import { IdeaDetailsView } from '@/features/idea-details';
 
 type IdeaDetailsPageProps = {
   ideaId: string;

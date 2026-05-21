@@ -1,7 +1,7 @@
 import type {
   SimilarIdeaCard,
   SimilarIdeasSubTab,
-} from '@/features/ideas/model/idea-details.types';
+} from '@/features/idea-details/model/idea-details.types';
 import { Globe, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 
