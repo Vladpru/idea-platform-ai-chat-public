@@ -1,16 +1,15 @@
 import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Resend } from 'resend';
+import * as sgMail from '@sendgrid/mail';
 
 import { buildPasswordResetEmail } from './templates/password-reset';
 
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
-  private readonly resend: Resend;
 
   constructor(private readonly config: ConfigService) {
-    this.resend = new Resend(this.config.getOrThrow<string>('RESEND_API_KEY'));
+    sgMail.setApiKey(this.config.getOrThrow<string>('SENDGRID_API_KEY'));
   }
 
   async sendPasswordResetEmail(params: {
@@ -20,16 +19,16 @@ export class MailService {
   }) {
     const { subject, text, html } = buildPasswordResetEmail(params);
 
-    const { error } = await this.resend.emails.send({
-      from: 'onboarding@resend.dev',
-      to: params.to,
-      subject,
-      text,
-      html,
-    });
-
-    if (error) {
-      this.logger.error('Resend send failed', error);
+    try {
+      await sgMail.send({
+        from: 'andriy.varshko@oril.co',
+        to: params.to,
+        subject,
+        text,
+        html,
+      });
+    } catch (error) {
+      this.logger.error('SendGrid send failed', error);
       throw new InternalServerErrorException('Unable to send email, try again later');
     }
   }
