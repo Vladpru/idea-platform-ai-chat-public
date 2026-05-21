@@ -15,15 +15,17 @@ export class MailService {
   private readonly transporter: Transporter;
 
   constructor(private readonly config: ConfigService) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
       port: 587,
       secure: false,
+      family: 4, // Render free tier has no outbound IPv6; smtp.gmail.com resolves to IPv6
       auth: {
         user: this.config.getOrThrow<string>('GMAIL_SMTP_USER'),
         pass: this.config.getOrThrow<string>('GMAIL_SMTP_PASS'),
       },
-    });
+    } as any);
   }
 
   async sendPasswordResetEmail(params: {
