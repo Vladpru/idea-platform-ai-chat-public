@@ -184,7 +184,8 @@ export class IdeaController {
       new ParseFilePipe({
         validators: [
           new FileTypeValidator({
-            fileType: /image\/(jpeg|png|webp)|application\/pdf/,
+            fileType:
+              /image\/(jpeg|png|webp)|application\/pdf|application\/msword|application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document/,
           }),
         ],
       }),

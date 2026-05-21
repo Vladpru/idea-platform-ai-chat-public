@@ -65,7 +65,7 @@ export class CloudinaryService {
 
     try {
       const res = (await cloudinary.uploader.destroy(publicId.trim(), {
-        resource_type: 'image',
+        resource_type: 'auto',
       })) as { result: string };
 
       if (res.result !== 'ok' && res.result !== 'not found') {
@@ -97,7 +97,10 @@ export class CloudinaryService {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
           folder,
-          resource_type: 'image',
+          resource_type: 'auto',
+          use_filename: true,
+          unique_filename: true,
+          filename_override: file.originalname,
         },
         (err, result) => {
           if (err) {
