@@ -16,6 +16,7 @@ import {
 } from '@/shared/ui/dropdown-menu';
 
 import { LogoutConfirmDialog } from './LogoutConfirmDialog';
+import { TriangleDown } from '@/shared/ui/icons/TriangleDown';
 
 const linkRowClassName =
   'flex w-full cursor-pointer items-center py-3 px-4 text-base';
@@ -34,8 +35,7 @@ export function UserNav({ triggerClassName }: UserNavProps) {
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className={triggerClassName}
-            aria-label="Account menu"
+            className={`group flex items-center gap-1.5 outline-none ${triggerClassName}`}
           >
             <Avatar className="h-8 w-8">
               <AvatarImage
@@ -46,6 +46,8 @@ export function UserNav({ triggerClassName }: UserNavProps) {
                 {nameInitial(user?.name ?? '')}
               </AvatarFallback>
             </Avatar>
+
+            <TriangleDown className="h-3 w-3 text-white transition-transform duration-200 group-data-[state=open]:rotate-180" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent

@@ -110,7 +110,7 @@ export function AppHeader() {
         </button>
 
         <div className="hidden lg:block">
-          <UserNav triggerClassName={HEADER_ACTION_BUTTON_CLASS} />
+          <UserNav triggerClassName=" transition-opacity cursor-pointer" />
         </div>
 
         <div className="lg:hidden">
