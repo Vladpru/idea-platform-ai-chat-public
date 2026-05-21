@@ -175,7 +175,7 @@ export class IdeaController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: memoryStorage(),
-      limits: { fileSize: 10 * 1024 * 1024 },
+      limits: { fileSize: 5 * 1024 * 1024 },
     }),
   )
   uploadAttachment(
@@ -213,7 +213,7 @@ export class IdeaController {
   @JwtAuth()
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Delete an idea (hard delete draft, soft delete published)',
+    summary: 'Delete an idea (hard delete draft or published)',
   })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Idea deleted' })

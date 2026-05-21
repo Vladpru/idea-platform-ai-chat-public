@@ -15,6 +15,14 @@ export const IDEA_FORM_INCLUDE = {
           title: true,
           description: true,
           status: true,
+          author: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              avatarUrl: true,
+            },
+          },
         },
       },
     },
