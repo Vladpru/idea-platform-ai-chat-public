@@ -1,6 +1,7 @@
+import { PASSWORD_MAX_LENGTH } from '@/shared/lib/password-rules';
 import { labelClass } from '@/features/profile/ui/profile-view-classes';
 import { Eye, EyeOff } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { UseFormRegisterReturn } from 'react-hook-form';
 
 import { cn } from '@/shared/lib/utils';
@@ -16,7 +17,6 @@ type ChangePasswordFieldProps = {
   registration: UseFormRegisterReturn;
   error?: string;
   autoFocus?: boolean;
-  resetVisibility?: boolean;
 };
 
 export function ChangePasswordField({
@@ -27,16 +27,10 @@ export function ChangePasswordField({
   registration,
   error,
   autoFocus,
-  resetVisibility,
 }: ChangePasswordFieldProps) {
   const [visible, setVisible] = useState(false);
   const errorId = `${id}-error`;
-
-  useEffect(() => {
-    if (resetVisibility) {
-      setVisible(false);
-    }
-  }, [resetVisibility]);
+  const { onChange, ...registrationRest } = registration;
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -53,7 +47,19 @@ export function ChangePasswordField({
           className="rounded-sm bg-transparent py-2.5 pr-10"
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errorId : undefined}
-          {...registration}
+          {...registrationRest}
+          maxLength={PASSWORD_MAX_LENGTH}
+          onChange={event => {
+            const nextValue = event.target.value.slice(0, PASSWORD_MAX_LENGTH);
+            if (nextValue === event.target.value) {
+              onChange(event);
+              return;
+            }
+            void onChange({
+              target: { ...event.target, value: nextValue },
+              type: event.type,
+            });
+          }}
         />
         <Button
           variant="ghost"

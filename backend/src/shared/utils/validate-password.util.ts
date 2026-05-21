@@ -1,5 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 
+export const PASSWORD_MAX_LENGTH = 64;
+
 export function validateNewPassword(
   password: unknown,
   fieldLabel = 'Password',
@@ -8,8 +10,10 @@ export function validateNewPassword(
     throw new BadRequestException(`${fieldLabel} is required`);
   }
 
-  if (password.length > 150) {
-    throw new BadRequestException(`${fieldLabel} is too long`);
+  if (password.length > PASSWORD_MAX_LENGTH) {
+    throw new BadRequestException(
+      `${fieldLabel} must be at most ${PASSWORD_MAX_LENGTH} characters`,
+    );
   }
 
   if (password.length < 8) {

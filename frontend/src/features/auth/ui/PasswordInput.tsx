@@ -2,6 +2,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import type { UseFormRegisterReturn } from 'react-hook-form';
 
+import { PASSWORD_MAX_LENGTH } from '@/shared/lib/password-rules';
 import { Button, Input, Label } from '@/shared/ui';
 
 interface PasswordInputProps {
@@ -38,6 +39,8 @@ export function PasswordInput({
     }
   };
 
+  const { onChange, ...registrationRest } = registration;
+
   return (
     <div className="flex flex-col gap-1">
       <Label htmlFor={id} className="text-brand-gray-600 text-xs">
@@ -50,7 +53,19 @@ export function PasswordInput({
           autoComplete={autoComplete}
           placeholder={placeholder}
           className="rounded-sm bg-transparent py-2.5 pr-10"
-          {...registration}
+          {...registrationRest}
+          maxLength={PASSWORD_MAX_LENGTH}
+          onChange={event => {
+            const nextValue = event.target.value.slice(0, PASSWORD_MAX_LENGTH);
+            if (nextValue === event.target.value) {
+              onChange(event);
+              return;
+            }
+            void onChange({
+              target: { ...event.target, value: nextValue },
+              type: event.type,
+            });
+          }}
         />
         <Button
           variant="ghost"

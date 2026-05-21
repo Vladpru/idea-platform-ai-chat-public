@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { getApiErrorMessage } from '@/shared/api/api-error';
+import { passwordMaxLengthRule } from '@/shared/lib/password-rules';
 import { Button, Input, Label, Separator } from '@/shared/ui';
 
 import { useAuthSessionStore } from '../model/auth-session-store';
@@ -91,7 +92,9 @@ export function RegisterForm() {
             label="PASSWORD"
             placeholder="Create password"
             autoComplete="new-password"
-            registration={register('password')}
+            registration={register('password', {
+              maxLength: passwordMaxLengthRule,
+            })}
             error={errors.password?.message}
             passwordVisible={passwordsVisible}
             onPasswordVisibleChange={setPasswordsVisible}
@@ -104,7 +107,9 @@ export function RegisterForm() {
           label="CONFIRM PASSWORD"
           placeholder="Confirm password"
           autoComplete="new-password"
-          registration={register('confirmPassword')}
+          registration={register('confirmPassword', {
+            maxLength: passwordMaxLengthRule,
+          })}
           error={errors.confirmPassword?.message}
           passwordVisible={passwordsVisible}
           onPasswordVisibleChange={setPasswordsVisible}

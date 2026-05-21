@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { getApiErrorMessage } from '@/shared/api/api-error';
+import { passwordMaxLengthRule } from '@/shared/lib/password-rules';
 import { Button, Input, Label, Separator } from '@/shared/ui';
 
 import { useAuthSessionStore } from '../model/auth-session-store';
@@ -84,7 +85,9 @@ export function LoginForm() {
             label="PASSWORD"
             placeholder="••••••••"
             autoComplete="current-password"
-            registration={register('password')}
+            registration={register('password', {
+              maxLength: passwordMaxLengthRule,
+            })}
             error={errors.password?.message}
           />
           <div className="flex h-18 items-start justify-end">

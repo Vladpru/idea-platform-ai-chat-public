@@ -10,6 +10,8 @@ import {
   MinLength,
 } from 'class-validator';
 
+import { PASSWORD_MAX_LENGTH } from '../../shared/utils/validate-password.util';
+
 export class CreateUserDto {
   @ApiProperty({ example: 'user@example.com' })
   @IsNotEmpty({ message: 'Email is required' })
@@ -29,11 +31,17 @@ export class CreateUserDto {
   @MaxLength(50)
   lastName?: string;
 
-  @ApiProperty({ example: 'Secret123!', minLength: 8, maxLength: 150 })
+  @ApiProperty({
+    example: 'Secret123!',
+    minLength: 8,
+    maxLength: PASSWORD_MAX_LENGTH,
+  })
   @IsNotEmpty({ message: 'Password is required' })
   @IsString()
   @MinLength(8, { message: 'Password must be at least 8 characters' })
-  @MaxLength(150, { message: 'Password must be at most 150 characters' })
+  @MaxLength(PASSWORD_MAX_LENGTH, {
+    message: `Password must be at most ${PASSWORD_MAX_LENGTH} characters`,
+  })
   @Matches(/[A-Z]/, {
     message: 'Password must contain at least one uppercase letter',
   })

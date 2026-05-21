@@ -53,11 +53,12 @@ export function ChangePasswordModal({
             </DialogTitle>
           </DialogHeader>
 
-          <ChangePasswordForm
-            open={open}
-            onSuccess={handleClose}
-            onCancel={handleClose}
-          />
+          {open ? (
+            <ChangePasswordForm
+              onSuccess={handleClose}
+              onCancel={handleClose}
+            />
+          ) : null}
         </div>
       </DialogContent>
     </Dialog>
