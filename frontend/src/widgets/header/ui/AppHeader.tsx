@@ -1,8 +1,9 @@
 import PolycodersLogoWhiteText from '@/assets/svg/polycodersLogoWhiteText.svg';
 import { UserNav } from '@/features/auth';
 import { HEADER_ACTION_BUTTON_CLASS } from '@/widgets/header/lib/header-action-button-class';
-import { Link } from '@tanstack/react-router';
+import { Link, useMatchRoute } from '@tanstack/react-router';
 import { Bell, ChevronDown, Search } from 'lucide-react';
+import { clsx } from 'clsx';
 
 import { ROUTES } from '@/shared/config/paths';
 import { Button } from '@/shared/ui/button';
@@ -15,8 +16,24 @@ import {
 
 import { MobileMenu } from './MobileMenu';
 
-const navLinkClass =
-  'text-sm font-semibold uppercase tracking-wide text-white/90 transition-colors hover:text-white';
+function NavLink({ to, label }: { to: string; label: string }) {
+  const matchRoute = useMatchRoute();
+  const isActive = !!matchRoute({ to });
+
+  return (
+    <Link
+      to={to}
+      className={clsx(
+        'relative text-sm tracking-wide uppercase transition-colors hover:text-white',
+        isActive
+          ? 'after:bg-brand-orange font-bold text-white after:absolute after:bottom-[-6px] after:left-0 after:h-[2px] after:w-full after:rounded-full'
+          : 'font-normal text-white/90',
+      )}
+    >
+      {label}
+    </Link>
+  );
+}
 
 export function AppHeader() {
   return (
@@ -30,19 +47,10 @@ export function AppHeader() {
           />
         </Link>
 
-        <nav
-          className="hidden items-center gap-6 font-normal lg:flex"
-          aria-label="Main"
-        >
-          <Link to="/problems" className={navLinkClass}>
-            Problems
-          </Link>
-          <Link to="/ideas" className={navLinkClass}>
-            Ideas
-          </Link>
-          <Link to="/statistics" className={navLinkClass}>
-            Statistics
-          </Link>
+        <nav className="hidden items-center gap-6 lg:flex" aria-label="Main">
+          <NavLink to="/problems" label="Problems" />
+          <NavLink to="/ideas" label="Ideas" />
+          <NavLink to="/statistics" label="Statistics" />
         </nav>
       </div>
 
