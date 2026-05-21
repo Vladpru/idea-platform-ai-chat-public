@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { render } from '@react-email/components';
 import sgMail from '@sendgrid/mail';
@@ -22,7 +26,7 @@ export class MailService {
     const text = await render(WelcomeEmail(), { plainText: true });
 
     try {
-      await this.transporter.sendMail({
+      await sgMail.send({
         from,
         to: params.to,
         subject,
@@ -30,7 +34,7 @@ export class MailService {
         html,
       });
     } catch (error) {
-      this.logger.error('SMTP send failed during welcome email', error);
+      this.logger.error('SendGrid send failed during welcome email', error);
     }
   }
 
@@ -51,7 +55,9 @@ export class MailService {
       });
     } catch (error) {
       this.logger.error('SendGrid send failed', error);
-      throw new InternalServerErrorException('Unable to send email, try again later');
+      throw new InternalServerErrorException(
+        'Unable to send email, try again later',
+      );
     }
   }
 }
