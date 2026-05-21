@@ -71,7 +71,11 @@ export function ChangePasswordField({
         </Button>
       </div>
       {error ? (
-        <p id={errorId} role="alert" className="text-destructive text-xs font-medium">
+        <p
+          id={errorId}
+          role="alert"
+          className="text-destructive text-xs font-medium"
+        >
           {error}
         </p>
       ) : null}

@@ -1,9 +1,11 @@
 import { type SessionUser, nameInitial } from '@/features/auth';
+import { fetchHasPassword } from '@/features/profile/api/profile.api';
 import { ChangePasswordModal } from '@/features/profile/ui/ChangePasswordModal';
 import {
   outlineBtn,
   primaryBtn,
 } from '@/features/profile/ui/profile-view-classes';
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { cn } from '@/shared/lib/utils';
@@ -22,6 +24,10 @@ export function ProfileDisplayPanel({
   onEdit,
 }: ProfileDisplayPanelProps) {
   const [passwordOpen, setPasswordOpen] = useState(false);
+  const { data: hasPassword } = useQuery({
+    queryKey: ['users', 'me', 'has-password'],
+    queryFn: fetchHasPassword,
+  });
 
   return (
     <div className="mt-8 flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
@@ -47,17 +53,24 @@ export function ProfileDisplayPanel({
         >
           Edit profile
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className={cn(outlineBtn, 'min-w-36')}
-          onClick={() => setPasswordOpen(true)}
-        >
-          Change password
-        </Button>
+        {hasPassword ? (
+          <Button
+            type="button"
+            variant="outline"
+            className={cn(outlineBtn, 'min-w-36')}
+            onClick={() => setPasswordOpen(true)}
+          >
+            Change password
+          </Button>
+        ) : null}
       </div>
 
-      <ChangePasswordModal open={passwordOpen} onOpenChange={setPasswordOpen} />
+      {hasPassword ? (
+        <ChangePasswordModal
+          open={passwordOpen}
+          onOpenChange={setPasswordOpen}
+        />
+      ) : null}
     </div>
   );
 }

@@ -38,6 +38,17 @@ export async function removeMyAvatar(): Promise<UserPublic> {
   return data;
 }
 
+export type HasPasswordResponse = {
+  hasPassword: boolean;
+};
+
+export async function fetchHasPassword(): Promise<boolean> {
+  const { data } = await api.get<HasPasswordResponse>(
+    '/users/me/has-password',
+  );
+  return data.hasPassword;
+}
+
 export type ChangePasswordPayload = {
   currentPassword: string;
   newPassword: string;

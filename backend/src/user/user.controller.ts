@@ -48,6 +48,18 @@ export class UserController {
     return this.userService.findOne(req.user.id);
   }
 
+  @Get('me/has-password')
+  @JwtAuth()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Check if current user has a password set' })
+  @ApiOkResponse({
+    description: 'Whether the user can sign in with email/password',
+  })
+  async hasPassword(@Req() req: Request & { user: { id: string } }) {
+    const hasPassword = await this.userService.checkUserPassword(req.user.id);
+    return { hasPassword };
+  }
+
   @Post('me/avatar')
   @JwtAuth()
   @ApiBearerAuth()
