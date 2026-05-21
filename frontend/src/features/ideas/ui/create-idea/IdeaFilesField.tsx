@@ -1,6 +1,7 @@
+import type { IdeaCreateFormValues } from '@/features/ideas/lib/create-idea';
 import {
-  getAttachmentFileKey,
   MAX_ATTACHMENT_FILES,
+  getAttachmentFileKey,
   mergeAttachmentFiles,
 } from '@/features/ideas/lib/create-idea/attachments';
 import { AddImageModal } from '@/features/ideas/ui/modals/AddImageModal';
@@ -12,13 +13,7 @@ import { toast } from 'sonner';
 
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/shared/ui/tooltip';
-
-import type { IdeaCreateFormValues } from '@/features/ideas/lib/create-idea';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip';
 
 import { IdeaAttachmentCard } from './IdeaAttachmentCard';
 
@@ -27,7 +22,10 @@ type IdeaFilesFieldProps = {
   disabled?: boolean;
 };
 
-export function IdeaFilesField({ control, disabled = false }: IdeaFilesFieldProps) {
+export function IdeaFilesField({
+  control,
+  disabled = false,
+}: IdeaFilesFieldProps) {
   const [addFilesOpen, setAddFilesOpen] = useState(false);
 
   return (
@@ -50,7 +48,9 @@ export function IdeaFilesField({ control, disabled = false }: IdeaFilesFieldProp
         };
 
         const removeFile = (key: string) => {
-          field.onChange(files.filter(file => getAttachmentFileKey(file) !== key));
+          field.onChange(
+            files.filter(file => getAttachmentFileKey(file) !== key),
+          );
         };
 
         return (

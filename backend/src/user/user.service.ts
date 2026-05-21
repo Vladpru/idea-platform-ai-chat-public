@@ -219,7 +219,16 @@ export class UserService {
     }
   }
 
-  private getByEmail(email: string) {
-    return this.prisma.user.findUnique({ where: { email } });
+  async checkUserPassword(userId: string) {
+    const user = await this.findOneWithPassword(userId);
+    return !!user.password;
+  }
+
+  private async findOneWithPassword(id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
+    if (!user) throw new NotFoundException(`User not found`);
+    return user;
   }
 }
