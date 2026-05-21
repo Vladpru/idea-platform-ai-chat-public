@@ -4,6 +4,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import * as net from 'net';
 import * as nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
 
@@ -20,7 +21,9 @@ export class MailService {
       host: 'smtp.gmail.com',
       port: 587,
       secure: false,
-      family: 4, // Render free tier has no outbound IPv6; smtp.gmail.com resolves to IPv6
+      // Render free tier has no outbound IPv6; `family:4` on top-level options gets
+      // stripped before nodemailer builds the socket, so we override via createConnection.
+      createConnection: (opts: any) => net.createConnection({ ...opts, family: 4 }),
       auth: {
         user: this.config.getOrThrow<string>('GMAIL_SMTP_USER'),
         pass: this.config.getOrThrow<string>('GMAIL_SMTP_PASS'),
