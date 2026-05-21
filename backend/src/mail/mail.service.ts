@@ -1,10 +1,7 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { render } from '@react-email/components';
+import sgMail from '@sendgrid/mail';
 
 import { WelcomeEmail } from './templates/WelcomeEmail';
 import { buildPasswordResetEmail } from './templates/password-reset';
@@ -12,18 +9,9 @@ import { buildPasswordResetEmail } from './templates/password-reset';
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
-  private readonly transporter: Transporter;
 
   constructor(private readonly config: ConfigService) {
-    this.transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
-      auth: {
-        user: this.config.getOrThrow<string>('GMAIL_SMTP_USER'),
-        pass: this.config.getOrThrow<string>('GMAIL_SMTP_PASS'),
-      },
-    });
+    sgMail.setApiKey(this.config.getOrThrow<string>('SENDGRID_API_KEY'));
   }
 
   async sendWelcomeEmail(params: { to: string }) {
@@ -51,22 +39,19 @@ export class MailService {
     resetUrl: string;
     expiresMinutes: number;
   }) {
-    const from = this.config.getOrThrow<string>('GMAIL_SMTP_USER');
     const { subject, text, html } = buildPasswordResetEmail(params);
 
     try {
-      await this.transporter.sendMail({
-        from,
+      await sgMail.send({
+        from: 'andriy.varshko@oril.co',
         to: params.to,
         subject,
         text,
         html,
       });
     } catch (error) {
-      this.logger.error('SMTP send failed during password reset email', error);
-      throw new InternalServerErrorException(
-        'Unable to send email, try again later',
-      );
+      this.logger.error('SendGrid send failed', error);
+      throw new InternalServerErrorException('Unable to send email, try again later');
     }
   }
 }
