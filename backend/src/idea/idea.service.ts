@@ -863,7 +863,7 @@ export class IdeaService {
         setweight(to_tsvector('english', coalesce(i.title, '')), 'A') ||
         setweight(to_tsvector('english', coalesce(i.description, '')), 'B'),
         to_tsquery('english', ${searchQuery})
-      ) DESC, i.published_at DESC
+      ) DESC, i."published_at" DESC
       LIMIT 3;
     `;
 

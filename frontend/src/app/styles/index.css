@@ -56,6 +56,7 @@
   --color-brand-black: var(--brand-black);
   --color-brand-dark-blue: var(--brand-dark-blue);
   --color-brand-neutral: var(--brand-neutral);
+  --color-brand-blue-700: var(--brand-blue-700);
   --color-brand-gray-900: var(--brand-gray-900);
   --color-brand-gray-800: var(--brand-gray-800);
   --color-brand-gray-700: var(--brand-gray-700);
@@ -114,6 +115,7 @@
   --brand-extra-black: #000000;
   --brand-black: #101820;
   --brand-dark-blue: #003057;
+  --brand-blue-700: #003057;
   --brand-neutral: #f9f9f9;
   --brand-hover-red-700: #b40500;
   --brand-orange: #e17100;
