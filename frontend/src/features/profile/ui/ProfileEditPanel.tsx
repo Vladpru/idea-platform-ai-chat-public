@@ -5,12 +5,14 @@ import {
   outlineBtn,
   primaryBtn,
 } from '@/features/profile/ui/profile-view-classes';
+import { useState } from 'react';
 import type { BaseSyntheticEvent, ChangeEventHandler, RefObject } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 
 import { cn } from '@/shared/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
+import { ConfirmModal } from '@/shared/ui/confirm-modal';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 
@@ -23,7 +25,7 @@ type ProfileEditPanelProps = {
   openFilePicker: () => void;
   onSaveEdit: (e?: BaseSyntheticEvent) => Promise<void>;
   onCancelEdit: () => void;
-  onRemoveAvatar: () => void;
+  onRemoveAvatar: () => void | Promise<void>;
   busy: boolean;
   patchPending: boolean;
   uploadPending: boolean;
@@ -45,6 +47,17 @@ export function ProfileEditPanel({
   uploadPending,
   removePending,
 }: ProfileEditPanelProps) {
+  const [removeAvatarOpen, setRemoveAvatarOpen] = useState(false);
+
+  const handleConfirmRemoveAvatar = async () => {
+    try {
+      await onRemoveAvatar();
+      setRemoveAvatarOpen(false);
+    } catch {
+      // Error toast is handled by the mutation; keep the modal open.
+    }
+  };
+
   return (
     <div className="mt-8 space-y-10">
       <div className="flex flex-col gap-6 md:flex-row md:items-start">
@@ -80,15 +93,25 @@ export function ProfileEditPanel({
               type="button"
               variant="outline"
               className={outlineBtn}
-              onClick={onRemoveAvatar}
+              onClick={() => setRemoveAvatarOpen(true)}
               disabled={busy || !user.picture}
-              isLoading={removePending}
             >
               Remove
             </Button>
           </div>
         </div>
       </div>
+
+      <ConfirmModal
+        open={removeAvatarOpen}
+        onOpenChange={setRemoveAvatarOpen}
+        title="Remove profile photo?"
+        description="Your photo will be removed from your account. You can upload a new one anytime."
+        confirmLabel="YES"
+        cancelLabel="NO"
+        onConfirm={handleConfirmRemoveAvatar}
+        isPending={removePending}
+      />
 
       <form className="space-y-6" onSubmit={onSaveEdit}>
         <div className="grid gap-6 md:grid-cols-2">

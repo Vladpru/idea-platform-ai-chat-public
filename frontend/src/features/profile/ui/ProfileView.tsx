@@ -52,7 +52,9 @@ export function ProfileView() {
             openFilePicker={openFilePicker}
             onSaveEdit={onSaveEdit}
             onCancelEdit={cancelEdit}
-            onRemoveAvatar={() => removeMutation.mutate()}
+            onRemoveAvatar={async () => {
+              await removeMutation.mutateAsync();
+            }}
             busy={busy}
             patchPending={patchMutation.isPending}
             uploadPending={uploadMutation.isPending}
