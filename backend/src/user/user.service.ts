@@ -80,11 +80,7 @@ export class UserService {
   async upsertOAuthUser(dto: UpsertOAuthUserInput) {
     return await this.prisma.user.upsert({
       where: { email: dto.email },
-      update: {
-        firstName: dto.firstName,
-        lastName: dto.lastName,
-        avatarUrl: dto.avatarUrl,
-      },
+      update: {},
       create: {
         email: dto.email,
         firstName: dto.firstName,
