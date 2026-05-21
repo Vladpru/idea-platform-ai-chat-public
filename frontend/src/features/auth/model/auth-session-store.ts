@@ -31,7 +31,10 @@ function parseSessionUser(raw: unknown): SessionUser | null {
 
   const firstName = typeof u.firstName === 'string' ? u.firstName : '';
   const lastName = typeof u.lastName === 'string' ? u.lastName : '';
-  const avatarUrl = typeof u.avatarUrl === 'string' ? u.avatarUrl : null;
+  const avatarUrl =
+    typeof u.avatarUrl === 'string' && u.avatarUrl.trim().length > 0
+      ? u.avatarUrl
+      : null;
   const email = u.email;
 
   const fullName = `${firstName} ${lastName}`.trim();

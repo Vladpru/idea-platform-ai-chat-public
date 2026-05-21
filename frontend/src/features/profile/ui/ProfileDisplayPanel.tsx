@@ -32,8 +32,12 @@ export function ProfileDisplayPanel({
   return (
     <div className="mt-8 flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
       <div className="flex items-center gap-4">
-        <Avatar size="xl" className="size-20 shrink-0">
-          {user.picture ? <AvatarImage src={user.picture} alt="" /> : null}
+        <Avatar
+          key={user.picture ?? 'no-avatar'}
+          size="xl"
+          className="size-20 shrink-0"
+        >
+          <AvatarImage src={user.picture ?? undefined} alt="" />
           <AvatarFallback className="text-lg font-semibold">
             {nameInitial(displayName)}
           </AvatarFallback>

@@ -61,8 +61,12 @@ export function ProfileEditPanel({
   return (
     <div className="mt-8 space-y-10">
       <div className="flex flex-col gap-6 md:flex-row md:items-start">
-        <Avatar size="xl" className="size-24 shrink-0">
-          {user.picture ? <AvatarImage src={user.picture} alt="" /> : null}
+        <Avatar
+          key={user.picture ?? 'no-avatar'}
+          size="xl"
+          className="size-24 shrink-0"
+        >
+          <AvatarImage src={user.picture ?? undefined} alt="" />
           <AvatarFallback className="text-4xl font-semibold">
             {nameInitial(displayName)}
           </AvatarFallback>
