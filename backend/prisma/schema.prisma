@@ -1,7 +1,7 @@
 generator client {
-  provider = "prisma-client"
+  provider        = "prisma-client"
   previewFeatures = ["fullTextSearchPostgres"]
-  output   = "../generated/prisma"
+  output          = "../generated/prisma"
 }
 
 datasource db {
@@ -26,6 +26,12 @@ enum Stage {
   completed
   archived
   paused
+}
+
+enum ProblemStage {
+  active
+  completed
+  archived
 }
 
 enum MediaKind {
@@ -89,19 +95,24 @@ model Idea {
 }
 
 model Problem {
-  id          String        @id @default(uuid())
-  authorId    String        @map("author_id")
-  title       String
-  description String        @db.Text
-  status      ProblemStatus @default(DRAFT)
-  category    String?
-  impact      String?
-  publishedAt DateTime?     @map("published_at")
-  createdAt   DateTime      @default(now()) @map("created_at")
-  updatedAt   DateTime      @updatedAt @map("updated_at")
+  id               String        @id @default(uuid())
+  authorId         String        @map("author_id")
+  title            String
+  description      String        @db.Text
+  status           ProblemStatus @default(DRAFT)
+  stage            ProblemStage?
+  valueProposition String?       @map("value_proposition")
+  costBenefit      Decimal?      @map("cost_benefit") @db.Decimal(12, 2)
+  category         String?
+  impact           String?
+  publishedAt      DateTime?     @map("published_at")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
 
-  author User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
   ideas  IdeaProblem[]
+  media  ProblemMedia[]
+  tags   ProblemTag[]
 
   @@index([authorId, status])
   @@index([status])
@@ -114,7 +125,8 @@ model Tag {
   label     String?
   createdAt DateTime @default(now()) @map("created_at")
 
-  ideas IdeaTag[]
+  ideas       IdeaTag[]
+  problemTags ProblemTag[]
 
   @@map("tag")
 }
@@ -142,6 +154,17 @@ model IdeaTag {
   @@map("idea_tag")
 }
 
+model ProblemTag {
+  problemId String @map("problem_id")
+  tagId     String @map("tag_id")
+
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([problemId, tagId])
+  @@map("problem_tag")
+}
+
 model IdeaMedia {
   id               String        @id @default(uuid())
   ideaId           String        @map("idea_id")
@@ -159,4 +182,23 @@ model IdeaMedia {
 
   @@index([ideaId, kind])
   @@map("idea_media")
+}
+
+model ProblemMedia {
+  id               String        @id @default(uuid())
+  problemId        String        @map("problem_id")
+  kind             MediaKind
+  provider         MediaProvider @default(CLOUDINARY)
+  url              String
+  publicId         String        @map("public_id")
+  mimeType         String        @map("mime_type")
+  byteSize         Int           @map("byte_size")
+  originalFilename String        @map("original_filename")
+  sortOrder        Int           @default(0) @map("sort_order")
+  createdAt        DateTime      @default(now()) @map("created_at")
+
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@index([problemId, kind])
+  @@map("problem_media")
 }

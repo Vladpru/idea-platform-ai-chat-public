@@ -3,9 +3,9 @@ import { UserNav } from '@/features/auth';
 import { HEADER_ACTION_BUTTON_CLASS } from '@/widgets/header/lib/header-action-button-class';
 import { Link, useMatchRoute } from '@tanstack/react-router';
 import { Bell, ChevronDown, Search } from 'lucide-react';
-import { clsx } from 'clsx';
 
 import { ROUTES } from '@/shared/config/paths';
+import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
 import {
   DropdownMenu,
@@ -13,24 +13,37 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
+import { AnimatedTabUnderline } from '@/shared/ui/motion';
 
 import { MobileMenu } from './MobileMenu';
 
-function NavLink({ to, label }: { to: string; label: string }) {
+function NavLink({
+  to,
+  label,
+  fuzzy = false,
+}: {
+  to: string;
+  label: string;
+  fuzzy?: boolean;
+}) {
   const matchRoute = useMatchRoute();
-  const isActive = !!matchRoute({ to });
+  const isActive = !!matchRoute({ to, fuzzy });
 
   return (
     <Link
       to={to}
-      className={clsx(
+      className={cn(
         'relative text-sm tracking-wide uppercase transition-colors hover:text-white',
-        isActive
-          ? 'after:bg-brand-orange font-bold text-white after:absolute after:bottom-[-6px] after:left-0 after:h-[2px] after:w-full after:rounded-full'
-          : 'font-normal text-white/90',
+        isActive ? 'font-bold text-white' : 'font-normal text-white/90',
       )}
     >
       {label}
+      {isActive ? (
+        <AnimatedTabUnderline
+          layoutId="app-header-nav"
+          className="bg-brand-orange -bottom-1.5 h-0.5 rounded-full"
+        />
+      ) : null}
     </Link>
   );
 }
@@ -48,20 +61,19 @@ export function AppHeader() {
         </Link>
 
         <nav className="hidden items-center gap-6 lg:flex" aria-label="Main">
-          <NavLink to="/problems" label="Problems" />
-          <NavLink to="/ideas" label="Ideas" />
-          <NavLink to="/statistics" label="Statistics" />
+          <NavLink to={ROUTES.problems} label="Problems" fuzzy />
+          <NavLink to={ROUTES.ideas} label="Ideas" fuzzy />
+          <NavLink to={ROUTES.statistics} label="Statistics" />
         </nav>
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
-        <Button
-          type="button"
-          variant="outline"
-          className="text-brand-dark-blue hover:bg-brand-dark-blue hidden h-9 rounded-sm border-white bg-white px-3 text-xs font-bold tracking-wide uppercase transition-colors hover:text-white sm:h-10 sm:px-4 sm:text-sm lg:inline-flex"
+        <Link
+          to={ROUTES.problemsNew}
+          className="text-brand-dark-blue hover:bg-brand-dark-blue hidden h-9 items-center rounded-sm border border-white bg-white px-3 text-xs font-bold tracking-wide uppercase transition-colors hover:text-white sm:h-10 sm:px-4 sm:text-sm lg:inline-flex"
         >
           ADD NEW PROBLEM
-        </Button>
+        </Link>
         <Link
           to={ROUTES.ideasNew}
           className="bg-brand-orange hover:text-brand-orange border-brand-orange hidden h-9 items-center rounded-sm border px-3 text-xs font-bold tracking-wide text-white uppercase transition-colors hover:bg-transparent sm:h-10 sm:px-4 sm:text-sm lg:inline-flex"

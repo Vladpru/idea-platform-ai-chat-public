@@ -1,4 +1,8 @@
-import { fetchIdeaById, fetchIdeas } from '@/features/ideas/api/ideas.api';
+import {
+  fetchIdeaById,
+  fetchIdeas,
+  fetchMyIdeas,
+} from '@/features/ideas/api/ideas.api';
 import type { IdeasListParams } from '@/features/ideas/api/ideas-api.types';
 import { ideaMutationKeys } from '@/features/ideas/hooks/use-idea-mutations';
 import { useQuery } from '@tanstack/react-query';
@@ -7,6 +11,13 @@ export function useIdeasListQuery(params?: IdeasListParams) {
   return useQuery({
     queryKey: ideaMutationKeys.list(params),
     queryFn: () => fetchIdeas(params),
+  });
+}
+
+export function useMyIdeasQuery(params?: IdeasListParams) {
+  return useQuery({
+    queryKey: [...ideaMutationKeys.all, 'mine', params] as const,
+    queryFn: () => fetchMyIdeas(params),
   });
 }
 

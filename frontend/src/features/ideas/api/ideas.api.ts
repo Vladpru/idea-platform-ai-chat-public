@@ -25,6 +25,15 @@ export async function fetchIdeas(
   return data;
 }
 
+export async function fetchMyIdeas(
+  params?: IdeasListParams,
+): Promise<IdeasListResponse> {
+  const { data } = await api.get<IdeasListResponse>(IDEAS_ROUTES.mine, {
+    params,
+  });
+  return data;
+}
+
 export async function fetchIdeaById(ideaId: string): Promise<IdeaApi> {
   const { data } = await api.get<IdeaApi>(IDEAS_ROUTES.byId(ideaId));
   return data;
