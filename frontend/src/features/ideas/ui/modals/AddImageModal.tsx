@@ -6,7 +6,6 @@ import {
 } from '@/features/ideas/lib/styles';
 import { SparklesIcon } from '@/features/ideas/ui/icons/SparklesIcon';
 import { cancelOutlineBtn } from '@/features/profile/ui/profile-view-classes';
-import { AnimatePresence, motion } from 'framer-motion';
 import { Upload, X } from 'lucide-react';
 import { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
@@ -20,6 +19,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/shared/ui/dialog';
+import {
+  AnimatedPanel,
+  AnimatedPanelSwitch,
+  AnimatedTabUnderline,
+} from '@/shared/ui/motion';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip';
 
 type TabId = 'upload' | 'generate';
@@ -128,15 +132,7 @@ export function AddImageModal({
                   )}
                   {tab.label}
                   {activeTab === tab.id ? (
-                    <motion.div
-                      layoutId="add-files-tab-underline"
-                      className="bg-brand-accent absolute inset-x-0 -bottom-px z-10 h-[3px]"
-                      transition={{
-                        type: 'spring',
-                        stiffness: 500,
-                        damping: 40,
-                      }}
-                    />
+                    <AnimatedTabUnderline layoutId="add-files-tab-underline" />
                   ) : null}
                 </button>
               ))}
@@ -144,15 +140,9 @@ export function AddImageModal({
           </div>
 
           <div className="mt-6 min-h-[220px]">
-            <AnimatePresence mode="wait">
+            <AnimatedPanelSwitch>
               {activeTab === 'upload' ? (
-                <motion.div
-                  key="upload"
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.15 }}
-                >
+                <AnimatedPanel panelKey="upload">
                   <div
                     {...getRootProps()}
                     className={cn(
@@ -183,23 +173,19 @@ export function AddImageModal({
                       </ul>
                     )}
                   </div>
-                </motion.div>
+                </AnimatedPanel>
               ) : (
-                <motion.div
-                  key="generate"
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.15 }}
+                <AnimatedPanel
+                  panelKey="generate"
                   className="border-brand-gray-200 flex min-h-[220px] flex-col items-center justify-center rounded-md border border-dashed bg-white px-4 py-10 text-center"
                 >
                   <SparklesIcon className="text-brand-dark-blue mb-3 size-10" />
                   <p className="text-brand-gray-700 max-w-xs text-sm font-medium">
                     {GENERATE_DRAFT_SOON_TOOLTIP}
                   </p>
-                </motion.div>
+                </AnimatedPanel>
               )}
-            </AnimatePresence>
+            </AnimatedPanelSwitch>
           </div>
 
           <div className="mt-6 flex flex-wrap items-center justify-between gap-3">

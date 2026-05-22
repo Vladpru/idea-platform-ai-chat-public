@@ -28,6 +28,14 @@ export {
   TooltipTrigger,
 } from './tooltip';
 export {
+  AnimatedPanel,
+  AnimatedPanelSwitch,
+  AnimatedTabUnderline,
+  panelFadeMotion,
+  panelFadeTransition,
+  tabUnderlineSpring,
+} from './motion';
+export {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,

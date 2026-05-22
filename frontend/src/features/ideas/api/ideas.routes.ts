@@ -1,5 +1,6 @@
 export const IDEAS_ROUTES = {
   root: '/ideas',
+  mine: '/ideas/mine',
   byId: (ideaId: string) => `/ideas/${ideaId}`,
   publish: (ideaId: string) => `/ideas/${ideaId}/publish`,
   mainImage: (ideaId: string) => `/ideas/${ideaId}/main-image`,

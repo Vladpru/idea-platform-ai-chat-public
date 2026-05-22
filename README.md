@@ -1,8 +1,24 @@
-# idea-platform-team-2
+# Idea Platform
 
-Fullstack internship project (Team 2): idea & problem sharing platform built with React and NestJS.
+**idea-platform-team-2** — fullstack internship project (Oril Software, Team 2).
 
-## Tech Stack
+## About
+
+Idea Platform is an internal innovation hub where teams capture real-world **problems**, turn them into **ideas**, and track progress from first draft to delivery. Users can submit and publish problems, create ideas (with tags, attachments, and lifecycle stages), link ideas to the problems they solve, and manage their own drafts from a personal profile.
+
+The app is built for collaborative product discovery: surface pain points, connect them to proposed solutions, and keep a single source of truth as ideas move through stages such as ideation, prototyping, and completed.
+
+### Features
+
+- **Problems** — submit, draft, and publish problems; browse and filter the problem catalog
+- **Ideas** — create and edit ideas with rich content, tags, main image, and file attachments
+- **Linking** — associate ideas with one or more problems; link existing problems from idea details
+- **Lifecycle** — draft / published / archived status; idea stages (ideation → prototyping → completed)
+- **Profile** — view and manage your problems, ideas, and drafts
+- **Auth** — registration, login, OAuth, password reset via email, profile and avatar management
+- **API docs** — OpenAPI/Swagger at `/docs` on the backend
+
+### Tech Stack
 
 - **Frontend:** React, Vite, TanStack Router
 - **Backend:** NestJS, Prisma v7

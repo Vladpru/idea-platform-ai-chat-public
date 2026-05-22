@@ -4,6 +4,7 @@ import type {
 } from '@/features/idea-details/model/idea-details.types';
 
 import { cn } from '@/shared/lib/utils';
+import { AnimatedTabUnderline } from '@/shared/ui/motion';
 
 type IdeaTabsProps = {
   activeTab: IdeaTabId;
@@ -28,8 +29,6 @@ const TABS: TabConfig[] = [
   },
 ];
 
-const TAB_BORDER_CLASS = 'border-b-4';
-
 const tabsNavClass =
   'scrollbar-none flex gap-4 overflow-x-auto border-b border-gray-200 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden sm:gap-6';
 
@@ -49,11 +48,10 @@ export function IdeaTabs({ activeTab, onChange, counts }: IdeaTabsProps) {
             aria-selected={isActive}
             onClick={() => onChange(tab.id)}
             className={cn(
-              'font-arial inline-flex shrink-0 cursor-pointer items-center gap-2 pb-3 text-base font-normal tracking-wide uppercase transition-colors',
-              TAB_BORDER_CLASS,
+              'font-arial relative inline-flex shrink-0 cursor-pointer items-center gap-2 pb-3 text-base font-normal tracking-wide uppercase transition-colors',
               isActive
-                ? 'border-brand-orange text-brand-dark-blue font-bold'
-                : 'text-brand-black border-transparent hover:text-[#0A2540]/80',
+                ? 'text-brand-dark-blue font-bold'
+                : 'text-brand-black hover:text-[#0A2540]/80',
             )}
           >
             <span>{tab.label}</span>
@@ -61,6 +59,12 @@ export function IdeaTabs({ activeTab, onChange, counts }: IdeaTabsProps) {
               <span className="bg-brand-light-blue font-arial inline-flex h-6 min-w-6 items-center justify-center rounded-sm px-1 text-sm font-bold tabular-nums transition-colors">
                 {count}
               </span>
+            ) : null}
+            {isActive ? (
+              <AnimatedTabUnderline
+                layoutId="idea-details-tabs"
+                className="bg-brand-orange h-1"
+              />
             ) : null}
           </button>
         );

@@ -57,6 +57,13 @@ export class CloudinaryService {
     return this.uploadImage(file, `ideas/${ideaId}/attachments`);
   }
 
+  async uploadProblemAttachment(
+    file: Express.Multer.File,
+    problemId: string,
+  ): Promise<CloudinaryUploadResult> {
+    return this.uploadImage(file, `problems/${problemId}/attachments`);
+  }
+
   async deleteByPublicId(publicId: string): Promise<void> {
     if (!publicId?.trim()) {
       this.logger.warn('Cloudinary delete skipped: empty publicId');

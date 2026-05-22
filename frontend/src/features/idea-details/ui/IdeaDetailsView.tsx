@@ -1,7 +1,16 @@
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import {
-  ideaDetailsToEditFormValues,
+  useIdeaDetailsQuery,
+  useSimilarIdeasQuery,
+} from '@/features/idea-details/lib/use-idea-details-queries';
+import type {
+  IdeaDetails,
+  IdeaTabId,
+} from '@/features/idea-details/model/idea-details.types';
+import { useUpdateIdea } from '@/features/ideas/hooks/use-update-idea';
+import {
   type IdeaEditFormValues,
+  ideaDetailsToEditFormValues,
 } from '@/features/ideas/lib/edit-idea';
 import {
   IDEA_DELETED_SUCCESS_DESCRIPTION,
@@ -25,6 +34,7 @@ import { IdeaForm } from '@/features/ideas/ui/idea-form/IdeaForm';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
 import {
+  type MouseEvent,
   useCallback,
   useEffect,
   useId,
@@ -32,21 +42,27 @@ import {
   type MouseEvent,
 } from 'react';
 
-import { ROUTES } from '@/shared/config/paths';
 import { getApiErrorMessage } from '@/shared/api/api-error';
+import { ROUTES } from '@/shared/config/paths';
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
 import { ConfirmModal } from '@/shared/ui/confirm-modal';
+import {
+  AnimatedPanel,
+  AnimatedPanelSwitch,
+} from '@/shared/ui/motion';
 import { SuccessModal } from '@/shared/ui/success-modal';
 import { IdeaAttachmentsTab } from './attachments/IdeaAttachmentsTab';
 import { TeamModal } from '@/features/idea-details/modals/TeamModal';
+
 import { IdeaHeader } from './IdeaHeader';
-import { IdeaLinkedProblemsTab } from './linked-problems/IdeaLinkedProblemsTab';
 import { IdeaStatsFooter } from './IdeaStatsFooter';
 import { IdeaTabs } from './IdeaTabs';
 import { IdeaTagCloud } from './IdeaTagCloud';
-import { IdeaDetailsPageSkeleton } from './skeletons/IdeaDetailsPageSkeleton';
+import { IdeaAttachmentsTab } from './attachments/IdeaAttachmentsTab';
+import { IdeaLinkedProblemsTab } from './linked-problems/IdeaLinkedProblemsTab';
 import { SimilarIdeasWidget } from './similar/SimilarIdeasWidget';
+import { IdeaDetailsPageSkeleton } from './skeletons/IdeaDetailsPageSkeleton';
 
 type IdeaDetailsViewProps = {
   ideaId: string;
@@ -258,11 +274,12 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
               />
             </section>
           ) : (
-            <>
+            <AnimatedPanelSwitch>
               {activeTab === 'description' && (
-                <section
-                  key="view-description"
-                  className="animate-in fade-in space-y-6 duration-200"
+                <AnimatedPanel
+                  panelKey="description"
+                  className="space-y-6"
+                  aria-label="Description"
                 >
                   {idea.mainImageUrl ? (
                     <div className="border-brand-gray-200 overflow-hidden rounded-lg border bg-white">
@@ -289,27 +306,33 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
                     createdAt={idea.createdAt}
                     stats={idea.stats}
                   />
-                </section>
+                </AnimatedPanel>
               )}
 
               {activeTab === 'attachments' && (
-                <IdeaAttachmentsTab attachments={idea.attachments} />
+                <AnimatedPanel panelKey="attachments">
+                  <IdeaAttachmentsTab attachments={idea.attachments} />
+                </AnimatedPanel>
               )}
 
               {activeTab === 'discussion' && (
-                <div className="py-16 text-center font-medium text-gray-500">
-                  This section will be available soon.
-                </div>
+                <AnimatedPanel panelKey="discussion">
+                  <div className="py-16 text-center font-medium text-gray-500">
+                    This section will be available soon.
+                  </div>
+                </AnimatedPanel>
               )}
 
               {activeTab === 'linked-problems' && (
-                <IdeaLinkedProblemsTab
-                  ideaId={ideaId}
-                  problems={visibleProblems}
-                  isAuthor={isAuthor}
-                />
+                <AnimatedPanel panelKey="linked-problems">
+                  <IdeaLinkedProblemsTab
+                    ideaId={ideaId}
+                    problems={visibleProblems}
+                    isAuthor={isAuthor}
+                  />
+                </AnimatedPanel>
               )}
-            </>
+            </AnimatedPanelSwitch>
           )}
         </div>
 
