@@ -30,37 +30,44 @@ The app is built for collaborative product discovery: surface pain points, conne
 ## Local Development
 
 ### Prerequisites
+
 - Node.js 22+ (use `nvm use 22`)
 - Yarn
 
 ### Setup
 
 1. **Clone the repo**
+
    ```bash
    git clone https://github.com/oril-software/idea-platform-team-2
    cd idea-platform-team-2
    ```
 
 2. **Install dependencies**
+
    ```bash
    cd backend && yarn install
    cd ../frontend && yarn install
    ```
 
 3. **Environment files** — create from examples:
+
    ```bash
    cp backend/.env.example backend/.env.development
    cp frontend/.env.example frontend/.env.development
    ```
+
    Fill in `DATABASE_URL` in `backend/.env.development` with the Neon development branch URL.
-   For password reset emails, set `GMAIL_SMTP_USER` and `GMAIL_SMTP_PASS` (Google App Password).
+   For transactional email (welcome + password reset), set `SENDGRID_API_KEY` and `SENDGRID_FROM_EMAIL` (a verified sender in SendGrid).
 
 4. **Generate Prisma client**
+
    ```bash
    cd backend && yarn prisma generate
    ```
 
 5. **Run locally**
+
    ```bash
    # Terminal 1 — backend
    cd backend && yarn start:dev
@@ -77,15 +84,16 @@ The app is built for collaborative product discovery: surface pain points, conne
 
 ## Branch Strategy & Auto-Deploy
 
-| Branch | Environment | Auto-deploys to |
-|--------|-------------|-----------------|
+| Branch    | Environment | Auto-deploys to                             |
+| --------- | ----------- | ------------------------------------------- |
 | `develop` | Development | `idea-platform-team-2-develop.onrender.com` |
-| `staging` | Staging | `idea-platform-team-2-staging.onrender.com` |
-| `main` | Production | _(not yet configured)_ |
+| `staging` | Staging     | `idea-platform-team-2-staging.onrender.com` |
+| `main`    | Production  | _(not yet configured)_                      |
 
 **Every push to `develop` or `staging` triggers an automatic deploy on Render.**
 
 ### Workflow
+
 ```
 feature branch → PR → develop → PR → staging → PR → main
 ```
@@ -101,13 +109,14 @@ feature branch → PR → develop → PR → staging → PR → main
 
 Three isolated Neon branches — one per environment:
 
-| Environment | Neon Branch |
-|-------------|-------------|
-| development | `development` |
-| staging | `staging` |
-| production | `production` (main) |
+| Environment | Neon Branch         |
+| ----------- | ------------------- |
+| development | `development`       |
+| staging     | `staging`           |
+| production  | `production` (main) |
 
 ### Running migrations locally
+
 ```bash
 cd backend
 
@@ -127,13 +136,13 @@ Migrations run **automatically on every deploy** via the start command on Render
 
 ## Environment Variables
 
-| File | Used for |
-|------|----------|
-| `backend/.env.development` | Local backend |
-| `backend/.env.staging` | Staging backend |
-| `backend/.env.production` | Production backend |
-| `frontend/.env.development` | Local frontend |
-| `frontend/.env.staging` | Staging frontend |
-| `frontend/.env.production` | Production frontend |
+| File                        | Used for            |
+| --------------------------- | ------------------- |
+| `backend/.env.development`  | Local backend       |
+| `backend/.env.staging`      | Staging backend     |
+| `backend/.env.production`   | Production backend  |
+| `frontend/.env.development` | Local frontend      |
+| `frontend/.env.staging`     | Staging frontend    |
+| `frontend/.env.production`  | Production frontend |
 
 > `.env.*` files are gitignored. Never commit secrets. Ask a teammate for values if needed.
