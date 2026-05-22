@@ -2,8 +2,8 @@ import PolycodersLogoWhiteText from '@/assets/svg/polycodersLogoWhiteText.svg';
 import { UserNav } from '@/features/auth';
 import { HEADER_ACTION_BUTTON_CLASS } from '@/widgets/header/lib/header-action-button-class';
 import { Link, useMatchRoute } from '@tanstack/react-router';
-import { Bell, ChevronDown, Search } from 'lucide-react';
 import { clsx } from 'clsx';
+import { Bell, ChevronDown, Search } from 'lucide-react';
 
 import { ROUTES } from '@/shared/config/paths';
 import { Button } from '@/shared/ui/button';
@@ -55,13 +55,12 @@ export function AppHeader() {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
-        <Button
-          type="button"
-          variant="outline"
-          className="text-brand-dark-blue hover:bg-brand-dark-blue hidden h-9 rounded-sm border-white bg-white px-3 text-xs font-bold tracking-wide uppercase transition-colors hover:text-white sm:h-10 sm:px-4 sm:text-sm lg:inline-flex"
+        <Link
+          to={ROUTES.problemsNew}
+          className="text-brand-dark-blue hover:bg-brand-dark-blue hidden h-9 items-center rounded-sm border border-white bg-white px-3 text-xs font-bold tracking-wide uppercase transition-colors hover:text-white sm:h-10 sm:px-4 sm:text-sm lg:inline-flex"
         >
           ADD NEW PROBLEM
-        </Button>
+        </Link>
         <Link
           to={ROUTES.ideasNew}
           className="bg-brand-orange hover:text-brand-orange border-brand-orange hidden h-9 items-center rounded-sm border px-3 text-xs font-bold tracking-wide text-white uppercase transition-colors hover:bg-transparent sm:h-10 sm:px-4 sm:text-sm lg:inline-flex"

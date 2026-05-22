@@ -9,3 +9,5 @@ export {
   useCreateProblemDraftMutation,
   useMyProblemsQuery,
 } from './hooks/use-problem-mutations';
+export { useSubmitProblemForm } from './hooks/use-submit-problem-form';
+export { SubmitProblemForm } from './ui/submit-problem';

@@ -6,6 +6,8 @@ export const ROUTES = {
   ideasNew: '/ideas/new',
   ideaDetail: (id: string) => `/ideas/${id}`,
   problems: '/problems',
+  problemsNew: '/problems/new',
+  problemDetail: (id: string) => `/problems/${id}`,
   statistics: '/statistics',
   profile: '/profile',
   profileIdeas: '/profile/ideas',
