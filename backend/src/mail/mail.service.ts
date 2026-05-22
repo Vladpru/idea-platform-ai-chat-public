@@ -13,13 +13,14 @@ import { buildPasswordResetEmail } from './templates/password-reset';
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
+  private readonly defaultFrom: string;
 
   constructor(private readonly config: ConfigService) {
     sgMail.setApiKey(this.config.getOrThrow<string>('SENDGRID_API_KEY'));
+    this.defaultFrom = this.config.getOrThrow<string>('SENDGRID_FROM_EMAIL');
   }
 
   async sendWelcomeEmail(params: { to: string }) {
-    const from = this.config.getOrThrow<string>('GMAIL_SMTP_USER');
     const subject = 'Welcome to The Idea Platform';
 
     const html = await render(WelcomeEmail());
@@ -27,7 +28,7 @@ export class MailService {
 
     try {
       await sgMail.send({
-        from,
+        from: this.defaultFrom,
         to: params.to,
         subject,
         text,
@@ -35,6 +36,9 @@ export class MailService {
       });
     } catch (error) {
       this.logger.error('SendGrid send failed during welcome email', error);
+      throw new InternalServerErrorException(
+        'Unable to send welcome email, try again later',
+      );
     }
   }
 
@@ -47,14 +51,14 @@ export class MailService {
 
     try {
       await sgMail.send({
-        from: 'andriy.varshko@oril.co',
+        from: this.defaultFrom,
         to: params.to,
         subject,
         text,
         html,
       });
     } catch (error) {
-      this.logger.error('SendGrid send failed', error);
+      this.logger.error('SendGrid send failed during password reset', error);
       throw new InternalServerErrorException(
         'Unable to send email, try again later',
       );

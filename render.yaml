@@ -25,9 +25,9 @@ services:
         sync: false
       - key: FRONTEND_URL
         sync: false
-      - key: GMAIL_SMTP_USER
+      - key: SENDGRID_API_KEY
         sync: false
-      - key: GMAIL_SMTP_PASS
+      - key: SENDGRID_FROM_EMAIL
         sync: false
 
   - type: web
@@ -56,9 +56,9 @@ services:
         sync: false
       - key: FRONTEND_URL
         sync: false
-      - key: GMAIL_SMTP_USER
+      - key: SENDGRID_API_KEY
         sync: false
-      - key: GMAIL_SMTP_PASS
+      - key: SENDGRID_FROM_EMAIL
         sync: false
 
   - type: static

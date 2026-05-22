@@ -27,12 +27,7 @@ export class AuthService {
 
   async register(dto: CreateUserDto) {
     const user = await this.userService.create(dto);
-    void this.mailService.sendWelcomeEmail({ to: user.email }).catch(error => {
-      this.logger.error(
-        `Failed to send welcome email for user ${user.id}`,
-        error,
-      );
-    });
+    await this.mailService.sendWelcomeEmail({ to: user.email });
     return this.finalizeAuth(user);
   }
 
