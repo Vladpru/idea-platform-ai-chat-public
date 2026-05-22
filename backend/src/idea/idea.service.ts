@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   Logger,
   NotFoundException,
@@ -13,6 +14,7 @@ import {
   Prisma,
   ProblemStatus,
 } from '../../generated/prisma/client';
+import type { IdeaMemberModel } from '../../generated/prisma/models/IdeaMember';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateIdeaDto } from './dto/create-idea.dto';
@@ -511,7 +513,7 @@ export class IdeaService {
     const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
 
     return {
-      data: ideas.map(toIdeaFormResponse),
+      data: ideas.map(idea => toIdeaFormResponse(idea)),
       meta: { total, page, limit, totalPages },
     };
   }
@@ -544,7 +546,7 @@ export class IdeaService {
     const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
 
     return {
-      data: ideas.map(toIdeaFormResponse),
+      data: ideas.map(idea => toIdeaFormResponse(idea, authorId)),
       meta: { total, page, limit, totalPages },
     };
   }
@@ -563,7 +565,7 @@ export class IdeaService {
       throw new NotFoundException(IDEA_NOT_FOUND);
     }
 
-    return toIdeaFormResponse(idea);
+    return toIdeaFormResponse(idea, userId);
   }
 
   async updateDraft(
@@ -883,6 +885,62 @@ export class IdeaService {
     return similarIds
       .map(sampleId => fullIdeas.find(idea => idea.id === sampleId))
       .filter((idea): idea is NonNullable<typeof idea> => !!idea)
-      .map(toIdeaFormResponse);
+      .map(idea => toIdeaFormResponse(idea));
+  }
+  private ideaMemberKey(
+    ideaId: string,
+    userId: string,
+  ): Prisma.IdeaMemberWhereUniqueInput {
+    return { ideaId_userId: { ideaId, userId } };
+  }
+
+  async joinIdea(ideaId: string, userId: string): Promise<IdeaMemberModel> {
+    const idea = await this.prisma.idea.findUnique({
+      where: { id: ideaId },
+      select: { authorId: true, status: true },
+    });
+
+    if (!idea) {
+      throw new NotFoundException();
+    }
+
+    if (idea.status !== IdeaStatus.PUBLISHED) {
+      throw new BadRequestException();
+    }
+
+    if (idea.authorId === userId) {
+      throw new ConflictException();
+    }
+
+    const memberKey = this.ideaMemberKey(ideaId, userId);
+    const existingMember = await this.prisma.ideaMember.findUnique({
+      where: memberKey,
+    });
+
+    if (existingMember) {
+      throw new ConflictException();
+    }
+
+    return this.prisma.ideaMember.create({
+      data: {
+        ideaId,
+        userId,
+      },
+    });
+  }
+
+  async leaveIdea(ideaId: string, userId: string): Promise<IdeaMemberModel> {
+    const memberKey = this.ideaMemberKey(ideaId, userId);
+    const member = await this.prisma.ideaMember.findUnique({
+      where: memberKey,
+    });
+
+    if (!member) {
+      throw new NotFoundException();
+    }
+
+    return this.prisma.ideaMember.delete({
+      where: memberKey,
+    });
   }
 }

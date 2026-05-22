@@ -3,6 +3,7 @@ import type { Prisma } from '../../generated/prisma/client';
 import { IDEA_FORM_INCLUDE } from './idea.constants';
 import type {
   IdeaFormAuthor,
+  IdeaFormMember,
   IdeaFormResponse,
   IdeaMediaResponse,
 } from './types/idea-form.types';
@@ -10,6 +11,20 @@ import type {
 export type IdeaFormRecord = Prisma.IdeaGetPayload<{
   include: typeof IDEA_FORM_INCLUDE;
 }>;
+
+export function toIdeaAuthorResponse(author: {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  avatarUrl: string | null;
+}): IdeaFormAuthor {
+  return {
+    id: author.id,
+    firstName: author.firstName,
+    lastName: author.lastName,
+    avatarUrl: author.avatarUrl,
+  };
+}
 
 export function toIdeaMediaResponse(
   media: IdeaFormRecord['media'][number],
@@ -27,28 +42,21 @@ export function toIdeaMediaResponse(
   };
 }
 
-export function toIdeaAuthorResponse(
-  author: IdeaFormRecord['author'],
-): IdeaFormAuthor {
-  return {
-    id: author.id,
-    firstName: author.firstName,
-    lastName: author.lastName,
-    avatarUrl: author.avatarUrl,
-  };
-}
-
-export function toIdeaFormResponse(idea: IdeaFormRecord): IdeaFormResponse {
+export function toIdeaFormResponse(
+  idea: IdeaFormRecord,
+  currentUserId?: string,
+): IdeaFormResponse {
   const mainImages = idea.media.filter(m => m.kind === MediaKind.MAIN_IMAGE);
-
-  if (mainImages.length > 1) {
-    console.warn(`Idea ${idea.id} has ${mainImages.length} MAIN_IMAGE entries`);
-  }
-
   const mainImage = mainImages[0] ?? null;
   const attachments = idea.media
     .filter(m => m.kind === MediaKind.ATTACHMENT)
     .sort((a, b) => a.sortOrder - b.sortOrder);
+
+  const isAuthor = currentUserId ? idea.authorId === currentUserId : false;
+
+  const isMember = currentUserId
+    ? idea.members.some(m => m.userId === currentUserId)
+    : false;
 
   return {
     id: idea.id,
@@ -57,6 +65,15 @@ export function toIdeaFormResponse(idea: IdeaFormRecord): IdeaFormResponse {
     title: idea.title,
     description: idea.description,
     publishedAt: idea.publishedAt?.toISOString() ?? null,
+    viewer: {
+      isAuthor,
+      isMember,
+      canJoin:
+        !!currentUserId &&
+        !isAuthor &&
+        !isMember &&
+        idea.status === 'PUBLISHED',
+    },
     problems: idea.problems.map(({ problem, isPrimary }) => ({
       id: problem.id,
       title: problem.title,
@@ -72,5 +89,11 @@ export function toIdeaFormResponse(idea: IdeaFormRecord): IdeaFormResponse {
     mainImage: mainImage ? toIdeaMediaResponse(mainImage) : null,
     attachments: attachments.map(toIdeaMediaResponse),
     author: toIdeaAuthorResponse(idea.author),
+    members: idea.members.map(
+      (m): IdeaFormMember => ({
+        user: toIdeaAuthorResponse(m.user),
+        joinedAt: m.joinedAt.toISOString(),
+      }),
+    ),
   };
 }

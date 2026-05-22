@@ -1,11 +1,25 @@
+import type { Prisma } from '../../generated/prisma/client';
+
+export const IDEA_FORM_AUTHOR_SELECT = {
+  id: true,
+  firstName: true,
+  lastName: true,
+  avatarUrl: true,
+} as const;
+
+export const IDEA_FORM_MEMBER_INCLUDE = {
+  user: {
+    select: IDEA_FORM_AUTHOR_SELECT,
+  },
+} as const satisfies Prisma.IdeaMemberInclude;
+
+export type IdeaFormMemberRecord = Prisma.IdeaMemberGetPayload<{
+  include: typeof IDEA_FORM_MEMBER_INCLUDE;
+}>;
+
 export const IDEA_FORM_INCLUDE = {
   author: {
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      avatarUrl: true,
-    },
+    select: IDEA_FORM_AUTHOR_SELECT,
   },
   problems: {
     include: {
@@ -16,12 +30,7 @@ export const IDEA_FORM_INCLUDE = {
           description: true,
           status: true,
           author: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              avatarUrl: true,
-            },
+            select: IDEA_FORM_AUTHOR_SELECT,
           },
         },
       },
@@ -36,6 +45,9 @@ export const IDEA_FORM_INCLUDE = {
         },
       },
     },
+  },
+  members: {
+    include: IDEA_FORM_MEMBER_INCLUDE,
   },
   media: true,
 } as const;
