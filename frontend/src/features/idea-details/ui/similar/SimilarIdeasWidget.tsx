@@ -6,6 +6,7 @@ import { Globe, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 
 import { cn } from '@/shared/lib/utils';
+import { AnimatedTabUnderline } from '@/shared/ui/motion';
 
 import { SimilarIdeasRowSkeleton } from '../skeletons/SimilarIdeasRowSkeleton';
 import { SimilarIdeaCard as SimilarIdeaCardUi } from './SimilarIdeaCard';
@@ -76,10 +77,10 @@ export function SimilarIdeasWidget({
                 aria-selected={isActive}
                 onClick={() => setActiveSubTab(tab.id)}
                 className={cn(
-                  'font-arial group inline-flex shrink-0 cursor-pointer items-center gap-1.5 border-b-2 pb-3 text-sm font-normal tracking-wide uppercase transition-colors sm:text-base',
+                  'font-arial group relative inline-flex shrink-0 cursor-pointer items-center gap-1.5 pb-3 text-sm font-normal tracking-wide uppercase transition-colors sm:text-base',
                   isActive
-                    ? 'border-brand-orange text-brand-dark-blue font-bold'
-                    : 'text-brand-dark-blue hover:text-brand-dark-blue/90 border-transparent',
+                    ? 'text-brand-dark-blue font-bold'
+                    : 'text-brand-dark-blue hover:text-brand-dark-blue/90',
                 )}
               >
                 <span className={cn('text-brand-dark-blue transition-colors')}>
@@ -97,6 +98,13 @@ export function SimilarIdeasWidget({
                 >
                   {tab.count}
                 </span>
+
+                {isActive ? (
+                  <AnimatedTabUnderline
+                    layoutId="similar-ideas-sub-tabs"
+                    className="bg-brand-orange h-1"
+                  />
+                ) : null}
               </button>
             );
           })}
