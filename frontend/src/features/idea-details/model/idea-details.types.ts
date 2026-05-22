@@ -18,6 +18,24 @@ export type IdeaDetailsStats = {
   likes: number;
 };
 
+export type IdeaDetailsAuthor = {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  avatarUrl: string | null;
+};
+
+export type IdeaDetailsMember = {
+  user: IdeaDetailsAuthor;
+  joinedAt: string;
+};
+
+export type IdeaDetailsViewer = {
+  isAuthor: boolean;
+  isMember: boolean;
+  canJoin: boolean;
+};
+
 export type IdeaDetailsTeamMember = {
   id: string;
   name: string;
@@ -61,6 +79,9 @@ export type IdeaDetails = {
   mainImage: IdeaDetailsMainImage | null;
   mainImageUrl: string | null;
   tags: string[];
+  author: IdeaDetailsAuthor;
+  members: IdeaDetailsMember[];
+  viewer: IdeaDetailsViewer;
   team: IdeaDetailsTeamMember[];
   attachments: IdeaDetailsAttachment[];
   linkedProblems: IdeaDetailsLinkedProblem[];
