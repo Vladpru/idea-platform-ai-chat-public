@@ -21,6 +21,15 @@ import {
   IDEA_UPDATED_SUCCESS_TITLE,
 } from '@/features/ideas/lib/modals/copy';
 import { outlineBtnClass, primaryBtnClass } from '@/features/ideas/lib/styles';
+import { useUpdateIdea } from '@/features/ideas/hooks/use-update-idea';
+import {
+  useIdeaDetailsQuery,
+  useSimilarIdeasQuery,
+} from '@/features/idea-details/lib/use-idea-details-queries';
+import type {
+  IdeaDetails,
+  IdeaTabId,
+} from '@/features/idea-details/model/idea-details.types';
 import { IdeaForm } from '@/features/ideas/ui/idea-form/IdeaForm';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
@@ -30,6 +39,7 @@ import {
   useEffect,
   useId,
   useState,
+  type MouseEvent,
 } from 'react';
 
 import { getApiErrorMessage } from '@/shared/api/api-error';
@@ -42,6 +52,8 @@ import {
   AnimatedPanelSwitch,
 } from '@/shared/ui/motion';
 import { SuccessModal } from '@/shared/ui/success-modal';
+import { IdeaAttachmentsTab } from './attachments/IdeaAttachmentsTab';
+import { TeamModal } from '@/features/idea-details/modals/TeamModal';
 
 import { IdeaHeader } from './IdeaHeader';
 import { IdeaStatsFooter } from './IdeaStatsFooter';
@@ -89,6 +101,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
   const [editFormSnapshot, setEditFormSnapshot] =
     useState<IdeaEditFormValues | null>(null);
   const [hasUnsavedEdits, setHasUnsavedEdits] = useState(false);
+  const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [undoModalOpen, setUndoModalOpen] = useState(false);
   const [updatedSuccessOpen, setUpdatedSuccessOpen] = useState(false);
   const [deletedSuccessOpen, setDeletedSuccessOpen] = useState(false);
@@ -226,8 +239,10 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
           idea={idea}
           isAuthor={isAuthor}
           isEditing={isEditing}
+          showProjectActions={!isEditing}
           onStartEdit={() => handleStartEdit(idea)}
           onDeleteSuccess={() => setDeletedSuccessOpen(true)}
+          onTeamClick={() => setIsTeamModalOpen(true)}
         />
 
         {!isEditing ? (
@@ -353,6 +368,16 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
           />
         ) : null}
       </div>
+
+      {isTeamModalOpen ? (
+        <TeamModal
+          ideaId={idea.id}
+          author={idea.author}
+          members={idea.members}
+          viewer={idea.viewer}
+          onClose={() => setIsTeamModalOpen(false)}
+        />
+      ) : null}
 
       <ConfirmModal
         open={undoModalOpen}

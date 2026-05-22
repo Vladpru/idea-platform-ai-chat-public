@@ -36,14 +36,17 @@ import {
 
 import { getInitials } from '@/features/idea-details/lib/get-initials';
 
+import { IdeaProjectActions } from '@/features/idea-details/ui/IdeaProjectActions';
 import { StageChevronBadge } from '@/shared/ui/stage-chevron-badge';
 
 type IdeaHeaderProps = {
   idea: IdeaDetails;
   isAuthor?: boolean;
   isEditing?: boolean;
+  showProjectActions?: boolean;
   onStartEdit?: () => void;
   onDeleteSuccess?: () => void;
+  onTeamClick?: () => void;
 };
 
 const metadataLabelClass =
@@ -53,8 +56,10 @@ export function IdeaHeader({
   idea,
   isAuthor = false,
   isEditing = false,
+  showProjectActions = true,
   onStartEdit,
   onDeleteSuccess,
+  onTeamClick,
 }: IdeaHeaderProps) {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
@@ -82,13 +87,18 @@ export function IdeaHeader({
           </h1>
         )}
 
-        <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:gap-6 md:gap-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-6 md:gap-8">
           {idea.team.length > 0 ? (
-            <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              className="hover:bg-brand-gray-100/80 focus-visible:ring-brand-dark-blue -m-1 flex cursor-pointer items-center gap-1.5 rounded-md p-1 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+              aria-label="View team members"
+              onClick={onTeamClick}
+            >
               <span className={metadataLabelClass}>Team</span>
 
               <AvatarGroup aria-label="Team members">
-                {idea.team.map(member => (
+                {idea.team.slice(0, 4).map(member => (
                   <Avatar
                     key={member.id}
                     size="sm"
@@ -104,12 +114,29 @@ export function IdeaHeader({
                     </AvatarFallback>
                   </Avatar>
                 ))}
+
+                {idea.team.length > 4 && (
+                  <Avatar
+                    size="sm"
+                    className="flex items-center justify-center bg-slate-700 ring-2 ring-white"
+                  >
+                    <span className="text-[11px] font-bold tracking-tight text-white">
+                      +{idea.team.length - 4}
+                    </span>
+                  </Avatar>
+                )}
               </AvatarGroup>
-            </div>
+            </button>
           ) : null}
 
-          <div className="flex flex-col gap-1.5">
-            <StageChevronBadge stage={idea.stage} />
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
+            <div className="flex flex-col gap-1.5">
+              <StageChevronBadge stage={idea.stage} />
+            </div>
+
+            {showProjectActions && !isEditing ? (
+              <IdeaProjectActions ideaId={idea.id} viewer={idea.viewer} />
+            ) : null}
           </div>
         </div>
       </div>

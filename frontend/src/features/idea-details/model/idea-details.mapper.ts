@@ -1,17 +1,35 @@
 import type { IdeaFormResponseDto } from '@/features/ideas/api/idea-form-api.types';
+import { formatPersonName } from '@/features/idea-details/lib/format-person-name';
 import { formStageToApiStage } from '@/features/ideas/lib/stages/stage-map';
 import type { IdeaStage } from '@/features/ideas/lib/stages';
 import type { ApiStage } from '@/features/ideas/model/idea.types';
 
-import type { IdeaDetails, SimilarIdeaCard } from './idea-details.types';
+import type {
+  IdeaDetails,
+  IdeaDetailsAuthor,
+  IdeaDetailsMember,
+  IdeaDetailsTeamMember,
+  SimilarIdeaCard,
+} from './idea-details.types';
 
-function formatPersonName(
-  firstName: string | null,
-  lastName: string | null,
-  fallback: string,
-): string {
-  const full = `${firstName ?? ''} ${lastName ?? ''}`.trim();
-  return full || fallback;
+function toAuthor(author: IdeaFormResponseDto['author']): IdeaDetailsAuthor {
+  return {
+    id: author?.id ?? '',
+    firstName: author?.firstName ?? null,
+    lastName: author?.lastName ?? null,
+    avatarUrl: author?.avatarUrl ?? null,
+  };
+}
+
+function toTeamMember(
+  author: IdeaDetailsAuthor,
+  fallbackName: string,
+): IdeaDetailsTeamMember {
+  return {
+    id: author.id,
+    name: formatPersonName(author.firstName, author.lastName, fallbackName),
+    avatarUrl: author.avatarUrl,
+  };
 }
 
 function toStageLabel(stage: string | null): string {
@@ -24,11 +42,17 @@ function toStageLabel(stage: string | null): string {
 }
 
 export function toIdeaDetails(dto: IdeaFormResponseDto): IdeaDetails {
-  const authorName = formatPersonName(
-    dto.author?.firstName ?? null,
-    dto.author?.lastName ?? null,
-    'Author',
-  );
+  const author = toAuthor(dto.author);
+  const members: IdeaDetailsMember[] =
+    dto.members?.map(member => ({
+      user: toAuthor(member.user),
+      joinedAt: member.joinedAt,
+    })) ?? [];
+
+  const authorTeamMember = toTeamMember(author, 'Author');
+  const memberTeamMembers = members
+    .filter(member => member.user.id !== author.id)
+    .map(member => toTeamMember(member.user, 'Member'));
 
   const mainImage = dto.mainImage
     ? { id: dto.mainImage.id, url: dto.mainImage.url }
@@ -36,7 +60,7 @@ export function toIdeaDetails(dto: IdeaFormResponseDto): IdeaDetails {
 
   return {
     id: dto.id,
-    authorId: dto.author?.id ?? '',
+    authorId: author.id,
     status: dto.status,
     title: dto.title?.trim() ?? '',
     description: dto.description?.trim() ?? '',
@@ -74,13 +98,14 @@ export function toIdeaDetails(dto: IdeaFormResponseDto): IdeaDetails {
           likes: 0,
         },
       })) ?? [],
-    team: [
-      {
-        id: dto.author?.id ?? '',
-        name: authorName,
-        avatarUrl: dto.author?.avatarUrl ?? null,
-      },
-    ],
+    author,
+    members,
+    viewer: {
+      isAuthor: dto.viewer?.isAuthor ?? false,
+      isMember: dto.viewer?.isMember ?? false,
+      canJoin: dto.viewer?.canJoin ?? false,
+    },
+    team: [authorTeamMember, ...memberTeamMembers],
     createdAt: dto.publishedAt ?? new Date(0).toISOString(),
     stats: {
       views: 0,

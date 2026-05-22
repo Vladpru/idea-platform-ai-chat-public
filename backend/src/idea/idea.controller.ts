@@ -268,4 +268,34 @@ export class IdeaController {
   findSimilar(@Param('id', ParseUUIDPipe) id: string) {
     return this.ideaService.findSimilar(id);
   }
+
+  @Post(':id/join')
+  @JwtAuth()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Join a published idea' })
+  @ApiCreatedResponse({ description: 'Joined idea successfully' })
+  @ApiNotFoundResponse({ description: 'Idea not found' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @HttpCode(HttpStatus.CREATED)
+  join(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.ideaService.joinIdea(id, req.user.id);
+  }
+
+  @Delete(':id/leave')
+  @JwtAuth()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Leave an idea' })
+  @ApiNoContentResponse({ description: 'Left idea successfully' })
+  @ApiNotFoundResponse({ description: 'Idea or member not found' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async leave(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<void> {
+    await this.ideaService.leaveIdea(id, req.user.id);
+  }
 }

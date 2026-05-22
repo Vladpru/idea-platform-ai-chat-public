@@ -107,6 +107,14 @@ export async function deleteIdea(ideaId: string): Promise<void> {
   await api.delete(IDEAS_ROUTES.byId(ideaId));
 }
 
+export async function joinIdea(ideaId: string): Promise<void> {
+  await api.post(IDEAS_ROUTES.join(ideaId));
+}
+
+export async function leaveIdea(ideaId: string): Promise<void> {
+  await api.delete(IDEAS_ROUTES.leave(ideaId));
+}
+
 export async function uploadIdeaMedia(
   ideaId: string,
   { file }: UploadIdeaMediaPayload,

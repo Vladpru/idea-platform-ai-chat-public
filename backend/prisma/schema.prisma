@@ -53,8 +53,9 @@ model User {
   updatedAt           DateTime             @updatedAt @map("updated_at")
   avatarUrl           String?              @map("avatar_url")
   passwordResetTokens PasswordResetToken[]
-  ideas               Idea[]
+  ideas               Idea[]               @relation("IdeaAuthor")
   problems            Problem[]
+  joinedIdeas         IdeaMember[]
 
   @@map("user")
 }
@@ -84,14 +85,28 @@ model Idea {
   createdAt   DateTime   @default(now()) @map("created_at")
   updatedAt   DateTime   @updatedAt @map("updated_at")
 
-  author   User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author   User          @relation("IdeaAuthor", fields: [authorId], references: [id], onDelete: Cascade)
   problems IdeaProblem[]
   tags     IdeaTag[]
   media    IdeaMedia[]
+  members  IdeaMember[]
 
   @@index([authorId, status])
   @@index([status, publishedAt])
   @@map("idea")
+}
+
+model IdeaMember {
+  ideaId   String   @map("idea_id")
+  userId   String   @map("user_id")
+  joinedAt DateTime @default(now()) @map("joined_at")
+
+  idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([ideaId, userId])
+  @@index([userId])
+  @@map("idea_member")
 }
 
 model Problem {

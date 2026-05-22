@@ -7,6 +7,17 @@ export type IdeaFormAuthorDto = {
   avatarUrl: string | null;
 };
 
+export type IdeaFormMemberDto = {
+  user: IdeaFormAuthorDto;
+  joinedAt: string;
+};
+
+export type IdeaFormViewerDto = {
+  isAuthor: boolean;
+  isMember: boolean;
+  canJoin: boolean;
+};
+
 export type IdeaFormProblemDto = {
   id: string;
   title: string;
@@ -45,4 +56,6 @@ export type IdeaFormResponseDto = {
   mainImage: IdeaMediaResponseDto | null;
   attachments: IdeaMediaResponseDto[];
   author: IdeaFormAuthorDto;
+  members: IdeaFormMemberDto[];
+  viewer: IdeaFormViewerDto;
 };

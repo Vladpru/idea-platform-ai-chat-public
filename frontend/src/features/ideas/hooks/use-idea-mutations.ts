@@ -8,6 +8,8 @@ import {
   deleteIdea,
   deleteIdeaMedia,
   fetchIdeaById,
+  joinIdea,
+  leaveIdea,
   linkProblemsToIdea,
   unlinkProblemFromIdea,
   publishIdea,
@@ -306,6 +308,38 @@ export function useUnlinkProblemMutation() {
     onSuccess: (_response, { ideaId }) => {
       invalidateIdeaQueries(queryClient, ideaId);
       toast.success('Problem unlinked');
+    },
+    onError: error => {
+      toast.error(getApiErrorMessage(error));
+    },
+  });
+}
+
+export function useJoinIdeaMutation(ideaId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: [...ideaMutationKeys.all, 'join', ideaId],
+    mutationFn: () => joinIdea(ideaId),
+    onSuccess: () => {
+      invalidateIdeaQueries(queryClient, ideaId);
+      toast.success('You joined the project');
+    },
+    onError: error => {
+      toast.error(getApiErrorMessage(error));
+    },
+  });
+}
+
+export function useLeaveIdeaMutation(ideaId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: [...ideaMutationKeys.all, 'leave', ideaId],
+    mutationFn: () => leaveIdea(ideaId),
+    onSuccess: () => {
+      invalidateIdeaQueries(queryClient, ideaId);
+      toast.success('You left the project');
     },
     onError: error => {
       toast.error(getApiErrorMessage(error));

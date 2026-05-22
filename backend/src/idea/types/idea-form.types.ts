@@ -13,6 +13,11 @@ export type IdeaFormAuthor = {
   avatarUrl: string | null;
 };
 
+export type IdeaFormMember = {
+  user: IdeaFormAuthor;
+  joinedAt: string;
+};
+
 export type IdeaFormProblem = {
   id: string;
   title: string;
@@ -51,6 +56,12 @@ export type IdeaFormResponse = {
   mainImage: IdeaMediaResponse | null;
   attachments: IdeaMediaResponse[];
   author: IdeaFormAuthor;
+  viewer: {
+    isAuthor: boolean;
+    isMember: boolean;
+    canJoin: boolean;
+  };
+  members: IdeaFormMember[];
 };
 
 export type IdeasFeedMeta = {
