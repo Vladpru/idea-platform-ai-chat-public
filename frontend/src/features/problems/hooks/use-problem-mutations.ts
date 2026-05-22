@@ -1,5 +1,6 @@
 import {
-  type CreateProblemDraftPayload,
+  type CreateProblemPayload,
+  createProblem,
   createProblemDraft,
   fetchMyProblems,
 } from '@/features/problems/api/problems.api';
@@ -8,13 +9,29 @@ import { toast } from 'sonner';
 
 import { getApiErrorMessage } from '@/shared/api/api-error';
 
+export function useCreateProblemMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: ['problems', 'create'],
+    mutationFn: (payload: CreateProblemPayload) => createProblem(payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['problems', 'mine'] });
+      void queryClient.invalidateQueries({ queryKey: ['problems'] });
+    },
+    onError: error => {
+      toast.error(getApiErrorMessage(error));
+    },
+  });
+}
+
+/** @deprecated Use useCreateProblemMutation */
 export function useCreateProblemDraftMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationKey: ['problems', 'create-draft'],
-    mutationFn: (payload: CreateProblemDraftPayload) =>
-      createProblemDraft(payload),
+    mutationFn: createProblemDraft,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['problems', 'mine'] });
       toast.success('Problem draft created');
@@ -25,9 +42,14 @@ export function useCreateProblemDraftMutation() {
   });
 }
 
-export function useMyProblemsQuery() {
+export function useMyProblemsQuery(
+  params?: Parameters<typeof fetchMyProblems>[0],
+) {
   return useQuery({
-    queryKey: ['problems', 'mine'],
-    queryFn: fetchMyProblems,
+    queryKey: ['problems', 'mine', params],
+    queryFn: async () => {
+      const feed = await fetchMyProblems(params);
+      return feed.data;
+    },
   });
 }

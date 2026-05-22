@@ -1,6 +1,6 @@
 export const PROBLEM_STAGES = [
   { value: 'active', label: 'Active' },
-  { value: 'paused', label: 'Paused' },
+  { value: 'completed', label: 'Completed' },
   { value: 'archived', label: 'Archived' },
 ] as const;
 
