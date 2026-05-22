@@ -4,6 +4,7 @@ import { MailService } from '../mail/mail.service';
 import type { UserPublic } from '../shared/types/user.types';
 import { TokenService } from '../token/token.service';
 import { CreateUserDto } from '../user/dto/create-user.dto';
+import { UpsertOAuthUserResult } from '../user/dto/upsert-oauth-user.dto';
 import { UserService } from '../user/user.service';
 import { LoginDto } from './dto/login.dto';
 
@@ -60,14 +61,28 @@ export class AuthService {
         ? raw.name.substring(raw.name.indexOf(' ') + 1)
         : undefined);
 
-    const user = await this.userService.upsertOAuthUser({
-      email,
-      firstName,
-      lastName,
-      avatarUrl: typeof raw.picture === 'string' ? raw.picture : undefined,
-    });
+    const oauthUpsert: UpsertOAuthUserResult =
+      await this.userService.upsertOAuthUser({
+        email,
+        firstName,
+        lastName,
+        avatarUrl: typeof raw.picture === 'string' ? raw.picture : undefined,
+      });
 
-    return this.finalizeAuth(user);
+    if (oauthUpsert.isNewUser) {
+      try {
+        await this.mailService.sendWelcomeEmail({
+          to: oauthUpsert.user.email,
+        });
+      } catch (error: unknown) {
+        this.logger.error(
+          `Failed to send OAuth welcome email to ${oauthUpsert.user.email}`,
+          error,
+        );
+      }
+    }
+
+    return this.finalizeAuth(oauthUpsert.user);
   }
 
   private async fetchGoogleProfile(token: string): Promise<GoogleProfileRaw> {

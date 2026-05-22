@@ -18,7 +18,10 @@ import {
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import type { UpsertOAuthUserInput } from './dto/upsert-oauth-user.dto';
+import type {
+  UpsertOAuthUserInput,
+  UpsertOAuthUserResult,
+} from './dto/upsert-oauth-user.dto';
 
 const USER_PUBLIC_SELECT = {
   id: true,
@@ -77,8 +80,15 @@ export class UserService {
     return user;
   }
 
-  async upsertOAuthUser(dto: UpsertOAuthUserInput) {
-    return await this.prisma.user.upsert({
+  async upsertOAuthUser(
+    dto: UpsertOAuthUserInput,
+  ): Promise<UpsertOAuthUserResult> {
+    const existing = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+      select: { id: true },
+    });
+
+    const user: UserPublic = await this.prisma.user.upsert({
       where: { email: dto.email },
       update: {},
       create: {
@@ -89,6 +99,8 @@ export class UserService {
       },
       select: USER_PUBLIC_SELECT,
     });
+
+    return { user, isNewUser: existing === null };
   }
 
   findAll() {

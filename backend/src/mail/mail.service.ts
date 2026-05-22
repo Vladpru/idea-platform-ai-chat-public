@@ -47,7 +47,7 @@ export class MailService {
     resetUrl: string;
     expiresMinutes: number;
   }) {
-    const { subject, text, html } = buildPasswordResetEmail(params);
+    const { subject, text, html } = await buildPasswordResetEmail(params);
 
     try {
       await sgMail.send({
