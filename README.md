@@ -59,6 +59,7 @@ The app is built for collaborative product discovery: surface pain points, conne
 
    Fill in `DATABASE_URL` in `backend/.env.development` with the Neon development branch URL.
    For transactional email (welcome + password reset), set `SENDGRID_API_KEY` and `SENDGRID_FROM_EMAIL` (a verified sender in SendGrid).
+   Set `FRONTEND_URL` to your local Vite URL (`http://localhost:5173`); password-reset emails build links from this value.
 
 4. **Generate Prisma client**
 
@@ -144,5 +145,16 @@ Migrations run **automatically on every deploy** via the start command on Render
 | `frontend/.env.development` | Local frontend      |
 | `frontend/.env.staging`     | Staging frontend    |
 | `frontend/.env.production`  | Production frontend |
+
+### Deployed backends (`FRONTEND_URL`)
+
+Password-reset emails link to `{FRONTEND_URL}/reset-password?token=…`. The backend must use the **deployed frontend origin**, not `localhost`, or QA will open local URLs from email.
+
+| Backend service (Render)              | Set `FRONTEND_URL` to                                      |
+| ------------------------------------- | ---------------------------------------------------------- |
+| `idea-platform-team-2-develop`        | `https://idea-platform-team-2-frontend.onrender.com`       |
+| `idea-platform-team-2-staging`      | `https://idea-platform-team-2-frontend-staging.onrender.com` |
+
+These defaults are in `render.yaml`. If you change the frontend service name on Render, update `FRONTEND_URL` on the matching backend and redeploy.
 
 > `.env.*` files are gitignored. Never commit secrets. Ask a teammate for values if needed.

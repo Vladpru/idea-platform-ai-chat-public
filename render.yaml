@@ -24,7 +24,7 @@ services:
       - key: SERVER_DOMAIN
         sync: false
       - key: FRONTEND_URL
-        sync: false
+        value: https://idea-platform-team-2-frontend.onrender.com
       - key: SENDGRID_API_KEY
         sync: false
       - key: SENDGRID_FROM_EMAIL
@@ -55,7 +55,7 @@ services:
       - key: SERVER_DOMAIN
         sync: false
       - key: FRONTEND_URL
-        sync: false
+        value: https://idea-platform-team-2-frontend-staging.onrender.com
       - key: SENDGRID_API_KEY
         sync: false
       - key: SENDGRID_FROM_EMAIL
