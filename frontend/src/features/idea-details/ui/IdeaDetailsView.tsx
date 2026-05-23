@@ -21,15 +21,6 @@ import {
   IDEA_UPDATED_SUCCESS_TITLE,
 } from '@/features/ideas/lib/modals/copy';
 import { outlineBtnClass, primaryBtnClass } from '@/features/ideas/lib/styles';
-import { useUpdateIdea } from '@/features/ideas/hooks/use-update-idea';
-import {
-  useIdeaDetailsQuery,
-  useSimilarIdeasQuery,
-} from '@/features/idea-details/lib/use-idea-details-queries';
-import type {
-  IdeaDetails,
-  IdeaTabId,
-} from '@/features/idea-details/model/idea-details.types';
 import { IdeaForm } from '@/features/ideas/ui/idea-form/IdeaForm';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
@@ -39,7 +30,6 @@ import {
   useEffect,
   useId,
   useState,
-  type MouseEvent,
 } from 'react';
 
 import { getApiErrorMessage } from '@/shared/api/api-error';
@@ -59,7 +49,6 @@ import { IdeaHeader } from './IdeaHeader';
 import { IdeaStatsFooter } from './IdeaStatsFooter';
 import { IdeaTabs } from './IdeaTabs';
 import { IdeaTagCloud } from './IdeaTagCloud';
-import { IdeaAttachmentsTab } from './attachments/IdeaAttachmentsTab';
 import { IdeaLinkedProblemsTab } from './linked-problems/IdeaLinkedProblemsTab';
 import { SimilarIdeasWidget } from './similar/SimilarIdeasWidget';
 import { IdeaDetailsPageSkeleton } from './skeletons/IdeaDetailsPageSkeleton';
