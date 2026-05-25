@@ -1,11 +1,13 @@
 import type { IdeasFeedResponse } from '@/features/ideas/api/ideas-api.types';
+import type { ApiStage } from '@/features/ideas/model/idea.types';
 import { fetchIdeas } from '@/features/ideas/api/ideas.api';
-import { ideaMutationKeys } from '@/features/ideas/hooks/use-idea-mutations';
 import { useMediaQuery } from '@/shared/hooks/use-media-query';
 import { useInfiniteQuery, type InfiniteData } from '@tanstack/react-query';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo } from 'react';
 
 import {
+  API_STAGE_TO_FILTER,
   COLUMN_COUNT_MIN,
   FILTER_TO_API_STAGE,
   TABLET_COLUMN_COUNT_MAX,
@@ -25,16 +27,31 @@ import type {
 const IDEAS_PAGE_SIZE = 20;
 
 function scrollDashboardToTop(): void {
-  window.scrollTo(0, 0);
+  window.scrollTo({ top: 0, behavior: 'instant' });
 }
 
 export function useIdeasDashboardPreferences() {
-  const activeFilter = useDashboardGridPreferencesStore(s => s.activeFilter);
-  const setActiveFilterStore = useDashboardGridPreferencesStore(
-    s => s.setActiveFilter,
-  );
-  const sort = useDashboardGridPreferencesStore(s => s.sort);
-  const setSortStore = useDashboardGridPreferencesStore(s => s.setSort);
+  const search = useSearch({ from: '/_auth/ideas/' });
+  const navigate = useNavigate();
+
+  const sort: IdeaDashboardSort = search.sort ?? 'newest';
+  const stage: ApiStage | undefined = search.stage as ApiStage | undefined;
+
+  const activeFilter: IdeaDashboardFilter = stage
+    ? API_STAGE_TO_FILTER[stage]
+    : 'ALL';
+
+  useEffect(() => {
+    const raw = new URLSearchParams(window.location.search);
+    if (!raw.has('sort')) {
+      void navigate({
+        to: '.',
+        search: { sort, stage },
+        replace: true,
+      });
+    }
+  }, []);
+
   const columnCount = useDashboardGridPreferencesStore(s => s.columnCount);
   const setColumnCount = useDashboardGridPreferencesStore(
     s => s.setColumnCount,
@@ -52,17 +69,25 @@ export function useIdeasDashboardPreferences() {
   const setActiveFilter = useCallback(
     (filter: IdeaDashboardFilter) => {
       scrollDashboardToTop();
-      setActiveFilterStore(filter);
+      const nextStage =
+        filter === 'ALL' ? undefined : FILTER_TO_API_STAGE[filter];
+      void navigate({
+        to: '.',
+        search: prev => ({ ...prev, stage: nextStage }),
+      });
     },
-    [setActiveFilterStore],
+    [navigate],
   );
 
   const setSort = useCallback(
     (nextSort: IdeaDashboardSort) => {
       scrollDashboardToTop();
-      setSortStore(nextSort);
+      void navigate({
+        to: '.',
+        search: prev => ({ ...prev, sort: nextSort }),
+      });
     },
-    [setSortStore],
+    [navigate],
   );
 
   const isMobile = useMediaQuery('(max-width: 767px)');
@@ -93,6 +118,7 @@ export function useIdeasDashboardPreferences() {
     setActiveFilter,
     sort,
     setSort,
+    stage,
     columnCount,
     setColumnCount,
     effectiveColumnCount,
@@ -106,16 +132,12 @@ export function useIdeasDashboardPreferences() {
 }
 
 export function useIdeasDashboardQuery(
-  activeFilter: IdeaDashboardFilter,
+  stage: ApiStage | undefined,
   sort: IdeaDashboardSort,
 ) {
-  const stage =
-    activeFilter === 'ALL' ? undefined : FILTER_TO_API_STAGE[activeFilter];
-
   const selectCards = useCallback(
-    (data: InfiniteData<IdeasFeedResponse>) =>
-      selectIdeasDashboardCards(data, sort),
-    [sort],
+    (data: InfiniteData<IdeasFeedResponse>) => selectIdeasDashboardCards(data),
+    [],
   );
 
   const {
@@ -130,18 +152,19 @@ export function useIdeasDashboardQuery(
   } = useInfiniteQuery({
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    queryKey: [
-      ...ideaMutationKeys.list({ stage, limit: IDEAS_PAGE_SIZE }),
-      'infinite',
-    ],
+    queryKey: ['ideas', 'infinite', { stage, sort }],
     queryFn: ({ pageParam }) =>
-      fetchIdeas({ stage, limit: IDEAS_PAGE_SIZE, page: pageParam }),
+      fetchIdeas({
+        stage,
+        sort,
+        limit: IDEAS_PAGE_SIZE,
+        page: pageParam as number,
+      }),
     initialPageParam: 1,
     getNextPageParam: lastPage => {
-      if (lastPage.meta.page < lastPage.meta.totalPages) {
-        return lastPage.meta.page + 1;
-      }
-      return undefined;
+      return lastPage.meta.page < lastPage.meta.totalPages
+        ? lastPage.meta.page + 1
+        : undefined;
     },
     select: selectCards,
   });
@@ -160,10 +183,7 @@ export function useIdeasDashboardQuery(
 
 export function useIdeasDashboard() {
   const preferences = useIdeasDashboardPreferences();
-  const query = useIdeasDashboardQuery(
-    preferences.activeFilter,
-    preferences.sort,
-  );
+  const query = useIdeasDashboardQuery(preferences.stage, preferences.sort);
 
   return {
     ...preferences,

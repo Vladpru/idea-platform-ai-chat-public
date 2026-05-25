@@ -196,6 +196,7 @@ export async function unlinkProblemFromIdea(
 
 export type {
   CreateIdeaPayload,
+  IdeaSortOption,
   IdeasFeedMeta,
   IdeasFeedResponse,
   IdeasListParams,

@@ -1,12 +1,15 @@
 import type { IdeaFormResponseDto } from '@/features/ideas/api/idea-form-api.types';
 import type { ApiStage, IdeaStatus } from '@/features/ideas/model/idea.types';
 
+export type IdeaSortOption = 'newest' | 'oldest' | 'views' | 'likes' | 'comments';
+
 export type IdeasListParams = {
   status?: IdeaStatus;
   authorId?: string;
   page?: number;
   limit?: number;
   stage?: ApiStage;
+  sort?: IdeaSortOption;
 };
 
 export type IdeasFeedMeta = {
