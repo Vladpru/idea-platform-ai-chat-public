@@ -33,11 +33,11 @@ export function IdeaSelect({ formId, control, errors }: IdeaSelectProps) {
 
   const allIdeas = useMemo(
     () =>
-      (data?.items ?? []).map(idea => ({
+      (data?.data ?? []).map((idea) => ({
         id: idea.id,
         label: idea.title?.trim() || 'Untitled idea',
       })),
-    [data?.items],
+    [data?.data],
   );
 
   const resolveIdeaLabel = (id: string) =>
