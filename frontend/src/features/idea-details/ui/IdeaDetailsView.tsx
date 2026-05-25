@@ -1,7 +1,12 @@
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
-
-import { useIdeaDetailsQuery, useSimilarIdeasQuery } from '@/features/idea-details/lib/use-idea-details-queries';
-import type { IdeaDetails, IdeaTabId } from '@/features/idea-details/model/idea-details.types';
+import {
+  useIdeaDetailsQuery,
+  useSimilarIdeasQuery,
+} from '@/features/idea-details/lib/use-idea-details-queries';
+import type {
+  IdeaDetails,
+  IdeaTabId,
+} from '@/features/idea-details/model/idea-details.types';
 import {
   type IdeaEditFormValues,
   ideaDetailsToEditFormValues,
@@ -15,7 +20,7 @@ import {
 import { outlineBtnClass, primaryBtnClass } from '@/features/ideas/lib/styles';
 import { useUpdateIdea } from '@/features/ideas/hooks/use-update-idea';
 import { IdeaForm } from '@/features/ideas/ui/idea-form/IdeaForm';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate, useRouter } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
 import {
   type MouseEvent,
@@ -64,6 +69,7 @@ function IdeaDetailsErrorState({ message }: IdeaDetailsErrorStateProps) {
         <Link
           to={ROUTES.ideas}
           className="bg-brand-dark-blue hover:bg-brand-dark-blue/90 mt-6 inline-flex h-10 items-center justify-center rounded-sm px-6 text-xs font-bold tracking-wide text-white uppercase transition-colors"
+          search={{ sort: 'newest' }}
         >
           Back to ideas
         </Link>
@@ -74,6 +80,7 @@ function IdeaDetailsErrorState({ message }: IdeaDetailsErrorStateProps) {
 
 export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
   const navigate = useNavigate();
+  const router = useRouter();
   const formId = useId();
   const [activeTab, setActiveTab] = useState<IdeaTabId>('description');
   const [isEditing, setIsEditing] = useState(false);
@@ -138,7 +145,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
     exitEditMode();
 
     if (action === 'navigate-back') {
-      void navigate({ to: ROUTES.ideas });
+      router.history.back();
     }
   };
 
@@ -149,12 +156,13 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
     }
   };
 
-  const handleBackClick = (event: MouseEvent<HTMLAnchorElement>) => {
-    if (!isEditing || !hasUnsavedEdits) {
+  const handleBackClick = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    if (isEditing && hasUnsavedEdits) {
+      requestDiscardConfirmation('navigate-back');
       return;
     }
-    event.preventDefault();
-    requestDiscardConfirmation('navigate-back');
+    router.history.back();
   };
 
   const handleUpdatedSuccessClose = () => {
@@ -189,25 +197,24 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
   }
 
   const isAuthor =
-    idea.viewer.isAuthor ||
-    Boolean(userId && userId === idea.authorId);
+    idea.viewer.isAuthor || Boolean(userId && userId === idea.authorId);
 
   const visibleProblems = idea.linkedProblems.filter(
-    (p) => p.status !== 'DRAFT' || isAuthor,
+    p => p.status !== 'DRAFT' || isAuthor,
   );
 
   return (
     <main className="bg-brand-neutral min-h-[calc(100vh-56px)] md:px-8 lg:px-12">
       <div className="mx-auto max-w-6xl space-y-6 bg-white px-4 py-6 sm:space-y-8 sm:px-6 sm:py-8">
         <div className="flex items-center">
-          <Link
-            to={ROUTES.ideas}
+          <button
+            type="button"
             onClick={handleBackClick}
-            className="text-primary hover:text-primary/80 inline-flex items-center gap-1 text-xs font-bold tracking-wide uppercase transition-colors"
+            className="text-primary hover:text-primary/80 inline-flex cursor-pointer items-center gap-1 text-xs font-bold tracking-wide uppercase transition-colors"
           >
             <ArrowLeft className="size-4" />
             Back
-          </Link>
+          </button>
         </div>
 
         <IdeaHeader
@@ -217,7 +224,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
           showProjectActions={!isEditing}
           onStartEdit={() => handleStartEdit(idea)}
           onDeleteSuccess={() => {
-            void navigate({ to: ROUTES.ideas });
+            void navigate({ to: ROUTES.ideas, search: { sort: 'newest' } });
           }}
           onTeamClick={() => setIsTeamModalOpen(true)}
         />
@@ -373,7 +380,6 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
         description={IDEA_UPDATED_SUCCESS_DESCRIPTION}
         onClose={handleUpdatedSuccessClose}
       />
-
     </main>
   );
 }
