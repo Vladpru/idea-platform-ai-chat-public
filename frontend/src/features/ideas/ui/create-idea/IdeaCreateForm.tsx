@@ -9,12 +9,13 @@ import {
 import { SparklesIcon } from '@/features/ideas/ui/icons/SparklesIcon';
 import { useNavigate } from '@tanstack/react-router';
 import { ChevronDown, Upload } from 'lucide-react';
-import { useId, type FormEvent } from 'react';
+import { type FormEvent, useId } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Controller } from 'react-hook-form';
 
 import { ROUTES } from '@/shared/config/paths';
 import { cn } from '@/shared/lib/utils';
+import { TagsInput } from '@/shared/ui/TagsInput';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 
@@ -22,7 +23,6 @@ import DeleteImageButton from './DeleteImageButton';
 import { FieldError, FieldGroup, FieldLabel } from './Fields';
 import { IdeaFilesField } from './IdeaFilesField';
 import ProblemSelect from './ProblemSelect';
-import { TagsInput } from './TagsInput';
 
 const ALLOWED_MAIN_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 const INVALID_MAIN_IMAGE_TYPE_MESSAGE = 'Main image must be PNG, JPEG, or WEBP';

@@ -22,6 +22,7 @@ const attachmentsSchema = z
   .array(attachmentFileSchema)
   .max(MAX_ATTACHMENT_FILES, `You can add up to ${MAX_ATTACHMENT_FILES} files`);
 
+import { submitProblemCostBenefitSchema } from './cost-benefit';
 import { PROBLEM_STAGES, type ProblemStageValue } from './stages';
 
 const problemStageValues = PROBLEM_STAGES.map(stage => stage.value) as [
@@ -49,7 +50,7 @@ const submitProblemCoreFields = {
   title: submitProblemTitleSchema,
   description: submitProblemDescriptionSchema,
   valueProposition: z.string().optional(),
-  costBenefit: z.string().optional(),
+  costBenefit: submitProblemCostBenefitSchema,
   ideaIds: z.string().optional(),
   tags: z.string().optional(),
   files: attachmentsSchema.optional(),

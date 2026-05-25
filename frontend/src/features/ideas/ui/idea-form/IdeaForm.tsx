@@ -1,11 +1,14 @@
 import {
-  ideaEditSchema,
   type IdeaEditFormValues,
+  ideaEditSchema,
 } from '@/features/ideas/lib/edit-idea';
 import { IDEA_STAGES } from '@/features/ideas/lib/stages';
-import { selectClass, textareaClass } from '@/features/ideas/lib/styles';
-import { FieldError, FieldGroup, FieldLabel } from '@/features/ideas/ui/create-idea/Fields';
-import { TagsInput } from '@/features/ideas/ui/create-idea/TagsInput';
+import { textareaClass } from '@/features/ideas/lib/styles';
+import {
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from '@/features/ideas/ui/create-idea/Fields';
 import { IdeaEditAttachmentsField } from '@/features/ideas/ui/idea-form/IdeaEditAttachmentsField';
 import { IdeaEditMainImageField } from '@/features/ideas/ui/idea-form/IdeaEditMainImageField';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,6 +17,7 @@ import { useEffect, useId } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
 import { cn } from '@/shared/lib/utils';
+import { TagsInput, selectClass } from '@/shared/ui/TagsInput';
 import { Input } from '@/shared/ui/input';
 
 export type IdeaFormInitialData = IdeaEditFormValues;

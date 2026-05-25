@@ -9,10 +9,24 @@ import {
   updateProblem,
   uploadProblemAttachment,
 } from '@/features/problems/api/problems.api';
+import {
+  formValuesToCreateProblemPayload,
+  type SubmitProblemFormValues,
+} from '@/features/problems/lib/submit-problem';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { getApiErrorMessage } from '@/shared/api/api-error';
+
+async function uploadProblemFiles(
+  problemId: string,
+  files: File[] | undefined,
+) {
+  if (!files?.length) return;
+  await Promise.all(
+    files.map(file => uploadProblemAttachment(problemId, { file })),
+  );
+}
 
 export const problemMutationKeys = {
   all: ['problems'] as const,
@@ -50,6 +64,27 @@ export function useCreateProblemMutation() {
       toast.success(
         variables.isPublished ? 'Problem published' : 'Problem created',
       );
+    },
+    onError: error => {
+      toast.error(getApiErrorMessage(error));
+    },
+  });
+}
+
+export function usePublishProblemMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: [...problemMutationKeys.all, 'publish'],
+    mutationFn: async (values: SubmitProblemFormValues) => {
+      const payload = formValuesToCreateProblemPayload(values, true);
+      const problem = await createProblem(payload);
+      await uploadProblemFiles(problem.id, values.files);
+      return problem;
+    },
+    onSuccess: problem => {
+      invalidateProblemQueries(queryClient, problem.id);
+      toast.success('Problem published');
     },
     onError: error => {
       toast.error(getApiErrorMessage(error));

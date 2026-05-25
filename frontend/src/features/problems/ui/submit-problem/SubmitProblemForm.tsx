@@ -1,25 +1,24 @@
+import { publishBtnClass, textareaClass } from '@/features/ideas/lib/styles';
 import {
   FieldError,
   FieldGroup,
   FieldLabel,
 } from '@/features/ideas/ui/create-idea/Fields';
-import { TagsInput } from '@/features/ideas/ui/create-idea/TagsInput';
-import {
-  publishBtnClass,
-  selectClass,
-  textareaClass,
-} from '@/features/ideas/lib/styles';
 import { SparklesIcon } from '@/features/ideas/ui/icons/SparklesIcon';
 import { useSubmitProblemForm } from '@/features/problems/hooks/use-submit-problem-form';
-import { PROBLEM_STAGES } from '@/features/problems/lib/submit-problem';
+import {
+  PROBLEM_STAGES,
+  sanitizeCostBenefitInput,
+} from '@/features/problems/lib/submit-problem';
 import { SaveDraftButton } from '@/features/problems/ui/tooltips';
 import { useNavigate } from '@tanstack/react-router';
 import { ChevronDown } from 'lucide-react';
-import { useId, type FormEvent } from 'react';
+import { type FormEvent, useId } from 'react';
 import { Controller } from 'react-hook-form';
 
 import { ROUTES } from '@/shared/config/paths';
 import { cn } from '@/shared/lib/utils';
+import { TagsInput, selectClass } from '@/shared/ui/TagsInput';
 import { Input } from '@/shared/ui/input';
 
 import { IdeaSelect } from './IdeaSelect';
@@ -80,7 +79,9 @@ export function SubmitProblemForm() {
 
   const handlePublish = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    await onPublish();
+    const isPublished = await onPublish();
+    if (!isPublished) return;
+    void navigate({ to: ROUTES.problems });
   };
 
   return (
@@ -190,14 +191,26 @@ export function SubmitProblemForm() {
           >
             $
           </span>
-          <Input
-            id={`${formId}-costBenefit`}
-            className="bg-white pl-7"
-            placeholder="1,000.00"
-            inputMode="decimal"
-            aria-invalid={!!errors.costBenefit}
-            disabled={isBusy}
-            {...register('costBenefit')}
+          <Controller
+            name="costBenefit"
+            control={control}
+            render={({ field }) => (
+              <Input
+                id={`${formId}-costBenefit`}
+                className="bg-white pl-7"
+                placeholder="1000.00"
+                inputMode="decimal"
+                aria-invalid={!!errors.costBenefit}
+                disabled={isBusy}
+                value={field.value ?? ''}
+                onChange={event =>
+                  field.onChange(sanitizeCostBenefitInput(event.target.value))
+                }
+                onBlur={field.onBlur}
+                name={field.name}
+                ref={field.ref}
+              />
+            )}
           />
         </div>
         <FieldError message={errors.costBenefit?.message} />

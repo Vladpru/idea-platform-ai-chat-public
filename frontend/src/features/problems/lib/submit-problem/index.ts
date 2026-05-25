@@ -7,6 +7,13 @@ export {
   parseIdeaIds,
 } from './idea-ids';
 export {
+  isValidCostBenefit,
+  normalizeCostBenefitForApi,
+  normalizeCostBenefitInput,
+  sanitizeCostBenefitInput,
+} from './cost-benefit';
+export { formValuesToCreateProblemPayload } from './mappers';
+export {
   problemStageSchema,
   submitProblemDefaultValues,
   submitProblemDescriptionSchema,

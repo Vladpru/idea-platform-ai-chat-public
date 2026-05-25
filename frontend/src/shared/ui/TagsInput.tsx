@@ -1,9 +1,22 @@
-import { formatTags, parseTags } from '@/features/ideas/lib/create-idea/tags';
-import { selectClass } from '@/features/ideas/lib/styles';
 import { X } from 'lucide-react';
 import { type KeyboardEvent, useState } from 'react';
 
 import { cn } from '@/shared/lib/utils';
+
+export const selectClass =
+  'border-brand-gray-200 bg-white text-foreground focus-visible:ring-ring flex h-10 w-full appearance-none rounded-md border px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
+
+function parseTags(value: string | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split(',')
+    .map(tag => tag.trim())
+    .filter(Boolean);
+}
+
+function formatTags(tags: string[]): string {
+  return tags.join(', ');
+}
 
 type TagsInputProps = {
   id: string;

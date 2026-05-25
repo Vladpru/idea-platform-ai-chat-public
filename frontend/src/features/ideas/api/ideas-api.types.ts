@@ -1,3 +1,4 @@
+import type { IdeaFormResponseDto } from '@/features/ideas/api/idea-form-api.types';
 import type { ApiStage, IdeaStatus } from '@/features/ideas/model/idea.types';
 
 export type IdeasListParams = {
@@ -7,11 +8,17 @@ export type IdeasListParams = {
   limit?: number;
 };
 
-export type IdeasListResponse = {
-  items: import('@/features/ideas/model/idea.types').IdeaApi[];
+export type IdeasFeedMeta = {
   total: number;
   page: number;
   limit: number;
+  totalPages: number;
+};
+
+/** Paginated ideas feed (`GET /ideas`, `GET /ideas/mine`). */
+export type IdeasListResponse = {
+  data: IdeaFormResponseDto[];
+  meta: IdeasFeedMeta;
 };
 
 export type IdeaWritePayload = {

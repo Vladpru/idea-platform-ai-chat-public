@@ -32,6 +32,7 @@ export {
   useCreateProblemMutation,
   useDeleteProblemMediaMutation,
   useDeleteProblemMutation,
+  usePublishProblemMutation,
   useUpdateProblemMutation,
   useUploadProblemAttachmentMutation,
 } from './hooks/use-problem-mutations';

@@ -1,4 +1,7 @@
-import { useCreateProblemDraftMutation } from '@/features/problems/hooks/use-problem-mutations';
+import {
+  useCreateProblemDraftMutation,
+  usePublishProblemMutation,
+} from '@/features/problems/hooks/use-problem-mutations';
 import {
   type SubmitProblemFormValues,
   submitProblemDefaultValues,
@@ -9,7 +12,6 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useCallback, useState } from 'react';
 import { useForm, type UseFormReturn } from 'react-hook-form';
-import { toast } from 'sonner';
 import type { ZodIssue } from 'zod';
 
 import { getApiErrorMessage } from '@/shared/api/api-error';
@@ -32,6 +34,7 @@ function applyValidationIssuesToForm(
 export function useSubmitProblemForm() {
   const [error, setError] = useState<string | null>(null);
   const createDraftMutation = useCreateProblemDraftMutation();
+  const publishMutation = usePublishProblemMutation();
 
   const form = useForm<SubmitProblemFormValues>({
     resolver: zodResolver(submitProblemDraftSchema),
@@ -39,7 +42,8 @@ export function useSubmitProblemForm() {
     mode: 'onChange',
   });
 
-  const isBusy = createDraftMutation.isPending;
+  const isBusy =
+    createDraftMutation.isPending || publishMutation.isPending;
 
   const onSaveDraft = useCallback(async () => {
     setError(null);
@@ -77,9 +81,14 @@ export function useSubmitProblemForm() {
       return false;
     }
 
-    toast.info('Publishing problems will be available soon.');
-    return false;
-  }, [form]);
+    try {
+      await publishMutation.mutateAsync(validation.data);
+      return true;
+    } catch (err) {
+      setError(getApiErrorMessage(err));
+      return false;
+    }
+  }, [form, publishMutation]);
 
   const watchedValues = form.watch();
   const canSaveDraft = validateSubmitProblemForDraft(watchedValues).success;

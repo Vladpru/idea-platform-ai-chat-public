@@ -36,6 +36,7 @@ export {
 } from './api/ideas.api';
 export type {
   CreateIdeaPayload,
+  IdeasFeedMeta,
   IdeasListParams,
   IdeasListResponse,
   PublishIdeaPayload,

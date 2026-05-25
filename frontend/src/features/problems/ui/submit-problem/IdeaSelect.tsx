@@ -1,5 +1,4 @@
 import { useMyIdeasQuery } from '@/features/ideas/hooks/use-idea-queries';
-import { selectClass } from '@/features/ideas/lib/styles';
 import {
   FieldError,
   FieldGroup,
@@ -16,6 +15,7 @@ import type { Control, FieldErrors } from 'react-hook-form';
 import { Controller } from 'react-hook-form';
 
 import { cn } from '@/shared/lib/utils';
+import { selectClass } from '@/shared/ui/TagsInput';
 import { Input } from '@/shared/ui/input';
 
 type IdeaSelectProps = {
@@ -29,15 +29,15 @@ export function IdeaSelect({ formId, control, errors }: IdeaSelectProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const { data, isLoading } = useMyIdeasQuery({ limit: 10 });
+  const { data: ideasFeed, isLoading } = useMyIdeasQuery({ limit: 10 });
 
   const allIdeas = useMemo(
     () =>
-      (data?.items ?? []).map(idea => ({
+      (ideasFeed?.data ?? []).map(idea => ({
         id: idea.id,
         label: idea.title?.trim() || 'Untitled idea',
       })),
-    [data?.items],
+    [ideasFeed?.data],
   );
 
   const resolveIdeaLabel = (id: string) =>
