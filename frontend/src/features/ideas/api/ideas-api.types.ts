@@ -1,3 +1,4 @@
+import type { IdeaFormResponseDto } from '@/features/ideas/api/idea-form-api.types';
 import type { ApiStage, IdeaStatus } from '@/features/ideas/model/idea.types';
 
 export type IdeasListParams = {
@@ -5,8 +6,22 @@ export type IdeasListParams = {
   authorId?: string;
   page?: number;
   limit?: number;
+  stage?: ApiStage;
 };
 
+export type IdeasFeedMeta = {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+};
+
+export type IdeasFeedResponse = {
+  data: IdeaFormResponseDto[];
+  meta: IdeasFeedMeta;
+};
+
+/** @deprecated Use IdeasFeedResponse — kept for gradual migration */
 export type IdeasListResponse = {
   items: import('@/features/ideas/model/idea.types').IdeaApi[];
   total: number;
