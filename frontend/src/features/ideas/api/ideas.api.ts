@@ -7,6 +7,7 @@ import type {
   UploadIdeaMediaPayload,
 } from '@/features/ideas/api/ideas-api.types';
 import type { IdeaFormResponseDto } from '@/features/ideas/api/idea-form-api.types';
+import { ideaFormDtoToIdeaApi } from '@/features/ideas/api/idea-form.mappers';
 import { IDEAS_ROUTES } from '@/features/ideas/api/ideas.routes';
 import {
   IDEA_STATUS,
@@ -35,8 +36,8 @@ export async function fetchMyIdeas(
 }
 
 export async function fetchIdeaById(ideaId: string): Promise<IdeaApi> {
-  const { data } = await api.get<IdeaApi>(IDEAS_ROUTES.byId(ideaId));
-  return data;
+  const dto = await fetchIdeaFormById(ideaId);
+  return ideaFormDtoToIdeaApi(dto);
 }
 
 export async function fetchIdeaFormById(

@@ -30,12 +30,6 @@ export type IdeasListResponse = {
   totalPages: number;
 };
 
-/** Paginated ideas feed (`GET /ideas`, `GET /ideas/mine`). */
-export type IdeasListResponse = {
-  data: IdeaFormResponseDto[];
-  meta: IdeasFeedMeta;
-};
-
 export type IdeaWritePayload = {
   stage?: ApiStage | null;
   title?: string | null;

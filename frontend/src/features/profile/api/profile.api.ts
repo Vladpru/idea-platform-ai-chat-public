@@ -16,6 +16,11 @@ export type PatchUserPayload = {
   lastName: string;
 };
 
+export async function fetchCurrentUser(): Promise<UserPublic> {
+  const { data } = await api.get<UserPublic>('/users/me');
+  return data;
+}
+
 export async function patchUser(
   userId: string,
   payload: PatchUserPayload,

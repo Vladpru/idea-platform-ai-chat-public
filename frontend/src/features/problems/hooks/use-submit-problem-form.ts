@@ -42,8 +42,9 @@ export function useSubmitProblemForm() {
     mode: 'onChange',
   });
 
-  const isBusy =
-    createDraftMutation.isPending || publishMutation.isPending;
+  const isSavingDraft = createDraftMutation.isPending;
+  const isPublishing = publishMutation.isPending;
+  const isBusy = isSavingDraft || isPublishing;
 
   const onSaveDraft = useCallback(async () => {
     setError(null);
@@ -103,6 +104,8 @@ export function useSubmitProblemForm() {
     form,
     error,
     isBusy,
+    isSavingDraft,
+    isPublishing,
     onSaveDraft,
     onPublish,
     canSaveDraft,

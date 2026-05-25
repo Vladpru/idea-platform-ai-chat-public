@@ -19,6 +19,7 @@ import { Controller } from 'react-hook-form';
 import { ROUTES } from '@/shared/config/paths';
 import { cn } from '@/shared/lib/utils';
 import { TagsInput, selectClass } from '@/shared/ui/TagsInput';
+import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 
 import { IdeaSelect } from './IdeaSelect';
@@ -53,6 +54,8 @@ export function SubmitProblemForm() {
     form,
     error,
     isBusy,
+    isSavingDraft,
+    isPublishing,
     onSaveDraft,
     onPublish,
     canSaveDraft,
@@ -253,16 +256,18 @@ export function SubmitProblemForm() {
         </button>
         <SaveDraftButton
           canSave={canSaveDraft}
-          isBusy={isBusy}
+          isSaving={isSavingDraft}
+          disabled={isBusy}
           onSave={() => void handleSaveDraft()}
         />
-        <button
+        <Button
           type="submit"
           className={publishBtnClass}
           disabled={!canPublish || isBusy}
+          isLoading={isPublishing}
         >
           Publish problem
-        </button>
+        </Button>
       </div>
     </form>
   );

@@ -363,7 +363,7 @@ export class IdeaService {
       return result;
     });
 
-    return toIdeaFormResponse(idea);
+    return toIdeaFormResponse(idea, authorId);
   }
 
   private async resolveTagIdsByLabels(
@@ -489,7 +489,10 @@ export class IdeaService {
     await this.prisma.ideaMedia.delete({ where: { id: mediaId } });
     void this.cloudinary.deleteByPublicId(media.publicId);
   }
-  async findAllPublic(query: GetIdeasQueryDto): Promise<IdeasFeedResponse> {
+  async findAllPublic(
+    query: GetIdeasQueryDto,
+    currentUserId?: string,
+  ): Promise<IdeasFeedResponse> {
     const page = query.page ?? 1;
     const limit = Math.min(query.limit ?? 10, 50);
     const skip = (page - 1) * limit;
@@ -513,7 +516,7 @@ export class IdeaService {
     const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
 
     return {
-      data: ideas.map(idea => toIdeaFormResponse(idea)),
+      data: ideas.map(idea => toIdeaFormResponse(idea, currentUserId)),
       meta: { total, page, limit, totalPages },
     };
   }
@@ -597,7 +600,7 @@ export class IdeaService {
       return updated;
     });
 
-    return toIdeaFormResponse(idea);
+    return toIdeaFormResponse(idea, authorId);
   }
 
   async updatePublished(
@@ -655,7 +658,7 @@ export class IdeaService {
       return result;
     });
 
-    return toIdeaFormResponse(updated);
+    return toIdeaFormResponse(updated, authorId);
   }
 
   async uploadMainImage(
@@ -833,9 +836,12 @@ export class IdeaService {
       });
     });
 
-    return toIdeaFormResponse(published);
+    return toIdeaFormResponse(published, authorId);
   }
-  async findSimilar(id: string): Promise<IdeaFormResponse[]> {
+  async findSimilar(
+    id: string,
+    currentUserId?: string,
+  ): Promise<IdeaFormResponse[]> {
     const currentIdea = await this.prisma.idea.findUnique({
       where: { id },
       select: { id: true, title: true },
@@ -885,7 +891,7 @@ export class IdeaService {
     return similarIds
       .map(sampleId => fullIdeas.find(idea => idea.id === sampleId))
       .filter((idea): idea is NonNullable<typeof idea> => !!idea)
-      .map(idea => toIdeaFormResponse(idea));
+      .map(idea => toIdeaFormResponse(idea, currentUserId));
   }
   private ideaMemberKey(
     ideaId: string,

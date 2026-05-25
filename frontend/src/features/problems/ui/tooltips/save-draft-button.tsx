@@ -12,12 +12,32 @@ export const SAVE_DRAFT_TOOLTIP =
 
 type SaveDraftButtonProps = {
   canSave: boolean;
-  isBusy: boolean;
+  isSaving: boolean;
+  disabled?: boolean;
   onSave: () => void;
 };
 
-export function SaveDraftButton({ canSave, isBusy, onSave }: SaveDraftButtonProps) {
-  if (canSave && !isBusy) {
+export function SaveDraftButton({
+  canSave,
+  isSaving,
+  disabled = false,
+  onSave,
+}: SaveDraftButtonProps) {
+  if (isSaving) {
+    return (
+      <Button
+        type="button"
+        variant="outline"
+        className={outlineBtnClass}
+        disabled
+        isLoading
+      >
+        Save as draft
+      </Button>
+    );
+  }
+
+  if (canSave && !disabled) {
     return (
       <Button
         type="button"
@@ -30,7 +50,7 @@ export function SaveDraftButton({ canSave, isBusy, onSave }: SaveDraftButtonProp
     );
   }
 
-  if (!isBusy) {
+  if (!canSave) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>
@@ -57,7 +77,6 @@ export function SaveDraftButton({ canSave, isBusy, onSave }: SaveDraftButtonProp
       variant="outline"
       className={outlineBtnClass}
       disabled
-      isLoading
     >
       Save as draft
     </Button>
