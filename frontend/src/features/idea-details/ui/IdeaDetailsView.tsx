@@ -1,13 +1,5 @@
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
-import {
-  useIdeaDetailsQuery,
-  useSimilarIdeasQuery,
-} from '@/features/idea-details/lib/use-idea-details-queries';
-import type {
-  IdeaDetails,
-  IdeaTabId,
-} from '@/features/idea-details/model/idea-details.types';
-import { useUpdateIdea } from '@/features/ideas/hooks/use-update-idea';
+
 import {
   type IdeaEditFormValues,
   ideaDetailsToEditFormValues,
@@ -25,7 +17,6 @@ import { IdeaForm } from '@/features/ideas/ui/idea-form/IdeaForm';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
 import {
-  type MouseEvent,
   useCallback,
   useEffect,
   useId,
@@ -37,12 +28,8 @@ import { ROUTES } from '@/shared/config/paths';
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
 import { ConfirmModal } from '@/shared/ui/confirm-modal';
-import {
-  AnimatedPanel,
-  AnimatedPanelSwitch,
-} from '@/shared/ui/motion';
+import { AnimatedPanel, AnimatedPanelSwitch } from '@/shared/ui/motion';
 import { SuccessModal } from '@/shared/ui/success-modal';
-import { IdeaAttachmentsTab } from './attachments/IdeaAttachmentsTab';
 import { TeamModal } from '@/features/idea-details/modals/TeamModal';
 
 import { IdeaHeader } from './IdeaHeader';
@@ -289,7 +276,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
                     </p>
                   )}
 
-                  <IdeaTagCloud tags={idea.tags} />
+                  <IdeaTagCloud tags={idea.tags} showAll={true} />
 
                   <IdeaStatsFooter
                     createdAt={idea.createdAt}
