@@ -78,7 +78,8 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
                   Problems
                 </Link>
                 <Link
-                  to="/ideas"
+                  to={ROUTES.ideas}
+                  search={{ sort: 'newest' }}
                   className={navLinkClass}
                   activeProps={{
                     className: 'bg-active-background text-primary',

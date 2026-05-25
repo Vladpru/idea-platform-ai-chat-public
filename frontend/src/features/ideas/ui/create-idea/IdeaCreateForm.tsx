@@ -108,20 +108,20 @@ export function IdeaCreateForm() {
 
   const handleCancel = () => {
     resetCreateIdea();
-    void navigate({ to: ROUTES.ideas });
+    void navigate({ to: ROUTES.ideas, search: { sort: 'newest' } });
   };
 
   const handleSaveDraft = async () => {
     const isSaved = await onSaveDraft();
     if (!isSaved) return;
-    void navigate({ to: ROUTES.ideas });
+    void navigate({ to: ROUTES.ideas, search: { sort: 'newest' } });
   };
 
   const handlePublish = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const isPublished = await onPublish();
     if (!isPublished) return;
-    void navigate({ to: ROUTES.ideas });
+    void navigate({ to: ROUTES.ideas, search: { sort: 'newest' } });
   };
 
   return (
