@@ -5,7 +5,6 @@ import {
 } from '@/features/ideas/ui/create-idea/Fields';
 import { TagsInput } from '@/features/ideas/ui/create-idea/TagsInput';
 import {
-  outlineBtnClass,
   publishBtnClass,
   selectClass,
   textareaClass,
@@ -13,6 +12,7 @@ import {
 import { SparklesIcon } from '@/features/ideas/ui/icons/SparklesIcon';
 import { useSubmitProblemForm } from '@/features/problems/hooks/use-submit-problem-form';
 import { PROBLEM_STAGES } from '@/features/problems/lib/submit-problem';
+import { SaveDraftButton } from '@/features/problems/ui/tooltips';
 import { useNavigate } from '@tanstack/react-router';
 import { ChevronDown } from 'lucide-react';
 import { useId, type FormEvent } from 'react';
@@ -20,7 +20,6 @@ import { Controller } from 'react-hook-form';
 
 import { ROUTES } from '@/shared/config/paths';
 import { cn } from '@/shared/lib/utils';
-import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 
 import { IdeaSelect } from './IdeaSelect';
@@ -57,6 +56,7 @@ export function SubmitProblemForm() {
     isBusy,
     onSaveDraft,
     onPublish,
+    canSaveDraft,
     canPublish,
     resetForm,
   } = useSubmitProblemForm();
@@ -238,16 +238,11 @@ export function SubmitProblemForm() {
         >
           Cancel
         </button>
-        <Button
-          type="button"
-          variant="outline"
-          className={outlineBtnClass}
-          onClick={() => void handleSaveDraft()}
-          disabled={isBusy}
-          isLoading={isBusy}
-        >
-          Save as draft
-        </Button>
+        <SaveDraftButton
+          canSave={canSaveDraft}
+          isBusy={isBusy}
+          onSave={() => void handleSaveDraft()}
+        />
         <button
           type="submit"
           className={publishBtnClass}

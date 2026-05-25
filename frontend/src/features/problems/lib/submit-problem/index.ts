@@ -9,8 +9,11 @@ export {
 export {
   problemStageSchema,
   submitProblemDefaultValues,
+  submitProblemDescriptionSchema,
   submitProblemDraftSchema,
   submitProblemPublishSchema,
+  submitProblemTitleSchema,
+  validateSubmitProblemForDraft,
   validateSubmitProblemForPublish,
   type SubmitProblemFormValues,
 } from './schema';

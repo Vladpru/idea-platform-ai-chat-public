@@ -1,14 +1,14 @@
+import { useMyIdeasQuery } from '@/features/ideas/hooks/use-idea-queries';
+import { selectClass } from '@/features/ideas/lib/styles';
 import {
   FieldError,
   FieldGroup,
   FieldLabel,
 } from '@/features/ideas/ui/create-idea/Fields';
-import { selectClass } from '@/features/ideas/lib/styles';
-import { useMyIdeasQuery } from '@/features/ideas/hooks/use-idea-queries';
 import {
+  type SubmitProblemFormValues,
   formatIdeaIds,
   parseIdeaIds,
-  type SubmitProblemFormValues,
 } from '@/features/problems/lib/submit-problem';
 import { Check, ChevronDown, Search, X } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
@@ -29,7 +29,7 @@ export function IdeaSelect({ formId, control, errors }: IdeaSelectProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const { data, isLoading } = useMyIdeasQuery({ limit: 50 });
+  const { data, isLoading } = useMyIdeasQuery({ limit: 10 });
 
   const allIdeas = useMemo(
     () =>
@@ -139,7 +139,11 @@ export function IdeaSelect({ formId, control, errors }: IdeaSelectProps) {
                             className="text-brand-gray-600 hover:text-brand-gray-900 inline-flex size-4 shrink-0 items-center justify-center rounded-full transition-colors"
                             aria-label={`Remove ${label}`}
                           >
-                            <X className="size-3" strokeWidth={2.5} aria-hidden />
+                            <X
+                              className="size-3"
+                              strokeWidth={2.5}
+                              aria-hidden
+                            />
                           </button>
                         </span>
                       );
@@ -208,7 +212,10 @@ export function IdeaSelect({ formId, control, errors }: IdeaSelectProps) {
                               )}
                               onClick={() => toggleIdea(idea.id)}
                               onKeyDown={event => {
-                                if (event.key === 'Enter' || event.key === ' ') {
+                                if (
+                                  event.key === 'Enter' ||
+                                  event.key === ' '
+                                ) {
                                   event.preventDefault();
                                   toggleIdea(idea.id);
                                 }

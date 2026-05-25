@@ -31,31 +31,33 @@ const problemStageValues = PROBLEM_STAGES.map(stage => stage.value) as [
 
 export const problemStageSchema = z.enum(problemStageValues);
 
-export const submitProblemDraftSchema = z.object({
-  stage: problemStageSchema,
-  title: z.string().max(200, 'Title must be at most 200 characters').optional(),
-  description: z.string().optional(),
-  valueProposition: z.string().optional(),
-  costBenefit: z.string().optional(),
-  ideaIds: z.string().optional(),
-  tags: z.string().optional(),
-  files: attachmentsSchema.optional(),
-});
+/** Matches backend `PROBLEM_TITLE_MIN_LENGTH` / DTO max length. */
+export const submitProblemTitleSchema = z
+  .string()
+  .trim()
+  .min(3, 'Title is required and must be at least 3 characters')
+  .max(200, 'Title must be at most 200 characters');
 
-export const submitProblemPublishSchema = z.object({
+/** Matches backend `PROBLEM_DESCRIPTION_MIN_LENGTH`. */
+export const submitProblemDescriptionSchema = z
+  .string()
+  .trim()
+  .min(8, 'Description is required and must be at least 8 characters');
+
+const submitProblemCoreFields = {
   stage: problemStageSchema,
-  title: z
-    .string()
-    .trim()
-    .min(1, 'Problem title is required')
-    .max(200, 'Title must be at most 200 characters'),
-  description: z.string().trim().min(1, 'Description is required'),
+  title: submitProblemTitleSchema,
+  description: submitProblemDescriptionSchema,
   valueProposition: z.string().optional(),
   costBenefit: z.string().optional(),
   ideaIds: z.string().optional(),
   tags: z.string().optional(),
   files: attachmentsSchema.optional(),
-});
+};
+
+export const submitProblemDraftSchema = z.object(submitProblemCoreFields);
+
+export const submitProblemPublishSchema = z.object(submitProblemCoreFields);
 
 export type SubmitProblemFormValues = z.infer<typeof submitProblemDraftSchema>;
 
@@ -69,6 +71,10 @@ export const submitProblemDefaultValues: SubmitProblemFormValues = {
   tags: '',
   files: [],
 };
+
+export function validateSubmitProblemForDraft(values: SubmitProblemFormValues) {
+  return submitProblemDraftSchema.safeParse(values);
+}
 
 export function validateSubmitProblemForPublish(values: SubmitProblemFormValues) {
   return submitProblemPublishSchema.safeParse(values);

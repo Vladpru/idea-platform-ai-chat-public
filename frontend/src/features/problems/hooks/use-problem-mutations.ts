@@ -1,23 +1,55 @@
 import {
   type CreateProblemPayload,
+  type UpdateProblemPayload,
+  type UploadProblemAttachmentPayload,
   createProblem,
   createProblemDraft,
-  fetchMyProblems,
+  deleteProblem,
+  deleteProblemMedia,
+  updateProblem,
+  uploadProblemAttachment,
 } from '@/features/problems/api/problems.api';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { getApiErrorMessage } from '@/shared/api/api-error';
+
+export const problemMutationKeys = {
+  all: ['problems'] as const,
+  lists: () => [...problemMutationKeys.all, 'list'] as const,
+  list: (params?: Record<string, unknown>) =>
+    [...problemMutationKeys.lists(), params] as const,
+  mine: (params?: Record<string, unknown>) =>
+    [...problemMutationKeys.all, 'mine', params] as const,
+  details: () => [...problemMutationKeys.all, 'detail'] as const,
+  detail: (problemId: string) =>
+    [...problemMutationKeys.details(), problemId] as const,
+};
+
+function invalidateProblemQueries(
+  queryClient: ReturnType<typeof useQueryClient>,
+  problemId?: string,
+) {
+  void queryClient.invalidateQueries({ queryKey: problemMutationKeys.lists() });
+  void queryClient.invalidateQueries({ queryKey: problemMutationKeys.all });
+  if (problemId) {
+    void queryClient.invalidateQueries({
+      queryKey: problemMutationKeys.detail(problemId),
+    });
+  }
+}
 
 export function useCreateProblemMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationKey: ['problems', 'create'],
+    mutationKey: [...problemMutationKeys.all, 'create'],
     mutationFn: (payload: CreateProblemPayload) => createProblem(payload),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['problems', 'mine'] });
-      void queryClient.invalidateQueries({ queryKey: ['problems'] });
+    onSuccess: (problem, variables) => {
+      invalidateProblemQueries(queryClient, problem.id);
+      toast.success(
+        variables.isPublished ? 'Problem published' : 'Problem created',
+      );
     },
     onError: error => {
       toast.error(getApiErrorMessage(error));
@@ -25,15 +57,14 @@ export function useCreateProblemMutation() {
   });
 }
 
-/** @deprecated Use useCreateProblemMutation */
 export function useCreateProblemDraftMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationKey: ['problems', 'create-draft'],
+    mutationKey: [...problemMutationKeys.all, 'create-draft'],
     mutationFn: createProblemDraft,
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['problems', 'mine'] });
+    onSuccess: problem => {
+      invalidateProblemQueries(queryClient, problem.id);
       toast.success('Problem draft created');
     },
     onError: error => {
@@ -42,14 +73,68 @@ export function useCreateProblemDraftMutation() {
   });
 }
 
-export function useMyProblemsQuery(
-  params?: Parameters<typeof fetchMyProblems>[0],
-) {
-  return useQuery({
-    queryKey: ['problems', 'mine', params],
-    queryFn: async () => {
-      const feed = await fetchMyProblems(params);
-      return feed.data;
+export function useUpdateProblemMutation(problemId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: [...problemMutationKeys.all, 'update', problemId],
+    mutationFn: (payload: UpdateProblemPayload) =>
+      updateProblem(problemId, payload),
+    onSuccess: problem => {
+      invalidateProblemQueries(queryClient, problem.id);
+      toast.success('Problem updated');
+    },
+    onError: error => {
+      toast.error(getApiErrorMessage(error));
+    },
+  });
+}
+
+export function useDeleteProblemMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: [...problemMutationKeys.all, 'delete'],
+    mutationFn: (problemId: string) => deleteProblem(problemId),
+    onSuccess: (_void, problemId) => {
+      invalidateProblemQueries(queryClient, problemId);
+      toast.success('Problem deleted');
+    },
+    onError: error => {
+      toast.error(getApiErrorMessage(error));
+    },
+  });
+}
+
+export function useUploadProblemAttachmentMutation(problemId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: [...problemMutationKeys.all, 'upload-media', problemId],
+    mutationFn: (payload: UploadProblemAttachmentPayload) =>
+      uploadProblemAttachment(problemId, payload),
+    onSuccess: problem => {
+      invalidateProblemQueries(queryClient, problem.id);
+      toast.success('Attachment uploaded');
+    },
+    onError: error => {
+      toast.error(getApiErrorMessage(error));
+    },
+  });
+}
+
+export function useDeleteProblemMediaMutation(problemId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: [...problemMutationKeys.all, 'delete-media', problemId],
+    mutationFn: (mediaId: string) => deleteProblemMedia(problemId, mediaId),
+    onSuccess: () => {
+      invalidateProblemQueries(queryClient, problemId);
+      toast.success('Attachment removed');
+    },
+    onError: error => {
+      toast.error(getApiErrorMessage(error));
     },
   });
 }

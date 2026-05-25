@@ -3,14 +3,31 @@ import {
   type SubmitProblemFormValues,
   submitProblemDefaultValues,
   submitProblemDraftSchema,
+  validateSubmitProblemForDraft,
   validateSubmitProblemForPublish,
 } from '@/features/problems/lib/submit-problem';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useCallback, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type UseFormReturn } from 'react-hook-form';
 import { toast } from 'sonner';
+import type { ZodIssue } from 'zod';
 
 import { getApiErrorMessage } from '@/shared/api/api-error';
+
+function applyValidationIssuesToForm(
+  form: UseFormReturn<SubmitProblemFormValues>,
+  issues: ZodIssue[],
+) {
+  for (const issue of issues) {
+    const path = issue.path[0];
+    if (path && typeof path === 'string') {
+      form.setError(path as keyof SubmitProblemFormValues, {
+        type: 'manual',
+        message: issue.message,
+      });
+    }
+  }
+}
 
 export function useSubmitProblemForm() {
   const [error, setError] = useState<string | null>(null);
@@ -24,28 +41,29 @@ export function useSubmitProblemForm() {
 
   const isBusy = createDraftMutation.isPending;
 
-  const buildDraftPayload = useCallback((values: SubmitProblemFormValues) => {
-    const title = values.title?.trim();
-    const description = values.description?.trim();
-
-    return {
-      ...(title ? { title } : {}),
-      ...(description ? { description } : {}),
-    };
-  }, []);
-
   const onSaveDraft = useCallback(async () => {
     setError(null);
     const values = form.getValues();
+    const validation = validateSubmitProblemForDraft(values);
+
+    if (!validation.success) {
+      applyValidationIssuesToForm(form, validation.error.issues);
+      const firstIssue = validation.error.issues[0];
+      setError(firstIssue?.message ?? 'Please fix the highlighted fields');
+      return false;
+    }
 
     try {
-      await createDraftMutation.mutateAsync(buildDraftPayload(values));
+      await createDraftMutation.mutateAsync({
+        title: validation.data.title,
+        description: validation.data.description,
+      });
       return true;
     } catch (err) {
       setError(getApiErrorMessage(err));
       return false;
     }
-  }, [buildDraftPayload, createDraftMutation, form]);
+  }, [createDraftMutation, form]);
 
   const onPublish = useCallback(async () => {
     setError(null);
@@ -53,14 +71,8 @@ export function useSubmitProblemForm() {
     const validation = validateSubmitProblemForPublish(values);
 
     if (!validation.success) {
+      applyValidationIssuesToForm(form, validation.error.issues);
       const firstIssue = validation.error.issues[0];
-      const path = firstIssue?.path[0];
-      if (path && typeof path === 'string') {
-        form.setError(path as keyof SubmitProblemFormValues, {
-          type: 'manual',
-          message: firstIssue.message,
-        });
-      }
       setError(firstIssue?.message ?? 'Please fix the highlighted fields');
       return false;
     }
@@ -69,7 +81,9 @@ export function useSubmitProblemForm() {
     return false;
   }, [form]);
 
-  const canPublish = validateSubmitProblemForPublish(form.watch()).success;
+  const watchedValues = form.watch();
+  const canSaveDraft = validateSubmitProblemForDraft(watchedValues).success;
+  const canPublish = validateSubmitProblemForPublish(watchedValues).success;
 
   const resetForm = useCallback(() => {
     form.reset(submitProblemDefaultValues);
@@ -82,6 +96,7 @@ export function useSubmitProblemForm() {
     isBusy,
     onSaveDraft,
     onPublish,
+    canSaveDraft,
     canPublish,
     resetForm,
   };

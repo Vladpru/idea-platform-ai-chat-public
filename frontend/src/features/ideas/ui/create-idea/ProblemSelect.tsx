@@ -38,7 +38,8 @@ function ProblemSelect({
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [addProblemOpen, setAddProblemOpen] = useState(false);
-  const { data: myProblems = [] } = useMyProblemsQuery();
+  const { data: myProblemsFeed } = useMyProblemsQuery();
+  const myProblems = myProblemsFeed?.data ?? [];
 
   const allProblems = useMemo(() => {
     const seen = new Set<string>();
