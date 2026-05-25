@@ -4,7 +4,6 @@ import {
   formatProblemIds,
   parseProblemIds,
 } from '@/features/ideas/lib/problems';
-import { selectClass } from '@/features/ideas/lib/styles';
 import { type ProblemDraft, useMyProblemsQuery } from '@/features/problems';
 import { Check, ChevronDown, Plus, Search, X } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
@@ -12,6 +11,7 @@ import type { Control, FieldErrors } from 'react-hook-form';
 import { Controller } from 'react-hook-form';
 
 import { cn } from '@/shared/lib/utils';
+import { selectClass } from '@/shared/ui/TagsInput';
 import { Input } from '@/shared/ui/input';
 
 import { ArrowLink } from '../icons/ArrowLink';
@@ -38,7 +38,8 @@ function ProblemSelect({
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [addProblemOpen, setAddProblemOpen] = useState(false);
-  const { data: myProblems = [] } = useMyProblemsQuery();
+  const { data: myProblemsFeed } = useMyProblemsQuery();
+  const myProblems = myProblemsFeed?.data ?? [];
 
   const allProblems = useMemo(() => {
     const seen = new Set<string>();

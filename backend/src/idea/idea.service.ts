@@ -378,7 +378,7 @@ export class IdeaService {
       return result;
     });
 
-    return toIdeaFormResponse(idea);
+    return toIdeaFormResponse(idea, authorId);
   }
 
   async updateDraft(
@@ -410,7 +410,7 @@ export class IdeaService {
       return updated;
     });
 
-    return toIdeaFormResponse(idea);
+    return toIdeaFormResponse(idea, authorId);
   }
 
   async updatePublished(
@@ -468,7 +468,7 @@ export class IdeaService {
       return result;
     });
 
-    return toIdeaFormResponse(updated);
+    return toIdeaFormResponse(updated, authorId);
   }
 
   async publish(id: string, authorId: string): Promise<IdeaFormResponse> {
@@ -526,7 +526,7 @@ export class IdeaService {
       });
     });
 
-    return toIdeaFormResponse(published);
+    return toIdeaFormResponse(published, authorId);
   }
 
   async delete(id: string, authorId: string): Promise<void> {

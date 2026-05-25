@@ -48,7 +48,8 @@ export function LinkExistingProblemModal({
 
   const [addProblemOpen, setAddProblemOpen] = useState(false);
 
-  const { data: myProblems = [], isLoading } = useMyProblemsQuery();
+  const { data: myProblemsFeed, isLoading } = useMyProblemsQuery();
+  const myProblems = myProblemsFeed?.data ?? [];
   const linkMutation = useLinkProblemMutation();
 
   const linkedSet = useMemo(

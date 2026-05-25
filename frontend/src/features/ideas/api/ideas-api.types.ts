@@ -27,6 +27,7 @@ export type IdeasListResponse = {
   total: number;
   page: number;
   limit: number;
+  totalPages: number;
 };
 
 export type IdeaWritePayload = {

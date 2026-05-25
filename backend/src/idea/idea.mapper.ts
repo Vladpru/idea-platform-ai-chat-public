@@ -14,12 +14,14 @@ export type IdeaFormRecord = Prisma.IdeaGetPayload<{
 
 export function toIdeaAuthorResponse(author: {
   id: string;
+  email: string;
   firstName: string | null;
   lastName: string | null;
   avatarUrl: string | null;
 }): IdeaFormAuthor {
   return {
     id: author.id,
+    email: author.email,
     firstName: author.firstName,
     lastName: author.lastName,
     avatarUrl: author.avatarUrl,

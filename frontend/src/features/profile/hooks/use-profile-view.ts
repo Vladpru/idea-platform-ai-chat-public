@@ -14,6 +14,8 @@ import { type ChangeEventHandler, useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
+import { formatUserDisplayName } from '@/shared/lib/user-display';
+
 export function useProfileView() {
   const user = useAuthSessionStore(s => s.user);
   const [isEditing, setIsEditing] = useState(false);
@@ -38,9 +40,11 @@ export function useProfileView() {
 
   const displayName =
     user &&
-    (`${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() ||
-      user.email.split('@')[0] ||
-      'User');
+    formatUserDisplayName({
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+    });
 
   const openFilePicker = () => fileInputRef.current?.click();
 

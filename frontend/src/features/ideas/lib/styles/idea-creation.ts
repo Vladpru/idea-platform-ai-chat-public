@@ -16,7 +16,7 @@ export const primaryBtnClass =
   'bg-brand-dark-blue text-brand-white hover:bg-brand-dark-blue/90 h-10 rounded-sm px-5 text-xs font-bold uppercase tracking-wide sm:text-sm';
 
 export const outlineBtnClass =
-  'border-brand-dark-blue text-brand-dark-blue hover:bg-brand-dark-blue/10 h-10 rounded-sm border bg-white px-5 text-xs font-bold uppercase tracking-wide sm:text-sm';
+  'border-brand-dark-blue disabled:cursor-not-allowed text-brand-dark-blue hover:bg-brand-dark-blue/10 h-10 rounded-sm border bg-white px-5 text-xs font-bold uppercase tracking-wide sm:text-sm';
 
 export const publishBtnClass =
   'bg-brand-dark-blue hover:bg-brand-dark-blue/90 cursor-pointer text-brand-white h-10 rounded-sm px-5 text-xs font-bold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm';

@@ -39,7 +39,10 @@ export class IdeaQueryService {
     }
   }
 
-  async findAllPublic(query: GetIdeasQueryDto): Promise<IdeasFeedResponse> {
+  async findAllPublic(
+    query: GetIdeasQueryDto,
+    currentUserId?: string,
+  ): Promise<IdeasFeedResponse> {
     const page = Math.max(1, query.page ?? 1);
     const limit = Math.max(1, Math.min(query.limit ?? 10, 50));
     const skip = (page - 1) * limit;
@@ -65,7 +68,7 @@ export class IdeaQueryService {
     const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
 
     return {
-      data: ideas.map(idea => toIdeaFormResponse(idea)),
+      data: ideas.map(idea => toIdeaFormResponse(idea, currentUserId)),
       meta: { total, page, limit, totalPages },
     };
   }
@@ -122,7 +125,10 @@ export class IdeaQueryService {
     return toIdeaFormResponse(idea, userId);
   }
 
-  async findSimilar(id: string): Promise<IdeaFormResponse[]> {
+  async findSimilar(
+    id: string,
+    currentUserId?: string,
+  ): Promise<IdeaFormResponse[]> {
     const currentIdea = await this.prisma.idea.findUnique({
       where: { id },
       select: { id: true, title: true },
@@ -179,6 +185,6 @@ export class IdeaQueryService {
     return similarIds
       .map(sampleId => fullIdeas.find(idea => idea.id === sampleId))
       .filter((idea): idea is NonNullable<typeof idea> => !!idea)
-      .map(idea => toIdeaFormResponse(idea));
+      .map(idea => toIdeaFormResponse(idea, currentUserId));
   }
 }

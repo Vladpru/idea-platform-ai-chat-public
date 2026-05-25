@@ -1,119 +1,50 @@
-import { api } from '@/shared/api/http';
-
-export type ProblemStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
-
-export type ProblemStage = 'active' | 'completed' | 'archived';
-
-export type ProblemAuthor = {
-  id: string;
-  firstName: string | null;
-  lastName: string | null;
-  avatarUrl: string | null;
-};
-
-export type ProblemForm = {
-  id: string;
-  status: ProblemStatus;
-  stage: ProblemStage | null;
-  title: string;
-  description: string;
-  valueProposition: string | null;
-  costBenefit: string | null;
-  category: string | null;
-  impact: string | null;
-  publishedAt: string | null;
-  ideas: Array<{
-    id: string;
-    title: string | null;
-    status: string;
-    isPrimary: boolean;
-    author: ProblemAuthor;
-  }>;
-  tags: Array<{ id: string; name: string }>;
-  attachments: Array<{
-    id: string;
-    kind: string;
-    url: string;
-    mimeType: string;
-    originalFilename: string;
-  }>;
-  author: ProblemAuthor;
-};
-
-export type ProblemsFeedResponse = {
-  data: ProblemForm[];
-  meta: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
-};
-
-/** @deprecated Use ProblemForm */
-export type ProblemDraft = ProblemForm;
-
-/** @deprecated Use ProblemForm */
-export type MyProblem = ProblemForm;
-
-export type CreateProblemDraftPayload = Pick<
+import type {
+  CreateProblemDraftPayload,
   CreateProblemPayload,
-  'title' | 'description'
->;
+  MyProblemsListParams,
+  ProblemForm,
+  ProblemsFeedResponse,
+  ProblemsListParams,
+  UpdateProblemPayload,
+  UploadProblemAttachmentPayload,
+} from '@/features/problems/api/problems-api.types';
+import { PROBLEMS_ROUTES } from '@/features/problems/api/problems.routes';
 
-export type CreateProblemPayload = {
-  isPublished: boolean;
-  stage?: ProblemStage;
-  title?: string;
-  description?: string;
-  valueProposition?: string;
-  costBenefit?: string;
-  category?: string;
-  impact?: string;
-  ideaIds?: string[];
-  tagIds?: string[];
-  tagLabels?: string[];
-};
-
-export type UpdateProblemPayload = Omit<CreateProblemPayload, 'isPublished'>;
+import { api } from '@/shared/api/http';
 
 export async function createProblem(
   payload: CreateProblemPayload,
 ): Promise<ProblemForm> {
-  const { data } = await api.post<ProblemForm>('/problems', payload);
+  const { data } = await api.post<ProblemForm>(PROBLEMS_ROUTES.root, payload);
   return data;
 }
 
-/** @deprecated Use createProblem with isPublished: false */
 export async function createProblemDraft(
-  payload: Pick<CreateProblemPayload, 'title' | 'description'>,
+  payload: CreateProblemDraftPayload,
 ): Promise<ProblemForm> {
   return createProblem({ ...payload, isPublished: false });
 }
 
 export async function fetchProblems(
-  params?: { page?: number; limit?: number; stage?: ProblemStage },
+  params?: ProblemsListParams,
 ): Promise<ProblemsFeedResponse> {
-  const { data } = await api.get<ProblemsFeedResponse>('/problems', { params });
+  const { data } = await api.get<ProblemsFeedResponse>(PROBLEMS_ROUTES.root, {
+    params,
+  });
   return data;
 }
 
 export async function fetchMyProblems(
-  params?: {
-    page?: number;
-    limit?: number;
-    stage?: ProblemStage;
-    status?: ProblemStatus;
-  },
+  params?: MyProblemsListParams,
 ): Promise<ProblemsFeedResponse> {
-  const { data } = await api.get<ProblemsFeedResponse>('/problems/mine', {
+  const { data } = await api.get<ProblemsFeedResponse>(PROBLEMS_ROUTES.mine, {
     params,
   });
   return data;
 }
 
 export async function fetchProblemById(id: string): Promise<ProblemForm> {
-  const { data } = await api.get<ProblemForm>(`/problems/${id}`);
+  const { data } = await api.get<ProblemForm>(PROBLEMS_ROUTES.byId(id));
   return data;
 }
 
@@ -121,23 +52,26 @@ export async function updateProblem(
   id: string,
   payload: UpdateProblemPayload,
 ): Promise<ProblemForm> {
-  const { data } = await api.patch<ProblemForm>(`/problems/${id}`, payload);
+  const { data } = await api.patch<ProblemForm>(
+    PROBLEMS_ROUTES.byId(id),
+    payload,
+  );
   return data;
 }
 
 export async function deleteProblem(id: string): Promise<void> {
-  await api.delete(`/problems/${id}`);
+  await api.delete(PROBLEMS_ROUTES.byId(id));
 }
 
 export async function uploadProblemAttachment(
   problemId: string,
-  file: File,
+  { file }: UploadProblemAttachmentPayload,
 ): Promise<ProblemForm> {
   const formData = new FormData();
   formData.append('file', file);
 
   const { data } = await api.post<ProblemForm>(
-    `/problems/${problemId}/media`,
+    PROBLEMS_ROUTES.media(problemId),
     formData,
     {
       headers: { 'Content-Type': 'multipart/form-data' },
@@ -150,5 +84,22 @@ export async function deleteProblemMedia(
   problemId: string,
   mediaId: string,
 ): Promise<void> {
-  await api.delete(`/problems/${problemId}/media/${mediaId}`);
+  await api.delete(PROBLEMS_ROUTES.mediaById(problemId, mediaId));
 }
+
+export type {
+  CreateProblemDraftPayload,
+  CreateProblemPayload,
+  MyProblem,
+  MyProblemsListParams,
+  ProblemAuthor,
+  ProblemDraft,
+  ProblemForm,
+  ProblemsFeedMeta,
+  ProblemsFeedResponse,
+  ProblemsListParams,
+  ProblemStage,
+  ProblemStatus,
+  UpdateProblemPayload,
+  UploadProblemAttachmentPayload,
+} from '@/features/problems/api/problems-api.types';

@@ -18,3 +18,4 @@ export {
   LogoutConfirmDialog,
   type LogoutConfirmDialogProps,
 } from './ui/LogoutConfirmDialog';
+export { AuthSessionSync } from './ui/AuthSessionSync';

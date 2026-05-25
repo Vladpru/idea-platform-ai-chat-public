@@ -2,6 +2,7 @@ import type { IdeaStatus } from '@/features/ideas/model/idea.types';
 
 export type IdeaFormAuthorDto = {
   id: string;
+  email: string;
   firstName: string | null;
   lastName: string | null;
   avatarUrl: string | null;
