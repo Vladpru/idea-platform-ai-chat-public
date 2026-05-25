@@ -20,6 +20,7 @@ export type IdeaDetailsStats = {
 
 export type IdeaDetailsAuthor = {
   id: string;
+  email: string;
   firstName: string | null;
   lastName: string | null;
   avatarUrl: string | null;

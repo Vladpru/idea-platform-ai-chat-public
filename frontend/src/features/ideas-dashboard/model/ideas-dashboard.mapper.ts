@@ -1,5 +1,5 @@
 import type { IdeaFormResponseDto } from '@/features/ideas/api/idea-form-api.types';
-import { formatPersonName } from '@/features/idea-details/lib/format-person-name';
+import { formatUserDisplayName } from '@/shared/lib/user-display';
 import { formStageToApiStage } from '@/features/ideas/lib/stages/stage-map';
 import type { IdeaStage } from '@/features/ideas/lib/stages';
 import type { ApiStage } from '@/features/ideas/model/idea.types';
@@ -19,9 +19,12 @@ export function toIdeaDashboardCard(dto: IdeaFormResponseDto): IdeaDashboardCard
     title: dto.title?.trim() || 'Untitled idea',
     description: dto.description?.trim() ?? '',
     imageUrl: dto.mainImage?.url ?? null,
-    authorName: formatPersonName(
-      dto.author?.firstName ?? null,
-      dto.author?.lastName ?? null,
+    authorName: formatUserDisplayName(
+      {
+        firstName: dto.author?.firstName,
+        lastName: dto.author?.lastName,
+        email: dto.author?.email,
+      },
       'Author',
     ),
     authorAvatarUrl: dto.author?.avatarUrl ?? null,

@@ -1,3 +1,4 @@
+import { AuthSessionSync } from '@/features/auth';
 import { NotFoundPage } from '@/pages/not-found';
 import { AppHeader } from '@/widgets/header';
 import { createFileRoute, redirect } from '@tanstack/react-router';
@@ -13,6 +14,7 @@ export const Route = createFileRoute('/_auth')({
   },
   component: () => (
     <>
+      <AuthSessionSync />
       <AppHeader />
       <Outlet />
     </>

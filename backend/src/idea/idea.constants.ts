@@ -2,6 +2,7 @@ import type { Prisma } from '../../generated/prisma/client';
 
 export const IDEA_FORM_AUTHOR_SELECT = {
   id: true,
+  email: true,
   firstName: true,
   lastName: true,
   avatarUrl: true,

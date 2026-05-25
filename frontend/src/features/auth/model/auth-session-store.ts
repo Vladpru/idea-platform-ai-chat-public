@@ -5,6 +5,7 @@ import {
   clearStoredAuthToken,
   setStoredAuthToken,
 } from '@/shared/lib/auth-token';
+import { formatUserDisplayName } from '@/shared/lib/user-display';
 
 export type SessionUser = {
   id: string;
@@ -37,8 +38,7 @@ function parseSessionUser(raw: unknown): SessionUser | null {
       : null;
   const email = u.email;
 
-  const fullName = `${firstName} ${lastName}`.trim();
-  const name = fullName || email.split('@')[0] || 'User';
+  const name = formatUserDisplayName({ firstName, lastName, email });
 
   return {
     id: u.id,

@@ -7,8 +7,6 @@ import {
   ideaDetailsToEditFormValues,
 } from '@/features/ideas/lib/edit-idea';
 import {
-  IDEA_DELETED_SUCCESS_DESCRIPTION,
-  IDEA_DELETED_SUCCESS_TITLE,
   IDEA_UNDO_CHANGES_DESCRIPTION,
   IDEA_UNDO_CHANGES_TITLE,
   IDEA_UPDATED_SUCCESS_DESCRIPTION,
@@ -85,7 +83,6 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [undoModalOpen, setUndoModalOpen] = useState(false);
   const [updatedSuccessOpen, setUpdatedSuccessOpen] = useState(false);
-  const [deletedSuccessOpen, setDeletedSuccessOpen] = useState(false);
   const [pendingDiscardAction, setPendingDiscardAction] =
     useState<PendingDiscardAction | null>(null);
   const userId = useAuthSessionStore(s => s.user?.id);
@@ -164,11 +161,6 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
     setUpdatedSuccessOpen(false);
   };
 
-  const handleDeletedSuccessClose = () => {
-    setDeletedSuccessOpen(false);
-    void navigate({ to: ROUTES.profileIdeas });
-  };
-
   useEffect(() => {
     if (!isEditing || !hasUnsavedEdits) {
       return;
@@ -196,7 +188,9 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
     return <IdeaDetailsErrorState message={message} />;
   }
 
-  const isAuthor = Boolean(userId && userId === idea.authorId);
+  const isAuthor =
+    idea.viewer.isAuthor ||
+    Boolean(userId && userId === idea.authorId);
 
   const visibleProblems = idea.linkedProblems.filter(
     (p) => p.status !== 'DRAFT' || isAuthor,
@@ -222,7 +216,9 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
           isEditing={isEditing}
           showProjectActions={!isEditing}
           onStartEdit={() => handleStartEdit(idea)}
-          onDeleteSuccess={() => setDeletedSuccessOpen(true)}
+          onDeleteSuccess={() => {
+            void navigate({ to: ROUTES.ideas });
+          }}
           onTeamClick={() => setIsTeamModalOpen(true)}
         />
 
@@ -378,14 +374,6 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
         onClose={handleUpdatedSuccessClose}
       />
 
-      <SuccessModal
-        open={deletedSuccessOpen}
-        onOpenChange={setDeletedSuccessOpen}
-        title={IDEA_DELETED_SUCCESS_TITLE}
-        description={IDEA_DELETED_SUCCESS_DESCRIPTION}
-        buttonLabel="YES"
-        onClose={handleDeletedSuccessClose}
-      />
     </main>
   );
 }

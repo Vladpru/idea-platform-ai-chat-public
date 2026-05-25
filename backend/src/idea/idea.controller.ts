@@ -75,8 +75,11 @@ export class IdeaController {
   @ApiQuery({ name: 'stage', required: false, enum: Stage })
   @ApiOkResponse({ description: 'Paginated published ideas' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
-  findAll(@Query() query: GetIdeasQueryDto) {
-    return this.ideaService.findAllPublic(query);
+  findAll(
+    @Query() query: GetIdeasQueryDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.ideaService.findAllPublic(query, req.user.id);
   }
 
   @Get('mine')
@@ -265,8 +268,11 @@ export class IdeaController {
   @ApiOperation({ summary: 'Get top 3 similar ideas based on text relevance' })
   @ApiOkResponse({ description: 'Array of top 3 similar ideas' })
   @ApiNotFoundResponse({ description: 'Idea not found' })
-  findSimilar(@Param('id', ParseUUIDPipe) id: string) {
-    return this.ideaService.findSimilar(id);
+  findSimilar(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.ideaService.findSimilar(id, req.user.id);
   }
 
   @Post(':id/join')

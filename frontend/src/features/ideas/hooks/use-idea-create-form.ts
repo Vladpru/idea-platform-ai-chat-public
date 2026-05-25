@@ -217,11 +217,10 @@ export function useIdeaCreateForm() {
     }
   };
 
-  const isBusy =
-    isHydrating ||
-    isSaving ||
-    saveDraftMutation.isPending ||
-    publishMutation.isPending;
+  const isSavingDraft =
+    saveDraftMutation.isPending || (isSaving && !publishMutation.isPending);
+  const isPublishing = publishMutation.isPending;
+  const isBusy = isHydrating || isSavingDraft || isPublishing;
   const watchedValues = form.watch();
   const canPublish = validateForPublish(watchedValues, {
     hasRemoteMainImage: remoteMedia.some(media => media.kind === 'main'),
@@ -243,6 +242,8 @@ export function useIdeaCreateForm() {
     canPublish,
     isPublishedIdea,
     isBusy,
+    isSavingDraft,
+    isPublishing,
     isHydrating,
     error,
     resetCreateIdea: useCreateIdeaStore.getState().reset,
