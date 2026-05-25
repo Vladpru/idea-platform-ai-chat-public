@@ -28,14 +28,23 @@ export const FILTER_TO_API_STAGE: Record<
   ARCHIVED: 'archived',
 };
 
+export const API_STAGE_TO_FILTER: Record<ApiStage, IdeaDashboardFilter> = {
+  ideation: 'IDEATION',
+  prototyping: 'PROTOTYPING',
+  completed: 'COMPLETED',
+  paused: 'PAUSED',
+  archived: 'ARCHIVED',
+};
+
 export const IDEA_DASHBOARD_SORT_OPTIONS: {
   value: IdeaDashboardSort;
   label: string;
 }[] = [
   { value: 'newest', label: 'Newest First' },
   { value: 'oldest', label: 'Oldest First' },
-  { value: 'title-asc', label: 'Title A–Z' },
-  { value: 'title-desc', label: 'Title Z–A' },
+  { value: 'views', label: 'Most Viewed' },
+  { value: 'likes', label: 'Most Popular' },
+  { value: 'comments', label: 'Most Commented' },
 ];
 
 export const COLUMN_COUNT_MIN = 1;

@@ -16,8 +16,9 @@ export type IdeaDashboardFilter =
 export type IdeaDashboardSort =
   | 'newest'
   | 'oldest'
-  | 'title-asc'
-  | 'title-desc';
+  | 'views'
+  | 'likes'
+  | 'comments';
 
 export type IdeaDashboardLinkedProblem = DashboardLinkedItem;
 

@@ -1,3 +1,4 @@
+import type { ApiStage } from '@/features/ideas/model/idea.types';
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import { ROUTES } from '@/shared/config/paths';
 import { Button } from '@/shared/ui/button';
@@ -11,7 +12,6 @@ import { IDEAS_DASHBOARD_LABELS } from '../lib/ideas-dashboard-labels';
 import type { DashboardViewport } from '../lib/dashboard-grid-layout';
 import type {
   IdeaDashboardCard,
-  IdeaDashboardFilter,
   IdeaDashboardSort,
 } from '../model/ideas-dashboard.types';
 
@@ -80,7 +80,7 @@ function renderIdeaStandardCard(
 }
 
 type IdeasDashboardBodyProps = {
-  activeFilter: IdeaDashboardFilter;
+  stage: ApiStage | undefined;
   sort: IdeaDashboardSort;
   columnCount: number;
   viewport: DashboardViewport;
@@ -88,7 +88,7 @@ type IdeasDashboardBodyProps = {
 };
 
 const IdeasDashboardBody = memo(function IdeasDashboardBody({
-  activeFilter,
+  stage,
   sort,
   columnCount,
   viewport,
@@ -103,7 +103,7 @@ const IdeasDashboardBody = memo(function IdeasDashboardBody({
     onLoadMore,
     hasNextPage,
     isFetchingNextPage,
-  } = useIdeasDashboardQuery(activeFilter, sort);
+  } = useIdeasDashboardQuery(stage, sort);
 
   const isFetchingNextPageRef = useRef(isFetchingNextPage);
 
@@ -163,6 +163,7 @@ export function IdeasDashboardPage() {
     setActiveFilter,
     sort,
     setSort,
+    stage,
     columnCount,
     setColumnCount,
     viewport,
@@ -192,7 +193,7 @@ export function IdeasDashboardPage() {
 
         <div className="pb-8">
           <IdeasDashboardBody
-            activeFilter={activeFilter}
+            stage={stage as ApiStage | undefined}
             sort={sort}
             columnCount={columnCount}
             viewport={viewport}
