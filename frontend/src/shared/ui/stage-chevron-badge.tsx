@@ -1,14 +1,9 @@
 import { cn } from '@/shared/lib/utils';
 
-export function normalizeStageKey(stage: string | null | undefined): string {
+function normalizeStageKey(stage: string | null | undefined): string {
   if (stage == null || typeof stage !== 'string') return '';
   return stage.trim().toUpperCase().replace(/\s+/g, '_');
 }
-
-const FLAT_LEFT_CLIP =
-  'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%)';
-const CHEVRON_CLIP =
-  'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%, 12px 50%)';
 
 const STAGE_CHEVRON_CONFIGS: Record<
   string,
@@ -56,12 +51,14 @@ export type StageChevronBadgeProps = {
   stage?: string | null;
   className?: string;
   stageText?: boolean;
+  compact?: boolean;
 };
 
 export function StageChevronBadge({
   stage,
   className,
   stageText = true,
+  compact = false,
 }: StageChevronBadgeProps) {
   if (!stage?.trim()) return null;
 
@@ -69,12 +66,25 @@ export function StageChevronBadge({
   const key = normalizeStageKey(trimmed);
   const segments = STAGE_CHEVRON_CONFIGS[key] ?? DEFAULT_SEGMENTS(trimmed);
 
+  const offset = compact ? 8 : 12;
+  const flatLeftClip = `polygon(0 0, calc(100% - ${offset}px) 0, 100% 50%, calc(100% - ${offset}px) 100%, 0 100%)`;
+  const chevronClip = `polygon(0 0, calc(100% - ${offset}px) 0, 100% 50%, calc(100% - ${offset}px) 100%, 0 100%, ${offset}px 50%)`;
+
   return (
-    <div className={cn('flex h-[24px] items-stretch', className)}>
+    <div
+      className={cn(
+        'flex items-stretch',
+        compact ? 'h-[18px]' : 'h-[24px]',
+        className,
+      )}
+    >
       {stageText && (
         <div
-          className="relative z-50 flex items-center justify-center pr-4 text-[13px] font-medium tracking-wide text-gray-600"
-          style={{ clipPath: FLAT_LEFT_CLIP }}
+          className={cn(
+            'relative z-50 flex items-center justify-center font-medium tracking-wide text-gray-600',
+            compact ? 'pr-3 text-[10px]' : 'pr-4 text-[13px]',
+          )}
+          style={{ clipPath: flatLeftClip }}
         >
           Stage
         </div>
@@ -85,15 +95,18 @@ export function StageChevronBadge({
         return (
           <div
             key={index}
-            className="relative flex items-center justify-center text-[13px] font-medium tracking-wide text-white"
+            className={cn(
+              'relative flex items-center justify-center font-medium tracking-wide text-white',
+              compact ? 'text-[10px]' : 'text-[13px]',
+            )}
             style={{
               backgroundColor: segment.color,
-              clipPath: CHEVRON_CLIP,
-              marginLeft: '-10px',
+              clipPath: chevronClip,
+              marginLeft: compact ? '-6px' : '-10px',
               zIndex: segments.length - index,
-              width: hasText ? undefined : '23px',
-              paddingLeft: hasText ? '20px' : undefined,
-              paddingRight: hasText ? '20px' : undefined,
+              width: hasText ? undefined : compact ? '18px' : '23px',
+              paddingLeft: hasText ? (compact ? '12px' : '20px') : undefined,
+              paddingRight: hasText ? (compact ? '12px' : '20px') : undefined,
             }}
           >
             {segment.label}
