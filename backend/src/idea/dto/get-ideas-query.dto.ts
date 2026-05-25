@@ -1,9 +1,24 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsEnum, IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
 
 import { IdeaStatus } from '../../../generated/prisma/client';
 import { Stage } from '../enum/stage.enum';
+
+export type IdeaSortOption =
+  | 'newest'
+  | 'oldest'
+  | 'views'
+  | 'likes'
+  | 'comments';
+
+export const IDEA_SORT_OPTIONS: IdeaSortOption[] = [
+  'newest',
+  'oldest',
+  'views',
+  'likes',
+  'comments',
+];
 
 export class GetIdeasQueryDto {
   @ApiPropertyOptional({ default: 1, minimum: 1 })
@@ -30,4 +45,9 @@ export class GetIdeasQueryDto {
   @IsOptional()
   @IsEnum(IdeaStatus)
   status?: IdeaStatus;
+
+  @ApiPropertyOptional({ enum: IDEA_SORT_OPTIONS })
+  @IsOptional()
+  @IsIn(IDEA_SORT_OPTIONS)
+  sort?: IdeaSortOption;
 }
