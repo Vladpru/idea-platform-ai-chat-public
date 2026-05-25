@@ -37,6 +37,7 @@ export {
 export type {
   CreateIdeaPayload,
   IdeasFeedMeta,
+  IdeasFeedResponse,
   IdeasListParams,
   IdeasListResponse,
   PublishIdeaPayload,

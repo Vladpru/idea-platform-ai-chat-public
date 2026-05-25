@@ -1,7 +1,7 @@
 import type {
   CreateIdeaPayload,
+  IdeasFeedResponse,
   IdeasListParams,
-  IdeasListResponse,
   SaveIdeaDraftPayload,
   UpdateIdeaPayload,
   UploadIdeaMediaPayload,
@@ -18,8 +18,8 @@ import { api } from '@/shared/api/http';
 
 export async function fetchIdeas(
   params?: IdeasListParams,
-): Promise<IdeasListResponse> {
-  const { data } = await api.get<IdeasListResponse>(IDEAS_ROUTES.root, {
+): Promise<IdeasFeedResponse> {
+  const { data } = await api.get<IdeasFeedResponse>(IDEAS_ROUTES.root, {
     params,
   });
   return data;
@@ -27,8 +27,8 @@ export async function fetchIdeas(
 
 export async function fetchMyIdeas(
   params?: IdeasListParams,
-): Promise<IdeasListResponse> {
-  const { data } = await api.get<IdeasListResponse>(IDEAS_ROUTES.mine, {
+): Promise<IdeasFeedResponse> {
+  const { data } = await api.get<IdeasFeedResponse>(IDEAS_ROUTES.mine, {
     params,
   });
   return data;
@@ -195,6 +195,8 @@ export async function unlinkProblemFromIdea(
 
 export type {
   CreateIdeaPayload,
+  IdeasFeedMeta,
+  IdeasFeedResponse,
   IdeasListParams,
   IdeasListResponse,
   PublishIdeaPayload,

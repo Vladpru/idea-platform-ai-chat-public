@@ -6,9 +6,24 @@ export type IdeasListParams = {
   authorId?: string;
   page?: number;
   limit?: number;
+  stage?: ApiStage;
 };
 
 export type IdeasFeedMeta = {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+};
+
+export type IdeasFeedResponse = {
+  data: IdeaFormResponseDto[];
+  meta: IdeasFeedMeta;
+};
+
+/** @deprecated Use IdeasFeedResponse — kept for gradual migration */
+export type IdeasListResponse = {
+  items: import('@/features/ideas/model/idea.types').IdeaApi[];
   total: number;
   page: number;
   limit: number;
