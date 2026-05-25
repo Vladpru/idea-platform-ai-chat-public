@@ -75,15 +75,18 @@ model PasswordResetToken {
 }
 
 model Idea {
-  id          String     @id @default(uuid())
-  authorId    String     @map("author_id")
-  status      IdeaStatus @default(DRAFT)
-  stage       Stage?
-  title       String?
-  description String?    @db.Text
-  publishedAt DateTime?  @map("published_at")
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
+  id           String     @id @default(uuid())
+  authorId     String     @map("author_id")
+  status       IdeaStatus @default(DRAFT)
+  stage        Stage?
+  title        String?
+  description  String?    @db.Text
+  viewCount    Int        @default(0) @map("view_count")
+  likeCount    Int        @default(0) @map("like_count")
+  commentCount Int        @default(0) @map("comment_count")
+  publishedAt  DateTime?  @map("published_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
 
   author   User          @relation("IdeaAuthor", fields: [authorId], references: [id], onDelete: Cascade)
   problems IdeaProblem[]

@@ -42,6 +42,9 @@ import { GetIdeasQueryDto } from './dto/get-ideas-query.dto';
 import { UpdateIdeaDraftDto } from './dto/update-idea-draft.dto';
 import { UpdatePublishedIdeaDto } from './dto/update-published-idea.dto';
 import { Stage } from './enum/stage.enum';
+import { IdeaMediaService } from './idea-media.service';
+import { IdeaMemberService } from './idea-member.service';
+import { IdeaQueryService } from './idea-query.service';
 import { IdeaService } from './idea.service';
 
 type AuthenticatedRequest = Request & { user: { id: string } };
@@ -49,7 +52,12 @@ type AuthenticatedRequest = Request & { user: { id: string } };
 @ApiTags('ideas')
 @Controller('ideas')
 export class IdeaController {
-  constructor(private readonly ideaService: IdeaService) {}
+  constructor(
+    private readonly ideaService: IdeaService,
+    private readonly ideaMediaService: IdeaMediaService,
+    private readonly ideaQueryService: IdeaQueryService,
+    private readonly ideaMemberService: IdeaMemberService,
+  ) {}
 
   @Post()
   @JwtAuth()
@@ -73,13 +81,18 @@ export class IdeaController {
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
   @ApiQuery({ name: 'stage', required: false, enum: Stage })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    enum: ['newest', 'oldest', 'views', 'likes', 'comments'],
+  })
   @ApiOkResponse({ description: 'Paginated published ideas' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   findAll(
     @Query() query: GetIdeasQueryDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.ideaService.findAllPublic(query, req.user.id);
+    return this.ideaQueryService.findAllPublic(query, req.user.id);
   }
 
   @Get('mine')
@@ -90,10 +103,15 @@ export class IdeaController {
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
   @ApiQuery({ name: 'stage', required: false, enum: Stage })
   @ApiQuery({ name: 'status', required: false, enum: IdeaStatus })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    enum: ['newest', 'oldest', 'views', 'likes', 'comments'],
+  })
   @ApiOkResponse({ description: 'Paginated ideas for the current user' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   findMine(@Query() query: GetIdeasQueryDto, @Req() req: AuthenticatedRequest) {
-    return this.ideaService.findMyIdeas(req.user.id, query);
+    return this.ideaQueryService.findMyIdeas(req.user.id, query);
   }
 
   @Get(':id')
@@ -107,7 +125,7 @@ export class IdeaController {
     @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.ideaService.findByIdSmart(id, req.user.id);
+    return this.ideaQueryService.findByIdSmart(id, req.user.id);
   }
 
   @Patch(':id')
@@ -158,7 +176,7 @@ export class IdeaController {
     file: Express.Multer.File,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.ideaService.uploadMainImage(id, req.user.id, file);
+    return this.ideaMediaService.uploadMainImage(id, req.user.id, file);
   }
 
   @Post(':id/media')
@@ -196,7 +214,7 @@ export class IdeaController {
     file: Express.Multer.File,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.ideaService.uploadAttachment(id, req.user.id, file);
+    return this.ideaMediaService.uploadAttachment(id, req.user.id, file);
   }
 
   @Delete(':id/media/:mediaId')
@@ -210,7 +228,7 @@ export class IdeaController {
     @Param('mediaId', ParseUUIDPipe) mediaId: string,
     @Req() req: AuthenticatedRequest,
   ): Promise<void> {
-    return this.ideaService.deleteMedia(id, mediaId, req.user.id);
+    return this.ideaMediaService.deleteMedia(id, mediaId, req.user.id);
   }
 
   @Delete(':id')
@@ -272,7 +290,7 @@ export class IdeaController {
     @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.ideaService.findSimilar(id, req.user.id);
+    return this.ideaQueryService.findSimilar(id, req.user.id);
   }
 
   @Post(':id/join')
@@ -287,7 +305,7 @@ export class IdeaController {
     @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.ideaService.joinIdea(id, req.user.id);
+    return this.ideaMemberService.joinIdea(id, req.user.id);
   }
 
   @Delete(':id/leave')
@@ -302,6 +320,6 @@ export class IdeaController {
     @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticatedRequest,
   ): Promise<void> {
-    await this.ideaService.leaveIdea(id, req.user.id);
+    await this.ideaMemberService.leaveIdea(id, req.user.id);
   }
 }

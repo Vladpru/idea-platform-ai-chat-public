@@ -1,33 +1,23 @@
 import {
   BadRequestException,
-  ConflictException,
   Injectable,
-  Logger,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 
 import {
   IdeaStatus,
-  MediaKind,
-  MediaProvider,
   Prisma,
   ProblemStatus,
 } from '../../generated/prisma/client';
-import type { IdeaMemberModel } from '../../generated/prisma/models/IdeaMember';
-import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateIdeaDto } from './dto/create-idea.dto';
-import { GetIdeasQueryDto } from './dto/get-ideas-query.dto';
 import { UpdateIdeaDraftDto } from './dto/update-idea-draft.dto';
 import { UpdatePublishedIdeaDto } from './dto/update-published-idea.dto';
+import { IdeaMediaService } from './idea-media.service';
 import { IDEA_FORM_INCLUDE } from './idea.constants';
 import { type IdeaFormRecord, toIdeaFormResponse } from './idea.mapper';
-import type {
-  IdeaFormResponse,
-  IdeasFeedResponse,
-} from './types/idea-form.types';
-import { convertToSearchQuery } from './utils/fts.util';
+import type { IdeaFormResponse } from './types/idea-form.types';
 
 export const IDEA_TITLE_MIN_LENGTH = 3;
 export const IDEA_DESCRIPTION_MIN_LENGTH = 8;
@@ -45,36 +35,12 @@ type IdeaTagPayload = {
 
 const IDEA_NOT_FOUND = 'Idea not found';
 
-const ALLOWED_UPLOAD_STATUSES: IdeaStatus[] = [
-  IdeaStatus.DRAFT,
-  IdeaStatus.PUBLISHED,
-];
-
 @Injectable()
 export class IdeaService {
-  private readonly logger = new Logger(IdeaService.name);
-
   constructor(
     private readonly prisma: PrismaService,
-    private readonly cloudinary: CloudinaryService,
+    private readonly ideaMediaService: IdeaMediaService,
   ) {}
-
-  private enqueueCloudinaryDeletes(publicIds: string[]): void {
-    if (publicIds.length === 0) {
-      return;
-    }
-
-    void Promise.allSettled(
-      publicIds.map(publicId => this.cloudinary.deleteByPublicId(publicId)),
-    ).then(results => {
-      const failedCount = results.filter(r => r.status === 'rejected').length;
-      if (failedCount > 0) {
-        this.logger.warn(
-          `Cloudinary cleanup failed for ${failedCount}/${publicIds.length} asset(s) after idea deletion`,
-        );
-      }
-    });
-  }
 
   private async cleanupOrphanedDraftProblems(
     tx: Prisma.TransactionClient,
@@ -284,6 +250,55 @@ export class IdeaService {
     }
   }
 
+  private async resolveTagIdsByLabels(
+    tx: Prisma.TransactionClient,
+    dto: IdeaTagPayload,
+  ): Promise<string[]> {
+    if (dto.tagLabels === undefined) {
+      return [];
+    }
+
+    const normalizedLabels = [
+      ...new Set(dto.tagLabels.map(label => label.trim())),
+    ]
+      .filter(Boolean)
+      .slice(0, 20);
+
+    if (normalizedLabels.length === 0) {
+      return [];
+    }
+
+    const existing = await tx.tag.findMany({
+      where: { name: { in: normalizedLabels } },
+      select: { id: true, name: true },
+    });
+    const existingByName = new Map(existing.map(tag => [tag.name, tag.id]));
+    const missingNames = normalizedLabels.filter(
+      name => !existingByName.has(name),
+    );
+
+    if (missingNames.length > 0) {
+      const inserted = await Promise.all(
+        missingNames.map(name =>
+          tx.tag.upsert({
+            where: { name },
+            update: {},
+            create: { name, label: name },
+            select: { id: true, name: true },
+          }),
+        ),
+      );
+
+      for (const tag of inserted) {
+        existingByName.set(tag.name, tag.id);
+      }
+    }
+
+    return normalizedLabels
+      .map(name => existingByName.get(name))
+      .filter((tagId): tagId is string => Boolean(tagId));
+  }
+
   async create(
     authorId: string,
     dto: CreateIdeaDto,
@@ -364,211 +379,6 @@ export class IdeaService {
     });
 
     return toIdeaFormResponse(idea, authorId);
-  }
-
-  private async resolveTagIdsByLabels(
-    tx: Prisma.TransactionClient,
-    dto: IdeaTagPayload,
-  ): Promise<string[]> {
-    if (dto.tagLabels === undefined) {
-      return [];
-    }
-
-    const normalizedLabels = [
-      ...new Set(dto.tagLabels.map(label => label.trim())),
-    ]
-      .filter(Boolean)
-      .slice(0, 20);
-
-    if (normalizedLabels.length === 0) {
-      return [];
-    }
-
-    const existing = await tx.tag.findMany({
-      where: { name: { in: normalizedLabels } },
-      select: { id: true, name: true },
-    });
-    const existingByName = new Map(existing.map(tag => [tag.name, tag.id]));
-    const missingNames = normalizedLabels.filter(
-      name => !existingByName.has(name),
-    );
-
-    if (missingNames.length > 0) {
-      const inserted = await Promise.all(
-        missingNames.map(name =>
-          tx.tag.upsert({
-            where: { name },
-            update: {},
-            create: { name, label: name },
-            select: { id: true, name: true },
-          }),
-        ),
-      );
-
-      for (const tag of inserted) {
-        existingByName.set(tag.name, tag.id);
-      }
-    }
-
-    return normalizedLabels
-      .map(name => existingByName.get(name))
-      .filter((tagId): tagId is string => Boolean(tagId));
-  }
-
-  async uploadAttachment(
-    id: string,
-    authorId: string,
-    file: Express.Multer.File,
-  ): Promise<IdeaFormResponse> {
-    const idea = await this.prisma.idea.findFirst({
-      where: { id, authorId },
-      select: { id: true, status: true },
-    });
-
-    if (!idea) {
-      throw new NotFoundException(IDEA_NOT_FOUND);
-    }
-
-    if (!ALLOWED_UPLOAD_STATUSES.includes(idea.status)) {
-      throw new BadRequestException(
-        'Attachment upload is only allowed for draft or published ideas',
-      );
-    }
-
-    const uploaded = await this.cloudinary.uploadIdeaAttachment(file, id);
-
-    try {
-      const existingCount = await this.prisma.ideaMedia.count({
-        where: { ideaId: id, kind: MediaKind.ATTACHMENT },
-      });
-
-      await this.prisma.ideaMedia.create({
-        data: {
-          ideaId: id,
-          kind: MediaKind.ATTACHMENT,
-          provider: MediaProvider.CLOUDINARY,
-          url: uploaded.url,
-          publicId: uploaded.publicId,
-          mimeType: file.mimetype,
-          byteSize: file.size,
-          originalFilename: file.originalname || 'attachment',
-          sortOrder: existingCount,
-        },
-      });
-    } catch (err) {
-      await this.cloudinary.deleteByPublicId(uploaded.publicId).catch(() => {});
-      throw err;
-    }
-
-    return this.findByIdSmart(id, authorId);
-  }
-
-  async deleteMedia(
-    id: string,
-    mediaId: string,
-    authorId: string,
-  ): Promise<void> {
-    const idea = await this.prisma.idea.findFirst({
-      where: { id, authorId },
-      select: { id: true },
-    });
-
-    if (!idea) {
-      throw new NotFoundException(IDEA_NOT_FOUND);
-    }
-
-    const media = await this.prisma.ideaMedia.findFirst({
-      where: { id: mediaId, ideaId: id },
-      select: { id: true, publicId: true },
-    });
-
-    if (!media) {
-      throw new NotFoundException('Media not found');
-    }
-
-    await this.prisma.ideaMedia.delete({ where: { id: mediaId } });
-    void this.cloudinary.deleteByPublicId(media.publicId);
-  }
-  async findAllPublic(
-    query: GetIdeasQueryDto,
-    currentUserId?: string,
-  ): Promise<IdeasFeedResponse> {
-    const page = query.page ?? 1;
-    const limit = Math.min(query.limit ?? 10, 50);
-    const skip = (page - 1) * limit;
-
-    const where: Prisma.IdeaWhereInput = {
-      status: IdeaStatus.PUBLISHED,
-      ...(query.stage !== undefined ? { stage: query.stage } : {}),
-    };
-
-    const [total, ideas] = await this.prisma.$transaction([
-      this.prisma.idea.count({ where }),
-      this.prisma.idea.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { publishedAt: 'desc' },
-        include: IDEA_FORM_INCLUDE,
-      }),
-    ]);
-
-    const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
-
-    return {
-      data: ideas.map(idea => toIdeaFormResponse(idea, currentUserId)),
-      meta: { total, page, limit, totalPages },
-    };
-  }
-
-  async findMyIdeas(
-    authorId: string,
-    query: GetIdeasQueryDto,
-  ): Promise<IdeasFeedResponse> {
-    const page = query.page ?? 1;
-    const limit = Math.min(query.limit ?? 10, 50);
-    const skip = (page - 1) * limit;
-
-    const where: Prisma.IdeaWhereInput = {
-      authorId,
-      ...(query.status !== undefined ? { status: query.status } : {}),
-      ...(query.stage !== undefined ? { stage: query.stage } : {}),
-    };
-
-    const [total, ideas] = await this.prisma.$transaction([
-      this.prisma.idea.count({ where }),
-      this.prisma.idea.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: IDEA_FORM_INCLUDE,
-      }),
-    ]);
-
-    const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
-
-    return {
-      data: ideas.map(idea => toIdeaFormResponse(idea, authorId)),
-      meta: { total, page, limit, totalPages },
-    };
-  }
-
-  async findByIdSmart(id: string, userId: string): Promise<IdeaFormResponse> {
-    const idea = await this.prisma.idea.findUnique({
-      where: { id },
-      include: IDEA_FORM_INCLUDE,
-    });
-
-    if (!idea) {
-      throw new NotFoundException(IDEA_NOT_FOUND);
-    }
-
-    if (idea.authorId !== userId && idea.status !== IdeaStatus.PUBLISHED) {
-      throw new NotFoundException(IDEA_NOT_FOUND);
-    }
-
-    return toIdeaFormResponse(idea, userId);
   }
 
   async updateDraft(
@@ -661,126 +471,6 @@ export class IdeaService {
     return toIdeaFormResponse(updated, authorId);
   }
 
-  async uploadMainImage(
-    id: string,
-    authorId: string,
-    file: Express.Multer.File,
-  ): Promise<IdeaFormResponse> {
-    const idea = await this.prisma.idea.findFirst({
-      where: { id, authorId },
-      select: { id: true, status: true },
-    });
-
-    if (!idea) {
-      throw new NotFoundException(IDEA_NOT_FOUND);
-    }
-
-    if (!ALLOWED_UPLOAD_STATUSES.includes(idea.status)) {
-      throw new BadRequestException(
-        'Image upload is only allowed for draft or published ideas',
-      );
-    }
-
-    const uploaded = await this.cloudinary.uploadIdeaMainImage(file, id);
-    let publicIdsToDelete: string[] = [];
-
-    try {
-      await this.prisma.$transaction(async tx => {
-        const existingMedia = await tx.ideaMedia.findMany({
-          where: { ideaId: id, kind: MediaKind.MAIN_IMAGE },
-          select: { publicId: true },
-        });
-
-        publicIdsToDelete = existingMedia.map(m => m.publicId);
-
-        if (publicIdsToDelete.length > 0) {
-          await tx.ideaMedia.deleteMany({
-            where: { ideaId: id, kind: MediaKind.MAIN_IMAGE },
-          });
-        }
-
-        await tx.ideaMedia.create({
-          data: {
-            ideaId: id,
-            kind: MediaKind.MAIN_IMAGE,
-            provider: MediaProvider.CLOUDINARY,
-            url: uploaded.url,
-            publicId: uploaded.publicId,
-            mimeType: file.mimetype,
-            byteSize: file.size,
-            originalFilename: file.originalname || 'image',
-            sortOrder: 0,
-          },
-        });
-      });
-
-      if (publicIdsToDelete.length > 0) {
-        Promise.allSettled(
-          publicIdsToDelete.map(publicId =>
-            this.cloudinary.deleteByPublicId(publicId),
-          ),
-        ).catch(() => {});
-      }
-    } catch (err) {
-      await this.cloudinary.deleteByPublicId(uploaded.publicId).catch(() => {});
-      throw err;
-    }
-
-    return this.findByIdSmart(id, authorId);
-  }
-  async delete(id: string, authorId: string): Promise<void> {
-    let publicIdsToDelete: string[] = [];
-
-    await this.prisma.$transaction(async tx => {
-      const existing = await tx.idea.findFirst({
-        where: { id, authorId },
-        select: { id: true, status: true },
-      });
-
-      if (!existing) {
-        throw new NotFoundException(IDEA_NOT_FOUND);
-      }
-
-      if (existing.status === IdeaStatus.ARCHIVED) {
-        throw new BadRequestException('Idea is already deleted');
-      }
-
-      if (
-        existing.status !== IdeaStatus.DRAFT &&
-        existing.status !== IdeaStatus.PUBLISHED
-      ) {
-        throw new BadRequestException(
-          `Cannot delete idea with status: ${existing.status as string}`,
-        );
-      }
-
-      const media = await tx.ideaMedia.findMany({
-        where: { ideaId: id },
-        select: { publicId: true },
-      });
-      publicIdsToDelete = media.map(record => record.publicId);
-
-      const problemLinks = await tx.ideaProblem.findMany({
-        where: { ideaId: id },
-        select: { problemId: true },
-      });
-      const problemIdsToCleanup = problemLinks.map(link => link.problemId);
-
-      await tx.ideaMedia.deleteMany({ where: { ideaId: id } });
-      await tx.ideaProblem.deleteMany({ where: { ideaId: id } });
-      await tx.ideaTag.deleteMany({ where: { ideaId: id } });
-      await tx.idea.delete({ where: { id } });
-
-      await this.cleanupOrphanedDraftProblems(
-        tx,
-        authorId,
-        problemIdsToCleanup,
-      );
-    });
-
-    this.enqueueCloudinaryDeletes(publicIdsToDelete);
-  }
-
   async publish(id: string, authorId: string): Promise<IdeaFormResponse> {
     const published = await this.prisma.$transaction(async tx => {
       const idea = await tx.idea.findFirst({
@@ -838,115 +528,57 @@ export class IdeaService {
 
     return toIdeaFormResponse(published, authorId);
   }
-  async findSimilar(
-    id: string,
-    currentUserId?: string,
-  ): Promise<IdeaFormResponse[]> {
-    const currentIdea = await this.prisma.idea.findUnique({
-      where: { id },
-      select: { id: true, title: true },
+
+  async delete(id: string, authorId: string): Promise<void> {
+    let publicIdsToDelete: string[] = [];
+
+    await this.prisma.$transaction(async tx => {
+      const existing = await tx.idea.findFirst({
+        where: { id, authorId },
+        select: { id: true, status: true },
+      });
+
+      if (!existing) {
+        throw new NotFoundException(IDEA_NOT_FOUND);
+      }
+
+      if (existing.status === IdeaStatus.ARCHIVED) {
+        throw new BadRequestException('Idea is already deleted');
+      }
+
+      if (
+        existing.status !== IdeaStatus.DRAFT &&
+        existing.status !== IdeaStatus.PUBLISHED
+      ) {
+        throw new BadRequestException(
+          `Cannot delete idea with status: ${existing.status as string}`,
+        );
+      }
+
+      const media = await tx.ideaMedia.findMany({
+        where: { ideaId: id },
+        select: { publicId: true },
+      });
+      publicIdsToDelete = media.map(record => record.publicId);
+
+      const problemLinks = await tx.ideaProblem.findMany({
+        where: { ideaId: id },
+        select: { problemId: true },
+      });
+      const problemIdsToCleanup = problemLinks.map(link => link.problemId);
+
+      await tx.ideaMedia.deleteMany({ where: { ideaId: id } });
+      await tx.ideaProblem.deleteMany({ where: { ideaId: id } });
+      await tx.ideaTag.deleteMany({ where: { ideaId: id } });
+      await tx.idea.delete({ where: { id } });
+
+      await this.cleanupOrphanedDraftProblems(
+        tx,
+        authorId,
+        problemIdsToCleanup,
+      );
     });
 
-    if (!currentIdea) {
-      throw new NotFoundException(IDEA_NOT_FOUND);
-    }
-
-    if (!currentIdea.title || currentIdea.title.trim().length === 0) {
-      return [];
-    }
-
-    const searchQuery = convertToSearchQuery(currentIdea.title);
-    if (!searchQuery) {
-      return [];
-    }
-
-    const scoredRecords = await this.prisma.$queryRaw<{ id: string }[]>`
-      SELECT i.id
-      FROM "idea" i
-      WHERE 
-        i.status = 'PUBLISHED' 
-        AND i.id != ${id}
-        AND to_tsvector('english', coalesce(i.title, '') || ' ' || coalesce(i.description, '')) @@ to_tsquery('english', ${searchQuery})
-      ORDER BY ts_rank(
-        setweight(to_tsvector('english', coalesce(i.title, '')), 'A') ||
-        setweight(to_tsvector('english', coalesce(i.description, '')), 'B'),
-        to_tsquery('english', ${searchQuery})
-      ) DESC, i."published_at" DESC
-      LIMIT 3;
-    `;
-
-    if (scoredRecords.length === 0) {
-      return [];
-    }
-
-    const similarIds = scoredRecords.map(record => record.id);
-
-    const fullIdeas = await this.prisma.idea.findMany({
-      where: {
-        id: { in: similarIds },
-      },
-      include: IDEA_FORM_INCLUDE,
-    });
-
-    return similarIds
-      .map(sampleId => fullIdeas.find(idea => idea.id === sampleId))
-      .filter((idea): idea is NonNullable<typeof idea> => !!idea)
-      .map(idea => toIdeaFormResponse(idea, currentUserId));
-  }
-  private ideaMemberKey(
-    ideaId: string,
-    userId: string,
-  ): Prisma.IdeaMemberWhereUniqueInput {
-    return { ideaId_userId: { ideaId, userId } };
-  }
-
-  async joinIdea(ideaId: string, userId: string): Promise<IdeaMemberModel> {
-    const idea = await this.prisma.idea.findUnique({
-      where: { id: ideaId },
-      select: { authorId: true, status: true },
-    });
-
-    if (!idea) {
-      throw new NotFoundException();
-    }
-
-    if (idea.status !== IdeaStatus.PUBLISHED) {
-      throw new BadRequestException();
-    }
-
-    if (idea.authorId === userId) {
-      throw new ConflictException();
-    }
-
-    const memberKey = this.ideaMemberKey(ideaId, userId);
-    const existingMember = await this.prisma.ideaMember.findUnique({
-      where: memberKey,
-    });
-
-    if (existingMember) {
-      throw new ConflictException();
-    }
-
-    return this.prisma.ideaMember.create({
-      data: {
-        ideaId,
-        userId,
-      },
-    });
-  }
-
-  async leaveIdea(ideaId: string, userId: string): Promise<IdeaMemberModel> {
-    const memberKey = this.ideaMemberKey(ideaId, userId);
-    const member = await this.prisma.ideaMember.findUnique({
-      where: memberKey,
-    });
-
-    if (!member) {
-      throw new NotFoundException();
-    }
-
-    return this.prisma.ideaMember.delete({
-      where: memberKey,
-    });
+    this.ideaMediaService.enqueueCloudinaryDeletes(publicIdsToDelete);
   }
 }
