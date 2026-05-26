@@ -1,6 +1,9 @@
 import {
+  BadRequestException,
   Body,
   Controller,
+  Delete,
+  ForbiddenException,
   Get,
   Param,
   ParseUUIDPipe,
@@ -15,13 +18,18 @@ import {
   ApiBody,
   ApiConsumes,
   ApiCreatedResponse,
+  ApiForbiddenResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
+  ApiOperation,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
 
 import { JwtAuth } from '../shared/decorators/jwt-auth.decorator';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AvatarUploadInterceptor } from './interceptors/avatar-upload.interceptor';
@@ -33,14 +41,27 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get('me')
-  @ApiBearerAuth()
-  @ApiOkResponse({ description: 'Current user' })
   @JwtAuth()
+  @ApiBearerAuth()
+  @ApiOkResponse({ description: 'Current user profile' })
   getMe(@Req() req: Request & { user: { id: string } }) {
-    return this.userService.getProfileForUser(req.user.id);
+    return this.userService.findOne(req.user.id);
+  }
+
+  @Get('me/has-password')
+  @JwtAuth()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Check if current user has a password set' })
+  @ApiOkResponse({
+    description: 'Whether the user can sign in with email/password',
+  })
+  async hasPassword(@Req() req: Request & { user: { id: string } }) {
+    const hasPassword = await this.userService.checkUserPassword(req.user.id);
+    return { hasPassword };
   }
 
   @Post('me/avatar')
+  @JwtAuth()
   @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -51,13 +72,40 @@ export class UserController {
     },
   })
   @ApiOkResponse({ description: 'Avatar updated' })
-  @JwtAuth()
   @UseInterceptors(AvatarUploadInterceptor())
   uploadMyAvatar(
-    @UploadedFile() file: Express.Multer.File | undefined,
+    @UploadedFile() file: Express.Multer.File,
     @Req() req: Request & { user: { id: string } },
   ) {
-    return this.userService.finalizeAvatarUpload(req.user.id, file?.filename);
+    if (!file) {
+      throw new BadRequestException('Missing file (use form field "file").');
+    }
+    return this.userService.finalizeAvatarUpload(req.user.id, file);
+  }
+
+  @Delete('me/avatar')
+  @JwtAuth()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remove current user avatar' })
+  @ApiNoContentResponse({ description: 'Avatar removed' })
+  removeMyAvatar(@Req() req: Request & { user: { id: string } }) {
+    return this.userService.removeAvatar(req.user.id);
+  }
+
+  @Patch('me/password')
+  @JwtAuth()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Change current user password' })
+  @ApiBody({ type: ChangePasswordDto })
+  @ApiOkResponse({ description: 'Password updated successfully' })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized or wrong current password',
+  })
+  changeMyPassword(
+    @Body() dto: ChangePasswordDto,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    return this.userService.changePassword(req.user.id, dto);
   }
 
   @Post()
@@ -80,10 +128,21 @@ export class UserController {
   }
 
   @Patch(':id')
-  @ApiOkResponse({ description: 'User updated' })
-  @ApiNotFoundResponse({ description: 'User not found' })
   @JwtAuth()
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateUserDto) {
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update user profile' })
+  @ApiBody({ type: UpdateUserDto })
+  @ApiOkResponse({ description: 'User profile updated successfully' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiForbiddenResponse({ description: "Cannot update another user's profile" })
+  async update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateUserDto,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    if (req.user.id !== id) {
+      throw new ForbiddenException('You can only update your own profile');
+    }
     return this.userService.update(id, dto);
   }
 }

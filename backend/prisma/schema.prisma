@@ -1,20 +1,222 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider        = "prisma-client"
+  previewFeatures = ["fullTextSearchPostgres"]
+  output          = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
 }
 
+enum IdeaStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ProblemStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum Stage {
+  ideation
+  prototyping
+  completed
+  archived
+  paused
+}
+
+enum ProblemStage {
+  active
+  completed
+  archived
+}
+
+enum MediaKind {
+  MAIN_IMAGE
+  ATTACHMENT
+}
+
+enum MediaProvider {
+  CLOUDINARY
+}
+
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  realName  String?  @map("real_name")
-  password  String?
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  avatarUrl String?  @map("avatar_url")
+  id                  String               @id @default(uuid())
+  email               String               @unique
+  firstName           String?              @map("first_name")
+  lastName            String?              @map("last_name")
+  password            String?
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
+  avatarUrl           String?              @map("avatar_url")
+  passwordResetTokens PasswordResetToken[]
+  ideas               Idea[]               @relation("IdeaAuthor")
+  problems            Problem[]
+  joinedIdeas         IdeaMember[]
 
   @@map("user")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  tokenHash String    @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_token")
+}
+
+model Idea {
+  id           String     @id @default(uuid())
+  authorId     String     @map("author_id")
+  status       IdeaStatus @default(DRAFT)
+  stage        Stage?
+  title        String?
+  description  String?    @db.Text
+  viewCount    Int        @default(0) @map("view_count")
+  likeCount    Int        @default(0) @map("like_count")
+  commentCount Int        @default(0) @map("comment_count")
+  publishedAt  DateTime?  @map("published_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  author   User          @relation("IdeaAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  problems IdeaProblem[]
+  tags     IdeaTag[]
+  media    IdeaMedia[]
+  members  IdeaMember[]
+
+  @@index([authorId, status])
+  @@index([status, publishedAt])
+  @@map("idea")
+}
+
+model IdeaMember {
+  ideaId   String   @map("idea_id")
+  userId   String   @map("user_id")
+  joinedAt DateTime @default(now()) @map("joined_at")
+
+  idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([ideaId, userId])
+  @@index([userId])
+  @@map("idea_member")
+}
+
+model Problem {
+  id               String        @id @default(uuid())
+  authorId         String        @map("author_id")
+  title            String
+  description      String        @db.Text
+  status           ProblemStatus @default(DRAFT)
+  stage            ProblemStage?
+  valueProposition String?       @map("value_proposition")
+  costBenefit      Decimal?      @map("cost_benefit") @db.Decimal(12, 2)
+  category         String?
+  impact           String?
+  publishedAt      DateTime?     @map("published_at")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+
+  author User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  ideas  IdeaProblem[]
+  media  ProblemMedia[]
+  tags   ProblemTag[]
+
+  @@index([authorId, status])
+  @@index([status])
+  @@map("problem")
+}
+
+model Tag {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  label     String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  ideas       IdeaTag[]
+  problemTags ProblemTag[]
+
+  @@map("tag")
+}
+
+model IdeaProblem {
+  ideaId    String  @map("idea_id")
+  problemId String  @map("problem_id")
+  isPrimary Boolean @default(false) @map("is_primary")
+
+  idea    Idea    @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@id([ideaId, problemId])
+  @@map("idea_problem")
+}
+
+model IdeaTag {
+  ideaId String @map("idea_id")
+  tagId  String @map("tag_id")
+
+  idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([ideaId, tagId])
+  @@map("idea_tag")
+}
+
+model ProblemTag {
+  problemId String @map("problem_id")
+  tagId     String @map("tag_id")
+
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([problemId, tagId])
+  @@map("problem_tag")
+}
+
+model IdeaMedia {
+  id               String        @id @default(uuid())
+  ideaId           String        @map("idea_id")
+  kind             MediaKind
+  provider         MediaProvider @default(CLOUDINARY)
+  url              String
+  publicId         String        @map("public_id")
+  mimeType         String        @map("mime_type")
+  byteSize         Int           @map("byte_size")
+  originalFilename String        @map("original_filename")
+  sortOrder        Int           @default(0) @map("sort_order")
+  createdAt        DateTime      @default(now()) @map("created_at")
+
+  idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+
+  @@index([ideaId, kind])
+  @@map("idea_media")
+}
+
+model ProblemMedia {
+  id               String        @id @default(uuid())
+  problemId        String        @map("problem_id")
+  kind             MediaKind
+  provider         MediaProvider @default(CLOUDINARY)
+  url              String
+  publicId         String        @map("public_id")
+  mimeType         String        @map("mime_type")
+  byteSize         Int           @map("byte_size")
+  originalFilename String        @map("original_filename")
+  sortOrder        Int           @default(0) @map("sort_order")
+  createdAt        DateTime      @default(now()) @map("created_at")
+
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@index([problemId, kind])
+  @@map("problem_media")
 }

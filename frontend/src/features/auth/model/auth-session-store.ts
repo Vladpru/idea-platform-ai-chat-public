@@ -1,10 +1,17 @@
-import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
-import { clearStoredAuthToken, setStoredAuthToken } from "@/shared/lib/auth-token";
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
+
+import {
+  clearStoredAuthToken,
+  setStoredAuthToken,
+} from '@/shared/lib/auth-token';
+import { formatUserDisplayName } from '@/shared/lib/user-display';
 
 export type SessionUser = {
   id: string;
   email: string;
+  firstName: string;
+  lastName: string;
   name: string;
   picture: string | null;
 };
@@ -18,19 +25,26 @@ type AuthSessionState = {
 };
 
 function parseSessionUser(raw: unknown): SessionUser | null {
-  if (!raw || typeof raw !== "object") return null;
+  if (!raw || typeof raw !== 'object') return null;
   const u = raw as Record<string, unknown>;
-  if (typeof u.id !== "string" || typeof u.email !== "string") return null;
-  const realName = typeof u.realName === "string" ? u.realName : null;
-  const avatarUrl = typeof u.avatarUrl === "string" ? u.avatarUrl : null;
+
+  if (typeof u.id !== 'string' || typeof u.email !== 'string') return null;
+
+  const firstName = typeof u.firstName === 'string' ? u.firstName : '';
+  const lastName = typeof u.lastName === 'string' ? u.lastName : '';
+  const avatarUrl =
+    typeof u.avatarUrl === 'string' && u.avatarUrl.trim().length > 0
+      ? u.avatarUrl
+      : null;
   const email = u.email;
-  const name =
-    realName?.trim() ||
-    (typeof email === "string" ? email.split("@")[0] : "") ||
-    "User";
+
+  const name = formatUserDisplayName({ firstName, lastName, email });
+
   return {
     id: u.id,
     email,
+    firstName,
+    lastName,
     name,
     picture: avatarUrl,
   };
@@ -38,15 +52,20 @@ function parseSessionUser(raw: unknown): SessionUser | null {
 
 export const useAuthSessionStore = create<AuthSessionState>()(
   persist(
-    (set) => ({
+    set => ({
       user: null,
       accessToken: null,
       setSession: (apiUser, accessToken) => {
         const user = parseSessionUser(apiUser);
+        if (!user) {
+          clearStoredAuthToken();
+          set({ user: null, accessToken: null });
+          return;
+        }
         set({ user, accessToken });
         setStoredAuthToken(accessToken);
       },
-      setAccessToken: (accessToken) => {
+      setAccessToken: accessToken => {
         set({ accessToken });
         setStoredAuthToken(accessToken);
       },
@@ -57,18 +76,29 @@ export const useAuthSessionStore = create<AuthSessionState>()(
       },
     }),
     {
-      name: "auth-session",
+      name: 'auth-session',
       storage: createJSONStorage(() => localStorage),
-      partialize: (s) => ({ user: s.user, accessToken: s.accessToken }),
-      onRehydrateStorage: () => (state) => {
-        if (state?.accessToken) setStoredAuthToken(state.accessToken);
+      partialize: s => ({ user: s.user, accessToken: s.accessToken }),
+      onRehydrateStorage: () => state => {
+        if (state?.accessToken && state.user?.id) {
+          setStoredAuthToken(state.accessToken);
+        } else if (state) {
+          clearStoredAuthToken();
+          state.user = null;
+          state.accessToken = null;
+        }
       },
     },
   ),
 );
 
+export function hasValidSession(): boolean {
+  const { accessToken, user } = useAuthSessionStore.getState();
+  return Boolean(accessToken && user?.id);
+}
+
 export function nameInitial(name: string): string {
   const t = name.trim();
-  if (!t) return "?";
+  if (!t) return '?';
   return t.charAt(0).toUpperCase();
 }

@@ -1,0 +1,175 @@
+import {
+  type CreateProblemPayload,
+  type UpdateProblemPayload,
+  type UploadProblemAttachmentPayload,
+  createProblem,
+  createProblemDraft,
+  deleteProblem,
+  deleteProblemMedia,
+  updateProblem,
+  uploadProblemAttachment,
+} from '@/features/problems/api/problems.api';
+import {
+  formValuesToCreateProblemPayload,
+  type SubmitProblemFormValues,
+} from '@/features/problems/lib/submit-problem';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+
+import { getApiErrorMessage } from '@/shared/api/api-error';
+
+async function uploadProblemFiles(
+  problemId: string,
+  files: File[] | undefined,
+) {
+  if (!files?.length) return;
+  await Promise.all(
+    files.map(file => uploadProblemAttachment(problemId, { file })),
+  );
+}
+
+export const problemMutationKeys = {
+  all: ['problems'] as const,
+  lists: () => [...problemMutationKeys.all, 'list'] as const,
+  list: (params?: Record<string, unknown>) =>
+    [...problemMutationKeys.lists(), params] as const,
+  mine: (params?: Record<string, unknown>) =>
+    [...problemMutationKeys.all, 'mine', params] as const,
+  details: () => [...problemMutationKeys.all, 'detail'] as const,
+  detail: (problemId: string) =>
+    [...problemMutationKeys.details(), problemId] as const,
+};
+
+function invalidateProblemQueries(
+  queryClient: ReturnType<typeof useQueryClient>,
+  problemId?: string,
+) {
+  void queryClient.invalidateQueries({ queryKey: problemMutationKeys.lists() });
+  void queryClient.invalidateQueries({ queryKey: problemMutationKeys.all });
+  if (problemId) {
+    void queryClient.invalidateQueries({
+      queryKey: problemMutationKeys.detail(problemId),
+    });
+  }
+}
+
+export function useCreateProblemMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: [...problemMutationKeys.all, 'create'],
+    mutationFn: (payload: CreateProblemPayload) => createProblem(payload),
+    onSuccess: (problem, variables) => {
+      invalidateProblemQueries(queryClient, problem.id);
+      toast.success(
+        variables.isPublished ? 'Problem published' : 'Problem created',
+      );
+    },
+    onError: error => {
+      toast.error(getApiErrorMessage(error));
+    },
+  });
+}
+
+export function usePublishProblemMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: [...problemMutationKeys.all, 'publish'],
+    mutationFn: async (values: SubmitProblemFormValues) => {
+      const payload = formValuesToCreateProblemPayload(values, true);
+      const problem = await createProblem(payload);
+      await uploadProblemFiles(problem.id, values.files);
+      return problem;
+    },
+    onSuccess: problem => {
+      invalidateProblemQueries(queryClient, problem.id);
+      toast.success('Problem published');
+    },
+    onError: error => {
+      toast.error(getApiErrorMessage(error));
+    },
+  });
+}
+
+export function useCreateProblemDraftMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: [...problemMutationKeys.all, 'create-draft'],
+    mutationFn: createProblemDraft,
+    onSuccess: problem => {
+      invalidateProblemQueries(queryClient, problem.id);
+      toast.success('Problem draft created');
+    },
+    onError: error => {
+      toast.error(getApiErrorMessage(error));
+    },
+  });
+}
+
+export function useUpdateProblemMutation(problemId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: [...problemMutationKeys.all, 'update', problemId],
+    mutationFn: (payload: UpdateProblemPayload) =>
+      updateProblem(problemId, payload),
+    onSuccess: problem => {
+      invalidateProblemQueries(queryClient, problem.id);
+      toast.success('Problem updated');
+    },
+    onError: error => {
+      toast.error(getApiErrorMessage(error));
+    },
+  });
+}
+
+export function useDeleteProblemMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: [...problemMutationKeys.all, 'delete'],
+    mutationFn: (problemId: string) => deleteProblem(problemId),
+    onSuccess: (_void, problemId) => {
+      invalidateProblemQueries(queryClient, problemId);
+      toast.success('Problem deleted');
+    },
+    onError: error => {
+      toast.error(getApiErrorMessage(error));
+    },
+  });
+}
+
+export function useUploadProblemAttachmentMutation(problemId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: [...problemMutationKeys.all, 'upload-media', problemId],
+    mutationFn: (payload: UploadProblemAttachmentPayload) =>
+      uploadProblemAttachment(problemId, payload),
+    onSuccess: problem => {
+      invalidateProblemQueries(queryClient, problem.id);
+      toast.success('Attachment uploaded');
+    },
+    onError: error => {
+      toast.error(getApiErrorMessage(error));
+    },
+  });
+}
+
+export function useDeleteProblemMediaMutation(problemId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: [...problemMutationKeys.all, 'delete-media', problemId],
+    mutationFn: (mediaId: string) => deleteProblemMedia(problemId, mediaId),
+    onSuccess: () => {
+      invalidateProblemQueries(queryClient, problemId);
+      toast.success('Attachment removed');
+    },
+    onError: error => {
+      toast.error(getApiErrorMessage(error));
+    },
+  });
+}

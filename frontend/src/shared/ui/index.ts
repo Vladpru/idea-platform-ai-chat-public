@@ -1,14 +1,40 @@
-export { Button, type ButtonProps } from "./button";
+export { Button, type ButtonProps } from './button';
 export {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
   type CardProps,
-} from "./card";
-export { Input, type InputProps } from "./input";
-export { Label, type LabelProps } from "./label";
-export { Separator, type SeparatorProps } from "./separator";
+} from './card';
+export { Input, type InputProps } from './input';
+export { Label, type LabelProps } from './label';
+export { Separator, type SeparatorProps } from './separator';
+export {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogOverlay,
+  DialogPortal,
+  DialogTitle,
+  DialogTrigger,
+} from './dialog';
+export {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from './tooltip';
+export {
+  AnimatedPanel,
+  AnimatedPanelSwitch,
+  AnimatedTabUnderline,
+  panelFadeMotion,
+  panelFadeTransition,
+  tabUnderlineSpring,
+} from './motion';
 export {
   AlertDialog,
   AlertDialogAction,
@@ -21,5 +47,4 @@ export {
   AlertDialogPortal,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "./alert-dialog";
-
+} from './alert-dialog';

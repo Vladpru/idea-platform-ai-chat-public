@@ -1,77 +1,105 @@
-import PolycodersLogo from "@/assets/svg/polycodersLogo.svg";
-import { Link } from "@tanstack/react-router";
-import { UserNav } from "@/features/auth";
-import { Bell, Search, ChevronDown } from "lucide-react";
-import { Button } from "@/shared/ui/button";
-import { HEADER_ACTION_BUTTON_CLASS } from "@/widgets/header/lib/header-action-button-class";
-import { MobileMenu } from "./MobileMenu";
+import PolycodersLogoWhiteText from '@/assets/svg/polycodersLogoWhiteText.svg';
+import { UserNav } from '@/features/auth';
+import { HEADER_ACTION_BUTTON_CLASS } from '@/widgets/header/lib/header-action-button-class';
+import { Link, useMatchRoute } from '@tanstack/react-router';
+import { Bell, ChevronDown, Search } from 'lucide-react';
 
+import { ROUTES } from '@/shared/config/paths';
+import { cn } from '@/shared/lib/utils';
+import { Button } from '@/shared/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/shared/ui/dropdown-menu";
+} from '@/shared/ui/dropdown-menu';
+import { AnimatedTabUnderline } from '@/shared/ui/motion';
 
-const navLinkClass =
-  "text-sm font-semibold uppercase tracking-wide text-white/90 transition-colors hover:text-white";
+import { MobileMenu } from './MobileMenu';
+
+function NavLink({
+  to,
+  label,
+  fuzzy = false,
+}: {
+  to: string;
+  label: string;
+  fuzzy?: boolean;
+}) {
+  const matchRoute = useMatchRoute();
+  const isActive = !!matchRoute({ to, fuzzy });
+
+  return (
+    <Link
+      to={to}
+      className={cn(
+        'relative text-sm tracking-wide uppercase transition-colors hover:text-white',
+        isActive ? 'font-bold text-white' : 'font-normal text-white/90',
+      )}
+    >
+      {label}
+      {isActive ? (
+        <AnimatedTabUnderline
+          layoutId="app-header-nav"
+          className="bg-brand-orange -bottom-1.5 h-0.5 rounded-full"
+        />
+      ) : null}
+    </Link>
+  );
+}
 
 export function AppHeader() {
   return (
-    <header className="flex items-center justify-between px-4 py-3 sm:px-6 bg-primary text-white">
-      <div className="flex items-center gap-6 sm:gap-10">
+    <header className="bg-brand-dark-blue flex items-center justify-between px-4 py-3 text-white sm:px-10">
+      <div className="flex items-center gap-20 xl:gap-35 2xl:gap-45">
         <Link to="/" aria-label="Home">
           <img
-            src={PolycodersLogo}
+            src={PolycodersLogoWhiteText}
             alt="Polycoders Logo"
-            className="h-8 w-auto shrink-0 object-contain transition-transform hover:scale-105"
+            className="h-9 w-auto shrink-0 object-contain transition-transform"
           />
         </Link>
 
-        <nav className="hidden lg:flex items-center gap-6" aria-label="Main">
-          <Link to="/problems" className={navLinkClass}>
-            Problems
-          </Link>
-          <Link to="/ideas" className={navLinkClass}>
-            Ideas
-          </Link>
-          <Link to="/statistics" className={navLinkClass}>
-            Statistics
-          </Link>
+        <nav className="hidden items-center gap-6 lg:flex" aria-label="Main">
+          <NavLink to={ROUTES.problems} label="Problems" fuzzy />
+          <NavLink to={ROUTES.ideas} label="Ideas" fuzzy />
+          <NavLink to={ROUTES.statistics} label="Statistics" />
         </nav>
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
-        <Button
-          type="button"
-          variant="outline"
-          className="hidden lg:inline-flex h-9 border-white bg-transparent px-3 text-xs font-semibold uppercase tracking-wide text-white transition-colors hover:bg-white/10 sm:h-10 sm:px-4 sm:text-sm"
+        <Link
+          to={ROUTES.problemsNew}
+          className="text-brand-dark-blue hover:bg-brand-dark-blue hidden h-9 items-center rounded-sm border border-white bg-white px-3 text-xs font-bold tracking-wide uppercase transition-colors hover:text-white sm:h-10 sm:px-4 sm:text-sm lg:inline-flex"
         >
           ADD NEW PROBLEM
-        </Button>
-        <Button
-          type="button"
-          className="hidden lg:inline-flex h-9 bg-brand-accent px-3 text-xs font-semibold uppercase tracking-wide text-white transition-colors hover:bg-primary-foreground/95 sm:h-10 sm:px-4 sm:text-sm"
+        </Link>
+        <Link
+          to={ROUTES.ideasNew}
+          className="bg-brand-orange hover:text-brand-orange border-brand-orange hidden h-9 items-center rounded-sm border px-3 text-xs font-bold tracking-wide text-white uppercase transition-colors hover:bg-transparent sm:h-10 sm:px-4 sm:text-sm lg:inline-flex"
         >
           ADD NEW IDEA
-        </Button>
+        </Link>
 
         <div className="lg:hidden">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 type="button"
-                className="flex items-center gap-1 h-9 bg-brand-accent px-3 text-xs font-semibold uppercase tracking-wide text-white transition-colors hover:opacity-90 sm:h-10 sm:px-4 sm:text-sm"
+                className="bg-brand-orange flex h-9 items-center gap-1 px-3 text-xs font-semibold tracking-wide text-white uppercase transition-colors hover:opacity-90 sm:h-10 sm:px-4 sm:text-sm"
               >
                 ADD NEW <ChevronDown size={16} />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuItem className="cursor-pointer font-semibold uppercase text-xs">
+              <DropdownMenuItem className="cursor-pointer text-xs font-semibold uppercase">
                 Problem
               </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer font-semibold uppercase text-xs">
-                Idea
+              <DropdownMenuItem
+                className="cursor-pointer text-xs font-semibold uppercase"
+                asChild
+              >
+                <Link to={ROUTES.ideasNew}>Idea</Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -94,7 +122,7 @@ export function AppHeader() {
         </button>
 
         <div className="hidden lg:block">
-          <UserNav triggerClassName={HEADER_ACTION_BUTTON_CLASS} />
+          <UserNav triggerClassName=" transition-opacity cursor-pointer" />
         </div>
 
         <div className="lg:hidden">

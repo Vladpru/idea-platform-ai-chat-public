@@ -1,20 +1,20 @@
-import { useId, useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { Eye, EyeOff } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Input, Label, Separator } from "@/shared/ui";
-import { loginSchema, type LoginValues } from "../model/login-schema";
-import { GoogleLoginButton } from "./GoogleAuthButton";
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Link, useNavigate } from '@tanstack/react-router';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 
-import { login as loginUser } from "../api/auth";
-import { getApiErrorMessage } from "@/shared/api/api-error";
+import { getApiErrorMessage } from '@/shared/api/api-error';
+import { passwordMaxLengthRule } from '@/shared/lib/password-rules';
+import { Button, Input, Label, Separator } from '@/shared/ui';
+
+import { useAuthSessionStore } from '../model/auth-session-store';
+import { login as loginUser } from '../api/auth';
+import { type LoginValues, loginSchema } from '../model/login-schema';
+import { GoogleLoginButton } from './GoogleAuthButton';
+import { PasswordInput } from './PasswordInput';
 
 export function LoginForm() {
   const navigate = useNavigate();
-  const emailId = useId();
-  const passwordId = useId();
-  const [showPassword, setShowPassword] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const {
@@ -24,8 +24,8 @@ export function LoginForm() {
   } = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "",
-      password: "",
+      email: '',
+      password: '',
     },
   });
 
@@ -33,11 +33,12 @@ export function LoginForm() {
     setSubmitError(null);
     try {
       await loginUser({ email: data.email, password: data.password });
-      await navigate({ to: "/", replace: true });
+      await navigate({ to: '/profile', replace: true });
     } catch (e) {
+      useAuthSessionStore.getState().clearSession();
       setSubmitError(
         getApiErrorMessage(e, {
-          invalidCredentialsMessage: "Email or password is incorrect",
+          invalidCredentialsMessage: 'Invalid email or password',
         }),
       );
     }
@@ -45,20 +46,31 @@ export function LoginForm() {
 
   return (
     <div className="mt-6 w-full space-y-6">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
         {submitError && (
-          <p className="text-destructive text-sm font-medium">{submitError}</p>
+          <p
+            role="alert"
+            aria-live="polite"
+            className="text-destructive text-sm font-medium"
+          >
+            {submitError}
+          </p>
         )}
-        <div className="space-y-2">
-          <Label htmlFor={emailId}>EMAIL</Label>
+
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="login-email" className="text-brand-gray-600 text-xs">
+            EMAIL
+          </Label>
           <Input
-            id={emailId}
+            id="login-email"
             type="email"
             inputMode="email"
             autoComplete="email"
+            autoFocus
             placeholder="you@example.com"
-            className="h-11 py-2.5"
-            {...register("email")}
+            className="rounded-sm bg-transparent py-2.5"
+            aria-invalid={!!errors.email}
+            {...register('email')}
           />
           {errors.email && (
             <p className="text-destructive text-xs font-medium">
@@ -67,51 +79,33 @@ export function LoginForm() {
           )}
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor={passwordId}>PASSWORD</Label>
-          <div className="relative">
-            <Input
-              id={passwordId}
-              type={showPassword ? "text" : "password"}
-              autoComplete="current-password"
-              placeholder="••••••••"
-              className="h-11 py-2.5 pr-10"
-              {...register("password")}
-            />
-            <Button
-              variant="ghost"
-              size="icon"
-              type="button"
-              className="text-muted-foreground hover:text-foreground absolute right-1 top-1/2 h-9 w-9 -translate-y-1/2"
-              onClick={() => setShowPassword((v) => !v)}
-              aria-label={showPassword ? "Hide password" : "Show password"}
-            >
-              {showPassword ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-          {errors.password && (
-            <p className="text-destructive text-xs font-medium">
-              {errors.password.message}
-            </p>
-          )}
-
-          <div className="flex justify-end">
-            <Button
-              type="button"
-              variant="ghost"
-              className="text-muted-foreground hover:text-foreground h-auto px-0 py-0 text-xs font-medium"
+        <div className="flex flex-col gap-2">
+          <PasswordInput
+            id="login-password"
+            label="PASSWORD"
+            placeholder="••••••••"
+            autoComplete="current-password"
+            registration={register('password', {
+              maxLength: passwordMaxLengthRule,
+            })}
+            error={errors.password?.message}
+          />
+          <div className="flex h-18 items-start justify-end">
+            <Link
+              to="/forgotPassword"
+              className="text-brand-dark-blue hover:text-brand-dark-blue/80 dark:text-brand-light-blue dark:hover:text-brand-light-blue/80 text-xs font-medium hover:underline hover:underline-offset-2"
             >
               FORGOT PASSWORD?
-            </Button>
+            </Link>
           </div>
         </div>
 
-        <Button type="submit" disabled={isSubmitting} className="h-11 w-full">
-          SIGN IN
+        <Button
+          type="submit"
+          disabled={isSubmitting}
+          className="bg-brand-dark-blue text-brand-white hover:bg-brand-dark-blue/90 h-11 w-full"
+        >
+          {isSubmitting ? 'SIGNING IN...' : 'SIGN IN'}
         </Button>
 
         <div className="flex items-center gap-3">
@@ -122,18 +116,8 @@ export function LoginForm() {
           <Separator className="flex-1" />
         </div>
 
-        <GoogleLoginButton mode={"signin"} />
+        <GoogleLoginButton mode="signin" />
       </form>
-
-      <p className="text-muted-foreground pt-2 text-center text-sm">
-        Don&apos;t have an account?{" "}
-        <Link
-          to="/register"
-          className="text-primary font-semibold underline underline-offset-4"
-        >
-          SIGN UP
-        </Link>
-      </p>
     </div>
   );
 }

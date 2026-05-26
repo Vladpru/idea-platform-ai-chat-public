@@ -5,7 +5,7 @@ services:
     rootDir: backend
     branch: develop
     buildCommand: yarn install && yarn prisma generate && yarn build
-    startCommand: yarn prisma migrate deploy && node dist/src/main.js
+    startCommand: yarn prisma migrate resolve --rolled-back 20260519145406_add_idea_fts_index; yarn prisma migrate deploy && node dist/src/main.js
     envVars:
       - key: NODE_ENV
         value: development
@@ -22,6 +22,12 @@ services:
       - key: TOKEN_COOKIE_NAME
         value: refreshToken
       - key: SERVER_DOMAIN
+        sync: false
+      - key: FRONTEND_URL
+        value: https://idea-platform-team-2-frontend.onrender.com
+      - key: SENDGRID_API_KEY
+        sync: false
+      - key: SENDGRID_FROM_EMAIL
         sync: false
 
   - type: web
@@ -47,6 +53,12 @@ services:
       - key: TOKEN_COOKIE_NAME
         value: refreshToken
       - key: SERVER_DOMAIN
+        sync: false
+      - key: FRONTEND_URL
+        value: https://idea-platform-team-2-frontend-staging.onrender.com
+      - key: SENDGRID_API_KEY
+        sync: false
+      - key: SENDGRID_FROM_EMAIL
         sync: false
 
   - type: static

@@ -1,47 +1,39 @@
-import { Link } from "@tanstack/react-router";
-import { Menu } from "lucide-react";
+import { LogoutConfirmDialog } from '@/features/auth/ui/LogoutConfirmDialog';
+import {
+  nameInitial,
+  useAuthSessionStore,
+} from '@/features/auth/model/auth-session-store';
+import { ROUTES } from '@/shared/config/paths';
+import { Link } from '@tanstack/react-router';
+import { Menu } from 'lucide-react';
+import { useState } from 'react';
+
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/shared/ui/accordion';
+import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
+import { Button } from '@/shared/ui/button';
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/shared/ui/sheet";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/shared/ui/accordion";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/shared/ui/alert-dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
-import { Button } from "@/shared/ui/button";
-import { useLogout } from "@/features/auth/lib/use-logout";
-import {
-  nameInitial,
-  useAuthSessionStore,
-} from "@/features/auth/model/auth-session-store";
+} from '@/shared/ui/sheet';
 
 interface MobileMenuProps {
   triggerClassName: string;
 }
 
 const navLinkClass =
-  "block px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:text-primary rounded-md";
+  'block px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:text-primary rounded-md';
 
 export function MobileMenu({ triggerClassName }: MobileMenuProps) {
-  const logout = useLogout();
-  const user = useAuthSessionStore((s) => s.user);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+  const user = useAuthSessionStore(s => s.user);
 
   return (
     <Sheet>
@@ -56,23 +48,23 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
       </SheetTrigger>
       <SheetContent
         side="right"
-        className="flex w-[300px] flex-col bg-white p-0 sm:w-[400px]"
+        className="bg-brand-gray-200 flex w-[300px] flex-col p-0 sm:w-[400px]"
       >
-        <SheetHeader className="border-b border-primary p-4 text-left">
+        <SheetHeader className="border-primary border-b p-4 text-left">
           <SheetTitle className="text-lg font-bold">Menu</SheetTitle>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto p-4">
           <Accordion
             type="multiple"
-            defaultValue={["navigation", "profile"]}
+            defaultValue={['navigation', 'profile']}
             className="flex w-full flex-col gap-2"
           >
             <AccordionItem
               value="navigation"
-              className="rounded-sm border border-slate-200 bg-non-active-background px-3"
+              className="bg-non-active-background rounded-sm border border-slate-200 px-3"
             >
-              <AccordionTrigger className="px-1 py-2 text-sm font-semibold text-primary hover:underline">
+              <AccordionTrigger className="text-primary px-1 py-2 text-sm font-semibold hover:underline">
                 Navigation
               </AccordionTrigger>
               <AccordionContent className="flex flex-col gap-1 px-1 py-2">
@@ -80,16 +72,17 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
                   to="/problems"
                   className={navLinkClass}
                   activeProps={{
-                    className: "bg-active-background text-primary",
+                    className: 'bg-active-background text-primary',
                   }}
                 >
                   Problems
                 </Link>
                 <Link
-                  to="/ideas"
+                  to={ROUTES.ideas}
+                  search={{ sort: 'newest' }}
                   className={navLinkClass}
                   activeProps={{
-                    className: "bg-active-background text-primary",
+                    className: 'bg-active-background text-primary',
                   }}
                 >
                   Ideas
@@ -98,7 +91,7 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
                   to="/statistics"
                   className={navLinkClass}
                   activeProps={{
-                    className: "bg-active-background text-primary",
+                    className: 'bg-active-background text-primary',
                   }}
                 >
                   Statistics
@@ -107,9 +100,9 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
             </AccordionItem>
             <AccordionItem
               value="profile"
-              className="rounded-sm border border-slate-200 bg-non-active-background px-3"
+              className="bg-non-active-background rounded-sm border border-slate-200 px-3"
             >
-              <AccordionTrigger className="px-1 py-2 text-sm font-semibold text-primary hover:underline">
+              <AccordionTrigger className="text-primary px-1 py-2 text-sm font-semibold hover:underline">
                 Profile
               </AccordionTrigger>
               <AccordionContent className="flex flex-col gap-1 px-1 py-2">
@@ -117,14 +110,14 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
                   <Avatar className="h-8 w-8">
                     <AvatarImage
                       src={user?.picture ?? undefined}
-                      alt={user?.name || "User avatar"}
+                      alt={user?.name || 'User avatar'}
                     />
-                    <AvatarFallback className="bg-slate-200 text-xs font-medium text-slate-800">
-                      {nameInitial(user?.name ?? "")}
+                    <AvatarFallback className="text-brand-gray-80 bg-slate-200 text-xs font-medium">
+                      {nameInitial(user?.name ?? '')}
                     </AvatarFallback>
                   </Avatar>
                   <span className="text-sm font-medium text-slate-900">
-                    {user?.name || "Unknown User"}
+                    {user?.name || 'Unknown User'}
                   </span>
                 </div>
 
@@ -132,7 +125,7 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
                   to="/profile/problems"
                   className={navLinkClass}
                   activeProps={{
-                    className: "bg-active-background text-primary",
+                    className: 'bg-active-background text-primary',
                   }}
                 >
                   My Problems, Joins & Drafts
@@ -141,7 +134,7 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
                   to="/profile/ideas"
                   className={navLinkClass}
                   activeProps={{
-                    className: "bg-active-background text-primary",
+                    className: 'bg-active-background text-primary',
                   }}
                 >
                   My Ideas, Joins & Drafts
@@ -149,44 +142,27 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
                 <Link
                   to="/profile"
                   className={navLinkClass}
+                  activeOptions={{ exact: true }}
                   activeProps={{
-                    className: "bg-active-background text-primary",
+                    className: 'bg-active-background text-primary',
                   }}
                 >
                   Settings
                 </Link>
 
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <button
-                      type="button"
-                      className="mt-2 px-3 text-left text-sm font-bold text-brand-accent hover:opacity-80"
-                    >
-                      Log out
-                    </button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent className="w-[90%] rounded-md sm:max-w-[425px]">
-                    <AlertDialogHeader>
-                      <AlertDialogTitle className="text-center text-xl font-bold text-primary">
-                        Do you really want to Log out?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription className="text-center text-sm text-slate-500">
-                        Remember, you can come back at any time.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter className="flex-row items-center justify-center gap-3 sm:justify-center">
-                      <AlertDialogAction
-                        onClick={logout}
-                        className="w-24 text-primary hover:bg-slate-50"
-                      >
-                        YES
-                      </AlertDialogAction>
-                      <AlertDialogCancel className="mt-0 w-24 border-primary text-primary">
-                        NO
-                      </AlertDialogCancel>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                <button
+                  type="button"
+                  className="text-brand-accent mt-2 px-3 text-left text-sm font-bold hover:opacity-80"
+                  onClick={() => {
+                    setLogoutDialogOpen(true);
+                  }}
+                >
+                  Log out
+                </button>
+                <LogoutConfirmDialog
+                  open={logoutDialogOpen}
+                  onOpenChange={setLogoutDialogOpen}
+                />
               </AccordionContent>
             </AccordionItem>
           </Accordion>
@@ -195,13 +171,16 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
         <div className="mt-auto flex flex-col gap-3 p-4 pt-0">
           <Button
             variant="outline"
-            className="w-full border-primary text-xs font-bold uppercase tracking-wide text-primary"
+            className="border-primary text-primary w-full text-xs font-bold tracking-wide uppercase"
           >
             ADD NEW PROBLEM
           </Button>
-          <Button className="w-full bg-brand-accent text-xs font-bold uppercase tracking-wide text-white hover:opacity-90">
+          <Link
+            to={ROUTES.ideasNew}
+            className="bg-brand-accent inline-flex h-10 w-full items-center justify-center rounded-md text-xs font-bold tracking-wide text-white uppercase hover:opacity-90"
+          >
             ADD NEW IDEA
-          </Button>
+          </Link>
         </div>
       </SheetContent>
     </Sheet>

@@ -1,4 +1,5 @@
-import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
+import { NotFoundPage } from '@/pages/not-found';
+import { Outlet, createRootRouteWithContext } from '@tanstack/react-router';
 
 export type RouterContext = {
   isAuthenticated: boolean;
@@ -6,4 +7,5 @@ export type RouterContext = {
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   component: () => <Outlet />,
+  notFoundComponent: () => <NotFoundPage />,
 });

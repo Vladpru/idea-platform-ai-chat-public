@@ -1,11 +1,12 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
-import { LoginPage } from "@/pages/login";
-import { hasStoredAuthToken } from "@/shared/lib/auth-token";
+import { LoginPage } from '@/pages/login';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
-export const Route = createFileRoute("/login")({
+import { hasValidSession } from '@/features/auth/model/auth-session-store';
+
+export const Route = createFileRoute('/login')({
   beforeLoad: () => {
-    if (hasStoredAuthToken()) {
-      throw redirect({ to: "/" });
+    if (hasValidSession()) {
+      throw redirect({ to: '/profile' });
     }
   },
   component: LoginPage,
