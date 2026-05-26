@@ -1,4 +1,6 @@
-import { Eye, Heart, MessageCircle } from 'lucide-react';
+import commentsIcon from '@/assets/svg/comments.svg';
+import likeIcon from '@/assets/svg/like.svg';
+import viewsIcon from '@/assets/svg/views.svg';
 
 import { cn } from '@/shared/lib/utils';
 
@@ -10,6 +12,12 @@ type DashboardCardStatsProps = {
   iconClassName?: string;
 };
 
+function StatIcon({ src, className }: { src: string; className?: string }) {
+  return (
+    <img src={src} alt="" aria-hidden className={cn('shrink-0', className)} />
+  );
+}
+
 export function DashboardCardStats({
   stats,
   className,
@@ -18,27 +26,21 @@ export function DashboardCardStats({
   return (
     <div
       className={cn(
-        'text-brand-gray-600 flex shrink-0 items-center gap-3 text-xs',
+        'text-brand-dark-blue flex shrink-0 items-center gap-3 text-xs font-normal',
         className,
       )}
     >
       <span className="inline-flex items-center gap-1">
-        <Eye className={cn('text-brand-gray-400', iconClassName)} aria-hidden />
-        <span className="font-semibold tabular-nums">{stats.views}</span>
+        <StatIcon src={viewsIcon} className={iconClassName} />
+        <span className="tabular-nums">{stats.views}</span>
       </span>
       <span className="inline-flex items-center gap-1">
-        <MessageCircle
-          className={cn('text-brand-gray-400', iconClassName)}
-          aria-hidden
-        />
-        <span className="font-semibold tabular-nums">{stats.comments}</span>
+        <StatIcon src={commentsIcon} className={iconClassName} />
+        <span className="tabular-nums">{stats.comments}</span>
       </span>
       <span className="inline-flex items-center gap-1">
-        <Heart
-          className={cn('text-brand-gray-400', iconClassName)}
-          aria-hidden
-        />
-        <span className="font-semibold tabular-nums">{stats.likes}</span>
+        <StatIcon src={likeIcon} className={iconClassName} />
+        <span className="tabular-nums">{stats.likes}</span>
       </span>
     </div>
   );

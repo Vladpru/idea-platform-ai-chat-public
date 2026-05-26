@@ -76,6 +76,7 @@ function renderProblemStandardCard(
       onToggleLinkedItems={options.onToggleLinkedItems}
       isMobile={options.isMobile}
       showHeroImage={false}
+      linkedItemEmptyImageText={PROBLEMS_DASHBOARD_LABELS.emptyImage}
     />
   );
 }

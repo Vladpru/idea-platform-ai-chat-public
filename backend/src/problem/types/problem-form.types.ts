@@ -52,7 +52,11 @@ export type ProblemFormRecord = {
       id: string;
       title: string | null;
       status: IdeaStatus;
+      viewCount: number;
+      likeCount: number;
+      commentCount: number;
       author: ProblemFormAuthor;
+      media: Array<{ url: string }>;
     };
   }>;
   tags: Array<{
@@ -66,6 +70,10 @@ export type ProblemLinkedIdea = {
   title: string | null;
   status: IdeaStatus;
   isPrimary: boolean;
+  imageUrl: string | null;
+  viewCount: number;
+  likeCount: number;
+  commentCount: number;
   author: ProblemFormAuthor;
 };
 

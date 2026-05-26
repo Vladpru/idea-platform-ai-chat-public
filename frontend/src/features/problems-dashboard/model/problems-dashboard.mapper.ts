@@ -45,11 +45,11 @@ export function toProblemDashboardCard(dto: ProblemForm): ProblemDashboardCard {
       dto.ideas?.map(idea => ({
         id: idea.id,
         title: idea.title?.trim() || 'Untitled idea',
-        imageUrl: null,
+        imageUrl: idea.imageUrl,
         stats: {
-          views: 0,
-          comments: 0,
-          likes: 0,
+          views: idea.viewCount,
+          comments: idea.commentCount,
+          likes: idea.likeCount,
         },
       })) ?? [],
     publishedAt: dto.publishedAt,

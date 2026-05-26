@@ -29,6 +29,7 @@ export type DashboardCardStandardProps<
   tagToShowCount?: number;
   isMobile: boolean;
   showHeroImage?: boolean;
+  linkedItemEmptyImageText?: string;
 };
 
 function DashboardCardStandardInner<
@@ -47,6 +48,7 @@ function DashboardCardStandardInner<
   tagToShowCount = DASHBOARD_CARD_TAG_TO_SHOW_COUNT,
   isMobile,
   showHeroImage = true,
+  linkedItemEmptyImageText,
 }: DashboardCardStandardProps<TCard>) {
   const isHorizontal = layout === 'horizontal' && showHeroImage;
   const hasLinkedItems = card.linkedItems && card.linkedItems.length > 0;
@@ -168,6 +170,7 @@ function DashboardCardStandardInner<
               onToggleExpanded={
                 onToggleLinkedItems ? handleToggleLinked : undefined
               }
+              linkedItemEmptyImageText={linkedItemEmptyImageText}
             />
           </div>
         )}

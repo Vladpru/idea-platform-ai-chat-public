@@ -4,7 +4,6 @@ import { useEffect, useRef } from 'react';
 import { cn } from '@/shared/lib/utils';
 
 import type { DashboardLinkedItem } from '../model/dashboard.types';
-
 import { LinkedItemMiniCard } from './LinkedItemMiniCard';
 
 type LinkedItemsSectionProps = {
@@ -17,6 +16,7 @@ type LinkedItemsSectionProps = {
   showToggle?: boolean;
   compact?: boolean;
   className?: string;
+  linkedItemEmptyImageText?: string;
 };
 
 export function LinkedItemsSection({
@@ -29,6 +29,7 @@ export function LinkedItemsSection({
   showToggle = true,
   compact = false,
   className,
+  linkedItemEmptyImageText,
 }: LinkedItemsSectionProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -111,7 +112,7 @@ export function LinkedItemsSection({
         <div className="relative">
           <div
             ref={scrollRef}
-            className="flex h-full [scrollbar-width:none] gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            className="flex h-full scrollbar-none gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
             style={{ scrollBehavior: 'smooth' }}
           >
             {items.map(item => (
@@ -120,6 +121,7 @@ export function LinkedItemsSection({
                 item={item}
                 detailHref={getItemDetailHref(item.id)}
                 compact={compact}
+                emptyImageText={linkedItemEmptyImageText}
               />
             ))}
           </div>

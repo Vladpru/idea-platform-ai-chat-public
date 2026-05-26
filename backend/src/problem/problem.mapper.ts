@@ -31,7 +31,11 @@ type ProblemIdeaLinkInput = {
     id: string;
     title: string | null;
     status: IdeaStatus;
+    viewCount: number;
+    likeCount: number;
+    commentCount: number;
     author: ProblemFormAuthor;
+    media: Array<{ url: string }>;
   };
 };
 
@@ -92,6 +96,10 @@ function toProblemLinkedIdea(link: ProblemIdeaLinkInput): ProblemLinkedIdea {
     title: link.idea.title,
     status: link.idea.status,
     isPrimary: link.isPrimary,
+    imageUrl: link.idea.media[0]?.url ?? null,
+    viewCount: link.idea.viewCount,
+    likeCount: link.idea.likeCount,
+    commentCount: link.idea.commentCount,
     author: toProblemAuthorResponse(link.idea.author),
   };
 }

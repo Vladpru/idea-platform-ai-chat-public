@@ -1,28 +1,26 @@
-import type { ProblemStage } from '@/features/problems/api/problems-api.types';
-import type { ProblemsFeedResponse } from '@/features/problems/api/problems-api.types';
-import { fetchProblems } from '@/features/problems/api/problems.api';
 import {
   COLUMN_COUNT_MIN,
-  TABLET_COLUMN_COUNT_MAX,
   type ProblemDashboardFilter,
   type ProblemDashboardSort,
+  TABLET_COLUMN_COUNT_MAX,
 } from '@/features/ideas-dashboard';
-import { useMediaQuery } from '@/shared/hooks/use-media-query';
-import { useInfiniteQuery, type InfiniteData } from '@tanstack/react-query';
-import { useNavigate, useSearch } from '@tanstack/react-router';
-import { useCallback, useEffect, useMemo } from 'react';
-
-import {
-  API_STAGE_TO_FILTER,
-  FILTER_TO_API_STAGE,
-} from '../lib/constants';
 import {
   getColumnSelectMax,
   getEffectiveColumnCount,
   resolveDashboardViewport,
 } from '@/features/ideas-dashboard/lib/dashboard-grid-layout';
+import type { ProblemStage } from '@/features/problems/api/problems-api.types';
+import type { ProblemsFeedResponse } from '@/features/problems/api/problems-api.types';
+import { fetchProblems } from '@/features/problems/api/problems.api';
+import { type InfiniteData, useInfiniteQuery } from '@tanstack/react-query';
+import { useNavigate, useSearch } from '@tanstack/react-router';
+import { useCallback, useEffect, useMemo } from 'react';
+
+import { useMediaQuery } from '@/shared/hooks/use-media-query';
+
+import { API_STAGE_TO_FILTER, FILTER_TO_API_STAGE } from '../lib/constants';
 import { selectProblemsDashboardCards } from '../lib/select-problems-dashboard-cards';
-import { useProblemsDashboardGridPreferencesStore } from '../model/problems-dashboard-grid-preferences.store';
+import { useProblemsDashboardGridPreferencesStore } from '../store/problems-dashboard-grid-preferences.store';
 
 const PROBLEMS_PAGE_SIZE = 20;
 
@@ -35,7 +33,9 @@ export function useProblemsDashboardPreferences() {
   const navigate = useNavigate();
 
   const sort: ProblemDashboardSort = search.sort ?? 'newest';
-  const stage: ProblemStage | undefined = search.stage as ProblemStage | undefined;
+  const stage: ProblemStage | undefined = search.stage as
+    | ProblemStage
+    | undefined;
 
   const activeFilter: ProblemDashboardFilter = stage
     ? API_STAGE_TO_FILTER[stage]

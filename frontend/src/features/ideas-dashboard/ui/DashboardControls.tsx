@@ -1,6 +1,7 @@
-import { cn } from '@/shared/lib/utils';
 import { ChevronDown, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+
+import { cn } from '@/shared/lib/utils';
 
 type DashboardControlsProps<TSort extends string> = {
   sort: TSort;
@@ -163,7 +164,7 @@ export function DashboardControls<TSort extends string>({
         <button
           type="button"
           onClick={() => setIsDesktopSortOpen(!isDesktopSortOpen)}
-          className="border-brand-gray-200 text-brand-dark-blue flex min-w-[150px] cursor-pointer items-center justify-between gap-2 rounded-md border bg-white px-3 py-2 text-sm font-semibold shadow-sm transition-opacity hover:opacity-80"
+          className="border-brand-gray-200 text-brand-dark-blue flex min-w-[150px] cursor-pointer items-center justify-between gap-2 rounded-md border bg-white px-3 py-2 text-sm font-semibold transition-opacity hover:opacity-80"
         >
           <span className="truncate">{activeSort?.label}</span>
           <ChevronDown
@@ -221,7 +222,7 @@ export function DashboardControls<TSort extends string>({
           <button
             type="button"
             onClick={() => setIsColumnsOpen(!isColumnsOpen)}
-            className="border-brand-gray-200 text-brand-dark-blue flex min-w-[120px] cursor-pointer items-center justify-between gap-2 rounded-md border bg-white px-3 py-2 text-sm font-semibold shadow-sm transition-opacity hover:opacity-80"
+            className="border-brand-gray-200 text-brand-dark-blue flex min-w-[120px] cursor-pointer items-center justify-between gap-2 rounded-md border bg-white px-3 py-2 text-sm font-semibold transition-opacity hover:opacity-80"
           >
             <span>Columns {columnCount}</span>
             <ChevronDown
