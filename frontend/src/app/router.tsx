@@ -5,6 +5,7 @@ import { NotFoundPage } from '@/pages/not-found';
 
 export const router = createRouter({
   routeTree,
+  scrollRestoration: true,
   defaultNotFoundComponent: () => <NotFoundPage variant="content" />,
   context: {
     isAuthenticated: false,

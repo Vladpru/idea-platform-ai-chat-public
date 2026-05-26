@@ -67,7 +67,7 @@ function DashboardCardStandardInner<
         className={cn(
           'bg-brand-gray-100 focus-visible:ring-brand-dark-blue relative shrink-0 overflow-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
           isHorizontal
-            ? 'aspect-[16/10] w-full sm:aspect-auto sm:h-full sm:w-[320px] lg:w-[400px]'
+            ? 'aspect-[16/10] w-full sm:aspect-auto sm:min-h-[260px] sm:w-[320px] lg:w-[400px]'
             : 'aspect-[16/10] w-full',
         )}
       >
