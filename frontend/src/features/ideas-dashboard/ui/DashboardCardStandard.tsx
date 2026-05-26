@@ -7,7 +7,10 @@ import { cn } from '@/shared/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { StageChevronBadge } from '@/shared/ui/stage-chevron-badge';
 
-import { DASHBOARD_CARD_TAG_TO_SHOW_COUNT } from '../lib/constants';
+import {
+  DASHBOARD_CARD_TAG_TO_SHOW_COUNT,
+  STATS_BELOW_TAGS_COLUMN_THRESHOLD,
+} from '../lib/constants';
 import type { DashboardCardBase } from '../model/dashboard.types';
 
 import { DashboardCardStats } from './DashboardCardStats';
@@ -28,6 +31,7 @@ export type DashboardCardStandardProps<
   onToggleLinkedItems?: (cardId: string) => void;
   tagToShowCount?: number;
   isMobile: boolean;
+  columnCount?: number;
   showHeroImage?: boolean;
   linkedItemEmptyImageText?: string;
 };
@@ -47,11 +51,13 @@ function DashboardCardStandardInner<
   onToggleLinkedItems,
   tagToShowCount = DASHBOARD_CARD_TAG_TO_SHOW_COUNT,
   isMobile,
+  columnCount = 1,
   showHeroImage = true,
   linkedItemEmptyImageText,
 }: DashboardCardStandardProps<TCard>) {
   const isHorizontal = layout === 'horizontal' && showHeroImage;
   const hasLinkedItems = card.linkedItems && card.linkedItems.length > 0;
+  const stackStatsBelowTags = columnCount >= STATS_BELOW_TAGS_COLUMN_THRESHOLD;
 
   const handleToggleLinked = useCallback(() => {
     onToggleLinkedItems?.(card.id);
@@ -141,12 +147,19 @@ function DashboardCardStandardInner<
           <div
             className={cn(
               'mt-4 flex w-full flex-col gap-3',
-              isHorizontal
-                ? 'pt-3 sm:flex-row sm:items-center sm:justify-between sm:pt-0'
-                : 'sm:flex-row sm:items-center sm:justify-between',
+              !stackStatsBelowTags &&
+                (isHorizontal
+                  ? 'pt-3 sm:flex-row sm:items-center sm:justify-between sm:pt-0'
+                  : 'sm:flex-row sm:items-center sm:justify-between'),
             )}
           >
-            <div className="min-w-0 flex-1 shrink overflow-hidden [mask-image:linear-gradient(to_right,black_90%,transparent_100%)]">
+            <div
+              className={cn(
+                'min-w-0 flex-1 shrink overflow-hidden',
+                !stackStatsBelowTags &&
+                  '[mask-image:linear-gradient(to_right,black_90%,transparent_100%)]',
+              )}
+            >
               <IdeaTagCloud
                 tags={card.tags}
                 compact={isMobile}
@@ -154,7 +167,12 @@ function DashboardCardStandardInner<
               />
             </div>
 
-            <div className="relative z-10 shrink-0 bg-white">
+            <div
+              className={cn(
+                'relative z-10 shrink-0 bg-white',
+                stackStatsBelowTags && 'w-full',
+              )}
+            >
               <DashboardCardStats stats={card.stats} />
             </div>
           </div>
@@ -192,7 +210,8 @@ function areDashboardCardStandardPropsEqual<
     prev.detailHref === next.detailHref &&
     prev.onToggleLinkedItems === next.onToggleLinkedItems &&
     prev.tagToShowCount === next.tagToShowCount &&
-    prev.isMobile === next.isMobile
+    prev.isMobile === next.isMobile &&
+    prev.columnCount === next.columnCount
   );
 }
 

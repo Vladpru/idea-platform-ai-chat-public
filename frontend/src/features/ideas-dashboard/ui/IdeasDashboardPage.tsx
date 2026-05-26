@@ -58,6 +58,7 @@ function renderIdeaStandardCard(
     linkedItemsExpanded: boolean;
     onToggleLinkedItems: (cardId: string) => void;
     isMobile: boolean;
+    columnCount: number;
   },
 ) {
   return (
@@ -75,6 +76,7 @@ function renderIdeaStandardCard(
       linkedItemsExpanded={options.linkedItemsExpanded}
       onToggleLinkedItems={options.onToggleLinkedItems}
       isMobile={options.isMobile}
+      columnCount={options.columnCount}
     />
   );
 }

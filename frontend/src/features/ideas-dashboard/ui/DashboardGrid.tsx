@@ -46,6 +46,7 @@ export type DashboardGridProps<TCard extends DashboardCardBase> = {
       layout: 'vertical' | 'horizontal';
       linkedItemsExpanded: boolean;
       onToggleLinkedItems: (cardId: string) => void;
+      columnCount: number;
     },
   ) => ReactNode;
 };
@@ -235,6 +236,7 @@ function DashboardGridInner<TCard extends DashboardCardBase>({
                       layout: standardCardLayout,
                       linkedItemsExpanded: isCardLinkedExpanded(card.id),
                       onToggleLinkedItems: toggleCardLinked,
+                      columnCount: effectiveColumnCount,
                     })}
                   </div>
                 ),
