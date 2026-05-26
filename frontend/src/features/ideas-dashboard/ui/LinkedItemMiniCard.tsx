@@ -21,10 +21,25 @@ export function LinkedItemMiniCard({
     <Link
       to={detailHref}
       className={cn(
-        'border-brand-gray-200 hover:border-brand-dark-blue flex min-w-0 shrink-0 items-center gap-2 rounded-md border bg-white p-2 transition-colors hover:shadow-sm',
+        'border-brand-gray-200 hover:border-brand-dark-blue group/linked-item flex min-w-0 shrink-0 items-center gap-2 rounded-md border bg-white p-2 transition-colors hover:shadow-md',
         compact ? 'w-[200px]' : 'w-[240px] sm:w-[260px]',
       )}
     >
+      {item.imageUrl ? (
+        <div
+          className={cn(
+            'bg-brand-gray-100 shrink-0 overflow-hidden rounded',
+            compact ? 'size-10' : 'size-12',
+          )}
+        >
+          <img
+            src={item.imageUrl}
+            alt=""
+            loading="lazy"
+            className="size-full object-cover transition-transform duration-300 group-hover/linked-item:scale-105"
+          />
+        </div>
+      ) : null}
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <p
           className={cn(

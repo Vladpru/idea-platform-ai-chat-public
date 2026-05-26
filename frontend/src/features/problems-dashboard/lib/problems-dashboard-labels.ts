@@ -1,0 +1,18 @@
+export const PROBLEMS_DASHBOARD_LABELS = {
+  pageTitle: 'Problems',
+  filterAriaLabel: 'Filter problems by stage',
+  filterLayoutId: 'problems-dashboard-filter',
+  sortLabel: 'Sort problems',
+  sortSelectId: 'problems-sort',
+  columnsLabel: 'Column count',
+  columnsSelectId: 'problems-columns',
+  expandAll: 'Expand all',
+  collapseAll: 'Collapse all',
+  emptyGridMessage: 'No problems match the current filters.',
+  loadingMore: 'Loading more problems...',
+  loadErrorFallback: 'Failed to load problems.',
+  linkedSectionLabel: 'Linked ideas',
+  linkedItemsScrollLeftAriaLabel: 'Scroll linked ideas left',
+  emptyDescription: 'No description available.',
+  emptyImage: 'No image',
+} as const;

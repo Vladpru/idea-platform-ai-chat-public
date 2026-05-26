@@ -70,6 +70,7 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
               <AccordionContent className="flex flex-col gap-1 px-1 py-2">
                 <Link
                   to="/problems"
+                  search={{ sort: 'newest' }}
                   className={navLinkClass}
                   activeProps={{
                     className: 'bg-active-background text-primary',

@@ -21,10 +21,12 @@ function NavLink({
   to,
   label,
   fuzzy = false,
+  search,
 }: {
   to: string;
   label: string;
   fuzzy?: boolean;
+  search?: { sort: 'newest' };
 }) {
   const matchRoute = useMatchRoute();
   const isActive = !!matchRoute({ to, fuzzy });
@@ -32,6 +34,7 @@ function NavLink({
   return (
     <Link
       to={to}
+      search={search}
       className={cn(
         'relative text-sm tracking-wide uppercase transition-colors hover:text-white',
         isActive ? 'font-bold text-white' : 'font-normal text-white/90',
@@ -61,8 +64,18 @@ export function AppHeader() {
         </Link>
 
         <nav className="hidden items-center gap-6 lg:flex" aria-label="Main">
-          <NavLink to={ROUTES.problems} label="Problems" fuzzy />
-          <NavLink to={ROUTES.ideas} label="Ideas" fuzzy />
+          <NavLink
+            to={ROUTES.problems}
+            label="Problems"
+            fuzzy
+            search={{ sort: 'newest' }}
+          />
+          <NavLink
+            to={ROUTES.ideas}
+            label="Ideas"
+            fuzzy
+            search={{ sort: 'newest' }}
+          />
           <NavLink to={ROUTES.statistics} label="Statistics" />
         </nav>
       </div>

@@ -1,0 +1,208 @@
+import {
+  DashboardCardCompact,
+  DashboardCardStandard,
+  DashboardGrid,
+  LoadMoreFooter,
+} from '@/features/ideas-dashboard';
+import type { ProblemStage } from '@/features/problems/api/problems-api.types';
+import { getApiErrorMessage } from '@/shared/api/api-error';
+import { ROUTES } from '@/shared/config/paths';
+import { Button } from '@/shared/ui/button';
+import { memo, useEffect, useRef } from 'react';
+
+import {
+  useProblemsDashboardPreferences,
+  useProblemsDashboardQuery,
+} from '../hooks/use-problems-dashboard';
+import type { DashboardViewport } from '@/features/ideas-dashboard/lib/dashboard-grid-layout';
+import type { ProblemDashboardSort } from '@/features/ideas-dashboard';
+import { PROBLEMS_DASHBOARD_LABELS } from '../lib/problems-dashboard-labels';
+import type { ProblemDashboardCard } from '../model/problems-dashboard.types';
+
+import { ProblemsDashboardHeader } from './ProblemsDashboardHeader';
+
+function ProblemsGridSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <div
+          key={index}
+          className="border-brand-gray-200 h-72 animate-pulse rounded-lg border bg-white"
+        />
+      ))}
+    </div>
+  );
+}
+
+function renderProblemCompactCard(
+  card: ProblemDashboardCard,
+  options: { forceShowLinkedItems: boolean; columnCount: number },
+) {
+  return (
+    <DashboardCardCompact
+      card={card}
+      detailHref={ROUTES.problemDetail(card.id)}
+      emptyImageText={PROBLEMS_DASHBOARD_LABELS.emptyImage}
+      linkedSectionLabel={PROBLEMS_DASHBOARD_LABELS.linkedSectionLabel}
+      getLinkedItemDetailHref={ROUTES.ideaDetail}
+      forceShowLinkedItems={options.forceShowLinkedItems}
+      columnCount={options.columnCount}
+    />
+  );
+}
+
+function renderProblemStandardCard(
+  card: ProblemDashboardCard,
+  options: {
+    layout: 'vertical' | 'horizontal';
+    linkedItemsExpanded: boolean;
+    onToggleLinkedItems: (cardId: string) => void;
+    isMobile: boolean;
+  },
+) {
+  return (
+    <DashboardCardStandard
+      card={card}
+      detailHref={ROUTES.problemDetail(card.id)}
+      emptyDescriptionText={PROBLEMS_DASHBOARD_LABELS.emptyDescription}
+      emptyImageText={PROBLEMS_DASHBOARD_LABELS.emptyImage}
+      linkedSectionLabel={PROBLEMS_DASHBOARD_LABELS.linkedSectionLabel}
+      getLinkedItemDetailHref={ROUTES.ideaDetail}
+      linkedItemsScrollLeftAriaLabel={
+        PROBLEMS_DASHBOARD_LABELS.linkedItemsScrollLeftAriaLabel
+      }
+      layout="vertical"
+      linkedItemsExpanded={options.linkedItemsExpanded}
+      onToggleLinkedItems={options.onToggleLinkedItems}
+      isMobile={options.isMobile}
+      showHeroImage={false}
+    />
+  );
+}
+
+type ProblemsDashboardBodyProps = {
+  stage: ProblemStage | undefined;
+  sort: ProblemDashboardSort;
+  columnCount: number;
+  viewport: DashboardViewport;
+  linkedIdeasExpanded: boolean;
+};
+
+const ProblemsDashboardBody = memo(function ProblemsDashboardBody({
+  stage,
+  sort,
+  columnCount,
+  viewport,
+  linkedIdeasExpanded,
+}: ProblemsDashboardBodyProps) {
+  const {
+    problems,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    onLoadMore,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useProblemsDashboardQuery(stage, sort);
+
+  const isFetchingNextPageRef = useRef(isFetchingNextPage);
+
+  useEffect(() => {
+    isFetchingNextPageRef.current = isFetchingNextPage;
+  }, [isFetchingNextPage]);
+
+  if (isLoading) {
+    return <ProblemsGridSkeleton />;
+  }
+
+  if (isError) {
+    return (
+      <div className="border-brand-gray-200 rounded-lg border bg-white px-6 py-10 text-center">
+        <p className="text-brand-gray-700 mb-4 text-sm">
+          {getApiErrorMessage(error, {
+            invalidCredentialsMessage:
+              PROBLEMS_DASHBOARD_LABELS.loadErrorFallback,
+          })}
+        </p>
+        <Button type="button" variant="outline" onClick={() => refetch()}>
+          Try again
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <DashboardGrid
+        items={problems}
+        columnCount={columnCount}
+        viewport={viewport}
+        linkedItemsExpanded={linkedIdeasExpanded}
+        emptyMessage={PROBLEMS_DASHBOARD_LABELS.emptyGridMessage}
+        onLoadMore={onLoadMore}
+        hasNextPage={hasNextPage}
+        isFetchingNextPageRef={isFetchingNextPageRef}
+        renderCompactCard={renderProblemCompactCard}
+        renderStandardCard={(card, options) =>
+          renderProblemStandardCard(card, {
+            ...options,
+            isMobile: viewport === 'mobile',
+          })
+        }
+      />
+      <LoadMoreFooter
+        isFetchingNextPage={isFetchingNextPage}
+        loadingMessage={PROBLEMS_DASHBOARD_LABELS.loadingMore}
+      />
+    </>
+  );
+});
+
+export function ProblemsDashboardPage() {
+  const {
+    activeFilter,
+    setActiveFilter,
+    sort,
+    setSort,
+    stage,
+    columnCount,
+    setColumnCount,
+    viewport,
+    columnSelectOptions,
+    showColumnSelect,
+    linkedIdeasExpanded,
+    expandAllLinkedIdeas,
+    collapseAllLinkedIdeas,
+  } = useProblemsDashboardPreferences();
+
+  return (
+    <main className="bg-brand-neutral min-h-[calc(100vh-56px)]">
+      <div className="mx-auto max-w-[1600px] px-4 sm:px-8 lg:px-12">
+        <ProblemsDashboardHeader
+          activeFilter={activeFilter}
+          linkedIdeasExpanded={linkedIdeasExpanded}
+          onFilterChange={setActiveFilter}
+          sort={sort}
+          onSortChange={setSort}
+          columnCount={columnCount}
+          onColumnCountChange={setColumnCount}
+          columnSelectOptions={columnSelectOptions}
+          showColumnSelect={showColumnSelect}
+          onExpandAll={expandAllLinkedIdeas}
+          onCollapseAll={collapseAllLinkedIdeas}
+        />
+
+        <div className="pb-8">
+          <ProblemsDashboardBody
+            stage={stage}
+            sort={sort}
+            columnCount={columnCount}
+            viewport={viewport}
+            linkedIdeasExpanded={linkedIdeasExpanded}
+          />
+        </div>
+      </div>
+    </main>
+  );
+}

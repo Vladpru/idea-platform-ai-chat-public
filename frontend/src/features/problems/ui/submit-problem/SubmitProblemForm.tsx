@@ -5,6 +5,7 @@ import {
   FieldLabel,
 } from '@/features/ideas/ui/create-idea/Fields';
 import { SparklesIcon } from '@/features/ideas/ui/icons/SparklesIcon';
+import { DEFAULT_PROBLEMS_DASHBOARD_SEARCH } from '@/features/problems-dashboard/lib/constants';
 import { useSubmitProblemForm } from '@/features/problems/hooks/use-submit-problem-form';
 import {
   PROBLEM_STAGES,
@@ -71,20 +72,20 @@ export function SubmitProblemForm() {
 
   const handleCancel = () => {
     resetForm();
-    void navigate({ to: ROUTES.problems });
+    void navigate({ to: ROUTES.problems, search: DEFAULT_PROBLEMS_DASHBOARD_SEARCH });
   };
 
   const handleSaveDraft = async () => {
     const isSaved = await onSaveDraft();
     if (!isSaved) return;
-    void navigate({ to: ROUTES.problems });
+    void navigate({ to: ROUTES.problems, search: DEFAULT_PROBLEMS_DASHBOARD_SEARCH });
   };
 
   const handlePublish = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const isPublished = await onPublish();
     if (!isPublished) return;
-    void navigate({ to: ROUTES.problems });
+    void navigate({ to: ROUTES.problems, search: DEFAULT_PROBLEMS_DASHBOARD_SEARCH });
   };
 
   return (

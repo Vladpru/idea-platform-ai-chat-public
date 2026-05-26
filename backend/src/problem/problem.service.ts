@@ -373,6 +373,22 @@ export class ProblemService {
     return toProblemFormResponse(problem);
   }
 
+  private resolvePublicOrderBy(
+    sort: GetProblemsQueryDto['sort'],
+  ): Prisma.ProblemOrderByWithRelationInput {
+    switch (sort) {
+      case 'oldest':
+        return { publishedAt: 'asc' };
+      case 'most-ideas-linked':
+        return { ideas: { _count: 'desc' } };
+      case 'most-viewed':
+      case 'most-popular':
+      case 'newest':
+      default:
+        return { publishedAt: 'desc' };
+    }
+  }
+
   async findAllPublic(
     query: GetProblemsQueryDto,
   ): Promise<ProblemsFeedResponse> {
@@ -385,13 +401,15 @@ export class ProblemService {
       ...(query.stage !== undefined ? { stage: query.stage } : {}),
     };
 
+    const orderBy = this.resolvePublicOrderBy(query.sort);
+
     const [total, problems] = await this.prisma.$transaction([
       this.prisma.problem.count({ where }),
       this.prisma.problem.findMany({
         where,
         skip,
         take: limit,
-        orderBy: { publishedAt: 'desc' },
+        orderBy,
         include: PROBLEM_FORM_INCLUDE,
       }),
     ]);

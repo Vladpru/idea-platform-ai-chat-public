@@ -79,6 +79,7 @@ export function toProblemAuthorResponse(
 ): ProblemFormAuthor {
   return {
     id: author.id,
+    email: author.email,
     firstName: author.firstName,
     lastName: author.lastName,
     avatarUrl: author.avatarUrl,

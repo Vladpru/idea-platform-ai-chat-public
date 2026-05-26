@@ -4,6 +4,7 @@ export type ProblemStage = 'active' | 'completed' | 'archived';
 
 export type ProblemAuthor = {
   id: string;
+  email: string;
   firstName: string | null;
   lastName: string | null;
   avatarUrl: string | null;
@@ -54,10 +55,18 @@ export type ProblemDraft = ProblemForm;
 
 export type MyProblem = ProblemForm;
 
+export type ProblemListSort =
+  | 'newest'
+  | 'oldest'
+  | 'most-viewed'
+  | 'most-popular'
+  | 'most-ideas-linked';
+
 export type ProblemsListParams = {
   page?: number;
   limit?: number;
   stage?: ProblemStage;
+  sort?: ProblemListSort;
 };
 
 export type MyProblemsListParams = ProblemsListParams & {
