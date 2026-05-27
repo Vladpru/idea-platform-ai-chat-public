@@ -50,7 +50,7 @@ export function useIdeasDashboardPreferences() {
         replace: true,
       });
     }
-  }, []);
+  }, [navigate, sort, stage]);
 
   const columnCount = useDashboardGridPreferencesStore(s => s.columnCount);
   const setColumnCount = useDashboardGridPreferencesStore(

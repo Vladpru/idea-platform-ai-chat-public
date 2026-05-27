@@ -50,7 +50,7 @@ function NavLink({
 
 export function AppHeader() {
   return (
-    <header className="bg-brand-dark-blue flex items-center justify-between px-4 py-3 text-white sm:px-10">
+    <header className="bg-brand-dark-blue sticky top-0 z-50 flex items-center justify-between px-4 py-3 text-white shadow-sm sm:px-10">
       <div className="flex items-center gap-20 xl:gap-35 2xl:gap-45">
         <Link to="/" aria-label="Home">
           <img
@@ -105,13 +105,14 @@ export function AppHeader() {
           </DropdownMenu>
         </div>
 
-        <button
-          type="button"
+        <Link
+          to={ROUTES.search}
           className={HEADER_ACTION_BUTTON_CLASS}
           aria-label="Search"
+          search={{ q: '', t: 'ideas' }}
         >
           <Search size={22} strokeWidth={2} />
-        </button>
+        </Link>
 
         <button
           type="button"

@@ -87,6 +87,7 @@ model Idea {
   publishedAt  DateTime?  @map("published_at")
   createdAt    DateTime   @default(now()) @map("created_at")
   updatedAt    DateTime   @updatedAt @map("updated_at")
+  searchVector Unsupported("tsvector")? @map("search_vector")
 
   author   User          @relation("IdeaAuthor", fields: [authorId], references: [id], onDelete: Cascade)
   problems IdeaProblem[]
@@ -96,6 +97,7 @@ model Idea {
 
   @@index([authorId, status])
   @@index([status, publishedAt])
+  @@index([searchVector], type: Gin)
   @@map("idea")
 }
 
@@ -126,6 +128,7 @@ model Problem {
   publishedAt      DateTime?     @map("published_at")
   createdAt        DateTime      @default(now()) @map("created_at")
   updatedAt        DateTime      @updatedAt @map("updated_at")
+  searchVector Unsupported("tsvector")? @map("search_vector")
 
   author User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
   ideas  IdeaProblem[]
@@ -134,6 +137,7 @@ model Problem {
 
   @@index([authorId, status])
   @@index([status])
+  @@index([searchVector], type: Gin)
   @@map("problem")
 }
 

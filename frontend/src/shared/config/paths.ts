@@ -8,6 +8,7 @@ export const ROUTES = {
   problems: '/problems',
   problemsNew: '/problems/new',
   problemDetail: (id: string) => `/problems/${id}`,
+  search: '/search',
   statistics: '/statistics',
   profile: '/profile',
   profileIdeas: '/profile/ideas',
