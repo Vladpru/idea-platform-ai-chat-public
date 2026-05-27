@@ -1,5 +1,6 @@
 import type {
   CreateIdeaPayload,
+  IdeasDashboardParams,
   IdeasFeedResponse,
   IdeasListParams,
   SaveIdeaDraftPayload,
@@ -29,7 +30,16 @@ export async function fetchIdeas(
 export async function fetchMyIdeas(
   params?: IdeasListParams,
 ): Promise<IdeasFeedResponse> {
-  const { data } = await api.get<IdeasFeedResponse>(IDEAS_ROUTES.mine, {
+  const { data } = await api.get<IdeasFeedResponse>(IDEAS_ROUTES.myDashboard, {
+    params,
+  });
+  return data;
+}
+
+export async function fetchIdeasDashboard(
+  params: IdeasDashboardParams,
+): Promise<IdeasFeedResponse> {
+  const { data } = await api.get<IdeasFeedResponse>(IDEAS_ROUTES.myDashboard, {
     params,
   });
   return data;
@@ -197,6 +207,8 @@ export async function unlinkProblemFromIdea(
 export type {
   CreateIdeaPayload,
   IdeaSortOption,
+  IdeasDashboardParams,
+  IdeasDashboardTab,
   IdeasFeedMeta,
   IdeasFeedResponse,
   IdeasListParams,

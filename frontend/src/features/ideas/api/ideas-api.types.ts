@@ -17,11 +17,25 @@ export type IdeasFeedMeta = {
   page: number;
   limit: number;
   totalPages: number;
+  /** Present only in dashboard (BFF) responses */
+  totals?: {
+    published: number;
+    drafts: number;
+    joined: number;
+  };
 };
 
 export type IdeasFeedResponse = {
   data: IdeaFormResponseDto[];
   meta: IdeasFeedMeta;
+};
+
+export type IdeasDashboardTab = 'published' | 'drafts' | 'joined';
+
+export type IdeasDashboardParams = {
+  tab: IdeasDashboardTab;
+  page?: number;
+  limit?: number;
 };
 
 /** @deprecated Use IdeasFeedResponse — kept for gradual migration */

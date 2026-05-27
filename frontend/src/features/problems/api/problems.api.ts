@@ -3,6 +3,7 @@ import type {
   CreateProblemPayload,
   MyProblemsListParams,
   ProblemForm,
+  ProblemsDashboardParams,
   ProblemsFeedResponse,
   ProblemsListParams,
   UpdateProblemPayload,
@@ -37,9 +38,19 @@ export async function fetchProblems(
 export async function fetchMyProblems(
   params?: MyProblemsListParams,
 ): Promise<ProblemsFeedResponse> {
-  const { data } = await api.get<ProblemsFeedResponse>(PROBLEMS_ROUTES.mine, {
+  const { data } = await api.get<ProblemsFeedResponse>(PROBLEMS_ROUTES.myDashboard, {
     params,
   });
+  return data;
+}
+
+export async function fetchProblemsDashboard(
+  params: ProblemsDashboardParams,
+): Promise<ProblemsFeedResponse> {
+  const { data } = await api.get<ProblemsFeedResponse>(
+    PROBLEMS_ROUTES.myDashboard,
+    { params },
+  );
   return data;
 }
 
@@ -95,6 +106,8 @@ export type {
   ProblemAuthor,
   ProblemDraft,
   ProblemForm,
+  ProblemsDashboardParams,
+  ProblemsDashboardTab,
   ProblemsFeedMeta,
   ProblemsFeedResponse,
   ProblemsListParams,

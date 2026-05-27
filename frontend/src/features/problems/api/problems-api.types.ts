@@ -41,6 +41,7 @@ export type ProblemForm = {
     originalFilename: string;
   }>;
   author: ProblemAuthor;
+  viewer: { isAuthor: boolean; isMember: boolean; canJoin: boolean };
 };
 
 export type ProblemsFeedMeta = {
@@ -48,11 +49,25 @@ export type ProblemsFeedMeta = {
   page: number;
   limit: number;
   totalPages: number;
+  /** Present only in dashboard (BFF) responses */
+  totals?: {
+    published: number;
+    drafts: number;
+    joined: number;
+  };
 };
 
 export type ProblemsFeedResponse = {
   data: ProblemForm[];
   meta: ProblemsFeedMeta;
+};
+
+export type ProblemsDashboardTab = 'published' | 'joined' | 'drafts';
+
+export type ProblemsDashboardParams = {
+  tab: ProblemsDashboardTab;
+  page?: number;
+  limit?: number;
 };
 
 export type ProblemDraft = ProblemForm;
