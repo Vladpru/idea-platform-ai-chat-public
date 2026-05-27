@@ -48,9 +48,9 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
       </SheetTrigger>
       <SheetContent
         side="right"
-        className="bg-brand-gray-200 flex w-[300px] flex-col p-0 sm:w-[400px]"
+        className="brand-gray-200 flex w-[300px] flex-col p-0 sm:w-[400px]"
       >
-        <SheetHeader className="border-primary border-b p-4 text-left">
+        <SheetHeader className="border-primary border-b bg-white p-4 text-left">
           <SheetTitle className="text-lg font-bold">Menu</SheetTitle>
         </SheetHeader>
 
@@ -62,7 +62,7 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
           >
             <AccordionItem
               value="navigation"
-              className="bg-non-active-background rounded-sm border border-slate-200 px-3"
+              className="rounded-sm border border-slate-200 bg-white px-3"
             >
               <AccordionTrigger className="text-primary px-1 py-2 text-sm font-semibold hover:underline">
                 Navigation
@@ -101,7 +101,7 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
             </AccordionItem>
             <AccordionItem
               value="profile"
-              className="bg-non-active-background rounded-sm border border-slate-200 px-3"
+              className="rounded-sm border border-slate-200 bg-white px-3"
             >
               <AccordionTrigger className="text-primary px-1 py-2 text-sm font-semibold hover:underline">
                 Profile
@@ -123,7 +123,8 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
                 </div>
 
                 <Link
-                  to="/profile/problems"
+                  to={ROUTES.profileProblems}
+                  search={{ tab: 'published' }}
                   className={navLinkClass}
                   activeProps={{
                     className: 'bg-active-background text-primary',
@@ -132,7 +133,8 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
                   My Problems, Joins & Drafts
                 </Link>
                 <Link
-                  to="/profile/ideas"
+                  to={ROUTES.profileIdeas}
+                  search={{ tab: 'published' }}
                   className={navLinkClass}
                   activeProps={{
                     className: 'bg-active-background text-primary',
