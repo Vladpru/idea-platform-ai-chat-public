@@ -1,4 +1,5 @@
 import type { IdeaDetailsStats } from '@/features/idea-details/model/idea-details.types';
+import type React from 'react';
 
 export type DashboardEngagementStats = IdeaDetailsStats;
 
@@ -31,5 +32,5 @@ export type DashboardSortOption<TSort extends string = string> = {
 
 export type DashboardFilterTab<TFilter extends string = string> = {
   id: TFilter;
-  label: string;
+  label: React.ReactNode;
 };

@@ -1,9 +1,6 @@
-import type { ApiStage } from '@/features/ideas/model/idea.types';
+import type { ApiStage, IdeaStatus } from '@/features/ideas/model/idea.types';
 
-import type {
-  DashboardCardBase,
-  DashboardLinkedItem,
-} from './dashboard.types';
+import type { DashboardCardBase, DashboardLinkedItem } from './dashboard.types';
 
 export type IdeaDashboardFilter =
   | 'ALL'
@@ -22,10 +19,13 @@ export type IdeaDashboardSort =
 
 export type IdeaDashboardLinkedProblem = DashboardLinkedItem;
 
-export type IdeaDashboardCard = DashboardCardBase<IdeaDashboardLinkedProblem> & {
-  stageValue: ApiStage | null;
-  publishedAt: string | null;
-};
+export type IdeaDashboardCard =
+  DashboardCardBase<IdeaDashboardLinkedProblem> & {
+    stageValue: ApiStage | null;
+    publishedAt: string | null;
+    status: IdeaStatus;
+    isAuthor: boolean;
+  };
 
 export type ProblemDashboardFilter =
   | 'ALL'
