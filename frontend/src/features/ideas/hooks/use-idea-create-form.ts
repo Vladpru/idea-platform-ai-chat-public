@@ -17,12 +17,14 @@ import { useCreateIdeaStore } from '@/features/ideas/store/create-idea.store';
 import { IDEA_STATUS } from '@/features/ideas/model/idea.types';
 import type { ProblemDraft } from '@/features/problems';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect, useRef, useState, type BaseSyntheticEvent } from 'react';
 import { type Resolver, useForm } from 'react-hook-form';
 
 import { getApiErrorMessage } from '@/shared/api/api-error';
 
 export function useIdeaCreateForm() {
+  const { ideaId: urlIdeaId } = useSearch({ from: '/_auth/ideas/new' });
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [isDraggingImage, setIsDraggingImage] = useState(false);
@@ -77,13 +79,17 @@ export function useIdeaCreateForm() {
 
     const init = async () => {
       const store = useCreateIdeaStore.getState();
-      const draftId = store.draft.id;
+      const ideaIdToLoad = urlIdeaId ?? store.draft.id;
 
-      if (draftId) {
+      if (urlIdeaId && urlIdeaId !== store.draft.id) {
+        store.reset();
+      }
+
+      if (ideaIdToLoad) {
         store.setHydrating(true);
         store.setError(null);
         try {
-          const idea = await fetchIdeaById(draftId);
+          const idea = await fetchIdeaById(ideaIdToLoad);
           store.hydrateFromIdea(idea);
         } catch (err) {
           const message = getApiErrorMessage(err);
@@ -105,7 +111,7 @@ export function useIdeaCreateForm() {
     };
 
     void init();
-  }, [hasStoreHydrated, form]);
+  }, [hasStoreHydrated, form, urlIdeaId]);
 
   useEffect(() => {
     const subscription = form.watch(values => {
