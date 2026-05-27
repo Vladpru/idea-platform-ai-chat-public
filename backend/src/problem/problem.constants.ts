@@ -12,6 +12,7 @@ export const PROBLEM_FORM_INCLUDE = {
   author: {
     select: PROBLEM_FORM_AUTHOR_SELECT,
   },
+  members: true,
   ideas: {
     include: {
       idea: {
@@ -46,4 +47,4 @@ export const PROBLEM_FORM_INCLUDE = {
     },
   },
   media: true,
-} satisfies Prisma.ProblemInclude;
+} as const satisfies Prisma.ProblemInclude;

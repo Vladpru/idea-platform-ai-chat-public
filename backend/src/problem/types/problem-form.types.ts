@@ -9,6 +9,12 @@ type DecimalLike = {
   toString(): string;
 };
 
+export type ProblemViewerDto = {
+  isAuthor: boolean;
+  isMember: boolean;
+  canJoin: boolean;
+};
+
 export type ProblemFormAuthor = {
   id: string;
   email: string;
@@ -104,15 +110,21 @@ export type ProblemFormResponse = {
   tags: ProblemFormTag[];
   attachments: ProblemMediaResponse[];
   author: ProblemFormAuthor;
+  viewer: ProblemViewerDto;
 };
 
 export type ProblemsFeedMeta = {
-  total: number;
+  total?: number;
+  totals?: {
+    published: number;
+    drafts: number;
+    joined: number;
+  };
   page: number;
   limit: number;
   totalPages: number;
+  hasNextPage?: boolean;
 };
-
 export type ProblemsFeedResponse = {
   data: ProblemFormResponse[];
   meta: ProblemsFeedMeta;
