@@ -28,11 +28,6 @@ export const IDEA_FORM_INCLUDE = {
         select: {
           id: true,
           title: true,
-          description: true,
-          status: true,
-          author: {
-            select: IDEA_FORM_AUTHOR_SELECT,
-          },
         },
       },
     },

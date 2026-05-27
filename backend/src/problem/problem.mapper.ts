@@ -1,10 +1,6 @@
 import type {
-  IdeaStatus,
-  ProblemStage,
-  ProblemStatus,
-} from '../../generated/prisma/client';
-import type {
   ProblemFormAuthor,
+  ProblemFormRecord,
   ProblemFormResponse,
   ProblemFormTag,
   ProblemLinkedIdea,
@@ -25,39 +21,8 @@ type ProblemMediaInput = {
   createdAt: Date;
 };
 
-type ProblemIdeaLinkInput = {
-  isPrimary: boolean;
-  idea: {
-    id: string;
-    title: string | null;
-    status: IdeaStatus;
-    viewCount: number;
-    likeCount: number;
-    commentCount: number;
-    author: ProblemFormAuthor;
-    media: Array<{ url: string }>;
-  };
-};
-
 type ProblemTagLinkInput = {
   tag: ProblemFormTag;
-};
-
-type ProblemInput = {
-  id: string;
-  status: ProblemStatus;
-  stage: ProblemStage | null;
-  title: string;
-  description: string;
-  valueProposition: string | null;
-  costBenefit: { toString(): string } | null;
-  category: string | null;
-  impact: string | null;
-  publishedAt: Date | null;
-  author: ProblemFormAuthor;
-  ideas: ProblemIdeaLinkInput[];
-  tags: ProblemTagLinkInput[];
-  media: ProblemMediaInput[];
 };
 
 const ATTACHMENT: ProblemMediaResponse['kind'] = 'ATTACHMENT';
@@ -90,17 +55,17 @@ export function toProblemAuthorResponse(
   };
 }
 
-function toProblemLinkedIdea(link: ProblemIdeaLinkInput): ProblemLinkedIdea {
+function toProblemLinkedIdea(
+  link: ProblemFormRecord['ideas'][number],
+): ProblemLinkedIdea {
   return {
     id: link.idea.id,
     title: link.idea.title,
-    status: link.idea.status,
     isPrimary: link.isPrimary,
     imageUrl: link.idea.media[0]?.url ?? null,
     viewCount: link.idea.viewCount,
     likeCount: link.idea.likeCount,
     commentCount: link.idea.commentCount,
-    author: toProblemAuthorResponse(link.idea.author),
   };
 }
 
@@ -112,7 +77,7 @@ function toProblemFormTag(link: ProblemTagLinkInput): ProblemFormTag {
 }
 
 export function toProblemFormResponse(
-  problem: ProblemInput,
+  problem: ProblemFormRecord,
 ): ProblemFormResponse {
   const attachments = problem.media
     .filter(m => m.kind === ATTACHMENT)

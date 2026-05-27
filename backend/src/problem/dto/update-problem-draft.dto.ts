@@ -32,11 +32,9 @@ export class UpdateProblemDraftDto {
   @ApiPropertyOptional({
     example:
       'Teams lack real-time insight into how assets are used across sites.',
-    minLength: 8,
   })
   @IsOptional()
   @IsString()
-  @MinLength(8)
   description?: string;
 
   @ApiPropertyOptional({

@@ -1,5 +1,7 @@
 import { useIdeaCreateForm } from '@/features/ideas/hooks/use-idea-create-form';
+import { hasCreateIdeaUnsavedProgress } from '@/features/ideas/lib/create-idea/unsaved-progress';
 import { IDEA_STAGES } from '@/features/ideas/lib/stages';
+import { useCreateIdeaStore } from '@/features/ideas/store/create-idea.store';
 import {
   outlineBtnClass,
   publishBtnClass,
@@ -14,7 +16,10 @@ import { useDropzone } from 'react-dropzone';
 import { Controller } from 'react-hook-form';
 
 import { ROUTES } from '@/shared/config/paths';
+import { useCreateFormLeaveGuard } from '@/shared/hooks/use-create-form-leave-guard';
+import { SAVE_IDEA_PROGRESS_DESCRIPTION } from '@/shared/lib/create-form-leave/copy';
 import { cn } from '@/shared/lib/utils';
+import { SaveProgressBeforeLeavingModal } from '@/shared/ui/save-progress-before-leaving-modal';
 import { TagsInput } from '@/shared/ui/TagsInput';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
@@ -68,14 +73,31 @@ export function IdeaCreateForm() {
     isPublishing,
     isHydrating,
     error,
-    resetCreateIdea,
+    clearCreateIdeaSession,
   } = useIdeaCreateForm();
 
   const {
     register,
     control,
-    formState: { errors },
+    formState: { errors, isDirty: formIsDirty },
   } = form;
+
+  const hasUnsavedProgress = useCreateIdeaStore(
+    state => hasCreateIdeaUnsavedProgress(state) || formIsDirty,
+  );
+
+  const {
+    leaveModalOpen,
+    requestLeave,
+    handleLeaveModalOpenChange,
+    handleDiscard,
+    handleSaveAsDraft: handleLeaveSaveAsDraft,
+  } = useCreateFormLeaveGuard({
+    hasUnsavedProgress,
+    isBusy,
+    onSaveDraft,
+    onDiscard: clearCreateIdeaSession,
+  });
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
@@ -107,8 +129,9 @@ export function IdeaCreateForm() {
   });
 
   const handleCancel = () => {
-    resetCreateIdea();
-    void navigate({ to: ROUTES.ideas, search: { sort: 'newest' } });
+    requestLeave(() => {
+      void navigate({ to: ROUTES.ideas, search: { sort: 'newest' } });
+    });
   };
 
   const handleSaveDraft = async () => {
@@ -125,6 +148,7 @@ export function IdeaCreateForm() {
   };
 
   return (
+    <>
     <form
       id={formId}
       className="space-y-8"
@@ -332,5 +356,15 @@ export function IdeaCreateForm() {
         </Button>
       </div>
     </form>
+
+    <SaveProgressBeforeLeavingModal
+      open={leaveModalOpen}
+      onOpenChange={handleLeaveModalOpenChange}
+      onDiscard={handleDiscard}
+      onSaveAsDraft={() => void handleLeaveSaveAsDraft()}
+      isSaving={isSavingDraft}
+      description={SAVE_IDEA_PROGRESS_DESCRIPTION}
+    />
+    </>
   );
 }

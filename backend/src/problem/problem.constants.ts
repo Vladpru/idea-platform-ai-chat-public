@@ -18,13 +18,9 @@ export const PROBLEM_FORM_INCLUDE = {
         select: {
           id: true,
           title: true,
-          status: true,
           viewCount: true,
           likeCount: true,
           commentCount: true,
-          author: {
-            select: PROBLEM_FORM_AUTHOR_SELECT,
-          },
           media: {
             where: { kind: MediaKind.MAIN_IMAGE },
             take: 1,

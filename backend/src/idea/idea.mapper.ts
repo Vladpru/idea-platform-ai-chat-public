@@ -4,7 +4,7 @@ import { IDEA_FORM_INCLUDE } from './idea.constants';
 import type {
   IdeaFormAuthor,
   IdeaFormMember,
-  IdeaFormResponse,
+  IdeaFormResponseWithProblem,
   IdeaMediaResponse,
 } from './types/idea-form.types';
 
@@ -47,7 +47,7 @@ export function toIdeaMediaResponse(
 export function toIdeaFormResponse(
   idea: IdeaFormRecord,
   currentUserId?: string,
-): IdeaFormResponse {
+): IdeaFormResponseWithProblem {
   const mainImages = idea.media.filter(m => m.kind === MediaKind.MAIN_IMAGE);
   const mainImage = mainImages[0] ?? null;
   const attachments = idea.media
@@ -79,10 +79,7 @@ export function toIdeaFormResponse(
     problems: idea.problems.map(({ problem, isPrimary }) => ({
       id: problem.id,
       title: problem.title,
-      description: problem.description,
-      status: problem.status,
       isPrimary,
-      author: toIdeaAuthorResponse(problem.author),
     })),
     tags: idea.tags.map(({ tag }) => ({
       id: tag.id,

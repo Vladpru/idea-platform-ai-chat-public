@@ -1,3 +1,4 @@
+import { useCreateIdeaStore } from '@/features/ideas/store/create-idea.store';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
@@ -50,17 +51,26 @@ function parseSessionUser(raw: unknown): SessionUser | null {
   };
 }
 
+function clearUserScopedClientState() {
+  useCreateIdeaStore.getState().reset();
+}
+
 export const useAuthSessionStore = create<AuthSessionState>()(
   persist(
-    set => ({
+    (set, get) => ({
       user: null,
       accessToken: null,
       setSession: (apiUser, accessToken) => {
+        const prevUserId = get().user?.id;
         const user = parseSessionUser(apiUser);
         if (!user) {
           clearStoredAuthToken();
+          clearUserScopedClientState();
           set({ user: null, accessToken: null });
           return;
+        }
+        if (prevUserId && prevUserId !== user.id) {
+          clearUserScopedClientState();
         }
         set({ user, accessToken });
         setStoredAuthToken(accessToken);
@@ -70,6 +80,7 @@ export const useAuthSessionStore = create<AuthSessionState>()(
         setStoredAuthToken(accessToken);
       },
       clearSession: () => {
+        clearUserScopedClientState();
         clearStoredAuthToken();
         set({ user: null, accessToken: null });
         void useAuthSessionStore.persist.clearStorage();
