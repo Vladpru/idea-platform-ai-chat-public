@@ -18,6 +18,7 @@ export function ProblemCardActions({
   isDeleting = false,
 }: ProblemCardActionsProps) {
   const navigate = useNavigate();
+
   const isDraft = card.status === 'DRAFT';
   if (!card.isAuthor) return null;
 
@@ -32,7 +33,9 @@ export function ProblemCardActions({
       icon: <Trash2 className="size-4" />,
       variant: 'danger',
       disabled: isDeleting,
-      onSelect: () => onDelete?.(card.id),
+      onSelect: () => {
+        setTimeout(() => onDelete?.(card.id), 0);
+      },
     },
   ];
 

@@ -5,11 +5,13 @@ import { DashboardCardStandard } from '@/features/ideas-dashboard';
 import { PROBLEMS_DASHBOARD_LABELS } from '@/features/problems-dashboard/lib/problems-dashboard-labels';
 import { useDeleteProblemMutation } from '@/features/problems/hooks/use-problem-mutations';
 import type { TabDefinition } from '@/shared/ui/TabLabelWithBadge';
+import { Button } from '@/shared/ui/button';
 
 import { useMyProblemsDashboard } from '../hooks/use-my-problems-dashboard';
 import { ProblemCardActions } from './ProblemCardActions';
 import { ProfileDashboardView } from './ProfileDashboardView';
 import { useMemo } from 'react';
+import { Link } from '@tanstack/react-router';
 
 export function ProfileProblemsView() {
   const {
@@ -37,6 +39,29 @@ export function ProfileProblemsView() {
     [totals],
   );
 
+  const getEmptyStateContent = () => {
+    switch (tab) {
+      case 'drafts':
+        return {
+          ...PROBLEMS_DASHBOARD_LABELS.emptyStates.drafts,
+          href: ROUTES.problemsNew,
+        };
+      case 'joined':
+        return {
+          ...PROBLEMS_DASHBOARD_LABELS.emptyStates.joined,
+          href: ROUTES.problems,
+        };
+      case 'published':
+      default:
+        return {
+          ...PROBLEMS_DASHBOARD_LABELS.emptyStates.published,
+          href: ROUTES.problemsNew,
+        };
+    }
+  };
+
+  const emptyContent = getEmptyStateContent();
+
   type ProblemCard = (typeof items)[number];
 
   return (
@@ -56,13 +81,28 @@ export function ProfileProblemsView() {
         isFetchingNextPage,
         fetchNextPage,
       }}
-      emptyLabel={PROBLEMS_DASHBOARD_LABELS.emptyGridMessage}
+      emptyState={
+        <div className="flex flex-col items-center justify-center py-8">
+          <h3 className="text-brand-black mb-2 text-lg font-bold">
+            {emptyContent.title}
+          </h3>
+          <p className="text-brand-gray-700 mb-6 text-sm">
+            {emptyContent.description}
+          </p>
+          <Link to={emptyContent.href}>
+            <Button className="bg-brand-dark-blue hover:bg-brand-dark-blue/90 text-white">
+              {emptyContent.buttonText}
+            </Button>
+          </Link>
+        </div>
+      }
       renderErrorMessage={err =>
         getApiErrorMessage(err, {
           invalidCredentialsMessage:
             PROBLEMS_DASHBOARD_LABELS.loadErrorFallback,
         })
       }
+      tabsMobileMode="row"
       loadingMoreLabel={PROBLEMS_DASHBOARD_LABELS.loadingMore}
       layoutId="profile-problems-dashboard-tabs-underline"
       deleteMutation={deleteMutation}

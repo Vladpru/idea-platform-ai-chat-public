@@ -4,7 +4,7 @@ import {
   useAuthSessionStore,
 } from '@/features/auth/model/auth-session-store';
 import { ROUTES } from '@/shared/config/paths';
-import { Link } from '@tanstack/react-router';
+import { Link, useLocation } from '@tanstack/react-router';
 import { Menu } from 'lucide-react';
 import { useState } from 'react';
 
@@ -32,11 +32,21 @@ const navLinkClass =
   'block px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:text-primary rounded-md';
 
 export function MobileMenu({ triggerClassName }: MobileMenuProps) {
+  const [isOpen, setIsOpen] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const user = useAuthSessionStore(s => s.user);
+  const location = useLocation();
+  const [prevPath, setPrevPath] = useState(location.pathname);
+
+  if (location.pathname !== prevPath) {
+    setPrevPath(location.pathname);
+    if (isOpen) {
+      setIsOpen(false);
+    }
+  }
 
   return (
-    <Sheet>
+    <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
         <button
           type="button"
