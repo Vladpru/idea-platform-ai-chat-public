@@ -56,6 +56,7 @@ model User {
   ideas               Idea[]               @relation("IdeaAuthor")
   problems            Problem[]
   joinedIdeas         IdeaMember[]
+  joinedProblems      ProblemMember[]
 
   @@map("user")
 }
@@ -129,6 +130,7 @@ model Problem {
   createdAt        DateTime      @default(now()) @map("created_at")
   updatedAt        DateTime      @updatedAt @map("updated_at")
   searchVector Unsupported("tsvector")? @map("search_vector")
+  members ProblemMember[]
 
   author User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
   ideas  IdeaProblem[]
@@ -223,4 +225,17 @@ model ProblemMedia {
 
   @@index([problemId, kind])
   @@map("problem_media")
+}
+
+model ProblemMember {
+  problemId String   @map("problem_id")
+  userId    String   @map("user_id")
+  joinedAt  DateTime @default(now()) @map("joined_at")
+
+  problem   Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([problemId, userId])
+  @@index([userId])
+  @@map("problem_member")
 }
