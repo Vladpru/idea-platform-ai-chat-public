@@ -1,5 +1,4 @@
 import { outlineBtn } from '@/features/profile/ui/profile-view-classes';
-
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
 import { AppModal } from '@/shared/ui/app-modal';
@@ -14,6 +13,9 @@ export type ConfirmModalProps = {
   onConfirm: () => void;
   onCancel?: () => void;
   isPending?: boolean;
+  confirmClassName?: string;
+  cancelClassName?: string;
+  reverseButtons?: boolean;
 };
 
 export function ConfirmModal({
@@ -26,14 +28,48 @@ export function ConfirmModal({
   onConfirm,
   onCancel,
   isPending = false,
+  confirmClassName,
+  cancelClassName,
+  reverseButtons = false,
 }: ConfirmModalProps) {
   const handleCancel = () => {
-    if (isPending) {
-      return;
-    }
+    if (isPending) return;
     onCancel?.();
     onOpenChange(false);
   };
+
+  const confirmButton = (
+    <Button
+      type="button"
+      variant="outline"
+      className={cn(
+        outlineBtn,
+        'text-brand-orange border-brand-orange hover:bg-brand-orange/10 w-full px-4 py-1 sm:w-auto md:h-11 md:w-39',
+        confirmClassName,
+      )}
+      disabled={isPending}
+      onClick={onConfirm}
+      isLoading={isPending}
+    >
+      {confirmLabel}
+    </Button>
+  );
+
+  const cancelButton = (
+    <Button
+      type="button"
+      variant="outline"
+      className={cn(
+        outlineBtn,
+        'w-full px-4 py-1 sm:w-auto md:h-11 md:w-39',
+        cancelClassName,
+      )}
+      disabled={isPending}
+      onClick={handleCancel}
+    >
+      {cancelLabel}
+    </Button>
+  );
 
   return (
     <AppModal
@@ -44,31 +80,17 @@ export function ConfirmModal({
       preventClose={isPending}
     >
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center sm:gap-4">
-        <Button
-          type="button"
-          variant="outline"
-          className={cn(
-            outlineBtn,
-            'text-brand-orange border-brand-orange hover:bg-brand-orange/10 w-full px-4 py-1 sm:w-auto md:h-11 md:w-39',
-          )}
-          disabled={isPending}
-          onClick={onConfirm}
-          isLoading={isPending}
-        >
-          {confirmLabel}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className={cn(
-            outlineBtn,
-            'w-full px-4 py-1 sm:w-auto md:h-11 md:w-39',
-          )}
-          disabled={isPending}
-          onClick={handleCancel}
-        >
-          {cancelLabel}
-        </Button>
+        {reverseButtons ? (
+          <>
+            {cancelButton}
+            {confirmButton}
+          </>
+        ) : (
+          <>
+            {confirmButton}
+            {cancelButton}
+          </>
+        )}
       </div>
     </AppModal>
   );

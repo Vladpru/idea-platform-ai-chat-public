@@ -26,6 +26,7 @@ import {
 } from '../prisma/problem-tag.queries';
 import { CreateProblemDto } from './dto/create-problem.dto';
 import { GetProblemsQueryDto } from './dto/get-problems-query.dto';
+import { MyProblemsQueryDto } from './dto/my-problems.dto';
 import { UpdateProblemDraftDto } from './dto/update-problem-draft.dto';
 import { PROBLEM_FORM_INCLUDE } from './problem.constants';
 import { toProblemFormResponse } from './problem.mapper';
@@ -370,7 +371,7 @@ export class ProblemService {
       return results;
     });
 
-    return toProblemFormResponse(problem);
+    return toProblemFormResponse(problem, authorId);
   }
 
   private resolvePublicOrderBy(
@@ -391,6 +392,7 @@ export class ProblemService {
 
   async findAllPublic(
     query: GetProblemsQueryDto,
+    currentUserId?: string,
   ): Promise<ProblemsFeedResponse> {
     const page = query.page ?? 1;
     const limit = Math.min(query.limit ?? 10, 50);
@@ -417,41 +419,74 @@ export class ProblemService {
     const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
 
     return {
-      data: problems.map(toProblemFormResponse),
+      data: problems.map(problem =>
+        toProblemFormResponse(problem, currentUserId),
+      ),
       meta: { total, page, limit, totalPages },
     };
   }
 
-  async findMine(
-    authorId: string,
-    query: GetProblemsQueryDto,
-  ): Promise<ProblemsFeedResponse> {
-    const page = query.page ?? 1;
-    const limit = Math.min(query.limit ?? 10, 50);
+  async getDashboardFeed(userId: string, query: MyProblemsQueryDto) {
+    const page = Math.max(1, query.page ?? 1);
+    const limit = Math.max(1, Math.min(query.limit ?? 10, 50));
     const skip = (page - 1) * limit;
 
-    const where: Prisma.ProblemWhereInput = {
-      authorId,
-      ...(query.status !== undefined ? { status: query.status } : {}),
-      ...(query.stage !== undefined ? { stage: query.stage } : {}),
+    const basePublishedWhere: Prisma.ProblemWhereInput = {
+      authorId: userId,
+      status: ProblemStatus.PUBLISHED,
     };
 
-    const [total, problems] = await this.prisma.$transaction([
-      this.prisma.problem.count({ where }),
-      this.prisma.problem.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { updatedAt: 'desc' },
-        include: PROBLEM_FORM_INCLUDE,
-      }),
-    ]);
+    const baseDraftsWhere: Prisma.ProblemWhereInput = {
+      authorId: userId,
+      status: ProblemStatus.DRAFT,
+    };
 
-    const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
+    const baseJoinedWhere: Prisma.ProblemWhereInput = {
+      status: ProblemStatus.PUBLISHED,
+      members: { some: { userId } },
+    };
+
+    const [publishedTotal, draftsTotal, joinedTotal, activeItems] =
+      await this.prisma.$transaction([
+        this.prisma.problem.count({ where: basePublishedWhere }),
+        this.prisma.problem.count({ where: baseDraftsWhere }),
+        this.prisma.problem.count({ where: baseJoinedWhere }),
+        this.prisma.problem.findMany({
+          where:
+            query.tab === 'published'
+              ? basePublishedWhere
+              : query.tab === 'drafts'
+                ? baseDraftsWhere
+                : baseJoinedWhere,
+          skip,
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+          include: PROBLEM_FORM_INCLUDE,
+        }),
+      ]);
+
+    const activeTotal =
+      query.tab === 'published'
+        ? publishedTotal
+        : query.tab === 'drafts'
+          ? draftsTotal
+          : joinedTotal;
+
+    const totalPages = activeTotal === 0 ? 0 : Math.ceil(activeTotal / limit);
 
     return {
-      data: problems.map(toProblemFormResponse),
-      meta: { total, page, limit, totalPages },
+      data: activeItems.map(problem => toProblemFormResponse(problem, userId)),
+      meta: {
+        totals: {
+          published: publishedTotal,
+          drafts: draftsTotal,
+          joined: joinedTotal,
+        },
+        page,
+        limit,
+        totalPages,
+        hasNextPage: skip + limit < activeTotal,
+      },
     };
   }
 
@@ -475,7 +510,7 @@ export class ProblemService {
       throw new NotFoundException(PROBLEM_NOT_FOUND);
     }
 
-    return toProblemFormResponse(problem);
+    return toProblemFormResponse(problem, userId);
   }
 
   async update(
@@ -517,7 +552,7 @@ export class ProblemService {
       return updated;
     });
 
-    return toProblemFormResponse(problem);
+    return toProblemFormResponse(problem, authorId);
   }
 
   async uploadAttachment(

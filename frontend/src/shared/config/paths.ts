@@ -4,9 +4,12 @@ export const ROUTES = {
   register: '/register',
   ideas: '/ideas',
   ideasNew: '/ideas/new',
+  ideaCreation: (id: string) => `/ideas/new?ideaId=${encodeURIComponent(id)}`,
   ideaDetail: (id: string) => `/ideas/${id}`,
   problems: '/problems',
   problemsNew: '/problems/new',
+  problemCreation: (id: string) =>
+    `/problems/new?problemId=${encodeURIComponent(id)}`,
   problemDetail: (id: string) => `/problems/${id}`,
   search: '/search',
   statistics: '/statistics',

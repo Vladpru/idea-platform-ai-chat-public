@@ -13,7 +13,9 @@ function toStageLabel(stage: string | null): string {
   return apiStage ?? stage.toUpperCase();
 }
 
-export function toIdeaDashboardCard(dto: IdeaFormResponseDto): IdeaDashboardCard {
+export function toIdeaDashboardCard(
+  dto: IdeaFormResponseDto,
+): IdeaDashboardCard {
   return {
     id: dto.id,
     title: dto.title?.trim() || 'Untitled idea',
@@ -48,5 +50,7 @@ export function toIdeaDashboardCard(dto: IdeaFormResponseDto): IdeaDashboardCard
         },
       })) ?? [],
     publishedAt: dto.publishedAt,
+    status: dto.status,
+    isAuthor: dto.viewer?.isAuthor ?? false,
   };
 }

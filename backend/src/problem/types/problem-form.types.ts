@@ -1,11 +1,15 @@
 import type {
   MediaProvider,
+  Prisma,
   ProblemStatus,
 } from '../../../generated/prisma/client';
 import type { MediaKind } from '../../../generated/prisma/client';
+import { PROBLEM_FORM_INCLUDE } from '../problem.constants';
 
-type DecimalLike = {
-  toString(): string;
+export type ProblemViewerDto = {
+  isAuthor: boolean;
+  isMember: boolean;
+  canJoin: boolean;
 };
 
 export type ProblemFormAuthor = {
@@ -33,34 +37,9 @@ export type ProblemMediaRecord = {
   createdAt: Date;
 };
 
-export type ProblemFormRecord = {
-  id: string;
-  status: ProblemStatus;
-  stage: string | null;
-  title: string;
-  description: string;
-  valueProposition: string | null;
-  costBenefit: DecimalLike | null;
-  category: string | null;
-  impact: string | null;
-  publishedAt: Date | null;
-  author: ProblemFormAuthor;
-  ideas: Array<{
-    isPrimary: boolean;
-    idea: {
-      id: string;
-      title: string | null;
-      viewCount: number;
-      likeCount: number;
-      commentCount: number;
-      media: Array<{ url: string }>;
-    };
-  }>;
-  tags: Array<{
-    tag: ProblemFormTag;
-  }>;
-  media: ProblemMediaRecord[];
-};
+export type ProblemFormRecord = Prisma.ProblemGetPayload<{
+  include: typeof PROBLEM_FORM_INCLUDE;
+}>;
 
 export type ProblemLinkedIdea = {
   id: string;
@@ -99,15 +78,21 @@ export type ProblemFormResponse = {
   tags: ProblemFormTag[];
   attachments: ProblemMediaResponse[];
   author: ProblemFormAuthor;
+  viewer: ProblemViewerDto;
 };
 
 export type ProblemsFeedMeta = {
-  total: number;
+  total?: number;
+  totals?: {
+    published: number;
+    drafts: number;
+    joined: number;
+  };
   page: number;
   limit: number;
   totalPages: number;
+  hasNextPage?: boolean;
 };
-
 export type ProblemsFeedResponse = {
   data: ProblemFormResponse[];
   meta: ProblemsFeedMeta;

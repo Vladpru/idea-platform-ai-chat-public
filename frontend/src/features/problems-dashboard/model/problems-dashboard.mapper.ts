@@ -53,5 +53,7 @@ export function toProblemDashboardCard(dto: ProblemForm): ProblemDashboardCard {
         },
       })) ?? [],
     publishedAt: dto.publishedAt,
+    status: dto.status,
+    isAuthor: dto.viewer?.isAuthor ?? false,
   };
 }

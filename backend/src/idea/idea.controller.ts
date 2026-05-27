@@ -35,8 +35,8 @@ import {
 import type { Request } from 'express';
 import { memoryStorage } from 'multer';
 
-import { IdeaStatus } from '../../generated/prisma/client';
 import { JwtAuth } from '../shared/decorators/jwt-auth.decorator';
+import { MyIdeasQueryDto } from './dto';
 import { CreateIdeaDto } from './dto/create-idea.dto';
 import { GetIdeasQueryDto } from './dto/get-ideas-query.dto';
 import { UpdateIdeaDraftDto } from './dto/update-idea-draft.dto';
@@ -74,6 +74,16 @@ export class IdeaController {
     return this.ideaService.create(req.user.id, dto);
   }
 
+  @Get('my-dashboard')
+  @JwtAuth()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get ideas dashboard feed with tabs and counters' })
+  @ApiOkResponse({ description: 'Paginated ideas and tab totals' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  findMine(@Query() query: MyIdeasQueryDto, @Req() req: AuthenticatedRequest) {
+    return this.ideaQueryService.getDashboardFeed(req.user.id, query);
+  }
+
   @Get()
   @JwtAuth()
   @ApiBearerAuth()
@@ -88,30 +98,21 @@ export class IdeaController {
   })
   @ApiOkResponse({ description: 'Paginated published ideas' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
-  findAll(
-    @Query() query: GetIdeasQueryDto,
-    @Req() req: AuthenticatedRequest,
-  ) {
+  findAll(@Query() query: GetIdeasQueryDto, @Req() req: AuthenticatedRequest) {
     return this.ideaQueryService.findAllPublic(query, req.user.id);
   }
 
-  @Get('mine')
+  @Get(':id/similar')
   @JwtAuth()
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'List current user ideas (drafts and published)' })
-  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
-  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
-  @ApiQuery({ name: 'stage', required: false, enum: Stage })
-  @ApiQuery({ name: 'status', required: false, enum: IdeaStatus })
-  @ApiQuery({
-    name: 'sort',
-    required: false,
-    enum: ['newest', 'oldest', 'views', 'likes', 'comments'],
-  })
-  @ApiOkResponse({ description: 'Paginated ideas for the current user' })
-  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
-  findMine(@Query() query: GetIdeasQueryDto, @Req() req: AuthenticatedRequest) {
-    return this.ideaQueryService.findMyIdeas(req.user.id, query);
+  @ApiOperation({ summary: 'Get top 3 similar ideas based on text relevance' })
+  @ApiOkResponse({ description: 'Array of top 3 similar ideas' })
+  @ApiNotFoundResponse({ description: 'Idea not found' })
+  findSimilar(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.ideaQueryService.findSimilar(id, req.user.id);
   }
 
   @Get(':id')
@@ -278,19 +279,6 @@ export class IdeaController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.ideaService.updatePublished(id, req.user.id, dto);
-  }
-
-  @Get(':id/similar')
-  @JwtAuth()
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get top 3 similar ideas based on text relevance' })
-  @ApiOkResponse({ description: 'Array of top 3 similar ideas' })
-  @ApiNotFoundResponse({ description: 'Idea not found' })
-  findSimilar(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Req() req: AuthenticatedRequest,
-  ) {
-    return this.ideaQueryService.findSimilar(id, req.user.id);
   }
 
   @Post(':id/join')

@@ -78,10 +78,16 @@ function toProblemFormTag(link: ProblemTagLinkInput): ProblemFormTag {
 
 export function toProblemFormResponse(
   problem: ProblemFormRecord,
+  currentUserId?: string,
 ): ProblemFormResponse {
   const attachments = problem.media
     .filter(m => m.kind === ATTACHMENT)
     .sort((a, b) => a.sortOrder - b.sortOrder);
+
+  const isAuthor = currentUserId ? problem.author.id === currentUserId : false;
+  const isMember = currentUserId
+    ? problem.members.some(m => m.userId === currentUserId)
+    : false;
 
   return {
     id: problem.id,
@@ -98,5 +104,14 @@ export function toProblemFormResponse(
     tags: problem.tags.map(toProblemFormTag),
     attachments: attachments.map(toProblemMediaResponse),
     author: toProblemAuthorResponse(problem.author),
+    viewer: {
+      isAuthor,
+      isMember,
+      canJoin:
+        !!currentUserId &&
+        !isAuthor &&
+        !isMember &&
+        problem.status === 'PUBLISHED',
+    },
   };
 }

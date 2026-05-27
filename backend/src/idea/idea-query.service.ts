@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { IdeaStatus, Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { MyIdeasQueryDto } from './dto';
 import {
   GetIdeasQueryDto,
   type IdeaSortOption,
@@ -73,38 +74,67 @@ export class IdeaQueryService {
     };
   }
 
-  async findMyIdeas(
-    authorId: string,
-    query: GetIdeasQueryDto,
-  ): Promise<IdeasFeedResponse> {
+  async getDashboardFeed(userId: string, query: MyIdeasQueryDto) {
     const page = Math.max(1, query.page ?? 1);
     const limit = Math.max(1, Math.min(query.limit ?? 10, 50));
     const skip = (page - 1) * limit;
 
-    const where: Prisma.IdeaWhereInput = {
-      authorId,
-      ...(query.status !== undefined ? { status: query.status } : {}),
-      ...(query.stage !== undefined ? { stage: query.stage } : {}),
+    const basePublishedWhere: Prisma.IdeaWhereInput = {
+      authorId: userId,
+      status: IdeaStatus.PUBLISHED,
     };
 
-    const orderBy = this.resolveOrderBy(query.sort, { createdAt: 'desc' });
+    const baseDraftsWhere: Prisma.IdeaWhereInput = {
+      authorId: userId,
+      status: IdeaStatus.DRAFT,
+    };
 
-    const [total, ideas] = await this.prisma.$transaction([
-      this.prisma.idea.count({ where }),
-      this.prisma.idea.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy,
-        include: IDEA_FORM_INCLUDE,
-      }),
-    ]);
+    const baseJoinedWhere: Prisma.IdeaWhereInput = {
+      status: IdeaStatus.PUBLISHED,
+      members: { some: { userId } },
+    };
 
-    const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
+    const [publishedTotal, draftsTotal, joinedTotal, activeItems] =
+      await this.prisma.$transaction([
+        this.prisma.idea.count({ where: basePublishedWhere }),
+        this.prisma.idea.count({ where: baseDraftsWhere }),
+        this.prisma.idea.count({ where: baseJoinedWhere }),
+        this.prisma.idea.findMany({
+          where:
+            query.tab === 'published'
+              ? basePublishedWhere
+              : query.tab === 'drafts'
+                ? baseDraftsWhere
+                : baseJoinedWhere,
+          skip,
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+          include: IDEA_FORM_INCLUDE,
+        }),
+      ]);
+
+    const activeTotal =
+      query.tab === 'published'
+        ? publishedTotal
+        : query.tab === 'drafts'
+          ? draftsTotal
+          : joinedTotal;
+
+    const totalPages = activeTotal === 0 ? 0 : Math.ceil(activeTotal / limit);
 
     return {
-      data: ideas.map(idea => toIdeaFormResponse(idea, authorId)),
-      meta: { total, page, limit, totalPages },
+      data: activeItems.map(idea => toIdeaFormResponse(idea, userId)),
+      meta: {
+        totals: {
+          published: publishedTotal,
+          drafts: draftsTotal,
+          joined: joinedTotal,
+        },
+        page,
+        limit,
+        totalPages,
+        hasNextPage: skip + limit < activeTotal,
+      },
     };
   }
 

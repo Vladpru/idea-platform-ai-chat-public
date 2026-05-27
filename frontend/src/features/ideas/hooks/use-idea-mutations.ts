@@ -19,6 +19,7 @@ import {
   uploadIdeaMainImage,
   uploadIdeaMedia,
 } from '@/features/ideas/api/ideas.api';
+import { myIdeasDashboardKeys } from '@/features/profile/hooks/use-my-ideas-dashboard';
 import {
   type IdeaCreateFormValues,
   formValuesToSavePayload,
@@ -44,6 +45,7 @@ export const ideaMutationKeys = {
 export function invalidateIdeaQueries(
   queryClient: ReturnType<typeof useQueryClient>,
   ideaId?: string,
+  { invalidateDashboard = false }: { invalidateDashboard?: boolean } = {},
 ) {
   void queryClient.invalidateQueries({ queryKey: ideaMutationKeys.lists() });
   void queryClient.invalidateQueries({ queryKey: ideaMutationKeys.all });
@@ -51,6 +53,9 @@ export function invalidateIdeaQueries(
     void queryClient.invalidateQueries({
       queryKey: ideaMutationKeys.detail(ideaId),
     });
+  }
+  if (invalidateDashboard) {
+    void queryClient.invalidateQueries({ queryKey: myIdeasDashboardKeys.all });
   }
 }
 
@@ -142,7 +147,7 @@ export function useDeleteIdeaMutation() {
     mutationKey: [...ideaMutationKeys.all, 'delete'],
     mutationFn: (ideaId: string) => deleteIdea(ideaId),
     onSuccess: (_void, ideaId) => {
-      invalidateIdeaQueries(queryClient);
+      invalidateIdeaQueries(queryClient, undefined, { invalidateDashboard: true });
       queryClient.removeQueries({ queryKey: ideaMutationKeys.detail(ideaId) });
 
       const store = useCreateIdeaStore.getState();
@@ -218,7 +223,7 @@ export function usePublishIdeaMutation() {
     },
     onSuccess: ({ idea, action }) => {
       useCreateIdeaStore.getState().applyServerIdea(idea);
-      invalidateIdeaQueries(queryClient, idea.id);
+      invalidateIdeaQueries(queryClient, idea.id, { invalidateDashboard: true });
       toast.success(action === 'update' ? 'Idea updated' : 'Idea published');
     },
     onError: error => {
@@ -341,7 +346,7 @@ export function useLeaveIdeaMutation(ideaId: string) {
     mutationKey: [...ideaMutationKeys.all, 'leave', ideaId],
     mutationFn: () => leaveIdea(ideaId),
     onSuccess: () => {
-      invalidateIdeaQueries(queryClient, ideaId);
+      invalidateIdeaQueries(queryClient, ideaId, { invalidateDashboard: true });
       toast.success('You left the project');
     },
     onError: error => {

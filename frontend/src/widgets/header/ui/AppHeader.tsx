@@ -135,7 +135,7 @@ export function AppHeader() {
           <Bell size={22} strokeWidth={2} />
         </button>
 
-        <div className="hidden lg:block">
+        <div className="w-min-[] hidden lg:block">
           <UserNav triggerClassName=" transition-opacity cursor-pointer" />
         </div>
 

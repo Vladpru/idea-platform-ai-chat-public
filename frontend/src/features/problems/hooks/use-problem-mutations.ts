@@ -9,6 +9,7 @@ import {
   updateProblem,
   uploadProblemAttachment,
 } from '@/features/problems/api/problems.api';
+import { myProblemsDashboardKeys } from '@/features/profile/hooks/use-my-problems-dashboard';
 import {
   formValuesToCreateProblemPayload,
   type SubmitProblemFormValues,
@@ -43,12 +44,18 @@ export const problemMutationKeys = {
 function invalidateProblemQueries(
   queryClient: ReturnType<typeof useQueryClient>,
   problemId?: string,
+  { invalidateDashboard = false }: { invalidateDashboard?: boolean } = {},
 ) {
   void queryClient.invalidateQueries({ queryKey: problemMutationKeys.lists() });
   void queryClient.invalidateQueries({ queryKey: problemMutationKeys.all });
   if (problemId) {
     void queryClient.invalidateQueries({
       queryKey: problemMutationKeys.detail(problemId),
+    });
+  }
+  if (invalidateDashboard) {
+    void queryClient.invalidateQueries({
+      queryKey: myProblemsDashboardKeys.all,
     });
   }
 }
@@ -83,7 +90,9 @@ export function usePublishProblemMutation() {
       return problem;
     },
     onSuccess: problem => {
-      invalidateProblemQueries(queryClient, problem.id);
+      invalidateProblemQueries(queryClient, problem.id, {
+        invalidateDashboard: true,
+      });
       toast.success('Problem published');
     },
     onError: error => {
@@ -132,7 +141,9 @@ export function useDeleteProblemMutation() {
     mutationKey: [...problemMutationKeys.all, 'delete'],
     mutationFn: (problemId: string) => deleteProblem(problemId),
     onSuccess: (_void, problemId) => {
-      invalidateProblemQueries(queryClient, problemId);
+      invalidateProblemQueries(queryClient, problemId, {
+        invalidateDashboard: true,
+      });
       toast.success('Problem deleted');
     },
     onError: error => {
