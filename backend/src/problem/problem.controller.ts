@@ -34,10 +34,10 @@ import {
 import type { Request } from 'express';
 import { memoryStorage } from 'multer';
 
-import { ProblemStatus } from '../../generated/prisma/client';
 import { JwtAuth } from '../shared/decorators/jwt-auth.decorator';
 import { CreateProblemDto } from './dto/create-problem.dto';
 import { GetProblemsQueryDto } from './dto/get-problems-query.dto';
+import { MyProblemsQueryDto } from './dto/my-problems.dto';
 import { UpdateProblemDraftDto } from './dto/update-problem-draft.dto';
 import { ProblemStage } from './enum/problem-stage.enum';
 import { ProblemService } from './problem.service';
@@ -84,23 +84,19 @@ export class ProblemController {
     return this.problemService.findAllPublic(query);
   }
 
-  @Get('mine')
+  @Get('my-dashboard')
   @JwtAuth()
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'List current user problems (drafts and published)',
+    summary: 'Get problems dashboard data with tabs and counters',
   })
-  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
-  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
-  @ApiQuery({ name: 'stage', required: false, enum: ProblemStage })
-  @ApiQuery({ name: 'status', required: false, enum: ProblemStatus })
-  @ApiOkResponse({ description: 'Paginated problems for the current user' })
+  @ApiOkResponse({ description: 'Paginated problems and tab totals' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
-  findMine(
-    @Query() query: GetProblemsQueryDto,
+  getMyDashboard(
+    @Query() query: MyProblemsQueryDto,
     @Req() req: AuthenticatedRequest,
-  ): Promise<ProblemsFeedResponse> {
-    return this.problemService.findMine(req.user.id, query);
+  ) {
+    return this.problemService.getDashboardFeed(req.user.id, query);
   }
 
   @Get(':id')
