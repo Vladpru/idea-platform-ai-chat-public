@@ -1,4 +1,4 @@
-import { useMyIdeasQuery } from '@/features/ideas/hooks/use-idea-queries';
+import { useIdeasListQuery } from '@/features/ideas/hooks/use-idea-queries';
 import {
   FieldError,
   FieldGroup,
@@ -29,16 +29,18 @@ export function IdeaSelect({ formId, control, errors }: IdeaSelectProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const { data: ideasFeed, isLoading } = useMyIdeasQuery({ limit: 10 });
+  const { data: ideasFeed, isLoading } = useIdeasListQuery({
+    sort: 'newest',
+    limit: 50,
+  });
 
-  const allIdeas = useMemo(
-    () =>
-      (ideasFeed?.data ?? []).map(idea => ({
+  const allIdeas = useMemo(() => {
+    const ideas = ideasFeed?.data ?? [];
+    return ideas.map(idea => ({
         id: idea.id,
         label: idea.title?.trim() || 'Untitled idea',
-      })),
-    [ideasFeed?.data],
-  );
+      }));
+  }, [ideasFeed]);
 
   const resolveIdeaLabel = (id: string) =>
     allIdeas.find(idea => idea.id === id)?.label;
