@@ -33,6 +33,8 @@ export type DashboardCardStandardProps<
   columnCount?: number;
   showHeroImage?: boolean;
   linkedItemEmptyImageText?: string;
+  actionMenu?: React.ReactNode;
+  hideLinkedItems?: boolean;
 };
 
 function DashboardCardStandardInner<
@@ -44,7 +46,6 @@ function DashboardCardStandardInner<
   emptyImageText,
   linkedSectionLabel,
   getLinkedItemDetailHref,
-
   layout,
   linkedItemsExpanded,
   onToggleLinkedItems,
@@ -53,9 +54,12 @@ function DashboardCardStandardInner<
   columnCount = 1,
   showHeroImage = true,
   linkedItemEmptyImageText,
+  actionMenu,
+  hideLinkedItems = false,
 }: DashboardCardStandardProps<TCard>) {
   const isHorizontal = layout === 'horizontal' && showHeroImage;
-  const hasLinkedItems = card.linkedItems && card.linkedItems.length > 0;
+  const hasLinkedItems =
+    !hideLinkedItems && card.linkedItems && card.linkedItems.length > 0;
   const stackStatsBelowTags = columnCount >= STATS_BELOW_TAGS_COLUMN_THRESHOLD;
 
   const handleToggleLinked = useCallback(() => {
@@ -98,7 +102,13 @@ function DashboardCardStandardInner<
         </Link>
       ) : null}
 
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+      <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
+        {actionMenu && (
+          <div className="absolute top-4 right-4 z-20 sm:top-5 sm:right-5">
+            {actionMenu}
+          </div>
+        )}
+
         <Link
           to={detailHref}
           className={cn(
@@ -113,6 +123,7 @@ function DashboardCardStandardInner<
                 isHorizontal
                   ? 'line-clamp-2 text-sm sm:line-clamp-1 sm:text-base'
                   : 'line-clamp-2 text-base',
+                actionMenu && 'pr-10 sm:pr-12',
               )}
             >
               {card.title}
@@ -210,7 +221,8 @@ function areDashboardCardStandardPropsEqual<
     prev.onToggleLinkedItems === next.onToggleLinkedItems &&
     prev.tagToShowCount === next.tagToShowCount &&
     prev.isMobile === next.isMobile &&
-    prev.columnCount === next.columnCount
+    prev.columnCount === next.columnCount &&
+    prev.hideLinkedItems === next.hideLinkedItems
   );
 }
 
