@@ -70,6 +70,11 @@ export function useCreateFormLeaveGuard({
     [shouldBlockLeave],
   );
 
+  const allowNextLeave = useCallback((continueLeave: () => void) => {
+    isLeavingRef.current = true;
+    continueLeave();
+  }, []);
+
   const handleDiscard = useCallback(() => {
     onDiscard();
     completeLeave();
@@ -99,6 +104,7 @@ export function useCreateFormLeaveGuard({
   return {
     leaveModalOpen,
     requestLeave,
+    allowNextLeave,
     handleLeaveModalOpenChange,
     handleDiscard,
     handleSaveAsDraft,

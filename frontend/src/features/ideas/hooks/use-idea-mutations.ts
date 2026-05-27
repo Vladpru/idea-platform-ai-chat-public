@@ -35,15 +35,18 @@ export const ideaMutationKeys = {
   lists: () => [...ideaMutationKeys.all, 'list'] as const,
   list: (params?: Record<string, unknown>) =>
     [...ideaMutationKeys.lists(), params] as const,
+  infinite: (params?: Record<string, unknown>) =>
+    [...ideaMutationKeys.all, 'infinite', params] as const,
   details: () => [...ideaMutationKeys.all, 'detail'] as const,
   detail: (ideaId: string) => [...ideaMutationKeys.details(), ideaId] as const,
 };
 
-function invalidateIdeaQueries(
+export function invalidateIdeaQueries(
   queryClient: ReturnType<typeof useQueryClient>,
   ideaId?: string,
 ) {
   void queryClient.invalidateQueries({ queryKey: ideaMutationKeys.lists() });
+  void queryClient.invalidateQueries({ queryKey: ideaMutationKeys.all });
   if (ideaId) {
     void queryClient.invalidateQueries({
       queryKey: ideaMutationKeys.detail(ideaId),

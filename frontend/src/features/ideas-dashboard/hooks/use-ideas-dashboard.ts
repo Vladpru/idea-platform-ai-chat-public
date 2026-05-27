@@ -1,6 +1,7 @@
 import type { IdeasFeedResponse } from '@/features/ideas/api/ideas-api.types';
 import type { ApiStage } from '@/features/ideas/model/idea.types';
 import { fetchIdeas } from '@/features/ideas/api/ideas.api';
+import { ideaMutationKeys } from '@/features/ideas/hooks/use-idea-mutations';
 import { useMediaQuery } from '@/shared/hooks/use-media-query';
 import { useInfiniteQuery, type InfiniteData } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
@@ -152,7 +153,7 @@ export function useIdeasDashboardQuery(
   } = useInfiniteQuery({
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    queryKey: ['ideas', 'infinite', { stage, sort }],
+    queryKey: ideaMutationKeys.infinite({ stage, sort }),
     queryFn: ({ pageParam }) =>
       fetchIdeas({
         stage,

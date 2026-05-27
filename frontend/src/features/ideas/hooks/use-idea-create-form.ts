@@ -14,11 +14,17 @@ import {
   formatProblemIds,
   parseProblemIds,
 } from '@/features/ideas/lib/problems';
-import { useCreateIdeaStore } from '@/features/ideas/store/create-idea.store';
 import { IDEA_STATUS } from '@/features/ideas/model/idea.types';
+import { useCreateIdeaStore } from '@/features/ideas/store/create-idea.store';
 import type { ProblemDraft } from '@/features/problems';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useCallback, useEffect, useRef, useState, type BaseSyntheticEvent } from 'react';
+import {
+  type BaseSyntheticEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { type Resolver, useForm } from 'react-hook-form';
 
 import { getApiErrorMessage } from '@/shared/api/api-error';
@@ -155,6 +161,7 @@ export function useIdeaCreateForm() {
   }, [imagePreviewUrl]);
 
   const clearCreateIdeaSession = useCallback(() => {
+    formSyncEnabledRef.current = false;
     useCreateIdeaStore.getState().reset();
     form.reset(ideaCreateDefaultValues);
     setImagePreviewUrl(prev => {
@@ -166,6 +173,10 @@ export function useIdeaCreateForm() {
     if (imageInputRef.current) {
       imageInputRef.current.value = '';
     }
+
+    queueMicrotask(() => {
+      formSyncEnabledRef.current = true;
+    });
   }, [form]);
 
   const onSaveDraft = async (): Promise<boolean> => {

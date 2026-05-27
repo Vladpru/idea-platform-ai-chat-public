@@ -89,6 +89,7 @@ export function IdeaCreateForm() {
   const {
     leaveModalOpen,
     requestLeave,
+    allowNextLeave,
     handleLeaveModalOpenChange,
     handleDiscard,
     handleSaveAsDraft: handleLeaveSaveAsDraft,
@@ -137,14 +138,18 @@ export function IdeaCreateForm() {
   const handleSaveDraft = async () => {
     const isSaved = await onSaveDraft();
     if (!isSaved) return;
-    void navigate({ to: ROUTES.ideas, search: { sort: 'newest' } });
+    allowNextLeave(() => {
+      void navigate({ to: ROUTES.ideas, search: { sort: 'newest' } });
+    });
   };
 
   const handlePublish = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const isPublished = await onPublish();
     if (!isPublished) return;
-    void navigate({ to: ROUTES.ideas, search: { sort: 'newest' } });
+    allowNextLeave(() => {
+      void navigate({ to: ROUTES.ideas, search: { sort: 'newest' } });
+    });
   };
 
   return (
