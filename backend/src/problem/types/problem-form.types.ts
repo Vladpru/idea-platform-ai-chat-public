@@ -1,12 +1,10 @@
 import type {
   MediaProvider,
+  Prisma,
   ProblemStatus,
 } from '../../../generated/prisma/client';
 import type { MediaKind } from '../../../generated/prisma/client';
-
-type DecimalLike = {
-  toString(): string;
-};
+import { PROBLEM_FORM_INCLUDE } from '../problem.constants';
 
 export type ProblemViewerDto = {
   isAuthor: boolean;
@@ -39,34 +37,9 @@ export type ProblemMediaRecord = {
   createdAt: Date;
 };
 
-export type ProblemFormRecord = {
-  id: string;
-  status: ProblemStatus;
-  stage: string | null;
-  title: string;
-  description: string;
-  valueProposition: string | null;
-  costBenefit: DecimalLike | null;
-  category: string | null;
-  impact: string | null;
-  publishedAt: Date | null;
-  author: ProblemFormAuthor;
-  ideas: Array<{
-    isPrimary: boolean;
-    idea: {
-      id: string;
-      title: string | null;
-      viewCount: number;
-      likeCount: number;
-      commentCount: number;
-      media: Array<{ url: string }>;
-    };
-  }>;
-  tags: Array<{
-    tag: ProblemFormTag;
-  }>;
-  media: ProblemMediaRecord[];
-};
+export type ProblemFormRecord = Prisma.ProblemGetPayload<{
+  include: typeof PROBLEM_FORM_INCLUDE;
+}>;
 
 export type ProblemLinkedIdea = {
   id: string;

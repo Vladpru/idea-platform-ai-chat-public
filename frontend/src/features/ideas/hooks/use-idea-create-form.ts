@@ -19,7 +19,7 @@ import { useCreateIdeaStore } from '@/features/ideas/store/create-idea.store';
 import type { ProblemDraft } from '@/features/problems';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useSearch } from '@tanstack/react-router';
-import { useCallback, useEffect, useRef, useState, type BaseSyntheticEvent } from 'react';
+
 import {
   type BaseSyntheticEvent,
   useCallback,

@@ -78,6 +78,7 @@ function toProblemFormTag(link: ProblemTagLinkInput): ProblemFormTag {
 
 export function toProblemFormResponse(
   problem: ProblemFormRecord,
+  currentUserId?: string,
 ): ProblemFormResponse {
   const attachments = problem.media
     .filter(m => m.kind === ATTACHMENT)
