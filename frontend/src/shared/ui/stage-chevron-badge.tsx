@@ -35,9 +35,9 @@ const STAGE_CHEVRON_CONFIGS: Record<
     { color: '#8E3F8A', label: '' },
   ],
   ARCHIVED: [
-    { color: '#9CA3AF', label: '' },
-    { color: '#6B7280', label: '' },
-    { color: '#4B5563', label: 'Archived' },
+    { color: '#FFA900', label: '' },
+    { color: '#2B787C', label: '' },
+    { color: '#8E3F8A', label: 'Archived' },
   ],
 };
 

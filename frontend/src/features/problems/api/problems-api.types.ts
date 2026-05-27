@@ -4,6 +4,7 @@ export type ProblemStage = 'active' | 'completed' | 'archived';
 
 export type ProblemAuthor = {
   id: string;
+  email: string;
   firstName: string | null;
   lastName: string | null;
   avatarUrl: string | null;
@@ -25,6 +26,10 @@ export type ProblemForm = {
     title: string | null;
     status: string;
     isPrimary: boolean;
+    imageUrl: string | null;
+    viewCount: number;
+    likeCount: number;
+    commentCount: number;
     author: ProblemAuthor;
   }>;
   tags: Array<{ id: string; name: string }>;
@@ -54,10 +59,18 @@ export type ProblemDraft = ProblemForm;
 
 export type MyProblem = ProblemForm;
 
+export type ProblemListSort =
+  | 'newest'
+  | 'oldest'
+  | 'most-viewed'
+  | 'most-popular'
+  | 'most-ideas-linked';
+
 export type ProblemsListParams = {
   page?: number;
   limit?: number;
   stage?: ProblemStage;
+  sort?: ProblemListSort;
 };
 
 export type MyProblemsListParams = ProblemsListParams & {

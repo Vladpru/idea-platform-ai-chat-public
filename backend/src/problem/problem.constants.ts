@@ -1,13 +1,16 @@
-import type { Prisma } from '../../generated/prisma/client';
+import { MediaKind, type Prisma } from '../../generated/prisma/client';
+
+export const PROBLEM_FORM_AUTHOR_SELECT = {
+  id: true,
+  email: true,
+  firstName: true,
+  lastName: true,
+  avatarUrl: true,
+} as const;
 
 export const PROBLEM_FORM_INCLUDE = {
   author: {
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      avatarUrl: true,
-    },
+    select: PROBLEM_FORM_AUTHOR_SELECT,
   },
   ideas: {
     include: {
@@ -16,13 +19,17 @@ export const PROBLEM_FORM_INCLUDE = {
           id: true,
           title: true,
           status: true,
+          viewCount: true,
+          likeCount: true,
+          commentCount: true,
           author: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              avatarUrl: true,
-            },
+            select: PROBLEM_FORM_AUTHOR_SELECT,
+          },
+          media: {
+            where: { kind: MediaKind.MAIN_IMAGE },
+            take: 1,
+            orderBy: { sortOrder: 'asc' },
+            select: { url: true },
           },
         },
       },

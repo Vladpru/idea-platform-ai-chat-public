@@ -7,9 +7,11 @@ import { cn } from '@/shared/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { StageChevronBadge } from '@/shared/ui/stage-chevron-badge';
 
-import { DASHBOARD_CARD_TAG_TO_SHOW_COUNT } from '../lib/constants';
+import {
+  DASHBOARD_CARD_TAG_TO_SHOW_COUNT,
+  STATS_BELOW_TAGS_COLUMN_THRESHOLD,
+} from '../lib/constants';
 import type { DashboardCardBase } from '../model/dashboard.types';
-
 import { DashboardCardStats } from './DashboardCardStats';
 import { LinkedItemsSection } from './LinkedItemsSection';
 
@@ -28,6 +30,9 @@ export type DashboardCardStandardProps<
   onToggleLinkedItems?: (cardId: string) => void;
   tagToShowCount?: number;
   isMobile: boolean;
+  columnCount?: number;
+  showHeroImage?: boolean;
+  linkedItemEmptyImageText?: string;
 };
 
 function DashboardCardStandardInner<
@@ -45,9 +50,13 @@ function DashboardCardStandardInner<
   onToggleLinkedItems,
   tagToShowCount = DASHBOARD_CARD_TAG_TO_SHOW_COUNT,
   isMobile,
+  columnCount = 1,
+  showHeroImage = true,
+  linkedItemEmptyImageText,
 }: DashboardCardStandardProps<TCard>) {
-  const isHorizontal = layout === 'horizontal';
+  const isHorizontal = layout === 'horizontal' && showHeroImage;
   const hasLinkedItems = card.linkedItems && card.linkedItems.length > 0;
+  const stackStatsBelowTags = columnCount >= STATS_BELOW_TAGS_COLUMN_THRESHOLD;
 
   const handleToggleLinked = useCallback(() => {
     onToggleLinkedItems?.(card.id);
@@ -57,33 +66,37 @@ function DashboardCardStandardInner<
     <article
       className={cn(
         'group border-brand-gray-200 flex h-full w-full overflow-hidden rounded-lg border bg-white shadow-sm transition-shadow hover:shadow-md',
-        isHorizontal
+        showHeroImage && isHorizontal
           ? 'min-h-[260px] flex-col sm:flex-row'
-          : 'min-h-[400px] flex-col',
+          : showHeroImage
+            ? 'min-h-[400px] flex-col'
+            : 'min-h-[280px] flex-col',
       )}
     >
-      <Link
-        to={detailHref}
-        className={cn(
-          'bg-brand-gray-100 focus-visible:ring-brand-dark-blue relative shrink-0 overflow-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
-          isHorizontal
-            ? 'aspect-[16/10] w-full sm:aspect-auto sm:min-h-[260px] sm:w-[320px] lg:w-[400px]'
-            : 'aspect-[16/10] w-full',
-        )}
-      >
-        {card.imageUrl ? (
-          <img
-            src={card.imageUrl}
-            alt=""
-            loading="lazy"
-            className="absolute inset-0 size-full object-cover transition-transform duration-300 group-hover:scale-[1.01]"
-          />
-        ) : (
-          <div className="text-brand-gray-400 absolute inset-0 flex size-full items-center justify-center text-xs font-semibold uppercase">
-            {emptyImageText}
-          </div>
-        )}
-      </Link>
+      {showHeroImage ? (
+        <Link
+          to={detailHref}
+          className={cn(
+            'bg-brand-gray-100 focus-visible:ring-brand-dark-blue relative shrink-0 overflow-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+            isHorizontal
+              ? 'aspect-[16/10] w-full sm:aspect-auto sm:min-h-[260px] sm:w-[320px] lg:w-[400px]'
+              : 'aspect-[16/10] w-full',
+          )}
+        >
+          {card.imageUrl ? (
+            <img
+              src={card.imageUrl}
+              alt=""
+              loading="lazy"
+              className="absolute inset-0 size-full object-cover transition-transform duration-300 group-hover:scale-[1.01]"
+            />
+          ) : (
+            <div className="text-brand-gray-400 absolute inset-0 flex size-full items-center justify-center text-xs font-semibold uppercase">
+              {emptyImageText}
+            </div>
+          )}
+        </Link>
+      ) : null}
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Link
@@ -133,12 +146,19 @@ function DashboardCardStandardInner<
           <div
             className={cn(
               'mt-4 flex w-full flex-col gap-3',
-              isHorizontal
-                ? 'pt-3 sm:flex-row sm:items-center sm:justify-between sm:pt-0'
-                : 'sm:flex-row sm:items-center sm:justify-between',
+              !stackStatsBelowTags &&
+                (isHorizontal
+                  ? 'pt-3 sm:flex-row sm:items-center sm:justify-between sm:pt-0'
+                  : 'sm:flex-row sm:items-center sm:justify-between'),
             )}
           >
-            <div className="min-w-0 flex-1 shrink overflow-hidden [mask-image:linear-gradient(to_right,black_90%,transparent_100%)]">
+            <div
+              className={cn(
+                'min-w-0 flex-1 shrink overflow-hidden',
+                !stackStatsBelowTags &&
+                  '[mask-image:linear-gradient(to_right,black_90%,transparent_100%)]',
+              )}
+            >
               <IdeaTagCloud
                 tags={card.tags}
                 compact={isMobile}
@@ -146,7 +166,12 @@ function DashboardCardStandardInner<
               />
             </div>
 
-            <div className="relative z-10 shrink-0 bg-white">
+            <div
+              className={cn(
+                'relative z-10 shrink-0 bg-white',
+                stackStatsBelowTags && 'w-full',
+              )}
+            >
               <DashboardCardStats stats={card.stats} />
             </div>
           </div>
@@ -162,6 +187,7 @@ function DashboardCardStandardInner<
               onToggleExpanded={
                 onToggleLinkedItems ? handleToggleLinked : undefined
               }
+              linkedItemEmptyImageText={linkedItemEmptyImageText}
             />
           </div>
         )}
@@ -183,7 +209,8 @@ function areDashboardCardStandardPropsEqual<
     prev.detailHref === next.detailHref &&
     prev.onToggleLinkedItems === next.onToggleLinkedItems &&
     prev.tagToShowCount === next.tagToShowCount &&
-    prev.isMobile === next.isMobile
+    prev.isMobile === next.isMobile &&
+    prev.columnCount === next.columnCount
   );
 }
 

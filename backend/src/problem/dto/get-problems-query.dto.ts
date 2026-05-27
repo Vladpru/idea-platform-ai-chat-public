@@ -1,11 +1,26 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsEnum, IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
 
 import {
   ProblemStage,
   ProblemStatus,
 } from '../../../generated/prisma/client';
+
+export type ProblemSortOption =
+  | 'newest'
+  | 'oldest'
+  | 'most-viewed'
+  | 'most-popular'
+  | 'most-ideas-linked';
+
+export const PROBLEM_SORT_OPTIONS: ProblemSortOption[] = [
+  'newest',
+  'oldest',
+  'most-viewed',
+  'most-popular',
+  'most-ideas-linked',
+];
 
 export class GetProblemsQueryDto {
   @ApiPropertyOptional({ default: 1, minimum: 1 })
@@ -32,4 +47,9 @@ export class GetProblemsQueryDto {
   @IsOptional()
   @IsEnum(ProblemStatus)
   status?: ProblemStatus;
+
+  @ApiPropertyOptional({ enum: PROBLEM_SORT_OPTIONS })
+  @IsOptional()
+  @IsIn(PROBLEM_SORT_OPTIONS)
+  sort?: ProblemSortOption;
 }
