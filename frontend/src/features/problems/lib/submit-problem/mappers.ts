@@ -26,7 +26,7 @@ export function formValuesToCreateProblemPayload(
     isPublished,
     stage: values.stage,
     title: values.title.trim(),
-    description: values.description.trim(),
+    description: (values.description ?? '').trim(),
     ...(valueProposition ? { valueProposition } : {}),
     ...(costBenefit ? { costBenefit } : {}),
     ...(ideaIds.length > 0 ? { ideaIds } : {}),

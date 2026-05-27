@@ -9,7 +9,7 @@ export function hasSubmitProblemUnsavedProgress(
     return true;
   }
 
-  if (values.title.trim() || values.description.trim()) {
+  if (values.title.trim() || (values.description ?? '').trim()) {
     return true;
   }
 
