@@ -192,13 +192,12 @@ export function LinkExistingProblemModal({
                     }}
                     className={cn(
                       selectClass,
-                      // Додаємо h-auto, щоб перебити фіксовану висоту з selectClass, коли тегів стає багато
+
                       'relative h-auto min-h-10 cursor-pointer rounded-md pr-9 pl-2 text-left',
                       dropdownOpen &&
                         'border-brand-light-blue ring-brand-light-blue/40 ring-2',
                     )}
                   >
-                    {/* 1. Змінюємо контейнер на flex-wrap і вбиваємо милицю з onWheel */}
                     <div className="flex flex-wrap items-center gap-1.5 py-1.5">
                       {selectedProblemIds.length === 0 ? (
                         <span className="text-muted-foreground px-1 text-sm">
@@ -214,7 +213,6 @@ export function LinkExistingProblemModal({
                           return (
                             <span
                               key={id}
-                              // Прибрали зайві класи shrink-0 та whitespace-nowrap з контейнера пігулки
                               className="bg-brand-gray-100 text-brand-gray-900 inline-flex items-center gap-1 rounded-full py-0.5 pr-1 pl-2.5 text-xs"
                             >
                               <span className="max-w-[150px] truncate sm:max-w-[200px]">
@@ -241,7 +239,6 @@ export function LinkExistingProblemModal({
                       )}
                     </div>
 
-                    {/* 2. Прибираємо ганебний bg-white pl-1. Фіксуємо іконку зверху на випадок багаторядковості */}
                     <ChevronDown
                       className={cn(
                         'text-brand-gray-600 pointer-events-none absolute top-3 right-3 z-10 size-4 transition-transform',

@@ -1,8 +1,7 @@
 import { cn } from '@/shared/lib/utils';
-import { AnimatedTabUnderline } from '@/shared/ui/motion';
+import { AnimatedTabUnderline } from '@/shared/ui';
 import { ChevronDown, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-
 import type { DashboardFilterTab } from '../model/dashboard.types';
 
 type DashboardFilterProps<TFilter extends string> = {
@@ -12,6 +11,7 @@ type DashboardFilterProps<TFilter extends string> = {
   ariaLabel: string;
   layoutId: string;
   className?: string;
+  mobileMode?: 'drawer' | 'row';
 };
 
 export function DashboardFilter<TFilter extends string>({
@@ -21,6 +21,7 @@ export function DashboardFilter<TFilter extends string>({
   ariaLabel,
   layoutId,
   className,
+  mobileMode = 'drawer',
 }: DashboardFilterProps<TFilter>) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -36,6 +37,40 @@ export function DashboardFilter<TFilter extends string>({
   }, [isMobileMenuOpen]);
 
   const activeTab = filters.find(tab => tab.id === activeFilter);
+
+  const tabsRow = (
+    <nav
+      className={cn('flex flex-wrap items-center gap-x-6 gap-y-2', className)}
+      aria-label={ariaLabel}
+    >
+      {filters.map(tab => {
+        const isActive = tab.id === activeFilter;
+        return (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => onFilterChange(tab.id)}
+            className={cn(
+              'text-brand-dark-blue relative cursor-pointer pb-2 text-base font-normal tracking-wide uppercase transition-colors',
+              isActive ? 'font-bold' : 'hover:text-brand-dark-blue',
+            )}
+          >
+            {tab.label}
+            {isActive ? (
+              <AnimatedTabUnderline
+                layoutId={layoutId}
+                className="bg-brand-orange -bottom-0 h-1 rounded-full"
+              />
+            ) : null}
+          </button>
+        );
+      })}
+    </nav>
+  );
+
+  if (mobileMode === 'row') {
+    return tabsRow;
+  }
 
   return (
     <>
@@ -54,10 +89,8 @@ export function DashboardFilter<TFilter extends string>({
               type="button"
               onClick={() => onFilterChange(tab.id)}
               className={cn(
-                'relative cursor-pointer pb-2 text-sm font-bold tracking-wide uppercase transition-colors',
-                isActive
-                  ? 'text-brand-dark-blue'
-                  : 'text-brand-gray-500 hover:text-brand-dark-blue',
+                'text-brand-dark-blue relative cursor-pointer pb-2 text-base font-normal tracking-wide uppercase transition-colors',
+                isActive ? 'font-bold' : 'hover:text-brand-dark-blue',
               )}
             >
               {tab.label}
@@ -116,9 +149,9 @@ export function DashboardFilter<TFilter extends string>({
                           setIsMobileMenuOpen(false);
                         }}
                         className={cn(
-                          'w-full rounded-xl px-4 py-3.5 text-left text-base font-medium transition-colors',
+                          'w-full rounded-xl px-4 py-3.5 text-left text-base font-normal transition-colors',
                           isActive
-                            ? 'text-brand-dark-blue bg-brand-gray-100'
+                            ? 'text-brand-dark-blue bg-brand-gray-100 font-bold'
                             : 'text-brand-black hover:bg-slate-50',
                         )}
                       >
