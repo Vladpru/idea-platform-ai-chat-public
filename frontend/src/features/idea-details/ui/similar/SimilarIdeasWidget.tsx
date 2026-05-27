@@ -2,10 +2,11 @@ import type {
   SimilarIdeaCard,
   SimilarIdeasSubTab,
 } from '@/features/idea-details/model/idea-details.types';
-import { Globe, Sparkles } from 'lucide-react';
+import { Globe } from 'lucide-react';
 import { useState } from 'react';
 
 import { cn } from '@/shared/lib/utils';
+import { StarsIcon } from '@/shared/ui/icons';
 import { AnimatedTabUnderline } from '@/shared/ui/motion';
 
 import { SimilarIdeasRowSkeleton } from '../skeletons/SimilarIdeasRowSkeleton';
@@ -36,13 +37,13 @@ export function SimilarIdeasWidget({
     {
       id: 'IDEA_ENGINE',
       label: 'Idea Engine',
-      icon: <Sparkles className="size-3.5" />,
+      icon: <StarsIcon className="size-3.5" />,
       count: similarIdeas.length,
     },
     {
       id: 'FOUND_ON_WEB',
       label: 'Found on Web',
-      icon: <Sparkles className="size-3.5" />,
+      icon: <StarsIcon className="size-3.5" />,
       count: 0,
     },
   ];
@@ -56,7 +57,7 @@ export function SimilarIdeasWidget({
       aria-label="Similar ideas"
     >
       <div className="flex items-center gap-2">
-        <Sparkles className="text-brand-gray-900 size-5 sm:size-6" />
+        <StarsIcon className="text-brand-gray-900 size-5 sm:size-6" />
         <h2 className="text-brand-gray-950 font-arial text-lg font-bold tracking-tight uppercase sm:text-xl">
           Similar ideas
         </h2>

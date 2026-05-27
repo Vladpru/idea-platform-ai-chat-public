@@ -27,6 +27,7 @@ import { Route as AuthIdeasIndexRouteImport } from './routes/_auth/ideas/index'
 import { Route as AuthProfileProblemsRouteImport } from './routes/_auth/profile/problems'
 import { Route as AuthProfileIdeasRouteImport } from './routes/_auth/profile/ideas'
 import { Route as AuthProblemsNewRouteImport } from './routes/_auth/problems/new'
+import { Route as AuthProblemsProblemIdRouteImport } from './routes/_auth/problems/$problemId'
 import { Route as AuthIdeasNewRouteImport } from './routes/_auth/ideas/new'
 import { Route as AuthIdeasIdeaIdRouteImport } from './routes/_auth/ideas/$ideaId'
 
@@ -119,6 +120,11 @@ const AuthProblemsNewRoute = AuthProblemsNewRouteImport.update({
   path: '/new',
   getParentRoute: () => AuthProblemsRouteRoute,
 } as any)
+const AuthProblemsProblemIdRoute = AuthProblemsProblemIdRouteImport.update({
+  id: '/$problemId',
+  path: '/$problemId',
+  getParentRoute: () => AuthProblemsRouteRoute,
+} as any)
 const AuthIdeasNewRoute = AuthIdeasNewRouteImport.update({
   id: '/new',
   path: '/new',
@@ -144,6 +150,7 @@ export interface FileRoutesByFullPath {
   '/auth/callback': typeof AuthCallbackRoute
   '/ideas/$ideaId': typeof AuthIdeasIdeaIdRoute
   '/ideas/new': typeof AuthIdeasNewRoute
+  '/problems/$problemId': typeof AuthProblemsProblemIdRoute
   '/problems/new': typeof AuthProblemsNewRoute
   '/profile/ideas': typeof AuthProfileIdeasRoute
   '/profile/problems': typeof AuthProfileProblemsRoute
@@ -162,6 +169,7 @@ export interface FileRoutesByTo {
   '/': typeof AuthIndexRoute
   '/ideas/$ideaId': typeof AuthIdeasIdeaIdRoute
   '/ideas/new': typeof AuthIdeasNewRoute
+  '/problems/$problemId': typeof AuthProblemsProblemIdRoute
   '/problems/new': typeof AuthProblemsNewRoute
   '/profile/ideas': typeof AuthProfileIdeasRoute
   '/profile/problems': typeof AuthProfileProblemsRoute
@@ -185,6 +193,7 @@ export interface FileRoutesById {
   '/_auth/': typeof AuthIndexRoute
   '/_auth/ideas/$ideaId': typeof AuthIdeasIdeaIdRoute
   '/_auth/ideas/new': typeof AuthIdeasNewRoute
+  '/_auth/problems/$problemId': typeof AuthProblemsProblemIdRoute
   '/_auth/problems/new': typeof AuthProblemsNewRoute
   '/_auth/profile/ideas': typeof AuthProfileIdeasRoute
   '/_auth/profile/problems': typeof AuthProfileProblemsRoute
@@ -208,6 +217,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/ideas/$ideaId'
     | '/ideas/new'
+    | '/problems/$problemId'
     | '/problems/new'
     | '/profile/ideas'
     | '/profile/problems'
@@ -226,6 +236,7 @@ export interface FileRouteTypes {
     | '/'
     | '/ideas/$ideaId'
     | '/ideas/new'
+    | '/problems/$problemId'
     | '/problems/new'
     | '/profile/ideas'
     | '/profile/problems'
@@ -248,6 +259,7 @@ export interface FileRouteTypes {
     | '/_auth/'
     | '/_auth/ideas/$ideaId'
     | '/_auth/ideas/new'
+    | '/_auth/problems/$problemId'
     | '/_auth/problems/new'
     | '/_auth/profile/ideas'
     | '/_auth/profile/problems'
@@ -393,6 +405,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthProblemsNewRouteImport
       parentRoute: typeof AuthProblemsRouteRoute
     }
+    '/_auth/problems/$problemId': {
+      id: '/_auth/problems/$problemId'
+      path: '/$problemId'
+      fullPath: '/problems/$problemId'
+      preLoaderRoute: typeof AuthProblemsProblemIdRouteImport
+      parentRoute: typeof AuthProblemsRouteRoute
+    }
     '/_auth/ideas/new': {
       id: '/_auth/ideas/new'
       path: '/new'
@@ -427,11 +446,13 @@ const AuthIdeasRouteRouteWithChildren = AuthIdeasRouteRoute._addFileChildren(
 )
 
 interface AuthProblemsRouteRouteChildren {
+  AuthProblemsProblemIdRoute: typeof AuthProblemsProblemIdRoute
   AuthProblemsNewRoute: typeof AuthProblemsNewRoute
   AuthProblemsIndexRoute: typeof AuthProblemsIndexRoute
 }
 
 const AuthProblemsRouteRouteChildren: AuthProblemsRouteRouteChildren = {
+  AuthProblemsProblemIdRoute: AuthProblemsProblemIdRoute,
   AuthProblemsNewRoute: AuthProblemsNewRoute,
   AuthProblemsIndexRoute: AuthProblemsIndexRoute,
 }

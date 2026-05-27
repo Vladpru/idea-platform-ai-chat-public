@@ -12,6 +12,7 @@ import {
 import { myProblemsDashboardKeys } from '@/features/profile/hooks/use-my-problems-dashboard';
 import {
   formValuesToCreateProblemPayload,
+  formValuesToUpdateProblemPayload,
   type SubmitProblemFormValues,
 } from '@/features/problems/lib/submit-problem';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -78,22 +79,38 @@ export function useCreateProblemMutation() {
   });
 }
 
+export type PublishProblemVariables = {
+  values: SubmitProblemFormValues;
+  problemId?: string;
+};
+
 export function usePublishProblemMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationKey: [...problemMutationKeys.all, 'publish'],
-    mutationFn: async (values: SubmitProblemFormValues) => {
+    mutationFn: async ({ values, problemId }: PublishProblemVariables) => {
+      if (problemId) {
+        const problem = await updateProblem(
+          problemId,
+          formValuesToUpdateProblemPayload(values),
+        );
+        await uploadProblemFiles(problemId, values.files);
+        return problem;
+      }
+
       const payload = formValuesToCreateProblemPayload(values, true);
       const problem = await createProblem(payload);
       await uploadProblemFiles(problem.id, values.files);
       return problem;
     },
-    onSuccess: problem => {
+    onSuccess: (problem, variables) => {
       invalidateProblemQueries(queryClient, problem.id, {
         invalidateDashboard: true,
       });
-      toast.success('Problem published');
+      toast.success(
+        variables.problemId ? 'Problem updated' : 'Problem published',
+      );
     },
     onError: error => {
       toast.error(getApiErrorMessage(error));

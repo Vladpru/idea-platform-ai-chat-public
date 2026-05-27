@@ -1,10 +1,12 @@
+import commentsIcon from '@/assets/svg/comments.svg';
+import likeIcon from '@/assets/svg/like.svg';
+import viewsIcon from '@/assets/svg/views.svg';
+import { formatIdeaDate } from '@/features/idea-details/lib/format-idea-date';
 import type { IdeaDetailsStats } from '@/features/idea-details/model/idea-details.types';
-import { Eye, Heart, MessageCircle } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 import { cn } from '@/shared/lib/utils';
-
-import { formatIdeaDate } from '@/features/idea-details/lib/format-idea-date';
+import { StatIcon } from '@/shared/ui/icons/stat-icon';
 
 type IdeaStatsFooterProps = {
   createdAt: string;
@@ -55,17 +57,17 @@ export function IdeaStatsFooter({
       </div>
       <div className="flex flex-wrap items-center gap-4 sm:gap-6">
         <StatItem
-          icon={<Eye className="size-4" />}
+          icon={<StatIcon src={viewsIcon} className="size-4" />}
           value={stats.views}
           label="views"
         />
         <StatItem
-          icon={<MessageCircle className="size-4" />}
+          icon={<StatIcon src={commentsIcon} className="size-4" />}
           value={stats.comments}
           label="comments"
         />
         <StatItem
-          icon={<Heart className="size-4" />}
+          icon={<StatIcon src={likeIcon} className="size-4" />}
           value={stats.likes}
           label="likes"
         />

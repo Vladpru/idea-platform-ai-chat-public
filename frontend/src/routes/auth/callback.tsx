@@ -31,7 +31,7 @@ function AuthCallbackPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-3 p-6">
-      <p className="text-muted-foreground text-sm">Завершуємо вхід...</p>
+      <p className="text-muted-foreground text-sm">Finishing auth...</p>
     </div>
   );
 }

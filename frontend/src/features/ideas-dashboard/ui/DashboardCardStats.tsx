@@ -3,6 +3,7 @@ import likeIcon from '@/assets/svg/like.svg';
 import viewsIcon from '@/assets/svg/views.svg';
 
 import { cn } from '@/shared/lib/utils';
+import { StatIcon } from '@/shared/ui/icons/stat-icon';
 
 import type { DashboardEngagementStats } from '../model/dashboard.types';
 
@@ -11,12 +12,6 @@ type DashboardCardStatsProps = {
   className?: string;
   iconClassName?: string;
 };
-
-function StatIcon({ src, className }: { src: string; className?: string }) {
-  return (
-    <img src={src} alt="" aria-hidden className={cn('shrink-0', className)} />
-  );
-}
 
 export function DashboardCardStats({
   stats,

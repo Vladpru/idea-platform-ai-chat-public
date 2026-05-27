@@ -59,8 +59,10 @@ export function SubmitProblemForm() {
     form,
     error,
     isBusy,
+    isHydrating,
     isSavingDraft,
     isPublishing,
+    isEditing,
     onSaveDraft,
     onPublish,
     canSaveDraft,
@@ -85,6 +87,14 @@ export function SubmitProblemForm() {
     void navigate({ to: ROUTES.problems, search: DEFAULT_PROBLEMS_DASHBOARD_SEARCH });
   };
 
+  const navigateAfterSave = (wasEditing: boolean, problemId: string) => {
+    if (wasEditing) {
+      void navigate({ to: ROUTES.problemDetail(problemId) });
+      return;
+    }
+    navigateToProblems();
+  };
+
   const {
     leaveModalOpen,
     requestLeave,
@@ -94,7 +104,13 @@ export function SubmitProblemForm() {
   } = useCreateFormLeaveGuard({
     hasUnsavedProgress,
     isBusy,
-    onSaveDraft,
+    onSaveDraft: async () => {
+      const wasEditing = isEditing;
+      const problemId = await onSaveDraft();
+      if (!problemId) return false;
+      navigateAfterSave(wasEditing, problemId);
+      return true;
+    },
     onDiscard: clearSession,
   });
 
@@ -103,16 +119,18 @@ export function SubmitProblemForm() {
   };
 
   const handleSaveDraft = async () => {
-    const isSaved = await onSaveDraft();
-    if (!isSaved) return;
-    navigateToProblems();
+    const wasEditing = isEditing;
+    const problemId = await onSaveDraft();
+    if (!problemId) return;
+    navigateAfterSave(wasEditing, problemId);
   };
 
   const handlePublish = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const isPublished = await onPublish();
-    if (!isPublished) return;
-    void navigate({ to: ROUTES.problems, search: DEFAULT_PROBLEMS_DASHBOARD_SEARCH });
+    const wasEditing = isEditing;
+    const problemId = await onPublish();
+    if (!problemId) return;
+    navigateAfterSave(wasEditing, problemId);
   };
 
   return (
@@ -123,6 +141,10 @@ export function SubmitProblemForm() {
       onSubmit={event => void handlePublish(event)}
       noValidate
     >
+      {isHydrating ? (
+        <p className="text-brand-gray-600 text-sm">Loading problem…</p>
+      ) : null}
+
       {error ? (
         <p
           role="alert"
@@ -295,7 +317,7 @@ export function SubmitProblemForm() {
           disabled={!canPublish || isBusy}
           isLoading={isPublishing}
         >
-          Publish problem
+          {isEditing ? 'Save changes' : 'Publish problem'}
         </Button>
       </div>
     </form>
