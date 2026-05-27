@@ -1,7 +1,7 @@
+import { useMemo, useState } from 'react';
+import type { UseMutationResult } from '@tanstack/react-query';
 import { Button } from '@/shared/ui/button';
 import { ConfirmModal } from '@/shared/ui/confirm-modal';
-import type { UseMutationResult } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
 import { useMediaQuery } from '@/shared/hooks/use-media-query';
 import { TabList, type TabDefinition } from '@/shared/ui/TabLabelWithBadge';
 import { LoadMoreFooter } from '@/features/ideas-dashboard';
@@ -31,7 +31,7 @@ type ProfileDashboardViewProps<
   title: string;
   tabs: TabDefinition<TTab>[];
   data: ProfileDashboardViewData<TTab, TItem>;
-  emptyLabel: string;
+  emptyState: React.ReactNode;
   renderErrorMessage: (error: unknown) => string;
   loadingMoreLabel: string;
   layoutId: string;
@@ -53,7 +53,7 @@ export function ProfileDashboardView<
   title,
   tabs,
   data,
-  emptyLabel,
+  emptyState,
   renderErrorMessage,
   loadingMoreLabel,
   layoutId,
@@ -155,7 +155,7 @@ export function ProfileDashboardView<
 
           {!isLoading && !isError && items.length === 0 && (
             <div className="border-brand-gray-200 rounded-lg border bg-white px-6 py-16 text-center">
-              <p className="text-brand-gray-500 text-sm">{emptyLabel}</p>
+              {emptyState}
             </div>
           )}
 

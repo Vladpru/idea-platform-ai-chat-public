@@ -4,13 +4,14 @@ import { ROUTES } from '@/shared/config/paths';
 import { DashboardCardStandard } from '@/features/ideas-dashboard/ui/DashboardCardStandard';
 import { IDEAS_DASHBOARD_LABELS } from '@/features/ideas-dashboard/lib/ideas-dashboard-labels';
 import { useDeleteIdeaMutation } from '@/features/ideas/hooks/use-idea-mutations';
+import type { TabDefinition } from '@/shared/ui/TabLabelWithBadge';
+import { Button } from '@/shared/ui/button';
+import { Link } from '@tanstack/react-router';
+import { useMemo } from 'react';
 
 import { useMyIdeasDashboard } from '../hooks/use-my-ideas-dashboard';
-
-import type { TabDefinition } from '@/shared/ui/TabLabelWithBadge';
 import { IdeaCardActions } from './IdeaCardActions';
 import { ProfileDashboardView } from './ProfileDashboardView';
-import { useMemo } from 'react';
 
 export function ProfileIdeasView() {
   const {
@@ -38,6 +39,29 @@ export function ProfileIdeasView() {
     [totals],
   );
 
+  const getEmptyStateContent = () => {
+    switch (tab) {
+      case 'drafts':
+        return {
+          ...IDEAS_DASHBOARD_LABELS.emptyStates.drafts,
+          href: ROUTES.ideasNew,
+        };
+      case 'joined':
+        return {
+          ...IDEAS_DASHBOARD_LABELS.emptyStates.joined,
+          href: ROUTES.ideas,
+        };
+      case 'published':
+      default:
+        return {
+          ...IDEAS_DASHBOARD_LABELS.emptyStates.published,
+          href: ROUTES.ideasNew,
+        };
+    }
+  };
+
+  const emptyContent = getEmptyStateContent();
+
   type IdeaCard = (typeof items)[number];
 
   return (
@@ -57,7 +81,21 @@ export function ProfileIdeasView() {
         isFetchingNextPage,
         fetchNextPage,
       }}
-      emptyLabel={IDEAS_DASHBOARD_LABELS.emptyGridMessage}
+      emptyState={
+        <div className="flex flex-col items-center justify-center py-8">
+          <h3 className="text-brand-black mb-2 text-lg font-bold">
+            {emptyContent.title}
+          </h3>
+          <p className="text-brand-gray-700 mb-6 text-sm">
+            {emptyContent.description}
+          </p>
+          <Link to={emptyContent.href}>
+            <Button className="bg-brand-orange hover:bg-brand-orange/90 text-white">
+              {emptyContent.buttonText}
+            </Button>
+          </Link>
+        </div>
+      }
       renderErrorMessage={err =>
         getApiErrorMessage(err, {
           invalidCredentialsMessage: IDEAS_DASHBOARD_LABELS.loadErrorFallback,

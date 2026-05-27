@@ -1,3 +1,4 @@
+import React, { type ReactNode } from 'react';
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
 import {
@@ -9,7 +10,6 @@ import {
 } from '@/shared/ui/dropdown-menu';
 import { outlineBtnClass } from '@/features/ideas/lib/styles';
 import { ChevronDown } from 'lucide-react';
-import type { ReactNode } from 'react';
 
 export type DropdownItem = {
   label: ReactNode;
@@ -25,6 +25,8 @@ type AppDropdownProps = {
   triggerLabel?: string;
   align?: 'start' | 'center' | 'end';
   contentClassName?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
 export function AppDropdown({
@@ -33,6 +35,8 @@ export function AppDropdown({
   triggerLabel = 'Manage',
   align = 'end',
   contentClassName,
+  open,
+  onOpenChange,
 }: AppDropdownProps) {
   const defaultTrigger = (
     <Button
@@ -49,7 +53,7 @@ export function AppDropdown({
   );
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>
         {trigger ?? defaultTrigger}
       </DropdownMenuTrigger>
@@ -59,12 +63,9 @@ export function AppDropdown({
         className={cn('w-44 rounded p-2', contentClassName)}
       >
         {items.map((item, index) => (
-          <>
-            {index > 0 && (
-              <DropdownMenuSeparator key={`sep-${index}`} className="my-0" />
-            )}
+          <React.Fragment key={index}>
+            {index > 0 && <DropdownMenuSeparator className="my-0" />}
             <DropdownMenuItem
-              key={index}
               disabled={item.disabled}
               className={cn(
                 'cursor-pointer px-3 py-2 text-sm font-normal',
@@ -72,8 +73,7 @@ export function AppDropdown({
                   ? 'focus:bg-brand-orange/10 hover:bg-brand-orange/10 text-amber-600 focus:text-amber-600'
                   : 'focus:bg-brand-blue-700/10 hover:bg-brand-blue-700/10',
               )}
-              onSelect={event => {
-                event.preventDefault();
+              onSelect={() => {
                 item.onSelect();
               }}
             >
@@ -82,7 +82,7 @@ export function AppDropdown({
               )}
               {item.label}
             </DropdownMenuItem>
-          </>
+          </React.Fragment>
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
