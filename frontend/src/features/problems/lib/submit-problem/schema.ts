@@ -48,7 +48,7 @@ export const submitProblemDescriptionSchema = z
 const submitProblemCoreFields = {
   stage: problemStageSchema,
   title: submitProblemTitleSchema,
-  description: submitProblemDescriptionSchema,
+  description: z.string().optional(),
   valueProposition: z.string().optional(),
   costBenefit: submitProblemCostBenefitSchema,
   ideaIds: z.string().optional(),
@@ -58,7 +58,10 @@ const submitProblemCoreFields = {
 
 export const submitProblemDraftSchema = z.object(submitProblemCoreFields);
 
-export const submitProblemPublishSchema = z.object(submitProblemCoreFields);
+export const submitProblemPublishSchema = z.object({
+  ...submitProblemCoreFields,
+  description: submitProblemDescriptionSchema,
+});
 
 export type SubmitProblemFormValues = z.infer<typeof submitProblemDraftSchema>;
 
@@ -73,8 +76,13 @@ export const submitProblemDefaultValues: SubmitProblemFormValues = {
   files: [],
 };
 
+const submitProblemDraftSaveSchema = z.object({
+  title: submitProblemTitleSchema,
+  description: z.string().optional(),
+});
+
 export function validateSubmitProblemForDraft(values: SubmitProblemFormValues) {
-  return submitProblemDraftSchema.safeParse(values);
+  return submitProblemDraftSaveSchema.safeParse(values);
 }
 
 export function validateSubmitProblemForPublish(values: SubmitProblemFormValues) {

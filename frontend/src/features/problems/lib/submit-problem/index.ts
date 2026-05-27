@@ -13,6 +13,7 @@ export {
   sanitizeCostBenefitInput,
 } from './cost-benefit';
 export { formValuesToCreateProblemPayload } from './mappers';
+export { hasSubmitProblemUnsavedProgress } from './unsaved-progress';
 export {
   problemStageSchema,
   submitProblemDefaultValues,

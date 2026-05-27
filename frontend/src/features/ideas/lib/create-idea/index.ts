@@ -25,6 +25,7 @@ export {
   ideaApiToDraft,
   ideaApiToRemoteMedia,
 } from './mappers';
+export { hasCreateIdeaUnsavedProgress } from './unsaved-progress';
 export {
   EMPTY_PERSISTED_LOCAL_FILES,
   getLocalFilesKey,

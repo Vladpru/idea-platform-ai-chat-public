@@ -1,3 +1,8 @@
+export {
+  SAVE_PROGRESS_BEFORE_LEAVING_TITLE as IDEA_SAVE_PROGRESS_TITLE,
+  SAVE_IDEA_PROGRESS_DESCRIPTION as IDEA_SAVE_PROGRESS_DESCRIPTION,
+} from '@/shared/lib/create-form-leave/copy';
+
 export const IDEA_UNDO_CHANGES_TITLE = 'Undo changes?';
 export const IDEA_UNDO_CHANGES_DESCRIPTION =
   'All completed data will be deleted';

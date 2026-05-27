@@ -8,7 +8,7 @@ import {
 } from '@/shared/ui/tooltip';
 
 export const SAVE_DRAFT_TOOLTIP =
-  'Enter a problem title and description to save as draft.';
+  'Enter a problem title to save as draft.';
 
 type SaveDraftButtonProps = {
   canSave: boolean;

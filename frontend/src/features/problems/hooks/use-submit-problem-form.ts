@@ -46,6 +46,11 @@ export function useSubmitProblemForm() {
   const isPublishing = publishMutation.isPending;
   const isBusy = isSavingDraft || isPublishing;
 
+  const clearSession = useCallback(() => {
+    form.reset(submitProblemDefaultValues);
+    setError(null);
+  }, [form]);
+
   const onSaveDraft = useCallback(async () => {
     setError(null);
     const values = form.getValues();
@@ -59,16 +64,18 @@ export function useSubmitProblemForm() {
     }
 
     try {
+      const trimmedDescription = validation.data.description?.trim();
       await createDraftMutation.mutateAsync({
         title: validation.data.title,
-        description: validation.data.description,
+        ...(trimmedDescription ? { description: trimmedDescription } : {}),
       });
+      clearSession();
       return true;
     } catch (err) {
       setError(getApiErrorMessage(err));
       return false;
     }
-  }, [createDraftMutation, form]);
+  }, [clearSession, createDraftMutation, form]);
 
   const onPublish = useCallback(async () => {
     setError(null);
@@ -95,10 +102,7 @@ export function useSubmitProblemForm() {
   const canSaveDraft = validateSubmitProblemForDraft(watchedValues).success;
   const canPublish = validateSubmitProblemForPublish(watchedValues).success;
 
-  const resetForm = useCallback(() => {
-    form.reset(submitProblemDefaultValues);
-    setError(null);
-  }, [form]);
+  const resetForm = clearSession;
 
   return {
     form,
@@ -110,6 +114,7 @@ export function useSubmitProblemForm() {
     onPublish,
     canSaveDraft,
     canPublish,
+    clearSession,
     resetForm,
   };
 }

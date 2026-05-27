@@ -5,6 +5,7 @@ import {
 } from '@/features/ideas/hooks/use-idea-mutations';
 import {
   type IdeaCreateFormValues,
+  ideaCreateDefaultValues,
   ideaCreateDraftSchema,
   validateForPublish,
 } from '@/features/ideas/lib/create-idea';
@@ -13,12 +14,19 @@ import {
   formatProblemIds,
   parseProblemIds,
 } from '@/features/ideas/lib/problems';
-import { useCreateIdeaStore } from '@/features/ideas/store/create-idea.store';
 import { IDEA_STATUS } from '@/features/ideas/model/idea.types';
+import { useCreateIdeaStore } from '@/features/ideas/store/create-idea.store';
 import type { ProblemDraft } from '@/features/problems';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect, useRef, useState, type BaseSyntheticEvent } from 'react';
+import {
+  type BaseSyntheticEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { type Resolver, useForm } from 'react-hook-form';
 
 import { getApiErrorMessage } from '@/shared/api/api-error';
@@ -159,6 +167,25 @@ export function useIdeaCreateForm() {
     };
   }, [imagePreviewUrl]);
 
+  const clearCreateIdeaSession = useCallback(() => {
+    formSyncEnabledRef.current = false;
+    useCreateIdeaStore.getState().reset();
+    form.reset(ideaCreateDefaultValues);
+    setImagePreviewUrl(prev => {
+      if (prev) {
+        URL.revokeObjectURL(prev);
+      }
+      return null;
+    });
+    if (imageInputRef.current) {
+      imageInputRef.current.value = '';
+    }
+
+    queueMicrotask(() => {
+      formSyncEnabledRef.current = true;
+    });
+  }, [form]);
+
   const onSaveDraft = async (): Promise<boolean> => {
     const values = form.getValues();
     const result = ideaCreateDraftSchema.safeParse(values);
@@ -166,7 +193,7 @@ export function useIdeaCreateForm() {
 
     try {
       await saveDraftMutation.mutateAsync(values);
-      useCreateIdeaStore.getState().reset();
+      clearCreateIdeaSession();
       return true;
     } catch {
       return false;
@@ -216,7 +243,7 @@ export function useIdeaCreateForm() {
 
     try {
       await publishMutation.mutateAsync(values);
-      useCreateIdeaStore.getState().reset();
+      clearCreateIdeaSession();
       return true;
     } catch {
       return false;
@@ -252,6 +279,6 @@ export function useIdeaCreateForm() {
     isPublishing,
     isHydrating,
     error,
-    resetCreateIdea: useCreateIdeaStore.getState().reset,
+    clearCreateIdeaSession,
   };
 }

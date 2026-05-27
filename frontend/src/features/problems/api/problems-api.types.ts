@@ -24,13 +24,11 @@ export type ProblemForm = {
   ideas: Array<{
     id: string;
     title: string | null;
-    status: string;
     isPrimary: boolean;
     imageUrl: string | null;
     viewCount: number;
     likeCount: number;
     commentCount: number;
-    author: ProblemAuthor;
   }>;
   tags: Array<{ id: string; name: string }>;
   attachments: Array<{

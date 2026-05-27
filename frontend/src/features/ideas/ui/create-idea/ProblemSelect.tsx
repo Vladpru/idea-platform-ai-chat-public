@@ -4,7 +4,7 @@ import {
   formatProblemIds,
   parseProblemIds,
 } from '@/features/ideas/lib/problems';
-import { type ProblemDraft, useMyProblemsQuery } from '@/features/problems';
+import { type ProblemDraft, useProblemsListQuery } from '@/features/problems';
 import { Check, ChevronDown, Plus, Search, X } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { Control, FieldErrors } from 'react-hook-form';
@@ -38,13 +38,16 @@ function ProblemSelect({
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [addProblemOpen, setAddProblemOpen] = useState(false);
-  const { data: myProblemsFeed } = useMyProblemsQuery();
-  const myProblems = myProblemsFeed?.data ?? [];
+  const { data: problemsFeed } = useProblemsListQuery({
+    sort: 'newest',
+    limit: 50,
+  });
 
   const allProblems = useMemo(() => {
+    const publishedProblems = problemsFeed?.data ?? [];
     const seen = new Set<string>();
     const merged: MockProblem[] = [];
-    for (const problem of myProblems) {
+    for (const problem of publishedProblems) {
       if (seen.has(problem.id)) continue;
       seen.add(problem.id);
       merged.push({ id: problem.id, label: problem.title });
@@ -55,7 +58,7 @@ function ProblemSelect({
       merged.push(problem);
     }
     return merged;
-  }, [createdProblems, myProblems]);
+  }, [createdProblems, problemsFeed]);
 
   const resolveProblemLabel = (id: string) =>
     allProblems.find(problem => problem.id === id)?.label;

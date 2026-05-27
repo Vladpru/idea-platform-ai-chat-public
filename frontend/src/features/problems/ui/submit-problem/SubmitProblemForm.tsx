@@ -9,6 +9,7 @@ import { DEFAULT_PROBLEMS_DASHBOARD_SEARCH } from '@/features/problems-dashboard
 import { useSubmitProblemForm } from '@/features/problems/hooks/use-submit-problem-form';
 import {
   PROBLEM_STAGES,
+  hasSubmitProblemUnsavedProgress,
   sanitizeCostBenefitInput,
 } from '@/features/problems/lib/submit-problem';
 import { SaveDraftButton } from '@/features/problems/ui/tooltips';
@@ -18,10 +19,13 @@ import { type FormEvent, useId } from 'react';
 import { Controller } from 'react-hook-form';
 
 import { ROUTES } from '@/shared/config/paths';
+import { useCreateFormLeaveGuard } from '@/shared/hooks/use-create-form-leave-guard';
+import { SAVE_PROBLEM_PROGRESS_DESCRIPTION } from '@/shared/lib/create-form-leave/copy';
 import { cn } from '@/shared/lib/utils';
 import { TagsInput, selectClass } from '@/shared/ui/TagsInput';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
+import { SaveProgressBeforeLeavingModal } from '@/shared/ui/save-progress-before-leaving-modal';
 
 import { IdeaSelect } from './IdeaSelect';
 import { ProblemFilesField } from './ProblemFilesField';
@@ -61,24 +65,47 @@ export function SubmitProblemForm() {
     onPublish,
     canSaveDraft,
     canPublish,
-    resetForm,
+    clearSession,
   } = useSubmitProblemForm();
 
   const {
     register,
     control,
-    formState: { errors },
+    formState: { errors, isDirty: formIsDirty },
+    watch,
   } = form;
 
-  const handleCancel = () => {
-    resetForm();
+  const watchedValues = watch();
+  const hasUnsavedProgress = hasSubmitProblemUnsavedProgress(
+    formIsDirty,
+    watchedValues,
+  );
+
+  const navigateToProblems = () => {
     void navigate({ to: ROUTES.problems, search: DEFAULT_PROBLEMS_DASHBOARD_SEARCH });
+  };
+
+  const {
+    leaveModalOpen,
+    requestLeave,
+    handleLeaveModalOpenChange,
+    handleDiscard,
+    handleSaveAsDraft: handleLeaveSaveAsDraft,
+  } = useCreateFormLeaveGuard({
+    hasUnsavedProgress,
+    isBusy,
+    onSaveDraft,
+    onDiscard: clearSession,
+  });
+
+  const handleCancel = () => {
+    requestLeave(navigateToProblems);
   };
 
   const handleSaveDraft = async () => {
     const isSaved = await onSaveDraft();
     if (!isSaved) return;
-    void navigate({ to: ROUTES.problems, search: DEFAULT_PROBLEMS_DASHBOARD_SEARCH });
+    navigateToProblems();
   };
 
   const handlePublish = async (event: FormEvent<HTMLFormElement>) => {
@@ -89,6 +116,7 @@ export function SubmitProblemForm() {
   };
 
   return (
+    <>
     <form
       id={formId}
       className="space-y-8"
@@ -271,5 +299,15 @@ export function SubmitProblemForm() {
         </Button>
       </div>
     </form>
+
+    <SaveProgressBeforeLeavingModal
+      open={leaveModalOpen}
+      onOpenChange={handleLeaveModalOpenChange}
+      onDiscard={handleDiscard}
+      onSaveAsDraft={() => void handleLeaveSaveAsDraft()}
+      isSaving={isSavingDraft}
+      description={SAVE_PROBLEM_PROGRESS_DESCRIPTION}
+    />
+    </>
   );
 }

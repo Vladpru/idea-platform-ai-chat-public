@@ -1,5 +1,4 @@
 import type {
-  IdeaStatus,
   MediaProvider,
   ProblemStatus,
 } from '../../../generated/prisma/client';
@@ -57,11 +56,9 @@ export type ProblemFormRecord = {
     idea: {
       id: string;
       title: string | null;
-      status: IdeaStatus;
       viewCount: number;
       likeCount: number;
       commentCount: number;
-      author: ProblemFormAuthor;
       media: Array<{ url: string }>;
     };
   }>;
@@ -74,13 +71,11 @@ export type ProblemFormRecord = {
 export type ProblemLinkedIdea = {
   id: string;
   title: string | null;
-  status: IdeaStatus;
   isPrimary: boolean;
   imageUrl: string | null;
   viewCount: number;
   likeCount: number;
   commentCount: number;
-  author: ProblemFormAuthor;
 };
 
 export type ProblemMediaResponse = {
