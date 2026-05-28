@@ -21,7 +21,15 @@ export type IdeaFormMember = {
 export type IdeaFormProblem = {
   id: string;
   title: string;
+  description: string;
+  status: string;
+  stage: string | null;
   isPrimary: boolean;
+  author: IdeaFormAuthor;
+  viewCount: number;
+  likeCount: number;
+  commentCount: number;
+  isLiked: boolean;
 };
 
 export type IdeaFormTag = {

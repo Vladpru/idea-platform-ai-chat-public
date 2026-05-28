@@ -18,6 +18,27 @@ export type IdeaFormMemberRecord = Prisma.IdeaMemberGetPayload<{
   include: typeof IDEA_FORM_MEMBER_INCLUDE;
 }>;
 
+const IDEA_FORM_PROBLEM_SELECT = {
+  id: true,
+  title: true,
+  description: true,
+  status: true,
+  stage: true,
+  viewCount: true,
+  likeCount: true,
+  commentCount: true,
+  author: {
+    select: IDEA_FORM_AUTHOR_SELECT,
+  },
+} as const satisfies Prisma.ProblemSelect;
+
+export function userLikesInclude(userId: string) {
+  return {
+    where: { userId },
+    select: { userId: true },
+  } as const;
+}
+
 export const IDEA_FORM_INCLUDE = {
   author: {
     select: IDEA_FORM_AUTHOR_SELECT,
@@ -25,10 +46,7 @@ export const IDEA_FORM_INCLUDE = {
   problems: {
     include: {
       problem: {
-        select: {
-          id: true,
-          title: true,
-        },
+        select: IDEA_FORM_PROBLEM_SELECT,
       },
     },
   },
@@ -49,16 +67,24 @@ export const IDEA_FORM_INCLUDE = {
 } as const satisfies Prisma.IdeaInclude;
 
 export function ideaFormInclude(currentUserId: string) {
+  const likes = userLikesInclude(currentUserId);
+
   return {
     author: IDEA_FORM_INCLUDE.author,
-    problems: IDEA_FORM_INCLUDE.problems,
+    problems: {
+      include: {
+        problem: {
+          select: {
+            ...IDEA_FORM_PROBLEM_SELECT,
+            likes,
+          },
+        },
+      },
+    },
     tags: IDEA_FORM_INCLUDE.tags,
     members: IDEA_FORM_INCLUDE.members,
     media: IDEA_FORM_INCLUDE.media,
-    likes: {
-      where: { userId: currentUserId },
-      select: { userId: true },
-    },
+    likes,
   } as const satisfies Prisma.IdeaInclude;
 }
 

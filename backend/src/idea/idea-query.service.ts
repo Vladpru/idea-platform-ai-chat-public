@@ -7,7 +7,7 @@ import {
   GetIdeasQueryDto,
   type IdeaSortOption,
 } from './dto/get-ideas-query.dto';
-import { IDEA_FORM_INCLUDE, resolveIdeaFormInclude } from './idea.constants';
+import { resolveIdeaFormInclude } from './idea.constants';
 import { type IdeaFormRecord, toIdeaFormResponse } from './idea.mapper';
 import type {
   IdeaFormResponse,
@@ -254,12 +254,14 @@ export class IdeaQueryService {
       where: {
         id: { in: similarIds },
       },
-      include: IDEA_FORM_INCLUDE,
+      include: resolveIdeaFormInclude(currentUserId),
     });
 
     return similarIds
       .map(sampleId => fullIdeas.find(idea => idea.id === sampleId))
       .filter((idea): idea is NonNullable<typeof idea> => !!idea)
-      .map(idea => toIdeaFormResponse(idea, currentUserId));
+      .map(idea =>
+        toIdeaFormResponse(idea as unknown as IdeaFormRecord, currentUserId),
+      );
   }
 }

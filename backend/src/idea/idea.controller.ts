@@ -126,7 +126,7 @@ export class IdeaController {
     @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticatedRequest,
   ) {
-    const idea = await this.ideaQueryService.findByIdSmart(id, req.user?.id);
+    const idea = await this.ideaQueryService.findByIdSmart(id, req.user.id);
 
     this.ideaQueryService
       .trackUniqueView({ ideaId: id, userId: req.user?.id })
