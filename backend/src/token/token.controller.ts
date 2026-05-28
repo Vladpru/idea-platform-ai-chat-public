@@ -5,6 +5,7 @@ import {
   Res,
   UnauthorizedException,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 
 import { TokenService } from './token.service';
@@ -14,6 +15,7 @@ export class TokenController {
   constructor(private readonly tokenService: TokenService) {}
 
   @Post('refresh')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   async refresh(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,

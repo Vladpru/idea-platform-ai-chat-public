@@ -1,5 +1,6 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
@@ -11,6 +12,7 @@ export class PasswordResetController {
   constructor(private readonly passwordResetService: PasswordResetService) {}
 
   @Post('forgot-password')
+  @Throttle({ default: { limit: 4, ttl: 60_000 } })
   @ApiOperation({ summary: 'Request a password reset email' })
   @ApiBody({ type: ForgotPasswordDto })
   @ApiOkResponse({
@@ -21,6 +23,7 @@ export class PasswordResetController {
   }
 
   @Post('reset-password')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @ApiOperation({ summary: 'Set a new password using a reset token' })
   @ApiBody({ type: ResetPasswordDto })
   @ApiOkResponse({ description: 'Password updated successfully' })

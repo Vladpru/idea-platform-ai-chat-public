@@ -1,5 +1,6 @@
 import { Body, Controller, Post, Res } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 
 import { TokenService } from '../token/token.service';
@@ -16,6 +17,7 @@ export class AuthController {
   ) {}
 
   @Post('register')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   async register(
     @Body() dto: CreateUserDto,
     @Res({ passthrough: true }) res: Response,
@@ -27,6 +29,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @Throttle({ default: { limit: 6, ttl: 60_000 } })
   async login(
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) res: Response,
@@ -38,6 +41,7 @@ export class AuthController {
   }
 
   @Post('google')
+  @Throttle({ default: { limit: 8, ttl: 60_000 } })
   async googleLogin(
     @Body() body: { token?: string; credential?: string } | undefined,
     @Res({ passthrough: true }) res: Response,

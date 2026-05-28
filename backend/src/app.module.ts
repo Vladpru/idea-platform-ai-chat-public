@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 import { AuthModule } from './auth/auth.module';
 import { IdeaModule } from './idea/idea.module';
@@ -17,6 +19,12 @@ import { UserModule } from './user/user.module';
       isGlobal: true,
       envFilePath: `.env.${process.env.APP_ENV ?? 'development'}`,
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60_000,
+        limit: 30,
+      },
+    ]),
     UserModule,
     IdeaModule,
     ProblemModule,
@@ -26,6 +34,12 @@ import { UserModule } from './user/user.module';
     TokenModule,
     MailModule,
     SearchModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}

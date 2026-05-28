@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { hash, verify } from 'argon2';
-import { randomBytes } from 'crypto';
+import { randomBytes, randomUUID } from 'crypto';
 
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -17,12 +17,6 @@ import {
 
 const GENERIC_FORGOT_MESSAGE =
   'If an account exists with this email, we sent password reset instructions.';
-
-type PasswordResetCandidate = {
-  id: string;
-  userId: string;
-  tokenHash: string;
-};
 
 @Injectable()
 export class PasswordResetService {
@@ -50,20 +44,22 @@ export class PasswordResetService {
       where: { userId: user.id, usedAt: null },
     });
 
-    const rawToken = randomBytes(32).toString('hex');
-    const tokenHash = await hash(rawToken);
+    const tokenId = randomUUID();
+    const tokenSecret = randomBytes(32).toString('hex');
+    const tokenHash = await hash(tokenSecret);
     const expiresMinutes = this.resetExpireMinutes();
     const expiresAt = new Date(Date.now() + expiresMinutes * 60 * 1000);
 
     const record = await this.prisma.passwordResetToken.create({
-      data: { userId: user.id, tokenHash, expiresAt },
+      data: { id: tokenId, userId: user.id, tokenHash, expiresAt },
       select: { id: true },
     });
 
     const frontendUrl = this.config
       .getOrThrow<string>('FRONTEND_URL')
       .replace(/\/$/, '');
-    const resetUrl = `${frontendUrl}/reset-password?token=${rawToken}`;
+    const resetToken = `${tokenId}.${tokenSecret}`;
+    const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
 
     try {
       await this.mail.sendPasswordResetEmail({
@@ -88,28 +84,42 @@ export class PasswordResetService {
     }
 
     const password = validateNewPassword(newPassword, 'New password');
+    const now = new Date();
+    const parsed = this.parseTokenWithId(token);
 
-    const candidates = await this.prisma.passwordResetToken.findMany({
-      where: { usedAt: null, expiresAt: { gt: new Date() } },
-      select: { id: true, userId: true, tokenHash: true },
-    });
+    let matched: { id: string; userId: string; tokenHash: string } | null =
+      null;
+    if (parsed) {
+      matched = await this.prisma.passwordResetToken.findFirst({
+        where: {
+          id: parsed.id,
+          usedAt: null,
+          expiresAt: { gt: now },
+        },
+        select: { id: true, userId: true, tokenHash: true },
+      });
+    } else {
+      const candidates = await this.prisma.passwordResetToken.findMany({
+        where: { usedAt: null, expiresAt: { gt: now } },
+        select: { id: true, userId: true, tokenHash: true },
+      });
 
-    let matched: PasswordResetCandidate | null = null;
-
-    for (const candidate of candidates) {
-      try {
-        if (
-          await verify((candidate as PasswordResetCandidate).tokenHash, token)
-        ) {
-          matched = candidate;
-          break;
+      for (const candidate of candidates) {
+        try {
+          if (await verify(candidate.tokenHash, token)) {
+            matched = candidate;
+            break;
+          }
+        } catch {
+          // invalid hash format - skip
         }
-      } catch {
-        // invalid hash format — skip
       }
     }
 
     if (!matched) {
+      throw new BadRequestException('Invalid or expired reset link');
+    }
+    if (parsed && !(await verify(matched.tokenHash, parsed.secret))) {
       throw new BadRequestException('Invalid or expired reset link');
     }
 
@@ -137,5 +147,19 @@ export class PasswordResetService {
     const raw = this.config.get<string>('PASSWORD_RESET_EXPIRE_MINUTES');
     const parsed = raw ? Number.parseInt(raw, 10) : 30;
     return Number.isFinite(parsed) && parsed > 0 ? parsed : 30;
+  }
+
+  private parseTokenWithId(
+    token: string,
+  ): { id: string; secret: string } | null {
+    const parts = token.split('.');
+    if (parts.length !== 2) {
+      return null;
+    }
+    const [id, secret] = parts;
+    if (!id || !secret) {
+      return null;
+    }
+    return { id, secret };
   }
 }

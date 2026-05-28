@@ -5,7 +5,6 @@ import {
   publishBtnClass,
   selectClass,
 } from '@/features/ideas/lib/styles';
-import { FieldLabel } from '@/features/ideas/ui/create-idea/Fields';
 import { ArrowLink } from '@/features/ideas/ui/icons/ArrowLink';
 import { useLinkIdeasToProblemMutation } from '@/features/problem-details/lib/use-problem-idea-link-mutations';
 import { cancelOutlineBtn } from '@/features/profile/ui/profile-view-classes';
