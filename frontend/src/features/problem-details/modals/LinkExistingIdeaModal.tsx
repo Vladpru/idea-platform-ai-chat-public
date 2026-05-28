@@ -1,13 +1,15 @@
-import { ArrowLink } from '@/features/ideas/ui/icons/ArrowLink';
-import { FieldLabel } from '@/features/ideas/ui/create-idea/Fields';
+import { useMyIdeasQuery } from '@/features/ideas/hooks/use-idea-queries';
 import {
+  fieldLabelClass,
   primaryBtnClass,
   publishBtnClass,
   selectClass,
 } from '@/features/ideas/lib/styles';
-import { useMyIdeasQuery } from '@/features/ideas/hooks/use-idea-queries';
+import { FieldLabel } from '@/features/ideas/ui/create-idea/Fields';
+import { ArrowLink } from '@/features/ideas/ui/icons/ArrowLink';
 import { useLinkIdeasToProblemMutation } from '@/features/problem-details/lib/use-problem-idea-link-mutations';
 import { cancelOutlineBtn } from '@/features/profile/ui/profile-view-classes';
+import { Link } from '@tanstack/react-router';
 import { Check, ChevronDown, Search, X } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 
@@ -23,7 +25,6 @@ import {
 } from '@/shared/ui/dialog';
 import { Input } from '@/shared/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip';
-import { Link } from '@tanstack/react-router';
 
 const SAVE_TOOLTIP = 'Select at least one idea to link it to this problem.';
 
@@ -144,9 +145,9 @@ export function LinkExistingIdeaModal({
 
           <div className="mt-6 space-y-4">
             <div>
-              <FieldLabel htmlFor="link-idea-select">
+              <p className={fieldLabelClass}>
                 Ideas that can solve this problem
-              </FieldLabel>
+              </p>
 
               <div ref={containerRef} className="relative mt-2">
                 <div
@@ -165,7 +166,7 @@ export function LinkExistingIdeaModal({
                   }}
                   className={cn(
                     selectClass,
-                    'relative h-auto min-h-10 cursor-pointer rounded-md pr-9 pl-2 text-left',
+                    'relative h-auto min-h-8 cursor-pointer rounded-md pr-9 pl-2 text-left',
                     dropdownOpen &&
                       'border-brand-light-blue ring-brand-light-blue/40 ring-2',
                   )}
@@ -293,10 +294,7 @@ export function LinkExistingIdeaModal({
                                   onClick={event => event.stopPropagation()}
                                 >
                                   View
-                                  <ArrowLink
-                                    className="size-3.5"
-                                    aria-hidden
-                                  />
+                                  <ArrowLink className="size-3.5" aria-hidden />
                                 </Link>
 
                                 {isSelected ? (

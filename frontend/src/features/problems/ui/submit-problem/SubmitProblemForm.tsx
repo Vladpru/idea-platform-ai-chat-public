@@ -20,10 +20,15 @@ import { Controller } from 'react-hook-form';
 
 import { ROUTES } from '@/shared/config/paths';
 import { useCreateFormLeaveGuard } from '@/shared/hooks/use-create-form-leave-guard';
-import { SAVE_PROBLEM_PROGRESS_DESCRIPTION } from '@/shared/lib/create-form-leave/copy';
+import {
+  SAVE_PROBLEM_PROGRESS_DESCRIPTION,
+  UNDO_CHANGES_DESCRIPTION,
+  UNDO_CHANGES_TITLE,
+} from '@/shared/lib/create-form-leave/copy';
 import { cn } from '@/shared/lib/utils';
 import { TagsInput, selectClass } from '@/shared/ui/TagsInput';
 import { Button } from '@/shared/ui/button';
+import { ConfirmModal } from '@/shared/ui/confirm-modal';
 import { Input } from '@/shared/ui/input';
 import { SaveProgressBeforeLeavingModal } from '@/shared/ui/save-progress-before-leaving-modal';
 
@@ -305,12 +310,14 @@ export function SubmitProblemForm() {
         >
           Cancel
         </button>
-        <SaveDraftButton
-          canSave={canSaveDraft}
-          isSaving={isSavingDraft}
-          disabled={isBusy}
-          onSave={() => void handleSaveDraft()}
-        />
+        {!isEditing ? (
+          <SaveDraftButton
+            canSave={canSaveDraft}
+            isSaving={isSavingDraft}
+            disabled={isBusy}
+            onSave={() => void handleSaveDraft()}
+          />
+        ) : null}
         <Button
           type="submit"
           className={publishBtnClass}
@@ -322,14 +329,26 @@ export function SubmitProblemForm() {
       </div>
     </form>
 
-    <SaveProgressBeforeLeavingModal
-      open={leaveModalOpen}
-      onOpenChange={handleLeaveModalOpenChange}
-      onDiscard={handleDiscard}
-      onSaveAsDraft={() => void handleLeaveSaveAsDraft()}
-      isSaving={isSavingDraft}
-      description={SAVE_PROBLEM_PROGRESS_DESCRIPTION}
-    />
+    {isEditing ? (
+      <ConfirmModal
+        open={leaveModalOpen}
+        onOpenChange={handleLeaveModalOpenChange}
+        title={UNDO_CHANGES_TITLE}
+        description={UNDO_CHANGES_DESCRIPTION}
+        confirmLabel="YES"
+        cancelLabel="NO"
+        onConfirm={handleDiscard}
+      />
+    ) : (
+      <SaveProgressBeforeLeavingModal
+        open={leaveModalOpen}
+        onOpenChange={handleLeaveModalOpenChange}
+        onDiscard={handleDiscard}
+        onSaveAsDraft={() => void handleLeaveSaveAsDraft()}
+        isSaving={isSavingDraft}
+        description={SAVE_PROBLEM_PROGRESS_DESCRIPTION}
+      />
+    )}
     </>
   );
 }

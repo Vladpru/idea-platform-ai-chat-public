@@ -1,8 +1,15 @@
-import { LinkExistingIdeaModal } from '@/features/problem-details/modals/LinkExistingIdeaModal';
-import { useUnlinkIdeaFromProblemMutation } from '@/features/problem-details/lib/use-problem-idea-link-mutations';
-import type { ProblemDetails } from '@/features/problem-details/model/problem-details.types';
 import { outlineBtnClass } from '@/features/ideas/lib/styles';
-import { Eye, Heart, MessageCircle, MoreVertical, Sparkles } from 'lucide-react';
+import { useUnlinkIdeaFromProblemMutation } from '@/features/problem-details/lib/use-problem-idea-link-mutations';
+import { LinkExistingIdeaModal } from '@/features/problem-details/modals/LinkExistingIdeaModal';
+import type { ProblemDetails } from '@/features/problem-details/model/problem-details.types';
+import { Link } from '@tanstack/react-router';
+import {
+  Eye,
+  Heart,
+  MessageCircle,
+  MoreVertical,
+  Sparkles,
+} from 'lucide-react';
 import { useState } from 'react';
 
 import { ROUTES } from '@/shared/config/paths';
@@ -14,7 +21,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
-import { Link } from '@tanstack/react-router';
 
 type ProblemLinkedIdeasTabProps = {
   problemId: string;
@@ -41,22 +47,13 @@ function LinkedIdeasHeader({ onLinkExisting }: LinkedIdeasHeaderProps) {
         Linked ideas
       </h2>
       <div className={headerActionsLayoutClass}>
-        <Link
-          to={ROUTES.ideasNew}
-          className={cn(
-            headerActionClass,
-            'inline-flex flex-1 items-center justify-center md:flex-initial',
-          )}
-        >
-          Create new idea
-        </Link>
         <Button
           type="button"
           variant="outline"
           className={cn(headerActionClass, 'flex-1 md:flex-initial')}
           onClick={onLinkExisting}
         >
-          Link existing idea
+          Link idea
         </Button>
       </div>
     </div>
