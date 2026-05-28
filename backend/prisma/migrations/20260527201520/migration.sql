@@ -1,5 +1,3 @@
--- AlterTable
-ALTER TABLE "idea" ALTER COLUMN "search_vector" DROP DEFAULT;
-
--- AlterTable
-ALTER TABLE "problem" ALTER COLUMN "search_vector" DROP DEFAULT;
+-- no-op
+-- `search_vector` is a generated column, so dropping defaults is invalid in Postgres.
+-- Kept migration folder for history compatibility.
