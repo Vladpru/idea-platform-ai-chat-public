@@ -87,6 +87,7 @@ export type IdeaDetails = {
   attachments: IdeaDetailsAttachment[];
   linkedProblems: IdeaDetailsLinkedProblem[];
   createdAt: string;
+  isLiked: boolean;
   stats: IdeaDetailsStats;
   counts: IdeaDetailsCounts;
 };

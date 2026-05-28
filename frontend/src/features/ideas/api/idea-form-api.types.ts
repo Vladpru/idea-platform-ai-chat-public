@@ -52,6 +52,10 @@ export type IdeaFormResponseDto = {
   title: string | null;
   description: string | null;
   publishedAt: string | null;
+  viewCount?: number;
+  likeCount?: number;
+  commentCount?: number;
+  isLiked?: boolean;
   problems: IdeaFormProblemDto[];
   tags: IdeaFormTagDto[];
   mainImage: IdeaMediaResponseDto | null;

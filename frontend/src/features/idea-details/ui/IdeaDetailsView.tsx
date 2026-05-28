@@ -289,6 +289,9 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
                   <IdeaStatsFooter
                     createdAt={idea.createdAt}
                     stats={idea.stats}
+                    entityId={idea.id}
+                    entityType="IDEA"
+                    isLiked={idea.isLiked}
                   />
                 </AnimatedPanel>
               )}

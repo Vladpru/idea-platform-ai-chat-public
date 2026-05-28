@@ -19,6 +19,7 @@ export type DashboardCardStandardProps<
   TCard extends DashboardCardBase = DashboardCardBase,
 > = {
   card: TCard;
+  entityType?: 'IDEA' | 'PROBLEM';
   detailHref: string;
   emptyDescriptionText: string;
   emptyImageText: string;
@@ -41,6 +42,7 @@ function DashboardCardStandardInner<
   TCard extends DashboardCardBase = DashboardCardBase,
 >({
   card,
+  entityType,
   detailHref,
   emptyDescriptionText,
   emptyImageText,
@@ -61,6 +63,12 @@ function DashboardCardStandardInner<
   const hasLinkedItems =
     !hideLinkedItems && card.linkedItems && card.linkedItems.length > 0;
   const stackStatsBelowTags = columnCount >= STATS_BELOW_TAGS_COLUMN_THRESHOLD;
+  const resolvedEntityType: 'IDEA' | 'PROBLEM' =
+    entityType ?? (detailHref.includes('/problems/') ? 'PROBLEM' : 'IDEA');
+  const resolvedIsLiked =
+    'isLiked' in card && typeof card.isLiked === 'boolean'
+      ? card.isLiked
+      : false;
 
   const handleToggleLinked = useCallback(() => {
     onToggleLinkedItems?.(card.id);
@@ -112,8 +120,10 @@ function DashboardCardStandardInner<
         <Link
           to={detailHref}
           className={cn(
-            'focus-visible:ring-brand-dark-blue flex min-w-0 flex-1 flex-col justify-between text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
-            isHorizontal ? 'p-4 sm:p-5 lg:p-6' : 'p-4 sm:p-5',
+            'focus-visible:ring-brand-dark-blue flex min-w-0 flex-1 flex-col text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+            isHorizontal
+              ? 'px-4 pt-4 sm:px-5 sm:pt-5 lg:px-6 lg:pt-6'
+              : 'px-4 pt-4 sm:px-5 sm:pt-5',
           )}
         >
           <div className="space-y-2 sm:space-y-3">
@@ -153,40 +163,45 @@ function DashboardCardStandardInner<
               {card.description || emptyDescriptionText}
             </p>
           </div>
+        </Link>
+
+        <div
+          className={cn(
+            'flex w-full flex-col gap-3 px-4 pb-4 sm:px-5 sm:pb-5 lg:px-6 lg:pb-6',
+            !stackStatsBelowTags &&
+              (isHorizontal
+                ? 'pt-3 sm:flex-row sm:items-center sm:justify-between sm:pt-4'
+                : 'pt-4 sm:flex-row sm:items-center sm:justify-between'),
+          )}
+        >
+          <div
+            className={cn(
+              'min-w-0 flex-1 shrink overflow-hidden',
+              !stackStatsBelowTags &&
+                '[mask-image:linear-gradient(to_right,black_90%,transparent_100%)]',
+            )}
+          >
+            <IdeaTagCloud
+              tags={card.tags}
+              compact={isMobile}
+              tagToShowCount={tagToShowCount}
+            />
+          </div>
 
           <div
             className={cn(
-              'mt-4 flex w-full flex-col gap-3',
-              !stackStatsBelowTags &&
-                (isHorizontal
-                  ? 'pt-3 sm:flex-row sm:items-center sm:justify-between sm:pt-0'
-                  : 'sm:flex-row sm:items-center sm:justify-between'),
+              'relative z-10 shrink-0 bg-white',
+              stackStatsBelowTags && 'w-full',
             )}
           >
-            <div
-              className={cn(
-                'min-w-0 flex-1 shrink overflow-hidden',
-                !stackStatsBelowTags &&
-                  '[mask-image:linear-gradient(to_right,black_90%,transparent_100%)]',
-              )}
-            >
-              <IdeaTagCloud
-                tags={card.tags}
-                compact={isMobile}
-                tagToShowCount={tagToShowCount}
-              />
-            </div>
-
-            <div
-              className={cn(
-                'relative z-10 shrink-0 bg-white',
-                stackStatsBelowTags && 'w-full',
-              )}
-            >
-              <DashboardCardStats stats={card.stats} />
-            </div>
+            <DashboardCardStats
+              stats={card.stats}
+              entityId={card.id}
+              entityType={resolvedEntityType}
+              isLiked={resolvedIsLiked}
+            />
           </div>
-        </Link>
+        </div>
 
         {hasLinkedItems && (
           <div className="shrink-0 bg-white">
@@ -213,8 +228,15 @@ function areDashboardCardStandardPropsEqual<
   prev: DashboardCardStandardProps<TCard>,
   next: DashboardCardStandardProps<TCard>,
 ): boolean {
+  const prevIsLiked = 'isLiked' in prev.card ? prev.card.isLiked : undefined;
+  const nextIsLiked = 'isLiked' in next.card ? next.card.isLiked : undefined;
+  const prevLikes = prev.card.stats?.likes;
+  const nextLikes = next.card.stats?.likes;
+
   return (
     prev.card === next.card &&
+    prevIsLiked === nextIsLiked &&
+    prevLikes === nextLikes &&
     prev.layout === next.layout &&
     prev.linkedItemsExpanded === next.linkedItemsExpanded &&
     prev.detailHref === next.detailHref &&
