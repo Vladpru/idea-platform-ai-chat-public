@@ -40,6 +40,7 @@ import { GetProblemsQueryDto } from './dto/get-problems-query.dto';
 import { MyProblemsQueryDto } from './dto/my-problems.dto';
 import { UpdateProblemDraftDto } from './dto/update-problem-draft.dto';
 import { ProblemStage } from './enum/problem-stage.enum';
+import { ProblemQueryService } from './problem-query.service';
 import { ProblemService } from './problem.service';
 import type {
   ProblemFormResponse,
@@ -51,7 +52,10 @@ type AuthenticatedRequest = Request & { user: { id: string } };
 @ApiTags('problems')
 @Controller('problems')
 export class ProblemController {
-  constructor(private readonly problemService: ProblemService) {}
+  constructor(
+    private readonly problemService: ProblemService,
+    private readonly problemQueryService: ProblemQueryService,
+  ) {}
 
   @Post()
   @JwtAuth()
@@ -80,8 +84,11 @@ export class ProblemController {
   @ApiQuery({ name: 'stage', required: false, enum: ProblemStage })
   @ApiOkResponse({ description: 'Paginated published problems' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
-  findAll(@Query() query: GetProblemsQueryDto): Promise<ProblemsFeedResponse> {
-    return this.problemService.findAllPublic(query);
+  findAll(
+    @Query() query: GetProblemsQueryDto,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<ProblemsFeedResponse> {
+    return this.problemService.findAllPublic(query, req.user.id);
   }
 
   @Get('my-dashboard')
@@ -106,11 +113,17 @@ export class ProblemController {
   @ApiOkResponse({ description: 'Problem form payload' })
   @ApiNotFoundResponse({ description: 'Problem not found' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
-  findOne(
+  async findOne(
     @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticatedRequest,
   ): Promise<ProblemFormResponse> {
-    return this.problemService.findByIdSmart(id, req.user.id);
+    const problem = await this.problemService.findByIdSmart(id, req.user?.id);
+
+    this.problemQueryService
+      .trackUniqueView({ problemId: id, userId: req.user?.id })
+      .catch(err => console.error(err));
+
+    return problem;
   }
 
   @Patch(':id')
@@ -194,5 +207,16 @@ export class ProblemController {
     @Req() req: AuthenticatedRequest,
   ): Promise<void> {
     await this.problemService.delete(id, req.user.id);
+  }
+
+  @Post(':id/like')
+  @JwtAuth()
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  toggleLike(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<void> {
+    return this.problemService.toggleLike(id, req.user.id);
   }
 }

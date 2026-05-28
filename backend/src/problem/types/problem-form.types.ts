@@ -39,7 +39,9 @@ export type ProblemMediaRecord = {
 
 export type ProblemFormRecord = Prisma.ProblemGetPayload<{
   include: typeof PROBLEM_FORM_INCLUDE;
-}>;
+}> & {
+  likes?: Array<{ userId: string }>;
+};
 
 export type ProblemLinkedIdea = {
   id: string;
@@ -74,6 +76,10 @@ export type ProblemFormResponse = {
   category: string | null;
   impact: string | null;
   publishedAt: string | null;
+  viewCount: number;
+  likeCount: number;
+  commentCount: number;
+  isLiked: boolean;
   ideas: ProblemLinkedIdea[];
   tags: ProblemFormTag[];
   attachments: ProblemMediaResponse[];

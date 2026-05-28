@@ -63,9 +63,18 @@ function toProblemLinkedIdea(
     title: link.idea.title,
     isPrimary: link.isPrimary,
     imageUrl: link.idea.media[0]?.url ?? null,
-    viewCount: link.idea.viewCount,
-    likeCount: link.idea.likeCount,
-    commentCount: link.idea.commentCount,
+    viewCount: link.idea.viewCount ?? 0,
+    likeCount: link.idea.likeCount ?? 0,
+    commentCount: link.idea.commentCount ?? 0,
+  };
+}
+
+function mapProblemEngagementMetrics(problem: ProblemFormRecord) {
+  return {
+    viewCount: problem.viewCount ?? 0,
+    likeCount: problem.likeCount ?? 0,
+    commentCount: problem.commentCount ?? 0,
+    isLiked: Boolean(problem.likes && problem.likes.length > 0),
   };
 }
 
@@ -100,6 +109,7 @@ export function toProblemFormResponse(
     category: problem.category,
     impact: problem.impact,
     publishedAt: problem.publishedAt?.toISOString() ?? null,
+    ...mapProblemEngagementMetrics(problem),
     ideas: problem.ideas.map(toProblemLinkedIdea),
     tags: problem.tags.map(toProblemFormTag),
     attachments: attachments.map(toProblemMediaResponse),
