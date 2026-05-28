@@ -349,6 +349,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
           </div>
         ) : activeTab === 'description' ? (
           <SimilarIdeasWidget
+            ideaId={ideaId}
             similarIdeas={similarIdeas}
             isLoading={isSimilarLoading}
             className={cn('border-brand-gray-200 border-t pt-8')}

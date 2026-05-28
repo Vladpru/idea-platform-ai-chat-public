@@ -1,10 +1,11 @@
 import type { SimilarIdeaCard as SimilarIdeaCardModel } from '@/features/idea-details/model/idea-details.types';
 import { Link } from '@tanstack/react-router';
-import { Eye, Heart, MessageCircle } from 'lucide-react';
+import { Eye, MessageCircle } from 'lucide-react';
 
 import { ROUTES } from '@/shared/config/paths';
 import { cn } from '@/shared/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
+import { LikeButton, type LikeOptimisticState } from '@/shared/ui/LikeButton';
 import { StageChevronBadge } from '@/shared/ui/stage-chevron-badge';
 import { IdeaTagCloud } from '../IdeaTagCloud';
 
@@ -13,12 +14,13 @@ import { getInitials } from '@/features/idea-details/lib/get-initials';
 type SimilarIdeaCardProps = {
   card: SimilarIdeaCardModel;
   className?: string;
+  onLikeToggle?: (id: string, nextState: LikeOptimisticState) => Promise<void>;
 };
 
 const cardSurfaceClass =
   'group flex w-full flex-col overflow-hidden rounded-lg border border-brand-gray-200 bg-white text-left shadow-sm transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-brand-dark-blue focus-visible:ring-offset-2 focus-visible:outline-none lg:flex-row';
 
-function SimilarIdeaCardContent({ card }: SimilarIdeaCardProps) {
+function SimilarIdeaCardContent({ card, onLikeToggle }: SimilarIdeaCardProps) {
   return (
     <>
       <div className="bg-brand-gray-100 relative aspect-[16/10] w-full shrink-0 overflow-hidden lg:h-[226px] lg:w-[400px]">
@@ -83,12 +85,16 @@ function SimilarIdeaCardContent({ card }: SimilarIdeaCardProps) {
                 {card.stats.comments}
               </span>
             </span>
-            <span className="inline-flex items-center gap-1">
-              <Heart className="text-brand-gray-400 size-3.5" />
-              <span className="font-semibold tabular-nums">
-                {card.stats.likes}
-              </span>
-            </span>
+            <LikeButton
+              key={`${card.id}-${card.isLiked ?? false}-${card.stats.likes}`}
+              entityId={card.id}
+              entityType="IDEA"
+              initialIsLiked={card.isLiked ?? false}
+              initialLikeCount={card.stats?.likes ?? 0}
+              className="cursor-pointer px-0 py-0 text-xs font-semibold hover:bg-transparent"
+              iconClassName="text-brand-gray-400 size-3.5"
+              onLikeToggle={onLikeToggle}
+            />
           </div>
         </div>
       </div>
@@ -96,7 +102,11 @@ function SimilarIdeaCardContent({ card }: SimilarIdeaCardProps) {
   );
 }
 
-export function SimilarIdeaCard({ card, className }: SimilarIdeaCardProps) {
+export function SimilarIdeaCard({
+  card,
+  className,
+  onLikeToggle,
+}: SimilarIdeaCardProps) {
   if (card.externalUrl) {
     return (
       <a
@@ -105,7 +115,7 @@ export function SimilarIdeaCard({ card, className }: SimilarIdeaCardProps) {
         rel="noopener noreferrer"
         className={cn(cardSurfaceClass, className)}
       >
-        <SimilarIdeaCardContent card={card} />
+        <SimilarIdeaCardContent card={card} onLikeToggle={onLikeToggle} />
       </a>
     );
   }
@@ -115,7 +125,7 @@ export function SimilarIdeaCard({ card, className }: SimilarIdeaCardProps) {
       to={ROUTES.ideaDetail(card.id)}
       className={cn(cardSurfaceClass, className)}
     >
-      <SimilarIdeaCardContent card={card} />
+      <SimilarIdeaCardContent card={card} onLikeToggle={onLikeToggle} />
     </Link>
   );
 }
