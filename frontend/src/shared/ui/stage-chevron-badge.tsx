@@ -81,7 +81,7 @@ export function StageChevronBadge({
       {stageText && (
         <div
           className={cn(
-            'relative z-50 flex items-center justify-center font-medium tracking-wide text-gray-600',
+            'relative flex items-center justify-center font-medium tracking-wide text-gray-600',
             compact ? 'pr-3 text-[10px]' : 'pr-4 text-[13px]',
           )}
           style={{ clipPath: flatLeftClip }}
