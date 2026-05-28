@@ -17,6 +17,7 @@ import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as AuthIndexRouteImport } from './routes/_auth/index'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as AuthStatisticsRouteImport } from './routes/_auth/statistics'
+import { Route as AuthSettingsRouteImport } from './routes/_auth/settings'
 import { Route as AuthSearchRouteImport } from './routes/_auth/search'
 import { Route as AuthProfileRouteRouteImport } from './routes/_auth/profile/route'
 import { Route as AuthProblemsRouteRouteImport } from './routes/_auth/problems/route'
@@ -68,6 +69,11 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
 const AuthStatisticsRoute = AuthStatisticsRouteImport.update({
   id: '/statistics',
   path: '/statistics',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthSettingsRoute = AuthSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthSearchRoute = AuthSearchRouteImport.update({
@@ -146,6 +152,7 @@ export interface FileRoutesByFullPath {
   '/problems': typeof AuthProblemsRouteRouteWithChildren
   '/profile': typeof AuthProfileRouteRouteWithChildren
   '/search': typeof AuthSearchRoute
+  '/settings': typeof AuthSettingsRoute
   '/statistics': typeof AuthStatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/ideas/$ideaId': typeof AuthIdeasIdeaIdRoute
@@ -164,6 +171,7 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof AuthSearchRoute
+  '/settings': typeof AuthSettingsRoute
   '/statistics': typeof AuthStatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/': typeof AuthIndexRoute
@@ -188,6 +196,7 @@ export interface FileRoutesById {
   '/_auth/problems': typeof AuthProblemsRouteRouteWithChildren
   '/_auth/profile': typeof AuthProfileRouteRouteWithChildren
   '/_auth/search': typeof AuthSearchRoute
+  '/_auth/settings': typeof AuthSettingsRoute
   '/_auth/statistics': typeof AuthStatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/_auth/': typeof AuthIndexRoute
@@ -213,6 +222,7 @@ export interface FileRouteTypes {
     | '/problems'
     | '/profile'
     | '/search'
+    | '/settings'
     | '/statistics'
     | '/auth/callback'
     | '/ideas/$ideaId'
@@ -231,6 +241,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/search'
+    | '/settings'
     | '/statistics'
     | '/auth/callback'
     | '/'
@@ -254,6 +265,7 @@ export interface FileRouteTypes {
     | '/_auth/problems'
     | '/_auth/profile'
     | '/_auth/search'
+    | '/_auth/settings'
     | '/_auth/statistics'
     | '/auth/callback'
     | '/_auth/'
@@ -333,6 +345,13 @@ declare module '@tanstack/react-router' {
       path: '/statistics'
       fullPath: '/statistics'
       preLoaderRoute: typeof AuthStatisticsRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/settings': {
+      id: '/_auth/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthSettingsRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/search': {
@@ -480,6 +499,7 @@ interface AuthRouteChildren {
   AuthProblemsRouteRoute: typeof AuthProblemsRouteRouteWithChildren
   AuthProfileRouteRoute: typeof AuthProfileRouteRouteWithChildren
   AuthSearchRoute: typeof AuthSearchRoute
+  AuthSettingsRoute: typeof AuthSettingsRoute
   AuthStatisticsRoute: typeof AuthStatisticsRoute
   AuthIndexRoute: typeof AuthIndexRoute
 }
@@ -489,6 +509,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthProblemsRouteRoute: AuthProblemsRouteRouteWithChildren,
   AuthProfileRouteRoute: AuthProfileRouteRouteWithChildren,
   AuthSearchRoute: AuthSearchRoute,
+  AuthSettingsRoute: AuthSettingsRoute,
   AuthStatisticsRoute: AuthStatisticsRoute,
   AuthIndexRoute: AuthIndexRoute,
 }

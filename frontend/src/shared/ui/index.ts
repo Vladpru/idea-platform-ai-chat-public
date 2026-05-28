@@ -9,6 +9,7 @@ export {
 export { Input, type InputProps } from './input';
 export { Label, type LabelProps } from './label';
 export { Separator, type SeparatorProps } from './separator';
+export { Switch, type SwitchProps } from './switch';
 export {
   Dialog,
   DialogClose,

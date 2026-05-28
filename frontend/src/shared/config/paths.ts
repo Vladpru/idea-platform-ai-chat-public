@@ -14,6 +14,7 @@ export const ROUTES = {
   search: '/search',
   statistics: '/statistics',
   profile: '/profile',
+  settings: '/settings',
   profileIdeas: '/profile/ideas',
   profileProblems: '/profile/problems',
   authCallback: '/auth/callback',
