@@ -85,10 +85,11 @@ export function toProblemDetails(dto: ProblemForm): ProblemDetails {
     },
     team: [authorTeamMember],
     createdAt: dto.publishedAt ?? new Date(0).toISOString(),
+    isLiked: dto.isLiked ?? false,
     stats: {
-      views: 0,
-      comments: 0,
-      likes: 0,
+      views: dto.viewCount ?? 0,
+      comments: dto.commentCount ?? 0,
+      likes: dto.likeCount ?? 0,
     },
     counts: {
       attachments: dto.attachments?.length ?? 0,
@@ -117,9 +118,9 @@ export function toSimilarProblemCard(dto: ProblemForm): SimilarProblemCard {
     stage: toStageLabel(dto.stage),
     tags: dto.tags?.map(tag => tag.name) ?? [],
     stats: {
-      views: 0,
-      comments: 0,
-      likes: 0,
+      views: dto.viewCount ?? 0,
+      comments: dto.commentCount ?? 0,
+      likes: dto.likeCount ?? 0,
     },
   };
 }

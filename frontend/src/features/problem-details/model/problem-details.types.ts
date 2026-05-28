@@ -73,6 +73,7 @@ export type ProblemDetails = {
   attachments: ProblemDetailsAttachment[];
   linkedIdeas: ProblemDetailsLinkedIdea[];
   createdAt: string;
+  isLiked: boolean;
   stats: ProblemDetailsStats;
   counts: ProblemDetailsCounts;
 };
