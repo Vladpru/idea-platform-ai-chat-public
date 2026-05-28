@@ -57,11 +57,13 @@ export type IdeaDetailsLinkedProblem = {
   description: string;
   isPrimary: boolean;
   status: string;
+  stage: string;
   authorName: string;
   authorAvatarUrl: string | null;
   imageUrl: string | null;
   tags: string[];
   stats: IdeaDetailsStats;
+  isLiked?: boolean;
 };
 
 export type IdeaDetailsMainImage = {
@@ -102,6 +104,7 @@ export type SimilarIdeaCard = {
   stage: string;
   tags: string[];
   stats: IdeaDetailsStats;
+  isLiked?: boolean;
   externalUrl?: string;
 };
 

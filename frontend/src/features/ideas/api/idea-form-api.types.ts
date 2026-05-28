@@ -24,8 +24,13 @@ export type IdeaFormProblemDto = {
   title: string;
   description: string;
   status: string;
+  stage: string | null;
   isPrimary: boolean;
   author: IdeaFormAuthorDto;
+  viewCount?: number;
+  likeCount?: number;
+  commentCount?: number;
+  isLiked?: boolean;
 };
 
 export type IdeaFormTagDto = {

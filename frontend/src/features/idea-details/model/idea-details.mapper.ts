@@ -49,6 +49,13 @@ function toStageLabel(stage: string | null): string {
   return apiStage ?? stage.toUpperCase();
 }
 
+function toProblemStageLabel(stage: string | null | undefined): string {
+  if (!stage) {
+    return '';
+  }
+  return stage.charAt(0).toUpperCase() + stage.slice(1);
+}
+
 export function toIdeaDetails(dto: IdeaFormResponseDto): IdeaDetails {
   const author = toAuthor(dto.author);
   const members: IdeaDetailsMember[] =
@@ -92,6 +99,7 @@ export function toIdeaDetails(dto: IdeaFormResponseDto): IdeaDetails {
         description: problem.description,
         isPrimary: problem.isPrimary,
         status: problem.status,
+        stage: toProblemStageLabel(problem.stage),
         authorName: formatUserDisplayName(
           {
             firstName: problem.author?.firstName,
@@ -104,10 +112,11 @@ export function toIdeaDetails(dto: IdeaFormResponseDto): IdeaDetails {
         imageUrl: null,
         tags: [],
         stats: {
-          views: 0,
-          comments: 0,
-          likes: 0,
+          views: problem.viewCount ?? 0,
+          comments: problem.commentCount ?? 0,
+          likes: problem.likeCount ?? 0,
         },
+        isLiked: problem.isLiked ?? false,
       })) ?? [],
     author,
     members,
@@ -154,5 +163,6 @@ export function toSimilarIdeaCard(dto: IdeaFormResponseDto): SimilarIdeaCard {
       comments: dto.commentCount ?? 0,
       likes: dto.likeCount ?? 0,
     },
+    isLiked: dto.isLiked ?? false,
   };
 }
