@@ -20,10 +20,15 @@ import { Controller } from 'react-hook-form';
 
 import { ROUTES } from '@/shared/config/paths';
 import { useCreateFormLeaveGuard } from '@/shared/hooks/use-create-form-leave-guard';
-import { SAVE_PROBLEM_PROGRESS_DESCRIPTION } from '@/shared/lib/create-form-leave/copy';
+import {
+  SAVE_PROBLEM_PROGRESS_DESCRIPTION,
+  UNDO_CHANGES_DESCRIPTION,
+  UNDO_CHANGES_TITLE,
+} from '@/shared/lib/create-form-leave/copy';
 import { cn } from '@/shared/lib/utils';
 import { TagsInput, selectClass } from '@/shared/ui/TagsInput';
 import { Button } from '@/shared/ui/button';
+import { ConfirmModal } from '@/shared/ui/confirm-modal';
 import { Input } from '@/shared/ui/input';
 import { SaveProgressBeforeLeavingModal } from '@/shared/ui/save-progress-before-leaving-modal';
 
@@ -59,8 +64,10 @@ export function SubmitProblemForm() {
     form,
     error,
     isBusy,
+    isHydrating,
     isSavingDraft,
     isPublishing,
+    isEditing,
     onSaveDraft,
     onPublish,
     canSaveDraft,
@@ -85,6 +92,14 @@ export function SubmitProblemForm() {
     void navigate({ to: ROUTES.problems, search: DEFAULT_PROBLEMS_DASHBOARD_SEARCH });
   };
 
+  const navigateAfterSave = (wasEditing: boolean, problemId: string) => {
+    if (wasEditing) {
+      void navigate({ to: ROUTES.problemDetail(problemId) });
+      return;
+    }
+    navigateToProblems();
+  };
+
   const {
     leaveModalOpen,
     requestLeave,
@@ -94,7 +109,13 @@ export function SubmitProblemForm() {
   } = useCreateFormLeaveGuard({
     hasUnsavedProgress,
     isBusy,
-    onSaveDraft,
+    onSaveDraft: async () => {
+      const wasEditing = isEditing;
+      const problemId = await onSaveDraft();
+      if (!problemId) return false;
+      navigateAfterSave(wasEditing, problemId);
+      return true;
+    },
     onDiscard: clearSession,
   });
 
@@ -103,16 +124,18 @@ export function SubmitProblemForm() {
   };
 
   const handleSaveDraft = async () => {
-    const isSaved = await onSaveDraft();
-    if (!isSaved) return;
-    navigateToProblems();
+    const wasEditing = isEditing;
+    const problemId = await onSaveDraft();
+    if (!problemId) return;
+    navigateAfterSave(wasEditing, problemId);
   };
 
   const handlePublish = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const isPublished = await onPublish();
-    if (!isPublished) return;
-    void navigate({ to: ROUTES.problems, search: DEFAULT_PROBLEMS_DASHBOARD_SEARCH });
+    const wasEditing = isEditing;
+    const problemId = await onPublish();
+    if (!problemId) return;
+    navigateAfterSave(wasEditing, problemId);
   };
 
   return (
@@ -123,6 +146,10 @@ export function SubmitProblemForm() {
       onSubmit={event => void handlePublish(event)}
       noValidate
     >
+      {isHydrating ? (
+        <p className="text-brand-gray-600 text-sm">Loading problem…</p>
+      ) : null}
+
       {error ? (
         <p
           role="alert"
@@ -283,31 +310,45 @@ export function SubmitProblemForm() {
         >
           Cancel
         </button>
-        <SaveDraftButton
-          canSave={canSaveDraft}
-          isSaving={isSavingDraft}
-          disabled={isBusy}
-          onSave={() => void handleSaveDraft()}
-        />
+        {!isEditing ? (
+          <SaveDraftButton
+            canSave={canSaveDraft}
+            isSaving={isSavingDraft}
+            disabled={isBusy}
+            onSave={() => void handleSaveDraft()}
+          />
+        ) : null}
         <Button
           type="submit"
           className={publishBtnClass}
           disabled={!canPublish || isBusy}
           isLoading={isPublishing}
         >
-          Publish problem
+          {isEditing ? 'Save changes' : 'Publish problem'}
         </Button>
       </div>
     </form>
 
-    <SaveProgressBeforeLeavingModal
-      open={leaveModalOpen}
-      onOpenChange={handleLeaveModalOpenChange}
-      onDiscard={handleDiscard}
-      onSaveAsDraft={() => void handleLeaveSaveAsDraft()}
-      isSaving={isSavingDraft}
-      description={SAVE_PROBLEM_PROGRESS_DESCRIPTION}
-    />
+    {isEditing ? (
+      <ConfirmModal
+        open={leaveModalOpen}
+        onOpenChange={handleLeaveModalOpenChange}
+        title={UNDO_CHANGES_TITLE}
+        description={UNDO_CHANGES_DESCRIPTION}
+        confirmLabel="YES"
+        cancelLabel="NO"
+        onConfirm={handleDiscard}
+      />
+    ) : (
+      <SaveProgressBeforeLeavingModal
+        open={leaveModalOpen}
+        onOpenChange={handleLeaveModalOpenChange}
+        onDiscard={handleDiscard}
+        onSaveAsDraft={() => void handleLeaveSaveAsDraft()}
+        isSaving={isSavingDraft}
+        description={SAVE_PROBLEM_PROGRESS_DESCRIPTION}
+      />
+    )}
     </>
   );
 }

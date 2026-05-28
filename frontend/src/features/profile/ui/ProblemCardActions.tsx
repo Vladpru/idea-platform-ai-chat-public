@@ -26,7 +26,11 @@ export function ProblemCardActions({
     {
       label: isDraft ? 'Continue editing' : 'Edit problem',
       icon: <Edit2 className="size-4" />,
-      onSelect: () => void navigate({ to: ROUTES.problemCreation(card.id) }),
+      onSelect: () =>
+        void navigate({
+          to: ROUTES.problemsNew,
+          search: { problemId: card.id },
+        }),
     },
     {
       label: isDeleting ? 'Deleting...' : 'Delete problem',

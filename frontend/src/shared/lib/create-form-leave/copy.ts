@@ -6,3 +6,6 @@ export const SAVE_IDEA_PROGRESS_DESCRIPTION =
 
 export const SAVE_PROBLEM_PROGRESS_DESCRIPTION =
   'If you close now, all unsaved changes will be lost. You can save this problem as a draft and continue later.';
+
+export const UNDO_CHANGES_TITLE = 'Undo changes?';
+export const UNDO_CHANGES_DESCRIPTION = 'All completed data will be deleted';
