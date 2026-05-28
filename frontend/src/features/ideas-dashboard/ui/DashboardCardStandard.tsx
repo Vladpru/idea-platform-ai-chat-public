@@ -1,7 +1,7 @@
 import { getInitials } from '@/features/idea-details/lib/get-initials';
 import { IdeaTagCloud } from '@/features/idea-details/ui/IdeaTagCloud';
 import { Link } from '@tanstack/react-router';
-import { memo, useCallback } from 'react';
+import { memo, useCallback, type ReactNode } from 'react';
 
 import { cn } from '@/shared/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
@@ -34,7 +34,8 @@ export type DashboardCardStandardProps<
   columnCount?: number;
   showHeroImage?: boolean;
   linkedItemEmptyImageText?: string;
-  actionMenu?: React.ReactNode;
+  actionMenu?: ReactNode;
+  likeButton?: ReactNode;
   hideLinkedItems?: boolean;
 };
 
@@ -57,9 +58,11 @@ function DashboardCardStandardInner<
   showHeroImage = true,
   linkedItemEmptyImageText,
   actionMenu,
+  likeButton,
   hideLinkedItems = false,
 }: DashboardCardStandardProps<TCard>) {
   const isHorizontal = layout === 'horizontal' && showHeroImage;
+  const isCompactCard = !showHeroImage;
   const hasLinkedItems =
     !hideLinkedItems && card.linkedItems && card.linkedItems.length > 0;
   const stackStatsBelowTags = columnCount >= STATS_BELOW_TAGS_COLUMN_THRESHOLD;
@@ -82,7 +85,7 @@ function DashboardCardStandardInner<
           ? 'min-h-[260px] flex-col sm:flex-row'
           : showHeroImage
             ? 'min-h-[400px] flex-col'
-            : 'min-h-[280px] flex-col',
+            : 'flex-col',
       )}
     >
       {showHeroImage ? (
@@ -110,7 +113,12 @@ function DashboardCardStandardInner<
         </Link>
       ) : null}
 
-      <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
+      <div
+        className={cn(
+          'relative flex min-w-0 flex-col',
+          !isCompactCard && 'flex-1 overflow-hidden',
+        )}
+      >
         {actionMenu && (
           <div className="absolute top-4 right-4 z-20 sm:top-5 sm:right-5">
             {actionMenu}
@@ -120,7 +128,8 @@ function DashboardCardStandardInner<
         <Link
           to={detailHref}
           className={cn(
-            'focus-visible:ring-brand-dark-blue flex min-w-0 flex-1 flex-col text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+            'focus-visible:ring-brand-dark-blue flex min-w-0 flex-col text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+            !isCompactCard && 'flex-1',
             isHorizontal
               ? 'px-4 pt-4 sm:px-5 sm:pt-5 lg:px-6 lg:pt-6'
               : 'px-4 pt-4 sm:px-5 sm:pt-5',
@@ -156,11 +165,13 @@ function DashboardCardStandardInner<
                   {card.authorName}
                 </span>
               </div>
-              <StageChevronBadge stage={card.stage} stageText={false} />
+              {card.stage?.trim() ? (
+                <StageChevronBadge stage={card.stage} stageText={false} />
+              ) : null}
             </div>
 
-            <p className="text-brand-gray-600 line-clamp-2 text-sm leading-relaxed">
-              {card.description || emptyDescriptionText}
+            <p className="text-brand-gray-600 line-clamp-3 text-sm leading-relaxed">
+              {card.description?.trim() || emptyDescriptionText}
             </p>
           </div>
         </Link>
@@ -199,6 +210,7 @@ function DashboardCardStandardInner<
               entityId={card.id}
               entityType={resolvedEntityType}
               isLiked={resolvedIsLiked}
+              likeButton={likeButton}
             />
           </div>
         </div>
@@ -244,7 +256,8 @@ function areDashboardCardStandardPropsEqual<
     prev.tagToShowCount === next.tagToShowCount &&
     prev.isMobile === next.isMobile &&
     prev.columnCount === next.columnCount &&
-    prev.hideLinkedItems === next.hideLinkedItems
+    prev.hideLinkedItems === next.hideLinkedItems &&
+    prev.likeButton === next.likeButton
   );
 }
 

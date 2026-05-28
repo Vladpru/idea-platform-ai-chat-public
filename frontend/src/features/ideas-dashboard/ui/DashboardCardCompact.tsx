@@ -2,7 +2,7 @@ import { getInitials } from '@/features/idea-details/lib/get-initials';
 import { IdeaTagCloud } from '@/features/idea-details/ui/IdeaTagCloud';
 import { Link } from '@tanstack/react-router';
 import { ArrowRight, ChevronUp } from 'lucide-react';
-import { memo } from 'react';
+import { memo, type ReactNode } from 'react';
 
 import { cn } from '@/shared/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
@@ -15,29 +15,47 @@ export type DashboardCardCompactProps<
   TCard extends DashboardCardBase = DashboardCardBase,
 > = {
   card: TCard;
+  entityType?: 'IDEA' | 'PROBLEM';
   detailHref: string;
   emptyImageText: string;
   linkedSectionLabel: string;
   getLinkedItemDetailHref: (id: string) => string;
   forceShowLinkedItems?: boolean;
   columnCount?: number;
+  likeButton?: ReactNode;
 };
 
 function DashboardCardCompactInner<
   TCard extends DashboardCardBase = DashboardCardBase,
 >({
   card,
+  entityType,
   detailHref,
   emptyImageText,
   linkedSectionLabel,
   getLinkedItemDetailHref,
   forceShowLinkedItems = false,
   columnCount = 1,
+  likeButton,
 }: DashboardCardCompactProps<TCard>) {
   const linkedItems = card.linkedItems;
   const showLinkedOnHover = forceShowLinkedItems || linkedItems.length > 0;
   const isNarrow = columnCount > 5;
   const firstLinkedItem = linkedItems[0];
+  const resolvedEntityType: 'IDEA' | 'PROBLEM' =
+    entityType ?? (detailHref.includes('/problems/') ? 'PROBLEM' : 'IDEA');
+  const resolvedIsLiked =
+    'isLiked' in card && typeof card.isLiked === 'boolean'
+      ? card.isLiked
+      : false;
+
+  const statsProps = {
+    stats: card.stats,
+    entityId: card.id,
+    entityType: resolvedEntityType,
+    isLiked: resolvedIsLiked,
+    likeButton,
+  };
 
   return (
     <article className="group border-brand-gray-200 relative flex h-full cursor-pointer flex-col overflow-hidden rounded-xl border bg-white shadow-sm transition-all hover:shadow-md">
@@ -89,11 +107,12 @@ function DashboardCardCompactInner<
           </div>
 
           <DashboardCardStats
-            stats={card.stats}
+            {...statsProps}
             className={cn(
               'mt-auto text-slate-600',
               isNarrow ? 'pt-3 text-[11px]' : 'pt-6 text-[15px]',
             )}
+            iconClassName={isNarrow ? 'size-3' : 'size-3.5'}
           />
         </div>
       </Link>
@@ -157,11 +176,12 @@ function DashboardCardCompactInner<
           >
             <IdeaTagCloud tags={card.tags} compact={true} />
             <DashboardCardStats
-              stats={card.stats}
+              {...statsProps}
               className={cn(
                 'text-slate-600',
                 isNarrow ? 'text-[11px]' : 'text-[15px]',
               )}
+              iconClassName={isNarrow ? 'size-3' : 'size-3.5'}
             />
           </div>
 
@@ -230,11 +250,19 @@ function areDashboardCardCompactPropsEqual<
   prev: DashboardCardCompactProps<TCard>,
   next: DashboardCardCompactProps<TCard>,
 ): boolean {
+  const prevIsLiked = 'isLiked' in prev.card ? prev.card.isLiked : undefined;
+  const nextIsLiked = 'isLiked' in next.card ? next.card.isLiked : undefined;
+  const prevLikes = prev.card.stats?.likes;
+  const nextLikes = next.card.stats?.likes;
+
   return (
     prev.card === next.card &&
+    prevIsLiked === nextIsLiked &&
+    prevLikes === nextLikes &&
     prev.forceShowLinkedItems === next.forceShowLinkedItems &&
     prev.columnCount === next.columnCount &&
-    prev.detailHref === next.detailHref
+    prev.detailHref === next.detailHref &&
+    prev.likeButton === next.likeButton
   );
 }
 

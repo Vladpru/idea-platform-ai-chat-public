@@ -3,23 +3,28 @@
 import { useOptimistic, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { cn } from '@/shared/lib/utils';
+import { useEntityLikeToggle } from '@/shared/hooks/use-entity-like-toggle';
 import { ThumbsUp } from 'lucide-react';
 
-export type LikeButtonProps = {
-  entityId: string;
-  initialIsLiked: boolean;
-  initialLikeCount: number;
-  onLikeToggle: (id: string, nextState: OptimisticState) => Promise<void>;
-  className?: string;
-  iconClassName?: string;
-};
-
-type OptimisticState = {
+export type LikeOptimisticState = {
   isLiked: boolean;
   likeCount: number;
 };
 
-const getNextLikeState = (currentState: OptimisticState): OptimisticState => ({
+export type LikeButtonProps = {
+  entityId: string;
+  entityType: 'IDEA' | 'PROBLEM';
+  initialIsLiked: boolean;
+  initialLikeCount: number;
+  onSuccess?: (nextState: LikeOptimisticState) => void;
+  onLikeToggle?: (id: string, nextState: LikeOptimisticState) => Promise<void>;
+  className?: string;
+  iconClassName?: string;
+};
+
+const getNextLikeState = (
+  currentState: LikeOptimisticState,
+): LikeOptimisticState => ({
   isLiked: !currentState.isLiked,
   likeCount: currentState.isLiked
     ? Math.max(0, currentState.likeCount - 1)
@@ -28,8 +33,10 @@ const getNextLikeState = (currentState: OptimisticState): OptimisticState => ({
 
 export function LikeButton({
   entityId,
+  entityType,
   initialIsLiked,
   initialLikeCount,
+  onSuccess,
   onLikeToggle,
   className,
   iconClassName = 'size-5',
@@ -37,8 +44,16 @@ export function LikeButton({
   const [isPending, startTransition] = useTransition();
   const [hasInteracted, setHasInteracted] = useState(false);
 
+  const { mutateAsync: defaultMutateAsync } = useEntityLikeToggle(entityType);
+
+  const toggleLike =
+    onLikeToggle ??
+    (async (id, nextState) => {
+      await defaultMutateAsync({ id, nextState });
+    });
+
   const [optimisticState, addOptimisticToggle] = useOptimistic<
-    OptimisticState,
+    LikeOptimisticState,
     void
   >({ isLiked: initialIsLiked, likeCount: initialLikeCount }, currentState =>
     getNextLikeState(currentState),
@@ -71,7 +86,8 @@ export function LikeButton({
         startTransition(async () => {
           addOptimisticToggle();
           try {
-            await onLikeToggle(entityId, nextState);
+            await toggleLike(entityId, nextState);
+            onSuccess?.(nextState);
           } catch (err) {
             console.error(err);
             toast.error('Could not update like');

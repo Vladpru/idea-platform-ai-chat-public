@@ -1,12 +1,10 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import commentsIcon from '@/assets/svg/comments.svg';
 import likeIcon from '@/assets/svg/like.svg';
 import viewsIcon from '@/assets/svg/views.svg';
+import type { ReactNode } from 'react';
 
-import { api } from '@/shared/api/http';
-import { syncLikeQueryCache } from '@/shared/lib/sync-like-query-cache';
 import { cn } from '@/shared/lib/utils';
 import { StatIcon } from '@/shared/ui/icons/stat-icon';
 import { LikeButton } from '@/shared/ui/LikeButton';
@@ -18,6 +16,7 @@ type DashboardCardStatsProps = {
   entityId?: string;
   entityType?: 'IDEA' | 'PROBLEM';
   isLiked?: boolean;
+  likeButton?: ReactNode;
   className?: string;
   iconClassName?: string;
 };
@@ -27,34 +26,10 @@ export function DashboardCardStats({
   entityId,
   entityType,
   isLiked,
+  likeButton,
   className,
   iconClassName = 'size-3.5',
 }: DashboardCardStatsProps) {
-  const queryClient = useQueryClient();
-
-  const { mutateAsync } = useMutation({
-    mutationFn: async ({
-      id,
-      type,
-    }: {
-      id: string;
-      type: 'IDEA' | 'PROBLEM';
-      nextState: { isLiked: boolean; likeCount: number };
-    }) => {
-      const endpoint =
-        type === 'IDEA' ? `/ideas/${id}/like` : `/problems/${id}/like`;
-      await api.post(endpoint);
-    },
-    onSuccess: (_, variables) => {
-      syncLikeQueryCache(
-        queryClient,
-        variables.type,
-        variables.id,
-        variables.nextState,
-      );
-    },
-  });
-
   return (
     <div
       className={cn(
@@ -72,23 +47,22 @@ export function DashboardCardStats({
         <span className="tabular-nums">{stats.comments}</span>
       </span>
 
-      {entityId && entityType ? (
-        <LikeButton
-          entityId={entityId}
-          initialIsLiked={isLiked ?? false}
-          initialLikeCount={stats.likes}
-          className="cursor-pointer px-0 py-0 text-xs font-normal hover:bg-transparent"
-          iconClassName={iconClassName}
-          onLikeToggle={async (id, nextState) => {
-            await mutateAsync({ id, type: entityType, nextState });
-          }}
-        />
-      ) : (
-        <span className="inline-flex items-center gap-1">
-          <StatIcon src={likeIcon} className={iconClassName} />
-          <span className="tabular-nums">{stats.likes}</span>
-        </span>
-      )}
+      {likeButton ??
+        (entityId && entityType ? (
+          <LikeButton
+            entityId={entityId}
+            entityType={entityType}
+            initialIsLiked={isLiked ?? false}
+            initialLikeCount={stats.likes}
+            className="cursor-pointer px-0 py-0 text-xs font-normal hover:bg-transparent"
+            iconClassName={iconClassName}
+          />
+        ) : (
+          <span className="inline-flex items-center gap-1">
+            <StatIcon src={likeIcon} className={iconClassName} />
+            <span className="tabular-nums">{stats.likes}</span>
+          </span>
+        ))}
     </div>
   );
 }
