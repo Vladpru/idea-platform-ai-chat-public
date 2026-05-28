@@ -10,7 +10,18 @@ import type {
 
 export type IdeaFormRecord = Prisma.IdeaGetPayload<{
   include: typeof IDEA_FORM_INCLUDE;
-}>;
+}> & {
+  likes?: Array<{ userId: string }>;
+};
+
+function mapIdeaEngagementMetrics(idea: IdeaFormRecord) {
+  return {
+    viewCount: idea.viewCount ?? 0,
+    likeCount: idea.likeCount ?? 0,
+    commentCount: idea.commentCount ?? 0,
+    isLiked: Boolean(idea.likes && idea.likes.length > 0),
+  };
+}
 
 export function toIdeaAuthorResponse(author: {
   id: string;
@@ -67,6 +78,7 @@ export function toIdeaFormResponse(
     title: idea.title,
     description: idea.description,
     publishedAt: idea.publishedAt?.toISOString() ?? null,
+    ...mapIdeaEngagementMetrics(idea),
     viewer: {
       isAuthor,
       isMember,

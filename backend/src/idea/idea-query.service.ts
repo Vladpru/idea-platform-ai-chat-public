@@ -7,8 +7,8 @@ import {
   GetIdeasQueryDto,
   type IdeaSortOption,
 } from './dto/get-ideas-query.dto';
-import { IDEA_FORM_INCLUDE } from './idea.constants';
-import { toIdeaFormResponse } from './idea.mapper';
+import { IDEA_FORM_INCLUDE, resolveIdeaFormInclude } from './idea.constants';
+import { type IdeaFormRecord, toIdeaFormResponse } from './idea.mapper';
 import type {
   IdeaFormResponse,
   IdeasFeedResponse,
@@ -19,6 +19,44 @@ const IDEA_NOT_FOUND = 'Idea not found';
 @Injectable()
 export class IdeaQueryService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async trackUniqueView(params: {
+    ideaId: string;
+    userId?: string;
+    ipAddress?: string;
+  }): Promise<void> {
+    const userId = params.userId ?? null;
+    const ipAddress = params.ipAddress?.trim() ? params.ipAddress.trim() : null;
+
+    if (!userId && !ipAddress) return;
+
+    try {
+      await this.prisma.$transaction(async tx => {
+        await tx.ideaView.create({
+          data: {
+            ideaId: params.ideaId,
+            userId,
+            ipAddress,
+          },
+          select: { id: true },
+        });
+
+        await tx.idea.update({
+          where: { id: params.ideaId },
+          data: { viewCount: { increment: 1 } },
+          select: { id: true },
+        });
+      });
+    } catch (e) {
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === 'P2002'
+      ) {
+        return;
+      }
+      throw e;
+    }
+  }
 
   private resolveOrderBy(
     sort: IdeaSortOption | undefined,
@@ -62,14 +100,16 @@ export class IdeaQueryService {
         skip,
         take: limit,
         orderBy,
-        include: IDEA_FORM_INCLUDE,
+        include: resolveIdeaFormInclude(currentUserId),
       }),
     ]);
 
     const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
 
     return {
-      data: ideas.map(idea => toIdeaFormResponse(idea, currentUserId)),
+      data: ideas.map(idea =>
+        toIdeaFormResponse(idea as unknown as IdeaFormRecord, currentUserId),
+      ),
       meta: { total, page, limit, totalPages },
     };
   }
@@ -109,7 +149,7 @@ export class IdeaQueryService {
           skip,
           take: limit,
           orderBy: { createdAt: 'desc' },
-          include: IDEA_FORM_INCLUDE,
+          include: resolveIdeaFormInclude(userId),
         }),
       ]);
 
@@ -123,7 +163,9 @@ export class IdeaQueryService {
     const totalPages = activeTotal === 0 ? 0 : Math.ceil(activeTotal / limit);
 
     return {
-      data: activeItems.map(idea => toIdeaFormResponse(idea, userId)),
+      data: activeItems.map(idea =>
+        toIdeaFormResponse(idea as unknown as IdeaFormRecord, userId),
+      ),
       meta: {
         totals: {
           published: publishedTotal,
@@ -138,21 +180,24 @@ export class IdeaQueryService {
     };
   }
 
-  async findByIdSmart(id: string, userId: string): Promise<IdeaFormResponse> {
+  async findByIdSmart(id: string, userId?: string): Promise<IdeaFormResponse> {
     const idea = await this.prisma.idea.findUnique({
       where: { id },
-      include: IDEA_FORM_INCLUDE,
+      include: resolveIdeaFormInclude(userId),
     });
 
     if (!idea) {
       throw new NotFoundException(IDEA_NOT_FOUND);
     }
 
-    if (idea.authorId !== userId && idea.status !== IdeaStatus.PUBLISHED) {
+    if (
+      (!userId || idea.authorId !== userId) &&
+      idea.status !== IdeaStatus.PUBLISHED
+    ) {
       throw new NotFoundException(IDEA_NOT_FOUND);
     }
 
-    return toIdeaFormResponse(idea, userId);
+    return toIdeaFormResponse(idea as unknown as IdeaFormRecord, userId);
   }
 
   async findSimilar(

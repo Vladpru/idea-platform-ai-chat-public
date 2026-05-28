@@ -41,6 +41,13 @@ export type IdeaMediaResponse = {
   createdAt: string;
 };
 
+export type IdeaEngagementMetrics = {
+  viewCount: number;
+  likeCount: number;
+  commentCount: number;
+  isLiked: boolean;
+};
+
 export type IdeaFormResponse = {
   id: string;
   status: IdeaStatus;
@@ -48,6 +55,10 @@ export type IdeaFormResponse = {
   title: string | null;
   description: string | null;
   publishedAt: string | null;
+  viewCount: number;
+  likeCount: number;
+  commentCount: number;
+  isLiked: boolean;
   problems: IdeaFormProblem[];
   tags: IdeaFormTag[];
   mainImage: IdeaMediaResponse | null;
@@ -61,25 +72,7 @@ export type IdeaFormResponse = {
   members: IdeaFormMember[];
 };
 
-export type IdeaFormResponseWithProblem = {
-  id: string;
-  status: IdeaStatus;
-  stage: Stage | null;
-  title: string | null;
-  description: string | null;
-  publishedAt: string | null;
-  problems: IdeaFormProblem[];
-  tags: IdeaFormTag[];
-  mainImage: IdeaMediaResponse | null;
-  attachments: IdeaMediaResponse[];
-  author: IdeaFormAuthor;
-  viewer: {
-    isAuthor: boolean;
-    isMember: boolean;
-    canJoin: boolean;
-  };
-  members: IdeaFormMember[];
-};
+export type IdeaFormResponseWithProblem = IdeaFormResponse;
 
 export type IdeasFeedMeta = {
   total: number;
