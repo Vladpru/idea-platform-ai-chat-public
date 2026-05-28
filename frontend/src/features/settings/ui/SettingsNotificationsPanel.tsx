@@ -53,6 +53,9 @@ const DEFAULT_CHANNELS: NotificationChannels = {
   followUps: { inApp: true, email: true },
 };
 
+const actionButtonClassName =
+  'text-xs font-semibold tracking-wider uppercase transition-colors sm:text-sm';
+
 type ChannelToggleProps = {
   checked: boolean;
   onChange: (checked: boolean) => void;
@@ -79,13 +82,14 @@ export function SettingsNotificationsPanel() {
   );
 
   const setAll = (value: boolean) => {
-    setChannels(prev => {
-      const next: NotificationChannels = { ...prev };
-      for (const item of NOTIFICATION_ITEMS) {
-        next[item.key] = { inApp: value, email: value };
-      }
-      return next;
-    });
+    setChannels(
+      Object.fromEntries(
+        NOTIFICATION_ITEMS.map(item => [
+          item.key,
+          { inApp: value, email: value },
+        ]),
+      ) as NotificationChannels,
+    );
   };
 
   const setOneChannel = (
@@ -115,7 +119,8 @@ export function SettingsNotificationsPanel() {
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
               <button
                 className={cn(
-                  'text-xs font-semibold tracking-wider text-slate-400 uppercase transition-colors hover:text-slate-600 sm:text-sm',
+                  actionButtonClassName,
+                  'text-slate-400 hover:text-slate-600',
                   isAllEnabled && 'text-slate-500',
                 )}
                 onClick={() => setAll(true)}
@@ -125,8 +130,9 @@ export function SettingsNotificationsPanel() {
               </button>
               <button
                 className={cn(
-                  'text-xs font-semibold tracking-wider text-[#003A70] uppercase transition-colors hover:text-[#0B4D8C] sm:text-sm',
-                  !isAllEnabled && 'text-[#003A70]',
+                  actionButtonClassName,
+                  'text-brand-dark-blue hover:text-brand-dark-blue/80',
+                  !isAllEnabled && 'text-brand-dark-blue',
                 )}
                 onClick={() => setAll(false)}
                 type="button"
@@ -140,7 +146,7 @@ export function SettingsNotificationsPanel() {
             {NOTIFICATION_ITEMS.map(item => (
               <div className="space-y-2" key={item.key}>
                 <div>
-                  <h3 className="text-lg leading-tight font-semibold text-slate-900 sm:text-xl lg:text-2xl">
+                  <h3 className="text-brand-black text-lg leading-tight font-semibold">
                     {item.title}
                   </h3>
                   {item.description ? (
