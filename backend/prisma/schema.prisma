@@ -57,6 +57,10 @@ model User {
   problems            Problem[]
   joinedIdeas         IdeaMember[]
   joinedProblems      ProblemMember[]
+  ideaLikes           IdeaLike[]
+  problemLikes        ProblemLike[]
+  ideaViews           IdeaView[]
+  problemViews        ProblemView[]
 
   @@map("user")
 }
@@ -76,18 +80,18 @@ model PasswordResetToken {
 }
 
 model Idea {
-  id           String     @id @default(uuid())
-  authorId     String     @map("author_id")
-  status       IdeaStatus @default(DRAFT)
+  id           String                   @id @default(uuid())
+  authorId     String                   @map("author_id")
+  status       IdeaStatus               @default(DRAFT)
   stage        Stage?
   title        String?
-  description  String?    @db.Text
-  viewCount    Int        @default(0) @map("view_count")
-  likeCount    Int        @default(0) @map("like_count")
-  commentCount Int        @default(0) @map("comment_count")
-  publishedAt  DateTime?  @map("published_at")
-  createdAt    DateTime   @default(now()) @map("created_at")
-  updatedAt    DateTime   @updatedAt @map("updated_at")
+  description  String?                  @db.Text
+  viewCount    Int                      @default(0) @map("view_count")
+  likeCount    Int                      @default(0) @map("like_count")
+  commentCount Int                      @default(0) @map("comment_count")
+  publishedAt  DateTime?                @map("published_at")
+  createdAt    DateTime                 @default(now()) @map("created_at")
+  updatedAt    DateTime                 @updatedAt @map("updated_at")
   searchVector Unsupported("tsvector")? @map("search_vector")
 
   author   User          @relation("IdeaAuthor", fields: [authorId], references: [id], onDelete: Cascade)
@@ -95,6 +99,8 @@ model Idea {
   tags     IdeaTag[]
   media    IdeaMedia[]
   members  IdeaMember[]
+  likes    IdeaLike[]
+  views    IdeaView[]
 
   @@index([authorId, status])
   @@index([status, publishedAt])
@@ -115,32 +121,99 @@ model IdeaMember {
   @@map("idea_member")
 }
 
+model IdeaView {
+  id        String   @id @default(uuid())
+  ideaId    String   @map("idea_id")
+  userId    String?  @map("user_id")
+  ipAddress String?  @map("ip_address")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  idea Idea  @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([ideaId, userId])
+  @@unique([ideaId, ipAddress])
+  @@index([ideaId])
+  @@index([userId])
+  @@index([ipAddress])
+  @@map("idea_view")
+}
+
+model IdeaLike {
+  ideaId    String   @map("idea_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([ideaId, userId])
+  @@index([userId])
+  @@map("idea_like")
+}
+
 model Problem {
-  id               String        @id @default(uuid())
-  authorId         String        @map("author_id")
+  id               String                   @id @default(uuid())
+  authorId         String                   @map("author_id")
   title            String
-  description      String        @db.Text
-  status           ProblemStatus @default(DRAFT)
+  description      String                   @db.Text
+  status           ProblemStatus            @default(DRAFT)
   stage            ProblemStage?
-  valueProposition String?       @map("value_proposition")
-  costBenefit      Decimal?      @map("cost_benefit") @db.Decimal(12, 2)
+  valueProposition String?                  @map("value_proposition")
+  costBenefit      Decimal?                 @map("cost_benefit") @db.Decimal(12, 2)
   category         String?
   impact           String?
-  publishedAt      DateTime?     @map("published_at")
-  createdAt        DateTime      @default(now()) @map("created_at")
-  updatedAt        DateTime      @updatedAt @map("updated_at")
-  searchVector Unsupported("tsvector")? @map("search_vector")
-  members ProblemMember[]
+  viewCount        Int                      @default(0) @map("view_count")
+  likeCount        Int                      @default(0) @map("like_count")
+  commentCount     Int                      @default(0) @map("comment_count")
+  publishedAt      DateTime?                @map("published_at")
+  createdAt        DateTime                 @default(now()) @map("created_at")
+  updatedAt        DateTime                 @updatedAt @map("updated_at")
+  searchVector     Unsupported("tsvector")? @map("search_vector")
 
-  author User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  ideas  IdeaProblem[]
-  media  ProblemMedia[]
-  tags   ProblemTag[]
+  author   User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  members  ProblemMember[]
+  ideas    IdeaProblem[]
+  media    ProblemMedia[]
+  tags     ProblemTag[]
+  likes    ProblemLike[]
+  views    ProblemView[]
 
   @@index([authorId, status])
   @@index([status])
   @@index([searchVector], type: Gin)
   @@map("problem")
+}
+
+model ProblemView {
+  id        String   @id @default(uuid())
+  problemId String   @map("problem_id")
+  userId    String?  @map("user_id")
+  ipAddress String?  @map("ip_address")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([problemId, userId])
+  @@unique([problemId, ipAddress])
+  @@index([problemId])
+  @@index([userId])
+  @@index([ipAddress])
+  @@map("problem_view")
+}
+
+model ProblemLike {
+  problemId String   @map("problem_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([problemId, userId])
+  @@index([userId])
+  @@map("problem_like")
 }
 
 model Tag {
@@ -232,8 +305,8 @@ model ProblemMember {
   userId    String   @map("user_id")
   joinedAt  DateTime @default(now()) @map("joined_at")
 
-  problem   Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([problemId, userId])
   @@index([userId])
