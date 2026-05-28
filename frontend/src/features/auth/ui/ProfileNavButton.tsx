@@ -3,9 +3,9 @@ import {
   useAuthSessionStore,
 } from '@/features/auth/model/auth-session-store';
 import { Link } from '@tanstack/react-router';
-import { LogOut, User } from 'lucide-react';
 import { useState } from 'react';
 
+import { ROUTES } from '@/shared/config/paths';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import {
   DropdownMenu,
@@ -14,10 +14,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
+import { TriangleDown } from '@/shared/ui/icons/TriangleDown';
 
 import { LogoutConfirmDialog } from './LogoutConfirmDialog';
-import { TriangleDown } from '@/shared/ui/icons/TriangleDown';
-import { ROUTES } from '@/shared/config/paths';
 
 const linkRowClassName =
   'flex w-full cursor-pointer items-center py-3 px-4 text-base';
@@ -54,11 +53,10 @@ export function UserNav({ triggerClassName }: UserNavProps) {
         <DropdownMenuContent
           align="end"
           sideOffset={16}
-          className="w-62 rounded-sm text-base shadow-lg"
+          className="border-brand-gray-200 w-62 rounded-sm text-base shadow-lg"
         >
           <DropdownMenuItem asChild className="cursor-pointer p-0 text-sm">
             <Link to="/profile" className={linkRowClassName}>
-              <User className="mr-3 h-5 w-5 shrink-0" aria-hidden />
               <span>Profile</span>
             </Link>
           </DropdownMenuItem>
@@ -80,7 +78,13 @@ export function UserNav({ triggerClassName }: UserNavProps) {
               My Ideas, Joins & Drafts
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuSeparator />
+          <DropdownMenuSeparator className="mx-1" />
+
+          <DropdownMenuItem asChild className="cursor-pointer p-0 text-sm">
+            <Link to={ROUTES.settings} className={linkRowClassName}>
+              <span>Settings</span>
+            </Link>
+          </DropdownMenuItem>
           <DropdownMenuItem
             variant="destructive"
             className="hover:bg-brand-orange/10 flex cursor-pointer items-center px-4 py-3 text-sm"
@@ -89,10 +93,6 @@ export function UserNav({ triggerClassName }: UserNavProps) {
               setLogoutDialogOpen(true);
             }}
           >
-            <LogOut
-              className="stroke-brand-orange mr-3 h-5 w-5 shrink-0"
-              aria-hidden
-            />
             <span className="text-brand-orange">Log out</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
