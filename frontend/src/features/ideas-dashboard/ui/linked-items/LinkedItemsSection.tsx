@@ -1,5 +1,5 @@
-import { ChevronUp } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { ChevronRight, ChevronUp } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 import { cn } from '@/shared/lib/utils';
 
@@ -32,49 +32,34 @@ export function LinkedItemsSection({
   linkedItemEmptyImageText,
 }: LinkedItemsSectionProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [isScrollable, setIsScrollable] = useState(false);
 
   useEffect(() => {
     const scrollContainer = scrollRef.current;
     if (!scrollContainer || !expanded) return;
 
-    let isScrolling = false;
-
-    const handleWheel = (e: WheelEvent) => {
-      if (e.deltaY === 0) return;
-
-      const isScrollable =
-        scrollContainer.scrollWidth > scrollContainer.clientWidth;
-      if (!isScrollable) return;
-
-      const atLeftEdge = scrollContainer.scrollLeft <= 0 && e.deltaY < 0;
-      const atRightEdge =
-        scrollContainer.scrollLeft + scrollContainer.clientWidth >=
-          scrollContainer.scrollWidth && e.deltaY > 0;
-
-      if (!atLeftEdge && !atRightEdge) {
-        e.preventDefault();
-
-        if (!isScrolling) {
-          isScrolling = true;
-          requestAnimationFrame(() => {
-            scrollContainer.scrollBy({
-              left: e.deltaY * 0.8,
-              behavior: 'smooth',
-            });
-            setTimeout(() => {
-              isScrolling = false;
-            }, 50);
-          });
-        }
-      }
+    const syncScrollable = () => {
+      setIsScrollable(
+        scrollContainer.scrollWidth > scrollContainer.clientWidth + 1,
+      );
     };
 
-    scrollContainer.addEventListener('wheel', handleWheel, { passive: false });
+    syncScrollable();
+    const frameId = requestAnimationFrame(syncScrollable);
+
+    scrollContainer.addEventListener('scroll', syncScrollable, {
+      passive: true,
+    });
+
+    const resizeObserver = new ResizeObserver(syncScrollable);
+    resizeObserver.observe(scrollContainer);
 
     return () => {
-      scrollContainer.removeEventListener('wheel', handleWheel);
+      cancelAnimationFrame(frameId);
+      scrollContainer.removeEventListener('scroll', syncScrollable);
+      resizeObserver.disconnect();
     };
-  }, [expanded]);
+  }, [expanded, items]);
 
   if (items.length === 0) {
     return null;
@@ -112,8 +97,16 @@ export function LinkedItemsSection({
         <div className="relative">
           <div
             ref={scrollRef}
-            className="flex h-full scrollbar-none gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-            style={{ scrollBehavior: 'smooth' }}
+            className={cn(
+              'flex scrollbar-thin flex-nowrap gap-3 overflow-x-scroll overscroll-x-contain pb-1.5',
+              '[scrollbar-color:var(--color-brand-gray-400)_var(--color-brand-gray-100)]',
+              '[&::-webkit-scrollbar]:h-1.5',
+              '[&::-webkit-scrollbar-track]:rounded-full',
+              '[&::-webkit-scrollbar-track]:bg-brand-gray-100',
+              '[&::-webkit-scrollbar-thumb]:rounded-full',
+              '[&::-webkit-scrollbar-thumb]:bg-brand-gray-400',
+              'hover:[&::-webkit-scrollbar-thumb]:bg-brand-gray-500',
+            )}
           >
             {items.map(item => (
               <LinkedItemMiniCard
@@ -125,6 +118,15 @@ export function LinkedItemsSection({
               />
             ))}
           </div>
+
+          {isScrollable ? (
+            <div
+              className="pointer-events-none absolute inset-y-0 right-[-23px] flex w-10 items-center justify-end bg-linear-to-l from-white via-white/90 to-transparent pr-1"
+              aria-hidden
+            >
+              <ChevronRight className="text-brand-dark-blue size-4 shrink-0 opacity-90" />
+            </div>
+          ) : null}
         </div>
       ) : null}
     </section>

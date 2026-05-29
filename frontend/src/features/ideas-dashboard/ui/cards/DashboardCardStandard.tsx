@@ -1,7 +1,7 @@
 import { getInitials } from '@/features/idea-details/lib/get-initials';
 import { IdeaTagCloud } from '@/features/idea-details/ui/IdeaTagCloud';
 import { Link } from '@tanstack/react-router';
-import { memo, useCallback, type ReactNode } from 'react';
+import { type ReactNode, memo, useCallback } from 'react';
 
 import { cn } from '@/shared/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
@@ -12,8 +12,8 @@ import {
   STATS_BELOW_TAGS_COLUMN_THRESHOLD,
 } from '../../lib/config/constants';
 import type { DashboardCardBase } from '../../model/dashboard.types';
-import { DashboardCardStats } from './DashboardCardStats';
 import { LinkedItemsSection } from '../linked-items/LinkedItemsSection';
+import { DashboardCardStats } from './DashboardCardStats';
 
 export type DashboardCardStandardProps<
   TCard extends DashboardCardBase = DashboardCardBase,

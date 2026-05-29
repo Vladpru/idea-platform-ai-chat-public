@@ -2,7 +2,7 @@ import { getInitials } from '@/features/idea-details/lib/get-initials';
 import { IdeaTagCloud } from '@/features/idea-details/ui/IdeaTagCloud';
 import { Link } from '@tanstack/react-router';
 import { ArrowRight, ChevronUp } from 'lucide-react';
-import { memo, type ReactNode } from 'react';
+import { type ReactNode, memo } from 'react';
 
 import { cn } from '@/shared/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
