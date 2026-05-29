@@ -1,14 +1,12 @@
 import {
   COLUMN_COUNT_MIN,
+  getColumnSelectMax,
+  getEffectiveColumnCount,
+  resolveDashboardViewport,
   type ProblemDashboardFilter,
   type ProblemDashboardSort,
   TABLET_COLUMN_COUNT_MAX,
 } from '@/features/ideas-dashboard';
-import {
-  getColumnSelectMax,
-  getEffectiveColumnCount,
-  resolveDashboardViewport,
-} from '@/features/ideas-dashboard/lib/dashboard-grid-layout';
 import type { ProblemStage } from '@/features/problems/api/problems-api.types';
 import type { ProblemsFeedResponse } from '@/features/problems/api/problems-api.types';
 import { fetchProblems } from '@/features/problems/api/problems.api';

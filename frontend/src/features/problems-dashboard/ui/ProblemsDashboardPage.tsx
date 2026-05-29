@@ -14,8 +14,10 @@ import {
   useProblemsDashboardPreferences,
   useProblemsDashboardQuery,
 } from '../hooks/use-problems-dashboard';
-import type { DashboardViewport } from '@/features/ideas-dashboard/lib/dashboard-grid-layout';
-import type { ProblemDashboardSort } from '@/features/ideas-dashboard';
+import type {
+  DashboardViewport,
+  ProblemDashboardSort,
+} from '@/features/ideas-dashboard';
 import { PROBLEMS_DASHBOARD_LABELS } from '../lib/problems-dashboard-labels';
 import type { ProblemDashboardCard } from '../model/problems-dashboard.types';
 

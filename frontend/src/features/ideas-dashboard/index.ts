@@ -3,17 +3,17 @@ export {
   useIdeasDashboardPreferences,
   useIdeasDashboardQuery,
 } from './hooks/use-ideas-dashboard';
-export { IdeasDashboardPage } from './ui/IdeasDashboardPage';
-export { DashboardHeader } from './ui/DashboardHeader';
-export { LoadMoreFooter } from './ui/LoadMoreFooter';
-export { DashboardFilter } from './ui/DashboardFilter';
-export { DashboardControls } from './ui/DashboardControls';
-export { DashboardGrid } from './ui/DashboardGrid';
-export { DashboardCardStandard } from './ui/DashboardCardStandard';
-export { DashboardCardCompact } from './ui/DashboardCardCompact';
-export { DashboardCardStats } from './ui/DashboardCardStats';
-export { LinkedItemsSection } from './ui/LinkedItemsSection';
-export { LinkedItemMiniCard } from './ui/LinkedItemMiniCard';
+export { IdeasDashboardPage } from './ui/page/IdeasDashboardPage';
+export { DashboardHeader } from './ui/header/DashboardHeader';
+export { LoadMoreFooter } from './ui/grid/LoadMoreFooter';
+export { DashboardFilter } from './ui/header/DashboardFilter';
+export { DashboardControls } from './ui/header/DashboardControls';
+export { DashboardGrid } from './ui/grid/DashboardGrid';
+export { DashboardCardStandard } from './ui/cards/DashboardCardStandard';
+export { DashboardCardCompact } from './ui/cards/DashboardCardCompact';
+export { DashboardCardStats } from './ui/cards/DashboardCardStats';
+export { LinkedItemsSection } from './ui/linked-items/LinkedItemsSection';
+export { LinkedItemMiniCard } from './ui/linked-items/LinkedItemMiniCard';
 export type {
   DashboardCardBase,
   DashboardEngagementStats,
@@ -29,7 +29,12 @@ export type {
   ProblemDashboardFilter,
   ProblemDashboardSort,
 } from './model/ideas-dashboard.types';
-export type { DashboardViewport } from './lib/dashboard-grid-layout';
+export type { DashboardViewport } from './lib/layout/dashboard-grid-layout';
+export {
+  getColumnSelectMax,
+  getEffectiveColumnCount,
+  resolveDashboardViewport,
+} from './lib/layout/dashboard-grid-layout';
 export {
   COLUMN_COUNT_MAX,
   COLUMN_COUNT_MIN,
@@ -37,4 +42,5 @@ export {
   DASHBOARD_CARD_TAG_TO_SHOW_COUNT,
   DEFAULT_COLUMN_COUNT,
   TABLET_COLUMN_COUNT_MAX,
-} from './lib/constants';
+} from './lib/config/constants';
+export { IDEAS_DASHBOARD_LABELS } from './lib/config/ideas-dashboard-labels';

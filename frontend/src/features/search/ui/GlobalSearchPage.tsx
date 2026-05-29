@@ -1,4 +1,4 @@
-import { DashboardCardStandard } from '@/features/ideas-dashboard/ui/DashboardCardStandard';
+import { DashboardCardStandard } from '@/features/ideas-dashboard';
 import { ROUTES } from '@/shared/config/paths';
 import { useMediaQuery } from '@/shared/hooks/use-media-query';
 import { cn } from '@/shared/lib/utils';

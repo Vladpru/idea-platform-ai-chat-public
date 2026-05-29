@@ -8,7 +8,7 @@ import { cn } from '@/shared/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { StageChevronBadge } from '@/shared/ui/stage-chevron-badge';
 
-import type { DashboardCardBase } from '../model/dashboard.types';
+import type { DashboardCardBase } from '../../model/dashboard.types';
 import { DashboardCardStats } from './DashboardCardStats';
 
 export type DashboardCardCompactProps<

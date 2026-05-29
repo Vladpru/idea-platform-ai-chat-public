@@ -2,8 +2,8 @@ import { Link } from '@tanstack/react-router';
 
 import { cn } from '@/shared/lib/utils';
 
-import type { DashboardLinkedItem } from '../model/dashboard.types';
-import { DashboardCardStats } from './DashboardCardStats';
+import type { DashboardLinkedItem } from '../../model/dashboard.types';
+import { DashboardCardStats } from '../cards/DashboardCardStats';
 
 type LinkedItemMiniCardProps = {
   item: DashboardLinkedItem;

@@ -10,10 +10,10 @@ import { StageChevronBadge } from '@/shared/ui/stage-chevron-badge';
 import {
   DASHBOARD_CARD_TAG_TO_SHOW_COUNT,
   STATS_BELOW_TAGS_COLUMN_THRESHOLD,
-} from '../lib/constants';
-import type { DashboardCardBase } from '../model/dashboard.types';
+} from '../../lib/config/constants';
+import type { DashboardCardBase } from '../../model/dashboard.types';
 import { DashboardCardStats } from './DashboardCardStats';
-import { LinkedItemsSection } from './LinkedItemsSection';
+import { LinkedItemsSection } from '../linked-items/LinkedItemsSection';
 
 export type DashboardCardStandardProps<
   TCard extends DashboardCardBase = DashboardCardBase,

@@ -7,19 +7,19 @@ import { memo, useEffect, useRef } from 'react';
 import {
   useIdeasDashboardPreferences,
   useIdeasDashboardQuery,
-} from '../hooks/use-ideas-dashboard';
-import { IDEAS_DASHBOARD_LABELS } from '../lib/ideas-dashboard-labels';
-import type { DashboardViewport } from '../lib/dashboard-grid-layout';
+} from '../../hooks/use-ideas-dashboard';
+import { IDEAS_DASHBOARD_LABELS } from '../../lib/config/ideas-dashboard-labels';
+import type { DashboardViewport } from '../../lib/layout/dashboard-grid-layout';
 import type {
   IdeaDashboardCard,
   IdeaDashboardSort,
-} from '../model/ideas-dashboard.types';
+} from '../../model/ideas-dashboard.types';
 
-import { DashboardCardCompact } from './DashboardCardCompact';
-import { DashboardCardStandard } from './DashboardCardStandard';
-import { DashboardGrid } from './DashboardGrid';
-import { DashboardHeader } from './DashboardHeader';
-import { LoadMoreFooter } from './LoadMoreFooter';
+import { DashboardCardCompact } from '../cards/DashboardCardCompact';
+import { DashboardCardStandard } from '../cards/DashboardCardStandard';
+import { DashboardGrid } from '../grid/DashboardGrid';
+import { DashboardHeader } from '../header/DashboardHeader';
+import { LoadMoreFooter } from '../grid/LoadMoreFooter';
 
 function IdeasGridSkeleton() {
   return (

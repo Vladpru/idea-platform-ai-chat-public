@@ -1,5 +1,5 @@
 import { IdeasPage } from '@/pages/ideas';
-import { IDEAS_DASHBOARD_LABELS } from '@/features/ideas-dashboard/lib/ideas-dashboard-labels';
+import { IDEAS_DASHBOARD_LABELS } from '@/features/ideas-dashboard';
 import { pageDocumentHead } from '@/shared/lib/document-head';
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';

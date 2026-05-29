@@ -3,7 +3,7 @@ import type { ApiStage } from '@/features/ideas/model/idea.types';
 import type {
   IdeaDashboardFilter,
   IdeaDashboardSort,
-} from '../model/ideas-dashboard.types';
+} from '../../model/ideas-dashboard.types';
 
 export const IDEA_DASHBOARD_FILTERS: {
   id: IdeaDashboardFilter;

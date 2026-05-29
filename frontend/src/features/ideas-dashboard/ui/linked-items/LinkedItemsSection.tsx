@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 
 import { cn } from '@/shared/lib/utils';
 
-import type { DashboardLinkedItem } from '../model/dashboard.types';
+import type { DashboardLinkedItem } from '../../model/dashboard.types';
 import { LinkedItemMiniCard } from './LinkedItemMiniCard';
 
 type LinkedItemsSectionProps = {

@@ -1,8 +1,10 @@
 import type { IdeasDashboardTab } from '@/features/ideas/api/ideas-api.types';
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import { ROUTES } from '@/shared/config/paths';
-import { DashboardCardStandard } from '@/features/ideas-dashboard/ui/DashboardCardStandard';
-import { IDEAS_DASHBOARD_LABELS } from '@/features/ideas-dashboard/lib/ideas-dashboard-labels';
+import {
+  DashboardCardStandard,
+  IDEAS_DASHBOARD_LABELS,
+} from '@/features/ideas-dashboard';
 import { useDeleteIdeaMutation } from '@/features/ideas/hooks/use-idea-mutations';
 import type { TabDefinition } from '@/shared/ui/TabLabelWithBadge';
 import { Button } from '@/shared/ui/button';

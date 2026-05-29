@@ -12,13 +12,13 @@ import {
   COLUMN_COUNT_MIN,
   FILTER_TO_API_STAGE,
   TABLET_COLUMN_COUNT_MAX,
-} from '../lib/constants';
+} from '../lib/config/constants';
 import {
   getColumnSelectMax,
   getEffectiveColumnCount,
   resolveDashboardViewport,
-} from '../lib/dashboard-grid-layout';
-import { selectIdeasDashboardCards } from '../lib/select-ideas-dashboard-cards';
+} from '../lib/layout/dashboard-grid-layout';
+import { selectIdeasDashboardCards } from '../lib/data/select-ideas-dashboard-cards';
 import { useDashboardGridPreferencesStore } from '../model/dashboard-grid-preferences.store';
 import type {
   IdeaDashboardFilter,
