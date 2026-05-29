@@ -1,4 +1,5 @@
 import { useIdeasListQuery } from '@/features/ideas/hooks/use-idea-queries';
+import { ArrowLink } from '@/features/ideas/ui/icons/ArrowLink';
 import {
   FieldError,
   FieldGroup,
@@ -9,11 +10,13 @@ import {
   formatIdeaIds,
   parseIdeaIds,
 } from '@/features/problems/lib/submit-problem';
+import { Link } from '@tanstack/react-router';
 import { Check, ChevronDown, Search, X } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { Control, FieldErrors } from 'react-hook-form';
 import { Controller } from 'react-hook-form';
 
+import { ROUTES } from '@/shared/config/paths';
 import { cn } from '@/shared/lib/utils';
 import { selectClass } from '@/shared/ui/TagsInput';
 import { Input } from '@/shared/ui/input';
@@ -228,6 +231,17 @@ export function IdeaSelect({ formId, control, errors }: IdeaSelectProps) {
                               <span className="text-brand-gray-900 min-w-0 flex-1 truncate text-left text-sm">
                                 {idea.label}
                               </span>
+
+                              <Link
+                                to={ROUTES.ideaDetail(idea.id)}
+                                target="_blank"
+                                className="text-brand-dark-blue inline-flex shrink-0 items-center gap-1 text-xs font-bold"
+                                onClick={event => event.stopPropagation()}
+                              >
+                                View
+                                <ArrowLink className="size-3.5" aria-hidden />
+                              </Link>
+
                               {isSelected ? (
                                 <Check
                                   className="text-brand-dark-blue size-4 shrink-0"
