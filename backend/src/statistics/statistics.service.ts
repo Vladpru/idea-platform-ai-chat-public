@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 
 import { IdeaStatus, Stage } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -9,13 +9,8 @@ import type {
   StatisticsSnapshotResponse,
   StatisticsStatusChange,
 } from '../shared/types/statistics.types';
-import {
-  eachDayInRange,
-  eachMonthInRange,
-  resolveStatisticsPeriodRange,
-  toDateKey,
-  toMonthKey,
-} from './lib/statistics-period.util';
+import { formatChartBucketLabel } from './lib/statistics-chart-label.util';
+import { resolveStatisticsPeriodRange } from './lib/statistics-period.util';
 
 const STAGE_ORDER: Stage[] = [
   Stage.ideation,
@@ -38,22 +33,6 @@ const PUBLISHED_IDEA_WHERE = {
   publishedAt: { not: null },
 } as const;
 
-const UTC_TIME_ZONE = 'UTC' as const;
-
-const WEEKDAY_FORMATTER = new Intl.DateTimeFormat('en-US', {
-  weekday: 'short',
-  timeZone: UTC_TIME_ZONE,
-});
-const SHORT_DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
-  month: 'short',
-  day: 'numeric',
-  timeZone: UTC_TIME_ZONE,
-});
-const MONTH_FORMATTER = new Intl.DateTimeFormat('en-US', {
-  month: 'short',
-  timeZone: UTC_TIME_ZONE,
-});
-
 type DayCountRow = { day: Date; count: bigint };
 type MonthCountRow = { month: Date; count: bigint };
 type CountRow = { count: bigint };
@@ -61,17 +40,24 @@ type ContributorScoreRow = { author_id: string; score: bigint };
 
 @Injectable()
 export class StatisticsService {
-  private readonly logger = new Logger(StatisticsService.name);
-
   constructor(private readonly prisma: PrismaService) {}
 
   async getSnapshot(
     period: StatisticsPeriod,
+    timeZoneRaw?: string,
   ): Promise<StatisticsSnapshotResponse> {
-    const range = resolveStatisticsPeriodRange(period);
+    const timeZone = this.resolveTimeZone(timeZoneRaw);
+    const range = resolveStatisticsPeriodRange(period, timeZone);
 
-    const results = await Promise.allSettled([
-      this.getNewIdeasSeries(period, range.start, range.end),
+    const [
+      newIdeasSeries,
+      statusChanges,
+      newUsers,
+      activeUsers,
+      ideaUpdates,
+      topContributors,
+    ] = await Promise.all([
+      this.getNewIdeasSeries(period, range.start, range.end, timeZone),
       this.getStageDistribution(),
       this.countNewUsers(range.start, range.end),
       this.countActiveUsers(range.start, range.end),
@@ -79,23 +65,9 @@ export class StatisticsService {
       this.getTopContributors(),
     ]);
 
-    const newIdeasSeries = this.unwrapSettled(results[0], [], 'newIdeasSeries');
     const newIdeasTotal = newIdeasSeries.reduce(
       (sum, point) => sum + point.value,
       0,
-    );
-    const statusChanges = this.unwrapSettled(
-      results[1],
-      this.emptyStageDistribution(),
-      'statusChanges',
-    );
-    const newUsers = this.unwrapSettled(results[2], 0, 'newUsers');
-    const activeUsers = this.unwrapSettled(results[3], 0, 'activeUsers');
-    const ideaUpdates = this.unwrapSettled(results[4], 0, 'ideaUpdates');
-    const topContributors = this.unwrapSettled(
-      results[5],
-      [],
-      'topContributors',
     );
 
     return {
@@ -114,93 +86,104 @@ export class StatisticsService {
     };
   }
 
-  private unwrapSettled<T>(
-    result: PromiseSettledResult<T>,
-    fallback: T,
-    metric: string,
-  ): T {
-    if (result.status === 'fulfilled') {
-      return result.value;
-    }
-
-    this.logger.warn(
-      `Statistics metric "${metric}" failed: ${result.reason instanceof Error ? result.reason.message : String(result.reason)}`,
-    );
-    return fallback;
-  }
-
-  private emptyStageDistribution(): StatisticsStatusChange[] {
-    return STAGE_ORDER.map(stage => ({
-      label: STAGE_LABELS[stage],
-      percent: 0,
-    }));
-  }
-
   private async getNewIdeasSeries(
     period: StatisticsPeriod,
     start: Date,
     end: Date,
+    timeZone: string,
   ): Promise<StatisticsDataPoint[]> {
     if (period === 'year') {
-      return this.getNewIdeasMonthlySeries(start, end);
+      return this.getNewIdeasMonthlySeries(start, end, timeZone);
     }
 
-    return this.getNewIdeasDailySeries(period, start, end);
+    return this.getNewIdeasDailySeries(period, start, end, timeZone);
   }
 
   private async getNewIdeasDailySeries(
     period: StatisticsPeriod,
     start: Date,
     end: Date,
+    timeZone: string,
   ): Promise<StatisticsDataPoint[]> {
     const rows = await this.prisma.$queryRaw<DayCountRow[]>`
-      SELECT (published_at AT TIME ZONE 'UTC')::date AS day, COUNT(*)::bigint AS count
-      FROM "idea"
-      WHERE "status" = ${IdeaStatus.PUBLISHED}
-        AND "published_at" IS NOT NULL
-        AND "published_at" >= ${start}
-        AND "published_at" <= ${end}
-      GROUP BY (published_at AT TIME ZONE 'UTC')::date
-      ORDER BY day ASC
+      WITH buckets AS (
+        SELECT generate_series(
+          (${start} AT TIME ZONE ${timeZone})::date,
+          (${end} AT TIME ZONE ${timeZone})::date,
+          INTERVAL '1 day'
+        )::date AS day
+      ),
+      counts AS (
+        SELECT
+          (published_at AT TIME ZONE ${timeZone})::date AS day,
+          COUNT(*)::bigint AS count
+        FROM "idea"
+        WHERE "status" = ${IdeaStatus.PUBLISHED}
+          AND "published_at" IS NOT NULL
+          AND "published_at" >= ${start}
+          AND "published_at" <= ${end}
+        GROUP BY 1
+      )
+      SELECT buckets.day, COALESCE(counts.count, 0)::bigint AS count
+      FROM buckets
+      LEFT JOIN counts ON counts.day = buckets.day
+      ORDER BY buckets.day ASC
     `;
 
-    const countsByDay = new Map(
-      rows.map(row => [toDateKey(row.day), Number(row.count)]),
-    );
-
-    return [...eachDayInRange(start, end)].map(day => ({
-      label:
-        period === 'week'
-          ? WEEKDAY_FORMATTER.format(day)
-          : SHORT_DATE_FORMATTER.format(day),
-      value: countsByDay.get(toDateKey(day)) ?? 0,
+    return rows.map(row => ({
+      label: formatChartBucketLabel(
+        row.day,
+        timeZone,
+        period === 'week' ? 'weekday' : 'shortDate',
+      ),
+      value: Number(row.count),
     }));
   }
 
   private async getNewIdeasMonthlySeries(
     start: Date,
     end: Date,
+    timeZone: string,
   ): Promise<StatisticsDataPoint[]> {
     const rows = await this.prisma.$queryRaw<MonthCountRow[]>`
-      SELECT DATE_TRUNC('month', published_at AT TIME ZONE 'UTC') AS month,
-        COUNT(*)::bigint AS count
-      FROM "idea"
-      WHERE "status" = ${IdeaStatus.PUBLISHED}
-        AND "published_at" IS NOT NULL
-        AND "published_at" >= ${start}
-        AND "published_at" <= ${end}
-      GROUP BY DATE_TRUNC('month', published_at AT TIME ZONE 'UTC')
-      ORDER BY month ASC
+      WITH buckets AS (
+        SELECT generate_series(
+          DATE_TRUNC('month', ${start} AT TIME ZONE ${timeZone})::date,
+          DATE_TRUNC('month', ${end} AT TIME ZONE ${timeZone})::date,
+          INTERVAL '1 month'
+        )::date AS month
+      ),
+      counts AS (
+        SELECT
+          DATE_TRUNC('month', published_at AT TIME ZONE ${timeZone})::date AS month,
+          COUNT(*)::bigint AS count
+        FROM "idea"
+        WHERE "status" = ${IdeaStatus.PUBLISHED}
+          AND "published_at" IS NOT NULL
+          AND "published_at" >= ${start}
+          AND "published_at" <= ${end}
+        GROUP BY 1
+      )
+      SELECT buckets.month, COALESCE(counts.count, 0)::bigint AS count
+      FROM buckets
+      LEFT JOIN counts ON counts.month = buckets.month
+      ORDER BY buckets.month ASC
     `;
 
-    const countsByMonth = new Map(
-      rows.map(row => [toMonthKey(row.month), Number(row.count)]),
-    );
-
-    return [...eachMonthInRange(start, end)].map(month => ({
-      label: MONTH_FORMATTER.format(month),
-      value: countsByMonth.get(toMonthKey(month)) ?? 0,
+    return rows.map(row => ({
+      label: formatChartBucketLabel(row.month, timeZone, 'month'),
+      value: Number(row.count),
     }));
+  }
+
+  private resolveTimeZone(timeZoneRaw?: string): string {
+    const timeZone = timeZoneRaw?.trim() || 'UTC';
+    try {
+      Intl.DateTimeFormat('en-US', { timeZone });
+      return timeZone;
+    } catch {
+      throw new BadRequestException('Invalid IANA timezone');
+    }
   }
 
   private async getStageDistribution(): Promise<StatisticsStatusChange[]> {
