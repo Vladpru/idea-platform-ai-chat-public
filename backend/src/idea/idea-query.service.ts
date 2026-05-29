@@ -22,30 +22,15 @@ export class IdeaQueryService {
 
   async trackUniqueView(params: {
     ideaId: string;
-    userId?: string;
-    ipAddress?: string;
+    userId: string;
   }): Promise<void> {
-    const userId = params.userId ?? null;
-    const ipAddress = params.ipAddress?.trim() ? params.ipAddress.trim() : null;
-
-    if (!userId && !ipAddress) return;
-
     try {
-      await this.prisma.$transaction(async tx => {
-        await tx.ideaView.create({
-          data: {
-            ideaId: params.ideaId,
-            userId,
-            ipAddress,
-          },
-          select: { id: true },
-        });
-
-        await tx.idea.update({
-          where: { id: params.ideaId },
-          data: { viewCount: { increment: 1 } },
-          select: { id: true },
-        });
+      await this.prisma.ideaView.create({
+        data: {
+          ideaId: params.ideaId,
+          userId: params.userId,
+        },
+        select: { id: true },
       });
     } catch (e) {
       if (
@@ -56,8 +41,13 @@ export class IdeaQueryService {
       }
       throw e;
     }
-  }
 
+    await this.prisma.idea.update({
+      where: { id: params.ideaId },
+      data: { viewCount: { increment: 1 } },
+      select: { id: true },
+    });
+  }
   private resolveOrderBy(
     sort: IdeaSortOption | undefined,
     fallback: Prisma.IdeaOrderByWithRelationInput,

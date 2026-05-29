@@ -12,20 +12,12 @@ export class ProblemQueryService {
     userId: string;
   }): Promise<void> {
     try {
-      await this.prisma.$transaction(async tx => {
-        await tx.problemView.create({
-          data: {
-            problemId: params.problemId,
-            userId: params.userId,
-          },
-          select: { id: true },
-        });
-
-        await tx.problem.update({
-          where: { id: params.problemId },
-          data: { viewCount: { increment: 1 } },
-          select: { id: true },
-        });
+      await this.prisma.problemView.create({
+        data: {
+          problemId: params.problemId,
+          userId: params.userId,
+        },
+        select: { id: true },
       });
     } catch (e) {
       if (
@@ -36,5 +28,11 @@ export class ProblemQueryService {
       }
       throw e;
     }
+
+    await this.prisma.problem.update({
+      where: { id: params.problemId },
+      data: { viewCount: { increment: 1 } },
+      select: { id: true },
+    });
   }
 }
