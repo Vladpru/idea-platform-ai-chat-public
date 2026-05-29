@@ -1,4 +1,4 @@
-import { MediaKind, type Prisma } from '../../generated/prisma/client';
+import { MediaKind, Prisma } from '../../generated/prisma/client';
 
 export const PROBLEM_FORM_AUTHOR_SELECT = {
   id: true,
@@ -44,3 +44,27 @@ export const PROBLEM_FORM_INCLUDE = {
   },
   media: true,
 } as const satisfies Prisma.ProblemInclude;
+
+export function problemFormInclude(currentUserId: string) {
+  return {
+    author: PROBLEM_FORM_INCLUDE.author,
+    members: PROBLEM_FORM_INCLUDE.members,
+    ideas: PROBLEM_FORM_INCLUDE.ideas,
+    tags: PROBLEM_FORM_INCLUDE.tags,
+    media: PROBLEM_FORM_INCLUDE.media,
+    likes: {
+      where: { userId: currentUserId },
+      select: { userId: true },
+    },
+  } as const satisfies Prisma.ProblemInclude;
+}
+
+export function resolveProblemFormInclude(
+  userId?: string,
+): Prisma.ProblemInclude {
+  if (!userId) {
+    return PROBLEM_FORM_INCLUDE;
+  }
+
+  return problemFormInclude(userId);
+}

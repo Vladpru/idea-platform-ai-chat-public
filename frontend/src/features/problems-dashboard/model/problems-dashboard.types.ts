@@ -9,4 +9,5 @@ export type ProblemDashboardCard = DashboardCardBase & {
   publishedAt: string | null;
   status: ProblemStatus;
   isAuthor: boolean;
+  isLiked: boolean;
 };

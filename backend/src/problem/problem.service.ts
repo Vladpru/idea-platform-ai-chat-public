@@ -28,8 +28,14 @@ import { CreateProblemDto } from './dto/create-problem.dto';
 import { GetProblemsQueryDto } from './dto/get-problems-query.dto';
 import { MyProblemsQueryDto } from './dto/my-problems.dto';
 import { UpdateProblemDraftDto } from './dto/update-problem-draft.dto';
-import { PROBLEM_FORM_INCLUDE } from './problem.constants';
-import { toProblemFormResponse } from './problem.mapper';
+import {
+  PROBLEM_FORM_INCLUDE,
+  resolveProblemFormInclude,
+} from './problem.constants';
+import {
+  type ProblemFormRecord,
+  toProblemFormResponse,
+} from './problem.mapper';
 import type {
   ProblemFormResponse,
   ProblemsFeedResponse,
@@ -64,6 +70,57 @@ export class ProblemService {
     private readonly prisma: PrismaService,
     private readonly cloudinary: CloudinaryService,
   ) {}
+
+  async toggleLike(problemId: string, userId: string): Promise<void> {
+    await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const existing = await tx.problem.findFirst({
+        where: { id: problemId },
+        select: { id: true, status: true, authorId: true },
+      });
+
+      if (!existing) {
+        throw new NotFoundException(PROBLEM_NOT_FOUND);
+      }
+
+      if (
+        existing.authorId !== userId &&
+        existing.status !== ProblemStatus.PUBLISHED
+      ) {
+        throw new NotFoundException(PROBLEM_NOT_FOUND);
+      }
+
+      const like = await tx.problemLike.findUnique({
+        where: { problemId_userId: { problemId, userId } },
+        select: { problemId: true, userId: true },
+      });
+
+      if (like) {
+        await tx.problemLike.delete({
+          where: { problemId_userId: { problemId, userId } },
+          select: { problemId: true, userId: true },
+        });
+
+        await tx.problem.update({
+          where: { id: problemId },
+          data: { likeCount: { decrement: 1 } },
+          select: { id: true },
+        });
+
+        return;
+      }
+
+      await tx.problemLike.create({
+        data: { problemId, userId },
+        select: { problemId: true, userId: true },
+      });
+
+      await tx.problem.update({
+        where: { id: problemId },
+        data: { likeCount: { increment: 1 } },
+        select: { id: true },
+      });
+    });
+  }
 
   private enqueueCloudinaryDeletes(publicIds: string[]): void {
     if (publicIds.length === 0) {
@@ -412,7 +469,7 @@ export class ProblemService {
         skip,
         take: limit,
         orderBy,
-        include: PROBLEM_FORM_INCLUDE,
+        include: resolveProblemFormInclude(currentUserId),
       }),
     ]);
 
@@ -420,7 +477,10 @@ export class ProblemService {
 
     return {
       data: problems.map(problem =>
-        toProblemFormResponse(problem, currentUserId),
+        toProblemFormResponse(
+          problem as unknown as ProblemFormRecord,
+          currentUserId,
+        ),
       ),
       meta: { total, page, limit, totalPages },
     };
@@ -461,7 +521,7 @@ export class ProblemService {
           skip,
           take: limit,
           orderBy: { createdAt: 'desc' },
-          include: PROBLEM_FORM_INCLUDE,
+          include: resolveProblemFormInclude(userId),
         }),
       ]);
 
@@ -475,7 +535,9 @@ export class ProblemService {
     const totalPages = activeTotal === 0 ? 0 : Math.ceil(activeTotal / limit);
 
     return {
-      data: activeItems.map(problem => toProblemFormResponse(problem, userId)),
+      data: activeItems.map(problem =>
+        toProblemFormResponse(problem as unknown as ProblemFormRecord, userId),
+      ),
       meta: {
         totals: {
           published: publishedTotal,
@@ -492,11 +554,11 @@ export class ProblemService {
 
   async findByIdSmart(
     id: string,
-    userId: string,
+    userId?: string,
   ): Promise<ProblemFormResponse> {
     const problem = await this.prisma.problem.findUnique({
       where: { id },
-      include: PROBLEM_FORM_INCLUDE,
+      include: resolveProblemFormInclude(userId),
     });
 
     if (!problem) {
@@ -504,13 +566,16 @@ export class ProblemService {
     }
 
     if (
-      problem.authorId !== userId &&
+      (!userId || problem.authorId !== userId) &&
       problem.status !== ProblemStatus.PUBLISHED
     ) {
       throw new NotFoundException(PROBLEM_NOT_FOUND);
     }
 
-    return toProblemFormResponse(problem, userId);
+    return toProblemFormResponse(
+      problem as unknown as ProblemFormRecord,
+      userId,
+    );
   }
 
   async update(

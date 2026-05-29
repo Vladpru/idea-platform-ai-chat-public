@@ -21,6 +21,7 @@ function pickProblemImageUrl(dto: ProblemForm): string | null {
 export function toProblemDashboardCard(dto: ProblemForm): ProblemDashboardCard {
   return {
     id: dto.id,
+    authorId: dto.author.id,
     title: dto.title?.trim() || 'Untitled problem',
     description: dto.description?.trim() ?? '',
     imageUrl: pickProblemImageUrl(dto),
@@ -36,10 +37,11 @@ export function toProblemDashboardCard(dto: ProblemForm): ProblemDashboardCard {
     stage: toStageLabel(dto.stage),
     stageValue: dto.stage,
     tags: dto.tags?.map(tag => tag.name) ?? [],
+    isLiked: dto.isLiked ?? false,
     stats: {
-      views: 0,
-      comments: 0,
-      likes: 0,
+      views: dto.viewCount ?? 0,
+      comments: dto.commentCount ?? 0,
+      likes: dto.likeCount ?? 0,
     },
     linkedItems:
       dto.ideas?.map(idea => ({

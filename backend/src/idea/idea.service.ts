@@ -42,6 +42,57 @@ export class IdeaService {
     private readonly ideaMediaService: IdeaMediaService,
   ) {}
 
+  async toggleLike(ideaId: string, userId: string): Promise<void> {
+    await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const existing = await tx.idea.findFirst({
+        where: { id: ideaId },
+        select: { id: true, status: true, authorId: true },
+      });
+
+      if (!existing) {
+        throw new NotFoundException(IDEA_NOT_FOUND);
+      }
+
+      if (
+        existing.authorId !== userId &&
+        existing.status !== IdeaStatus.PUBLISHED
+      ) {
+        throw new NotFoundException(IDEA_NOT_FOUND);
+      }
+
+      const like = await tx.ideaLike.findUnique({
+        where: { ideaId_userId: { ideaId, userId } },
+        select: { ideaId: true, userId: true },
+      });
+
+      if (like) {
+        await tx.ideaLike.delete({
+          where: { ideaId_userId: { ideaId, userId } },
+          select: { ideaId: true, userId: true },
+        });
+
+        await tx.idea.update({
+          where: { id: ideaId },
+          data: { likeCount: { decrement: 1 } },
+          select: { id: true },
+        });
+
+        return;
+      }
+
+      await tx.ideaLike.create({
+        data: { ideaId, userId },
+        select: { ideaId: true, userId: true },
+      });
+
+      await tx.idea.update({
+        where: { id: ideaId },
+        data: { likeCount: { increment: 1 } },
+        select: { id: true },
+      });
+    });
+  }
+
   private async cleanupOrphanedDraftProblems(
     tx: Prisma.TransactionClient,
     authorId: string,

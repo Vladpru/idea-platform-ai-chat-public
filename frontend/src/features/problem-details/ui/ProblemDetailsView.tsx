@@ -151,6 +151,9 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
                 <IdeaStatsFooter
                   createdAt={problem.createdAt}
                   stats={problem.stats}
+                  entityId={problem.id}
+                  entityType="PROBLEM"
+                  isLiked={problem.isLiked}
                 />
               </AnimatedPanel>
             )}

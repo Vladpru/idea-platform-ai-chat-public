@@ -18,6 +18,7 @@ export function toIdeaDashboardCard(
 ): IdeaDashboardCard {
   return {
     id: dto.id,
+    authorId: dto.author.id,
     title: dto.title?.trim() || 'Untitled idea',
     description: dto.description?.trim() ?? '',
     imageUrl: dto.mainImage?.url ?? null,
@@ -33,10 +34,11 @@ export function toIdeaDashboardCard(
     stage: toStageLabel(dto.stage),
     stageValue: (dto.stage?.toLowerCase() ?? null) as ApiStage | null,
     tags: dto.tags?.map(tag => tag.name) ?? [],
+    isLiked: dto.isLiked ?? false,
     stats: {
-      views: 0,
-      comments: 0,
-      likes: 0,
+      views: dto.viewCount ?? 0,
+      comments: dto.commentCount ?? 0,
+      likes: dto.likeCount ?? 0,
     },
     linkedItems:
       dto.problems?.map(problem => ({

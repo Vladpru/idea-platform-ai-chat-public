@@ -122,11 +122,17 @@ export class IdeaController {
   @ApiOkResponse({ description: 'Idea form payload' })
   @ApiNotFoundResponse({ description: 'Idea not found' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
-  findOne(
+  async findOne(
     @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.ideaQueryService.findByIdSmart(id, req.user.id);
+    const idea = await this.ideaQueryService.findByIdSmart(id, req.user.id);
+
+    this.ideaQueryService
+      .trackUniqueView({ ideaId: id, userId: req.user?.id })
+      .catch(err => console.error(err));
+
+    return idea;
   }
 
   @Patch(':id')
@@ -309,5 +315,16 @@ export class IdeaController {
     @Req() req: AuthenticatedRequest,
   ): Promise<void> {
     await this.ideaMemberService.leaveIdea(id, req.user.id);
+  }
+
+  @Post(':id/like')
+  @JwtAuth()
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  toggleLike(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<void> {
+    return this.ideaService.toggleLike(id, req.user.id);
   }
 }

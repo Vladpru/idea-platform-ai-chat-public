@@ -8,9 +8,49 @@ import type {
   IdeaMediaResponse,
 } from './types/idea-form.types';
 
+type UserLikeRecord = { userId: string };
+
+type IdeaFormProblemRecord = {
+  id: string;
+  title: string | null;
+  description: string | null;
+  status: string;
+  stage: string | null;
+  viewCount: number;
+  likeCount: number;
+  commentCount: number;
+  author: {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+    avatarUrl: string | null;
+  };
+  likes?: UserLikeRecord[];
+};
+
 export type IdeaFormRecord = Prisma.IdeaGetPayload<{
   include: typeof IDEA_FORM_INCLUDE;
-}>;
+}> & {
+  likes?: UserLikeRecord[];
+  problems: Array<{
+    isPrimary: boolean;
+    problem: IdeaFormProblemRecord;
+  }>;
+};
+
+function mapUserIsLiked(likes: UserLikeRecord[] | undefined): boolean {
+  return (likes?.length ?? 0) > 0;
+}
+
+function mapIdeaEngagementMetrics(idea: IdeaFormRecord) {
+  return {
+    viewCount: idea.viewCount ?? 0,
+    likeCount: idea.likeCount ?? 0,
+    commentCount: idea.commentCount ?? 0,
+    isLiked: mapUserIsLiked(idea.likes),
+  };
+}
 
 export function toIdeaAuthorResponse(author: {
   id: string;
@@ -67,6 +107,7 @@ export function toIdeaFormResponse(
     title: idea.title,
     description: idea.description,
     publishedAt: idea.publishedAt?.toISOString() ?? null,
+    ...mapIdeaEngagementMetrics(idea),
     viewer: {
       isAuthor,
       isMember,
@@ -76,11 +117,23 @@ export function toIdeaFormResponse(
         !isMember &&
         idea.status === 'PUBLISHED',
     },
-    problems: idea.problems.map(({ problem, isPrimary }) => ({
-      id: problem.id,
-      title: problem.title,
-      isPrimary,
-    })),
+    problems: idea.problems.map(({ problem, isPrimary }) => {
+      const problemRecord = problem as IdeaFormProblemRecord;
+
+      return {
+        id: problemRecord.id,
+        title: problemRecord.title ?? '',
+        description: problemRecord.description ?? '',
+        status: problemRecord.status,
+        stage: problemRecord.stage,
+        isPrimary,
+        author: toIdeaAuthorResponse(problemRecord.author),
+        viewCount: problemRecord.viewCount ?? 0,
+        likeCount: problemRecord.likeCount ?? 0,
+        commentCount: problemRecord.commentCount ?? 0,
+        isLiked: mapUserIsLiked(problemRecord.likes),
+      };
+    }),
     tags: idea.tags.map(({ tag }) => ({
       id: tag.id,
       name: tag.name,

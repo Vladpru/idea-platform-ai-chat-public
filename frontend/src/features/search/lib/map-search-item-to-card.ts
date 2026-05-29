@@ -7,6 +7,7 @@ export function mapSearchItemToDashboardCard(
 ): DashboardCardBase {
   return {
     id: item.id,
+    authorId: item.authorId,
     title: item.title,
     description: item.excerpt,
     imageUrl: item.imageUrl,

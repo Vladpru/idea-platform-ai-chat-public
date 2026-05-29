@@ -25,6 +25,7 @@ export type IdeaDashboardCard =
     publishedAt: string | null;
     status: IdeaStatus;
     isAuthor: boolean;
+    isLiked: boolean;
   };
 
 export type ProblemDashboardFilter =

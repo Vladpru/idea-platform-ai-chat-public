@@ -2,17 +2,22 @@ import type {
   SimilarIdeaCard,
   SimilarIdeasSubTab,
 } from '@/features/idea-details/model/idea-details.types';
+import { ideaMutationKeys } from '@/features/ideas/hooks/use-idea-mutations';
 import { Globe } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 
+import { useEntityLikeToggle } from '@/shared/hooks/use-entity-like-toggle';
 import { cn } from '@/shared/lib/utils';
 import { StarsIcon } from '@/shared/ui/icons';
 import { AnimatedTabUnderline } from '@/shared/ui/motion';
+import type { LikeOptimisticState } from '@/shared/ui/LikeButton';
 
 import { SimilarIdeasRowSkeleton } from '../skeletons/SimilarIdeasRowSkeleton';
 import { SimilarIdeaCard as SimilarIdeaCardUi } from './SimilarIdeaCard';
 
 type SimilarIdeasWidgetProps = {
+  ideaId: string;
   similarIdeas: SimilarIdeaCard[];
   isLoading: boolean;
   className?: string;
@@ -25,13 +30,43 @@ type TabConfig = {
   count: number;
 };
 
+function similarIdeasQueryKey(ideaId: string) {
+  return [...ideaMutationKeys.detail(ideaId), 'similar'] as const;
+}
+
 export function SimilarIdeasWidget({
+  ideaId,
   similarIdeas,
   isLoading,
   className,
 }: SimilarIdeasWidgetProps) {
+  const queryClient = useQueryClient();
+  const baseLikeToggle = useEntityLikeToggle('IDEA');
   const [activeSubTab, setActiveSubTab] =
     useState<SimilarIdeasSubTab>('IDEA_ENGINE');
+
+  const onLikeToggle = useCallback(
+    async (id: string, nextState: LikeOptimisticState) => {
+      await baseLikeToggle.mutateAsync({ id, nextState });
+      queryClient.setQueryData<SimilarIdeaCard[]>(
+        similarIdeasQueryKey(ideaId),
+        currentSimilarIdeas =>
+          currentSimilarIdeas?.map(card =>
+            card.id === id
+              ? {
+                  ...card,
+                  isLiked: nextState.isLiked,
+                  stats: {
+                    ...card.stats,
+                    likes: nextState.likeCount,
+                  },
+                }
+              : card,
+          ),
+      );
+    },
+    [baseLikeToggle, ideaId, queryClient],
+  );
 
   const subTabsConfig: TabConfig[] = [
     {
@@ -43,7 +78,7 @@ export function SimilarIdeasWidget({
     {
       id: 'FOUND_ON_WEB',
       label: 'Found on Web',
-      icon: <StarsIcon className="size-3.5" />,
+      icon: <Globe className="size-3.5" />,
       count: 0,
     },
   ];
@@ -137,7 +172,11 @@ export function SimilarIdeasWidget({
       ) : (
         <div className="flex flex-col gap-4">
           {similarIdeas.map(card => (
-            <SimilarIdeaCardUi key={card.id} card={card} />
+            <SimilarIdeaCardUi
+              key={card.id}
+              card={card}
+              onLikeToggle={onLikeToggle}
+            />
           ))}
         </div>
       )}

@@ -21,6 +21,10 @@ export type ProblemForm = {
   category: string | null;
   impact: string | null;
   publishedAt: string | null;
+  viewCount?: number;
+  likeCount?: number;
+  commentCount?: number;
+  isLiked?: boolean;
   ideas: Array<{
     id: string;
     title: string | null;

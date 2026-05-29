@@ -14,6 +14,7 @@ export type DashboardCardBase<
   TLinked extends DashboardLinkedItem = DashboardLinkedItem,
 > = {
   id: string;
+  authorId: string;
   title: string;
   description: string;
   imageUrl: string | null;
