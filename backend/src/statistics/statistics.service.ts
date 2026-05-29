@@ -38,14 +38,21 @@ const PUBLISHED_IDEA_WHERE = {
   publishedAt: { not: null },
 } as const;
 
+const UTC_TIME_ZONE = 'UTC' as const;
+
 const WEEKDAY_FORMATTER = new Intl.DateTimeFormat('en-US', {
   weekday: 'short',
+  timeZone: UTC_TIME_ZONE,
 });
 const SHORT_DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
   month: 'short',
   day: 'numeric',
+  timeZone: UTC_TIME_ZONE,
 });
-const MONTH_FORMATTER = new Intl.DateTimeFormat('en-US', { month: 'short' });
+const MONTH_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  timeZone: UTC_TIME_ZONE,
+});
 
 type DayCountRow = { day: Date; count: bigint };
 type MonthCountRow = { month: Date; count: bigint };
@@ -147,13 +154,13 @@ export class StatisticsService {
     end: Date,
   ): Promise<StatisticsDataPoint[]> {
     const rows = await this.prisma.$queryRaw<DayCountRow[]>`
-      SELECT DATE("published_at") AS day, COUNT(*)::bigint AS count
+      SELECT (published_at AT TIME ZONE 'UTC')::date AS day, COUNT(*)::bigint AS count
       FROM "idea"
       WHERE "status" = ${IdeaStatus.PUBLISHED}
         AND "published_at" IS NOT NULL
         AND "published_at" >= ${start}
         AND "published_at" <= ${end}
-      GROUP BY DATE("published_at")
+      GROUP BY (published_at AT TIME ZONE 'UTC')::date
       ORDER BY day ASC
     `;
 
@@ -175,13 +182,14 @@ export class StatisticsService {
     end: Date,
   ): Promise<StatisticsDataPoint[]> {
     const rows = await this.prisma.$queryRaw<MonthCountRow[]>`
-      SELECT DATE_TRUNC('month', "published_at") AS month, COUNT(*)::bigint AS count
+      SELECT DATE_TRUNC('month', published_at AT TIME ZONE 'UTC') AS month,
+        COUNT(*)::bigint AS count
       FROM "idea"
       WHERE "status" = ${IdeaStatus.PUBLISHED}
         AND "published_at" IS NOT NULL
         AND "published_at" >= ${start}
         AND "published_at" <= ${end}
-      GROUP BY DATE_TRUNC('month', "published_at")
+      GROUP BY DATE_TRUNC('month', published_at AT TIME ZONE 'UTC')
       ORDER BY month ASC
     `;
 

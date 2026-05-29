@@ -13,7 +13,8 @@ export class GetStatisticsQueryDto {
   @ApiPropertyOptional({
     enum: STATISTICS_PERIODS,
     default: 'week',
-    description: 'Time range for chart series and activity metrics',
+    description:
+      'Time range for chart series and activity metrics (UTC day boundaries)',
   })
   @IsOptional()
   @IsIn(STATISTICS_PERIODS)
