@@ -65,13 +65,13 @@ export function LinkedItemMiniCard({
         to={detailHref}
         className={cn(
           'border-brand-gray-200 hover:border-brand-dark-blue focus-visible:ring-brand-dark-blue flex shrink-0 items-center rounded-lg border bg-white transition-colors hover:shadow-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
-          compact ? 'w-[220px] px-3 py-2' : 'w-[260px] px-4 py-2',
+          compact ? 'w-[180px] px-3 py-2 sm:w-[200px]' : 'w-[260px] px-4 py-2',
         )}
       >
         <p
           className={cn(
             'text-brand-black line-clamp-2 w-full leading-snug font-bold tracking-wide',
-            compact ? 'text-sm' : 'text-base',
+            compact ? 'text-xs' : 'text-base',
           )}
         >
           {item.title}

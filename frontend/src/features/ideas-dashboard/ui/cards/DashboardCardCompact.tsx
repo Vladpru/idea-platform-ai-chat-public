@@ -1,7 +1,6 @@
 import { getInitials } from '@/features/idea-details/lib/get-initials';
 import { IdeaTagCloud } from '@/features/idea-details/ui/IdeaTagCloud';
 import { Link } from '@tanstack/react-router';
-import { ArrowRight, ChevronUp } from 'lucide-react';
 import { type ReactNode, memo } from 'react';
 
 import { cn } from '@/shared/lib/utils';
@@ -9,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { StageChevronBadge } from '@/shared/ui/stage-chevron-badge';
 
 import type { DashboardCardBase } from '../../model/dashboard.types';
+import { LinkedItemsSection } from '../linked-items/LinkedItemsSection';
 import { DashboardCardStats } from './DashboardCardStats';
 
 export type DashboardCardCompactProps<
@@ -41,7 +41,6 @@ function DashboardCardCompactInner<
   const linkedItems = card.linkedItems;
   const showLinkedOnHover = forceShowLinkedItems || linkedItems.length > 0;
   const isNarrow = columnCount > 5;
-  const firstLinkedItem = linkedItems[0];
   const resolvedEntityType: 'IDEA' | 'PROBLEM' =
     entityType ?? (detailHref.includes('/problems/') ? 'PROBLEM' : 'IDEA');
   const resolvedIsLiked =
@@ -185,57 +184,23 @@ function DashboardCardCompactInner<
             />
           </div>
 
-          {firstLinkedItem ? (
+          {linkedItems.length > 0 ? (
             <div
               className={cn(
-                'border-brand-gray-200 mt-auto flex min-w-0 shrink-0 flex-col border-t',
-                isNarrow ? 'pt-2' : 'pt-3',
+                'border-brand-gray-200 mt-auto flex min-h-0 min-w-0 flex-col border-t',
+                isNarrow ? 'pt-1' : 'pt-2',
               )}
             >
-              <div
-                className={cn(
-                  'text-dark-blue-900 flex cursor-pointer items-center font-bold tracking-wide uppercase',
-                  isNarrow ? 'gap-1.5 text-[10px]' : 'gap-2.5 text-sm',
-                )}
-              >
-                <ChevronUp
-                  className={cn(
-                    'text-brand-dark-blue shrink-0 cursor-pointer',
-                    isNarrow ? 'size-3' : 'size-5',
-                  )}
-                />
-                <span className="truncate">{linkedSectionLabel}</span>
-              </div>
-
-              <Link
-                to={getLinkedItemDetailHref(firstLinkedItem.id)}
-                className={cn(
-                  'group/item mt-2 flex min-w-0 items-center gap-2 overflow-hidden',
-                  'border-brand-gray-200 rounded-lg border',
-                  'hover:bg-brand-gray-100 bg-white transition-colors',
-                  isNarrow ? 'p-1.5' : 'p-3',
-                )}
-              >
-                <h4
-                  className={cn(
-                    'text-dark-blue-800 min-w-0 flex-1 leading-snug font-semibold',
-                    isNarrow
-                      ? 'truncate text-[10px]'
-                      : 'line-clamp-2 text-[15px]',
-                  )}
-                >
-                  {firstLinkedItem.title}
-                </h4>
-                <span
-                  className={cn(
-                    'border-brand-gray-200 text-brand-dark-blue flex shrink-0 items-center justify-center rounded-lg border transition-colors',
-                    'group-hover/item:border-brand-dark-blue group-hover/item:bg-brand-dark-blue group-hover/item:text-white',
-                    isNarrow ? 'size-6' : 'size-10',
-                  )}
-                >
-                  <ArrowRight className={cn(isNarrow ? 'size-3' : 'size-5')} />
-                </span>
-              </Link>
+              <LinkedItemsSection
+                items={linkedItems}
+                sectionLabel={linkedSectionLabel}
+                getItemDetailHref={getLinkedItemDetailHref}
+                expanded
+                showToggle={false}
+                compact
+                className="min-h-0 px-0 pt-2 pb-0"
+                linkedItemEmptyImageText={emptyImageText}
+              />
             </div>
           ) : null}
         </div>

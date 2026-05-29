@@ -5,6 +5,7 @@ import { cn } from '@/shared/lib/utils';
 
 import type { DashboardLinkedItem } from '../../model/dashboard.types';
 import { LinkedItemMiniCard } from './LinkedItemMiniCard';
+import { linkedItemsScrollContainerClass } from './linked-items.styles';
 
 type LinkedItemsSectionProps = {
   items: DashboardLinkedItem[];
@@ -95,19 +96,7 @@ export function LinkedItemsSection({
 
       {expanded ? (
         <div className="relative">
-          <div
-            ref={scrollRef}
-            className={cn(
-              'flex scrollbar-thin flex-nowrap gap-3 overflow-x-scroll overscroll-x-contain pb-1.5',
-              '[scrollbar-color:var(--color-brand-gray-400)_var(--color-brand-gray-100)]',
-              '[&::-webkit-scrollbar]:h-1.5',
-              '[&::-webkit-scrollbar-track]:rounded-full',
-              '[&::-webkit-scrollbar-track]:bg-brand-gray-100',
-              '[&::-webkit-scrollbar-thumb]:rounded-full',
-              '[&::-webkit-scrollbar-thumb]:bg-brand-gray-400',
-              'hover:[&::-webkit-scrollbar-thumb]:bg-brand-gray-500',
-            )}
-          >
+          <div ref={scrollRef} className={linkedItemsScrollContainerClass}>
             {items.map(item => (
               <LinkedItemMiniCard
                 key={item.id}

@@ -1,8 +1,9 @@
 import type { ApiStage } from '@/features/ideas/model/idea.types';
+import { memo, useEffect, useRef } from 'react';
+
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import { ROUTES } from '@/shared/config/paths';
 import { Button } from '@/shared/ui/button';
-import { memo, useEffect, useRef } from 'react';
 
 import {
   useIdeasDashboardPreferences,
@@ -14,12 +15,11 @@ import type {
   IdeaDashboardCard,
   IdeaDashboardSort,
 } from '../../model/ideas-dashboard.types';
-
 import { DashboardCardCompact } from '../cards/DashboardCardCompact';
 import { DashboardCardStandard } from '../cards/DashboardCardStandard';
 import { DashboardGrid } from '../grid/DashboardGrid';
-import { DashboardHeader } from '../header/DashboardHeader';
 import { LoadMoreFooter } from '../grid/LoadMoreFooter';
+import { DashboardHeader } from '../header/DashboardHeader';
 
 function IdeasGridSkeleton() {
   return (

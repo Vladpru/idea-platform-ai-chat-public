@@ -1,0 +1,2 @@
+export const linkedItemsScrollContainerClass =
+  'flex scrollbar-thin flex-nowrap gap-3 overflow-x-scroll overscroll-x-contain pb-1.5 [scrollbar-color:var(--color-brand-gray-400)_var(--color-brand-gray-100)] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-brand-gray-100 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-brand-gray-400 hover:[&::-webkit-scrollbar-thumb]:bg-brand-gray-500';

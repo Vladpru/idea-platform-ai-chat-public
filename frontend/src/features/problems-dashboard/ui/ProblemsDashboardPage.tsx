@@ -4,23 +4,23 @@ import {
   DashboardGrid,
   LoadMoreFooter,
 } from '@/features/ideas-dashboard';
+import type {
+  DashboardViewport,
+  ProblemDashboardSort,
+} from '@/features/ideas-dashboard';
 import type { ProblemStage } from '@/features/problems/api/problems-api.types';
+import { memo, useEffect, useRef } from 'react';
+
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import { ROUTES } from '@/shared/config/paths';
 import { Button } from '@/shared/ui/button';
-import { memo, useEffect, useRef } from 'react';
 
 import {
   useProblemsDashboardPreferences,
   useProblemsDashboardQuery,
 } from '../hooks/use-problems-dashboard';
-import type {
-  DashboardViewport,
-  ProblemDashboardSort,
-} from '@/features/ideas-dashboard';
 import { PROBLEMS_DASHBOARD_LABELS } from '../lib/problems-dashboard-labels';
 import type { ProblemDashboardCard } from '../model/problems-dashboard.types';
-
 import { ProblemsDashboardHeader } from './ProblemsDashboardHeader';
 
 function ProblemsGridSkeleton() {

@@ -1,5 +1,8 @@
 import { useWindowVirtualizer } from '@tanstack/react-virtual';
 import {
+  type CSSProperties,
+  type MutableRefObject,
+  type ReactNode,
   memo,
   useCallback,
   useEffect,
@@ -7,23 +10,20 @@ import {
   useMemo,
   useRef,
   useState,
-  type CSSProperties,
-  type MutableRefObject,
-  type ReactNode,
 } from 'react';
 
 import { chunkDashboardRows } from '../../lib/layout/chunk-dashboard-rows';
+import {
+  type DashboardViewport,
+  getIsCompactLayout,
+  getStandardCardLayout,
+} from '../../lib/layout/dashboard-grid-layout';
 import {
   DASHBOARD_VIRTUAL_ROW_GAP_PX,
   getEstimatedDashboardRowHeight,
   getVirtualRowGridContainerClassName,
   getVirtualRowGridStyle,
 } from '../../lib/layout/dashboard-virtualization';
-import {
-  getIsCompactLayout,
-  getStandardCardLayout,
-  type DashboardViewport,
-} from '../../lib/layout/dashboard-grid-layout';
 import type { DashboardCardBase } from '../../model/dashboard.types';
 
 export type DashboardGridProps<TCard extends DashboardCardBase> = {
