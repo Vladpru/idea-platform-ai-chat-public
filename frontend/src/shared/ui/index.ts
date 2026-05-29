@@ -37,6 +37,15 @@ export {
   tabUnderlineSpring,
 } from './motion';
 export {
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartStyle,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from './chart';
+export {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,

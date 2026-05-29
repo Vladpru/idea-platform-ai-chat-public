@@ -12,6 +12,7 @@ import { ProblemModule } from './problem/problem.module';
 import { SearchModule } from './search/search.module';
 import { TokenModule } from './token/token.module';
 import { UserModule } from './user/user.module';
+import { StatisticsModule } from './statistics/statistics.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { UserModule } from './user/user.module';
     TokenModule,
     MailModule,
     SearchModule,
+    StatisticsModule,
   ],
   providers: [
     {
