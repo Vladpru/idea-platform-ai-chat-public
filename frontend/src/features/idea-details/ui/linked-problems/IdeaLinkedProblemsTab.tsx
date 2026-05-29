@@ -1,22 +1,18 @@
 import type { IdeaDetails } from '@/features/idea-details/model/idea-details.types';
 import { LinkExistingProblemModal } from '@/features/idea-details/modals/LinkExistingProblemModal';
-import {
-  ideaMutationKeys,
-  useUnlinkProblemMutation,
-} from '@/features/ideas/hooks/use-idea-mutations';
+import { useUnlinkProblemMutation } from '@/features/ideas/hooks/use-idea-mutations';
 import { outlineBtnClass } from '@/features/ideas/lib/styles';
 import { DashboardCardStandard } from '@/features/ideas-dashboard';
 import type { DashboardCardBase } from '@/features/ideas-dashboard/model/dashboard.types';
 import { PROBLEMS_DASHBOARD_LABELS } from '@/features/problems-dashboard/lib/problems-dashboard-labels';
-import { useQueryClient } from '@tanstack/react-query';
 import { MoreVertical, Unlink } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 
 import { ROUTES } from '@/shared/config/paths';
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
 import { AppDropdown, type DropdownItem } from '@/shared/ui/AppDropdown';
-import { LikeButton, type LikeOptimisticState } from '@/shared/ui/LikeButton';
+import { LikeButton } from '@/shared/ui/LikeButton';
 
 type IdeaLinkedProblemsTabProps = {
   ideaId: string;
@@ -70,7 +66,6 @@ function LinkedProblemsHeader({
 }
 
 type LinkedProblemCardProps = {
-  ideaId: string;
   problem: IdeaDetails['linkedProblems'][number];
   canUnlink: boolean;
   isUnlinking: boolean;
@@ -97,55 +92,21 @@ function mapLinkedProblemToDashboardCard(
 }
 
 function LinkedProblemCard({
-  ideaId,
   problem,
   canUnlink,
   isUnlinking,
   onUnlink,
 }: LinkedProblemCardProps) {
-  const queryClient = useQueryClient();
   const card = mapLinkedProblemToDashboardCard(problem);
-
-  const handleLikeSuccess = useCallback(
-    (nextState: LikeOptimisticState) => {
-      queryClient.setQueryData<IdeaDetails>(
-        ideaMutationKeys.detail(ideaId),
-        current => {
-          if (!current) {
-            return current;
-          }
-
-          return {
-            ...current,
-            linkedProblems: current.linkedProblems.map(linkedProblem =>
-              linkedProblem.id === problem.id
-                ? {
-                    ...linkedProblem,
-                    isLiked: nextState.isLiked,
-                    stats: {
-                      ...linkedProblem.stats,
-                      likes: nextState.likeCount,
-                    },
-                  }
-                : linkedProblem,
-            ),
-          };
-        },
-      );
-    },
-    [ideaId, problem.id, queryClient],
-  );
 
   const likeButton = (
     <LikeButton
-      key={`${problem.id}-${problem.isLiked ?? false}-${problem.stats.likes}`}
       entityId={problem.id}
       entityType="PROBLEM"
-      initialIsLiked={problem.isLiked ?? false}
-      initialLikeCount={problem.stats.likes}
+      isLiked={problem.isLiked ?? false}
+      likeCount={problem.stats.likes}
       className="cursor-pointer px-0 py-0 text-xs font-normal hover:bg-transparent"
       iconClassName="size-3.5"
-      onSuccess={handleLikeSuccess}
     />
   );
 
@@ -238,7 +199,6 @@ export function IdeaLinkedProblemsTab({
           {problems.map(problem => (
             <li key={problem.id}>
               <LinkedProblemCard
-                ideaId={ideaId}
                 problem={problem}
                 canUnlink={isAuthor}
                 isUnlinking={

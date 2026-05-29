@@ -1,7 +1,6 @@
 'use client';
 
-import { useOptimistic, useState, useTransition } from 'react';
-import { toast } from 'sonner';
+import { useState } from 'react';
 import { cn } from '@/shared/lib/utils';
 import { useEntityLikeToggle } from '@/shared/hooks/use-entity-like-toggle';
 import { ThumbsUp } from 'lucide-react';
@@ -14,10 +13,8 @@ export type LikeOptimisticState = {
 export type LikeButtonProps = {
   entityId: string;
   entityType: 'IDEA' | 'PROBLEM';
-  initialIsLiked: boolean;
-  initialLikeCount: number;
-  onSuccess?: (nextState: LikeOptimisticState) => void;
-  onLikeToggle?: (id: string, nextState: LikeOptimisticState) => Promise<void>;
+  isLiked: boolean;
+  likeCount: number;
   className?: string;
   iconClassName?: string;
 };
@@ -34,79 +31,47 @@ const getNextLikeState = (
 export function LikeButton({
   entityId,
   entityType,
-  initialIsLiked,
-  initialLikeCount,
-  onSuccess,
-  onLikeToggle,
+  isLiked,
+  likeCount,
   className,
   iconClassName = 'size-5',
 }: LikeButtonProps) {
-  const [isPending, startTransition] = useTransition();
   const [hasInteracted, setHasInteracted] = useState(false);
-
-  const { mutateAsync: defaultMutateAsync } = useEntityLikeToggle(entityType);
-
-  const toggleLike =
-    onLikeToggle ??
-    (async (id, nextState) => {
-      await defaultMutateAsync({ id, nextState });
-    });
-
-  const [optimisticState, addOptimisticToggle] = useOptimistic<
-    LikeOptimisticState,
-    void
-  >({ isLiked: initialIsLiked, likeCount: initialLikeCount }, currentState =>
-    getNextLikeState(currentState),
-  );
-
-  const ariaLabel = optimisticState.isLiked ? 'Unlike' : 'Like';
+  const { mutate } = useEntityLikeToggle(entityType);
 
   return (
     <button
       type="button"
       className={cn(
-        'inline-flex items-center gap-1 transition-all duration-200 active:scale-90 disabled:pointer-events-none disabled:opacity-50',
+        'inline-flex items-center gap-1 transition-all duration-200 active:scale-90',
         'text-brand-dark-blue',
-        !optimisticState.isLiked && 'hover:text-brand-dark-blue/80',
+        !isLiked && 'hover:text-brand-dark-blue/80',
         className,
       )}
-      aria-label={ariaLabel}
-      aria-pressed={optimisticState.isLiked}
-      disabled={isPending}
+      aria-label={isLiked ? 'Unlike' : 'Like'}
+      aria-pressed={isLiked}
       onClick={e => {
         e.preventDefault();
         e.stopPropagation();
 
-        if (!hasInteracted) {
-          setHasInteracted(true);
-        }
+        if (!hasInteracted) setHasInteracted(true);
 
-        const nextState = getNextLikeState(optimisticState);
-
-        startTransition(async () => {
-          addOptimisticToggle();
-          try {
-            await toggleLike(entityId, nextState);
-            onSuccess?.(nextState);
-          } catch (err) {
-            console.error(err);
-            toast.error('Could not update like');
-          }
-        });
+        const nextState = getNextLikeState({ isLiked, likeCount });
+        mutate({ id: entityId, nextState });
       }}
     >
       <ThumbsUp
         className={cn(
           iconClassName,
           'transition-colors duration-200',
-          optimisticState.isLiked
+          isLiked
             ? 'fill-brand-dark-blue text-brand-dark-blue'
             : 'text-brand-dark-blue fill-transparent',
-          hasInteracted && optimisticState.isLiked && 'animate-like-pop',
+          hasInteracted && isLiked && 'animate-like-pop',
         )}
       />
       <span aria-live="polite" className="tabular-nums">
-        {optimisticState.likeCount}
+        {likeCount}
       </span>
     </button>
   );

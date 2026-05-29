@@ -52,8 +52,8 @@ export function DashboardCardStats({
           <LikeButton
             entityId={entityId}
             entityType={entityType}
-            initialIsLiked={isLiked ?? false}
-            initialLikeCount={stats.likes}
+            isLiked={isLiked ?? false}
+            likeCount={stats.likes}
             className="cursor-pointer px-0 py-0 text-xs font-normal hover:bg-transparent"
             iconClassName={iconClassName}
           />

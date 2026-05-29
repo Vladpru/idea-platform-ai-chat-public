@@ -1,7 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 import { api } from '@/shared/api/http';
-import { syncLikeQueryCache } from '@/shared/lib/sync-like-query-cache';
+import {
+  getLikeEntityQueryKeys,
+  restoreLikeQueryCache,
+  snapshotLikeQueryCache,
+  syncLikeQueryCache,
+} from '@/shared/lib/sync-like-query-cache';
 
 type LikeToggleState = {
   isLiked: boolean;
@@ -10,6 +16,7 @@ type LikeToggleState = {
 
 export function useEntityLikeToggle(entityType: 'IDEA' | 'PROBLEM') {
   const queryClient = useQueryClient();
+  const queryKeys = getLikeEntityQueryKeys(entityType);
 
   return useMutation({
     mutationFn: async ({ id }: { id: string; nextState: LikeToggleState }) => {
@@ -18,28 +25,28 @@ export function useEntityLikeToggle(entityType: 'IDEA' | 'PROBLEM') {
       await api.post(endpoint);
     },
     onMutate: async ({ id, nextState }) => {
-      await queryClient.cancelQueries();
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: queryKeys.allKey }),
+        queryClient.cancelQueries({ queryKey: queryKeys.dashboardKey }),
+        queryClient.cancelQueries({ queryKey: queryKeys.ideaDetailsKey }),
+      ]);
 
-      const previousState = queryClient.getQueryData([entityType, id]) as
-        | LikeToggleState
-        | undefined;
+      const previousData = snapshotLikeQueryCache(queryClient, entityType);
 
       syncLikeQueryCache(queryClient, entityType, id, nextState);
 
-      return { previousState, id };
+      return { previousData };
     },
     onError: (_err, _variables, context) => {
-      if (context?.previousState) {
-        syncLikeQueryCache(
-          queryClient,
-          entityType,
-          context.id,
-          context.previousState,
-        );
-      }
+      toast.error('Could not update like');
+      restoreLikeQueryCache(queryClient, context?.previousData);
     },
     onSettled: () => {
-      queryClient.invalidateQueries();
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.allKey }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.dashboardKey }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.ideaDetailsKey }),
+      ]);
     },
   });
 }
