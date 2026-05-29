@@ -1,11 +1,22 @@
 import { NotFoundPage } from '@/pages/not-found';
-import { Outlet, createRootRouteWithContext } from '@tanstack/react-router';
+import { pageDocumentHead } from '@/shared/lib/document-head';
+import {
+  HeadContent,
+  Outlet,
+  createRootRouteWithContext,
+} from '@tanstack/react-router';
 
 export type RouterContext = {
   isAuthenticated: boolean;
 };
 
 export const Route = createRootRouteWithContext<RouterContext>()({
-  component: () => <Outlet />,
+  component: () => (
+    <>
+      <HeadContent />
+      <Outlet />
+    </>
+  ),
+  head: () => pageDocumentHead(''),
   notFoundComponent: () => <NotFoundPage />,
 });

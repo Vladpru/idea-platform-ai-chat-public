@@ -3,8 +3,10 @@ import {
   sectionTitleClass,
 } from '@/features/profile/ui/profile-view-classes';
 import { ROUTES } from '@/shared/config/paths';
+import { formatPageTitle } from '@/shared/lib/document-head';
 import { AppHeader } from '@/widgets/header';
 import { Link } from '@tanstack/react-router';
+import { useLayoutEffect } from 'react';
 
 import { hasValidSession } from '@/features/auth/model/auth-session-store';
 import { cn } from '@/shared/lib/utils';
@@ -55,6 +57,10 @@ function NotFoundContent() {
 export function NotFoundPage({ variant = 'full' }: NotFoundPageProps) {
   const isAuthed = hasValidSession();
   const showHeader = variant === 'full' && isAuthed;
+
+  useLayoutEffect(() => {
+    document.title = formatPageTitle('Page Not Found');
+  }, []);
 
   if (showHeader) {
     return (

@@ -1,4 +1,5 @@
 import { ProfileProblemsPage } from '@/pages/profile';
+import { pageDocumentHead } from '@/shared/lib/document-head';
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 
@@ -18,5 +19,6 @@ export type ProblemsDashboardSearchParams = z.infer<
 
 export const Route = createFileRoute('/_auth/profile/problems')({
   validateSearch: search => problemsDashboardSearchSchema.parse(search),
+  head: () => pageDocumentHead('My Problems'),
   component: ProfileProblemsPage,
 });

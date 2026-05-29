@@ -1,4 +1,6 @@
 import { IdeasPage } from '@/pages/ideas';
+import { IDEAS_DASHBOARD_LABELS } from '@/features/ideas-dashboard/lib/ideas-dashboard-labels';
+import { pageDocumentHead } from '@/shared/lib/document-head';
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 
@@ -20,5 +22,6 @@ export type IdeasSearchParams = z.infer<typeof ideasSearchSchema>;
 
 export const Route = createFileRoute('/_auth/ideas/')({
   validateSearch: search => ideasSearchSchema.parse(search),
+  head: () => pageDocumentHead(IDEAS_DASHBOARD_LABELS.pageTitle),
   component: IdeasPage,
 });
