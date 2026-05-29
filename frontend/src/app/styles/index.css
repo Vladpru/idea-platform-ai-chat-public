@@ -75,6 +75,13 @@
   --color-idea-archived: var(--idea-archived);
   --color-idea-paused: var(--idea-paused);
 
+  --color-statistics-chart-line: var(--statistics-chart-line);
+  --color-statistics-chart-grid: var(--statistics-chart-grid);
+  --color-statistics-chart-axis-label: var(--statistics-chart-axis-label);
+  --color-statistics-chart-axis-value: var(--statistics-chart-axis-value);
+  --color-statistics-chart-cursor: var(--statistics-chart-cursor);
+  --color-statistics-chart-dot-ring: var(--statistics-chart-dot-ring);
+
   --shadow-shadow-soft: var(--shadow-soft);
 
   --radius-sm: calc(var(--radius) * 0.6);
@@ -127,6 +134,14 @@
   --idea-completed: #2b787c;
   --idea-archived: #8c3890;
   --idea-paused: #4e6374;
+
+  /* Statistics — new ideas line chart */
+  --statistics-chart-line: var(--brand-dark-blue);
+  --statistics-chart-grid: var(--brand-gray-200);
+  --statistics-chart-axis-label: var(--brand-gray-600);
+  --statistics-chart-axis-value: var(--brand-gray-500);
+  --statistics-chart-cursor: var(--brand-gray-200);
+  --statistics-chart-dot-ring: var(--brand-white);
 
   --shadow-soft:
     0px 3px 6px rgba(145, 145, 145, 0.1),
