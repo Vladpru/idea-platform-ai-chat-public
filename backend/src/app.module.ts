@@ -13,6 +13,7 @@ import { SearchModule } from './search/search.module';
 import { TokenModule } from './token/token.module';
 import { UserModule } from './user/user.module';
 import { StatisticsModule } from './statistics/statistics.module';
+import { TagModule } from './tag/tag.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { StatisticsModule } from './statistics/statistics.module';
     MailModule,
     SearchModule,
     StatisticsModule,
+    TagModule,
   ],
   providers: [
     {
