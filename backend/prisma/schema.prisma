@@ -124,18 +124,14 @@ model IdeaMember {
 model IdeaView {
   id        String   @id @default(uuid())
   ideaId    String   @map("idea_id")
-  userId    String?  @map("user_id")
-  ipAddress String?  @map("ip_address")
+  userId    String   @map("user_id")
   createdAt DateTime @default(now()) @map("created_at")
 
-  idea Idea  @relation(fields: [ideaId], references: [id], onDelete: Cascade)
-  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([ideaId, userId])
-  @@unique([ideaId, ipAddress])
-  @@index([ideaId])
   @@index([userId])
-  @@index([ipAddress])
   @@map("idea_view")
 }
 
@@ -188,21 +184,16 @@ model Problem {
 model ProblemView {
   id        String   @id @default(uuid())
   problemId String   @map("problem_id")
-  userId    String?  @map("user_id")
-  ipAddress String?  @map("ip_address")
+  userId    String   @map("user_id")
   createdAt DateTime @default(now()) @map("created_at")
 
   problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
-  user    User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([problemId, userId])
-  @@unique([problemId, ipAddress])
-  @@index([problemId])
   @@index([userId])
-  @@index([ipAddress])
   @@map("problem_view")
 }
-
 model ProblemLike {
   problemId String   @map("problem_id")
   userId    String   @map("user_id")
