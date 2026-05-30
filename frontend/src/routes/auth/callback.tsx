@@ -1,9 +1,11 @@
+import { pageDocumentHead } from '@/shared/lib/document-head';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
 
 import { AUTH_TOKEN_STORAGE_KEY } from '@/shared/lib/auth-token';
 
 export const Route = createFileRoute('/auth/callback')({
+  head: () => pageDocumentHead('Signing In'),
   component: AuthCallbackPage,
 });
 

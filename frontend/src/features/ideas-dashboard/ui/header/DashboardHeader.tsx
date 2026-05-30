@@ -4,12 +4,12 @@ import { cn } from '@/shared/lib/utils';
 import {
   IDEA_DASHBOARD_FILTERS,
   IDEA_DASHBOARD_SORT_OPTIONS,
-} from '../lib/constants';
-import { IDEAS_DASHBOARD_LABELS } from '../lib/ideas-dashboard-labels';
+} from '../../lib/config/constants';
+import { IDEAS_DASHBOARD_LABELS } from '../../lib/config/ideas-dashboard-labels';
 import type {
   IdeaDashboardFilter,
   IdeaDashboardSort,
-} from '../model/ideas-dashboard.types';
+} from '../../model/ideas-dashboard.types';
 
 import { DashboardControls } from './DashboardControls';
 import { DashboardFilter } from './DashboardFilter';

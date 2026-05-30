@@ -1,14 +1,15 @@
-import { DashboardCardStandard } from '@/features/ideas-dashboard/ui/DashboardCardStandard';
+import { DashboardCardStandard } from '@/features/ideas-dashboard';
+import { useNavigate, useSearch } from '@tanstack/react-router';
+import { SearchIcon, XIcon } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { useInView } from 'react-intersection-observer';
+
 import { ROUTES } from '@/shared/config/paths';
 import { useMediaQuery } from '@/shared/hooks/use-media-query';
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui';
 import { Input } from '@/shared/ui/input';
 import { AnimatedTabUnderline } from '@/shared/ui/motion';
-import { useNavigate, useSearch } from '@tanstack/react-router';
-import { SearchIcon, XIcon } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
-import { useInView } from 'react-intersection-observer';
 
 import type { GlobalSearchResultItem, SearchTab } from '../api/search.types';
 import { useGlobalSearch } from '../hooks/use-global-search';
@@ -68,7 +69,7 @@ function TabButton({
       <span
         className={cn(
           'inline-flex min-w-[24px] items-center justify-center rounded px-1.5 py-0.5 text-xs font-bold',
-          'text-brand-black bg-[#e8eef4]',
+          'text-brand-black bg-white',
         )}
       >
         {count}

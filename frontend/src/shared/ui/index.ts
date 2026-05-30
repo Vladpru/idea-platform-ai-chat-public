@@ -58,3 +58,4 @@ export {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from './alert-dialog';
+export { ScrollArea, ScrollBar } from './scroll-area';

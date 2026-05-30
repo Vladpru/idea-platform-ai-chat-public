@@ -4,7 +4,7 @@ import {
   TABLET_COLUMN_COUNT_MAX,
   TABLET_COLUMN_GRID_CLASSES,
   type DashboardTabletColumnLayout,
-} from './constants';
+} from '../config/constants';
 
 export type DashboardViewport = 'mobile' | 'tablet' | 'desktop';
 

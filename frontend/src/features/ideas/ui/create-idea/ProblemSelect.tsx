@@ -5,11 +5,13 @@ import {
   parseProblemIds,
 } from '@/features/ideas/lib/problems';
 import { type ProblemDraft, useProblemsListQuery } from '@/features/problems';
+import { Link } from '@tanstack/react-router';
 import { Check, ChevronDown, Plus, Search, X } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { Control, FieldErrors } from 'react-hook-form';
 import { Controller } from 'react-hook-form';
 
+import { ROUTES } from '@/shared/config/paths';
 import { cn } from '@/shared/lib/utils';
 import { selectClass } from '@/shared/ui/TagsInput';
 import { Input } from '@/shared/ui/input';
@@ -246,16 +248,15 @@ function ProblemSelect({
                                   {problem.label}
                                 </span>
 
-                                <button
-                                  type="button"
-                                  disabled
-                                  tabIndex={-1}
+                                <Link
+                                  to={ROUTES.problemDetail(problem.id)}
+                                  target="_blank"
+                                  className="text-brand-dark-blue inline-flex shrink-0 items-center gap-1 text-xs font-bold"
                                   onClick={event => event.stopPropagation()}
-                                  className="text-brand-dark-blue inline-flex shrink-0 cursor-not-allowed items-center gap-1 text-xs font-bold opacity-60"
                                 >
                                   View
                                   <ArrowLink className="size-3.5" aria-hidden />
-                                </button>
+                                </Link>
 
                                 {isSelected ? (
                                   <Check

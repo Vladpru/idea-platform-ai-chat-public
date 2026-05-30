@@ -1,6 +1,6 @@
 import { formatIdeaDate } from '@/features/idea-details/lib/format-idea-date';
 import type { IdeaDetailsStats } from '@/features/idea-details/model/idea-details.types';
-import { DashboardCardStats } from '@/features/ideas-dashboard/ui/DashboardCardStats';
+import { DashboardCardStats } from '@/features/ideas-dashboard';
 
 import { cn } from '@/shared/lib/utils';
 

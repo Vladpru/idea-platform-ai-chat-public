@@ -51,7 +51,7 @@ export function ProblemTabs({ activeTab, onChange, counts }: ProblemTabsProps) {
               'font-arial relative inline-flex shrink-0 cursor-pointer items-center gap-2 pb-3 text-base font-normal tracking-wide uppercase transition-colors',
               isActive
                 ? 'text-brand-dark-blue font-bold'
-                : 'text-brand-black hover:text-[#0A2540]/80',
+                : 'text-brand-black hover:text-brand-gray-600',
             )}
           >
             <span>{tab.label}</span>

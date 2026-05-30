@@ -1,4 +1,5 @@
 import { ProfileIdeasPage } from '@/pages/profile';
+import { pageDocumentHead } from '@/shared/lib/document-head';
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 
@@ -12,5 +13,6 @@ export type IdeasDashboardSearchParams = z.infer<typeof ideasDashboardSearchSche
 
 export const Route = createFileRoute('/_auth/profile/ideas')({
   validateSearch: search => ideasDashboardSearchSchema.parse(search),
+  head: () => pageDocumentHead('My Ideas'),
   component: ProfileIdeasPage,
 });

@@ -1,25 +1,25 @@
 import type { ApiStage } from '@/features/ideas/model/idea.types';
+import { memo, useEffect, useRef } from 'react';
+
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import { ROUTES } from '@/shared/config/paths';
 import { Button } from '@/shared/ui/button';
-import { memo, useEffect, useRef } from 'react';
 
 import {
   useIdeasDashboardPreferences,
   useIdeasDashboardQuery,
-} from '../hooks/use-ideas-dashboard';
-import { IDEAS_DASHBOARD_LABELS } from '../lib/ideas-dashboard-labels';
-import type { DashboardViewport } from '../lib/dashboard-grid-layout';
+} from '../../hooks/use-ideas-dashboard';
+import { IDEAS_DASHBOARD_LABELS } from '../../lib/config/ideas-dashboard-labels';
+import type { DashboardViewport } from '../../lib/layout/dashboard-grid-layout';
 import type {
   IdeaDashboardCard,
   IdeaDashboardSort,
-} from '../model/ideas-dashboard.types';
-
-import { DashboardCardCompact } from './DashboardCardCompact';
-import { DashboardCardStandard } from './DashboardCardStandard';
-import { DashboardGrid } from './DashboardGrid';
-import { DashboardHeader } from './DashboardHeader';
-import { LoadMoreFooter } from './LoadMoreFooter';
+} from '../../model/ideas-dashboard.types';
+import { DashboardCardCompact } from '../cards/DashboardCardCompact';
+import { DashboardCardStandard } from '../cards/DashboardCardStandard';
+import { DashboardGrid } from '../grid/DashboardGrid';
+import { LoadMoreFooter } from '../grid/LoadMoreFooter';
+import { DashboardHeader } from '../header/DashboardHeader';
 
 function IdeasGridSkeleton() {
   return (
