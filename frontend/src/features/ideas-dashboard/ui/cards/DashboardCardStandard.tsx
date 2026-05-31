@@ -3,17 +3,16 @@ import { IdeaTagCloud } from '@/features/idea-details/ui/IdeaTagCloud';
 import { Link } from '@tanstack/react-router';
 import { type ReactNode, memo, useCallback } from 'react';
 
-import { cn } from '@/shared/lib/utils';
-import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
-import { StageChevronBadge } from '@/shared/ui/stage-chevron-badge';
-
 import {
   DASHBOARD_CARD_TAG_TO_SHOW_COUNT,
   STATS_BELOW_TAGS_COLUMN_THRESHOLD,
 } from '@/shared/dashboard';
 import type { DashboardCardBase } from '@/shared/dashboard/model/dashboard.types';
-import { LinkedItemsSection } from '@/shared/dashboard/ui/linked-items/LinkedItemsSection';
 import { DashboardCardStats } from '@/shared/dashboard/ui/cards/DashboardCardStats';
+import { LinkedItemsSection } from '@/shared/dashboard/ui/linked-items/LinkedItemsSection';
+import { cn } from '@/shared/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
+import { StageChevronBadge } from '@/shared/ui/stage-chevron-badge';
 
 export type DashboardCardStandardProps<
   TCard extends DashboardCardBase = DashboardCardBase,
@@ -73,7 +72,7 @@ function DashboardCardStandardInner<
   return (
     <article
       className={cn(
-        'group border-brand-gray-200 flex h-full w-full overflow-hidden rounded-lg border bg-white shadow-sm transition-shadow hover:shadow-md',
+        'group border-brand-gray-200 flex h-full w-full overflow-hidden rounded-lg border bg-white transition-shadow hover:shadow-md',
         isHorizontal
           ? 'min-h-[260px] flex-col sm:flex-row'
           : 'min-h-[400px] flex-col',

@@ -1,14 +1,14 @@
 import { getInitials } from '@/features/idea-details/lib/get-initials';
 import { IdeaTagCloud } from '@/features/idea-details/ui/IdeaTagCloud';
-import {
-  DashboardCardStats,
-  DASHBOARD_CARD_TAG_TO_SHOW_COUNT,
-  LinkedItemsSection,
-  STATS_BELOW_TAGS_COLUMN_THRESHOLD,
-} from '@/shared/dashboard';
 import { Link } from '@tanstack/react-router';
 import { type ReactNode, memo, useCallback } from 'react';
 
+import {
+  DASHBOARD_CARD_TAG_TO_SHOW_COUNT,
+  DashboardCardStats,
+  LinkedItemsSection,
+  STATS_BELOW_TAGS_COLUMN_THRESHOLD,
+} from '@/shared/dashboard';
 import { cn } from '@/shared/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { StageChevronBadge } from '@/shared/ui/stage-chevron-badge';
@@ -58,7 +58,7 @@ function ProblemDashboardCardStandardInner({
   }, [card.id, onToggleLinkedItems]);
 
   return (
-    <article className="group border-brand-gray-200 flex h-full w-full flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition-shadow hover:shadow-md">
+    <article className="group border-brand-gray-200 flex h-full w-full flex-col overflow-hidden rounded-lg border bg-white transition-shadow hover:shadow-md">
       <div className="relative flex h-full min-w-0 flex-col justify-between">
         {actionMenu ? (
           <div className="absolute top-4 right-4 z-20 sm:top-5 sm:right-5">

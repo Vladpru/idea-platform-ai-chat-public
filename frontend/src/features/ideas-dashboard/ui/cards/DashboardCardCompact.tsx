@@ -23,6 +23,9 @@ export type DashboardCardCompactProps<
   likeButton?: ReactNode;
 };
 
+const cardLinkClassName =
+  'focus-visible:ring-brand-dark-blue rounded-xl focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none';
+
 function DashboardCardCompactInner<
   TCard extends DashboardCardBase = DashboardCardBase,
 >({
@@ -72,13 +75,41 @@ function DashboardCardCompactInner<
 
   const cardPadding = isNarrow ? 'p-3' : 'p-4';
 
+  const authorRow = (
+    <div className="flex min-w-0 items-center gap-2">
+      <Avatar className={avatarClassName}>
+        <AvatarImage src={card.authorAvatarUrl ?? undefined} />
+        <AvatarFallback>{getInitials(card.authorName)}</AvatarFallback>
+      </Avatar>
+      <span className={authorClassName}>{card.authorName}</span>
+    </div>
+  );
+
+  const stageBadge = card.stage?.trim() ? (
+    <StageChevronBadge
+      stage={card.stage}
+      stageText={false}
+      compact={isNarrow}
+    />
+  ) : null;
+
   return (
-    <article className="group border-brand-gray-200 relative flex h-full cursor-pointer flex-col overflow-hidden rounded-xl border bg-white shadow-sm transition-all hover:shadow-md">
+    <article className="group border-brand-gray-200 relative flex h-full flex-col overflow-hidden rounded-xl border bg-white transition-shadow hover:shadow-md">
       <Link
         to={detailHref}
+        aria-label={card.title}
         className={cn(
-          'flex h-full flex-col transition-opacity duration-300',
-          showHover && 'group-hover:opacity-0',
+          cardLinkClassName,
+          'absolute inset-0 z-[1]',
+          showHover &&
+            'transition-opacity duration-300 group-hover:pointer-events-none group-hover:opacity-0',
+        )}
+      />
+
+      <div
+        className={cn(
+          'relative z-[2] flex h-full flex-col pointer-events-none',
+          showHover && 'transition-opacity duration-300 group-hover:opacity-0',
         )}
       >
         <div className="bg-brand-gray-100 relative aspect-16/10 w-full shrink-0 overflow-hidden">
@@ -99,65 +130,50 @@ function DashboardCardCompactInner<
         <div className={cn('flex flex-1 flex-col', cardPadding)}>
           <h3 className={titleClassName}>{card.title}</h3>
 
-          <div className="mt-3 flex items-center gap-2">
-            <Avatar className={avatarClassName}>
-              <AvatarImage src={card.authorAvatarUrl ?? undefined} />
-              <AvatarFallback>{getInitials(card.authorName)}</AvatarFallback>
-            </Avatar>
-            <span className={authorClassName}>{card.authorName}</span>
-          </div>
+          <div className="mt-3">{authorRow}</div>
 
           <DashboardCardStats
             {...statsProps}
-            className={cn('mt-auto pt-3', statsClassName)}
+            className={cn('relative z-[3] mt-auto pt-3 pointer-events-auto', statsClassName)}
             iconClassName={statsIconClassName}
           />
         </div>
-      </Link>
+      </div>
 
-      {showHover && (
+      {showHover ? (
         <div
           className={cn(
-            'absolute inset-0 z-10 flex flex-col overflow-hidden bg-white',
-            'pointer-events-none opacity-0 transition-opacity duration-300 group-hover:pointer-events-auto group-hover:opacity-100',
+            'absolute inset-0 z-[3] flex flex-col overflow-hidden bg-white',
+            'pointer-events-none opacity-0 transition-opacity duration-300',
+            'group-hover:pointer-events-auto group-hover:opacity-100',
             cardPadding,
           )}
         >
-          <Link to={detailHref} className="shrink-0">
+          <Link
+            to={detailHref}
+            className={cn(
+              cardLinkClassName,
+              'pointer-events-auto flex min-w-0 shrink-0 flex-col gap-3',
+            )}
+          >
             <h3 className={titleClassName}>{card.title}</h3>
+
+            <div
+              className={cn(
+                'flex min-w-0',
+                isNarrow
+                  ? 'flex-col items-start gap-2'
+                  : 'flex-row items-center gap-2',
+              )}
+            >
+              {authorRow}
+              {stageBadge}
+            </div>
+
+            <IdeaTagCloud tags={card.tags} compact />
           </Link>
 
-          <div
-            className={cn(
-              'flex min-w-0 shrink-0',
-              isNarrow
-                ? 'mt-3 flex-col items-start gap-2'
-                : 'mt-3 flex-row items-center gap-2',
-            )}
-          >
-            <div className="flex min-w-0 items-center gap-2">
-              <Avatar className={avatarClassName}>
-                <AvatarImage src={card.authorAvatarUrl ?? undefined} />
-                <AvatarFallback>{getInitials(card.authorName)}</AvatarFallback>
-              </Avatar>
-              <span className={authorClassName}>{card.authorName}</span>
-            </div>
-            {card.stage?.trim() ? (
-              <StageChevronBadge
-                stage={card.stage}
-                stageText={false}
-                compact={isNarrow}
-              />
-            ) : null}
-          </div>
-
-          <div
-            className={cn(
-              'flex min-w-0 shrink-0 flex-col',
-              isNarrow ? 'mt-3 gap-2' : 'mt-4 gap-3',
-            )}
-          >
-            <IdeaTagCloud tags={card.tags} compact />
+          <div className="pointer-events-auto relative z-[4] shrink-0">
             <DashboardCardStats
               {...statsProps}
               className={statsClassName}
@@ -165,10 +181,10 @@ function DashboardCardCompactInner<
             />
           </div>
 
-          {linkedItems.length > 0 && (
+          {linkedItems.length > 0 ? (
             <div
               className={cn(
-                'border-brand-gray-200 mt-auto flex min-h-0 min-w-0 flex-col border-t',
+                'border-brand-gray-200 pointer-events-auto relative z-[4] mt-auto flex min-h-0 min-w-0 flex-col border-t',
                 isNarrow ? 'pt-1' : 'pt-2',
               )}
             >
@@ -184,9 +200,9 @@ function DashboardCardCompactInner<
                 linkedItemEmptyImageText={emptyImageText}
               />
             </div>
-          )}
+          ) : null}
         </div>
-      )}
+      ) : null}
     </article>
   );
 }
