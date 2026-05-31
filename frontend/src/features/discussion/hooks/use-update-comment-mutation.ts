@@ -1,15 +1,20 @@
 import { updateComment } from '@/features/discussion/api/comments.api';
 import type { UpdateCommentPayload } from '@/features/discussion/api/comments-api.types';
-import type { DiscussionEntityType } from '@/features/discussion/api/comments-api.types';
+import type {
+  DiscussionEntityType,
+  PaginatedCommentsResponse,
+} from '@/features/discussion/api/comments-api.types';
 import { commentQueryKeys } from '@/features/discussion/hooks/comment-query-keys';
 import {
   restoreCommentInfiniteQuery,
   snapshotCommentInfiniteQuery,
   syncCommentContentInCache,
 } from '@/features/discussion/lib/sync-comment-mutation-cache';
-import { ideaMutationKeys } from '@/features/ideas/hooks/use-idea-mutations';
-import { problemMutationKeys } from '@/features/problems/hooks/use-problem-mutations';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  useMutation,
+  useQueryClient,
+  type InfiniteData,
+} from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 type UpdateCommentVariables = {
@@ -42,6 +47,23 @@ export function useUpdateCommentMutation(
 
       return { previousData };
     },
+    onSuccess: realUpdatedComment => {
+      queryClient.setQueriesData<InfiniteData<PaginatedCommentsResponse>>(
+        { queryKey: entityQueryKey },
+        old => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map(page => ({
+              ...page,
+              data: page.data.map(c =>
+                c.id === realUpdatedComment.id ? realUpdatedComment : c,
+              ),
+            })),
+          };
+        },
+      );
+    },
     onError: (_error, _variables, context) => {
       toast.error('Could not update comment');
       restoreCommentInfiniteQuery(
@@ -50,20 +72,6 @@ export function useUpdateCommentMutation(
         entityId,
         context?.previousData,
       );
-    },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: entityQueryKey });
-
-      if (entityType === 'IDEA') {
-        void queryClient.invalidateQueries({
-          queryKey: ideaMutationKeys.detail(entityId),
-        });
-        return;
-      }
-
-      void queryClient.invalidateQueries({
-        queryKey: problemMutationKeys.detail(entityId),
-      });
     },
   });
 }

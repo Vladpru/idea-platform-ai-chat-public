@@ -28,15 +28,15 @@ import { toast } from 'sonner';
 type CreateCommentMutationContext = {
   previousData?: CommentInfiniteQueriesSnapshot;
   optimisticAttachments?: CommentAttachmentDto[];
+  optimisticCommentId?: string;
 };
 
-function appendCommentToInfiniteData(
+function prependCommentToInfiniteData(
   data: InfiniteData<PaginatedCommentsResponse>,
   comment: CommentDto,
 ): InfiniteData<PaginatedCommentsResponse> {
-  if (data.pages.length === 0) {
+  if (!data || data.pages.length === 0) {
     return {
-      ...data,
       pages: [
         {
           data: [comment],
@@ -49,21 +49,20 @@ function appendCommentToInfiniteData(
           },
         },
       ],
+      pageParams: [1],
     };
   }
-
-  const lastIndex = data.pages.length - 1;
 
   return {
     ...data,
     pages: data.pages.map((page, index) => {
-      if (index !== lastIndex) {
+      if (index !== 0) {
         return page;
       }
 
       return {
         ...page,
-        data: [...page.data, comment],
+        data: [comment, ...page.data],
         meta: {
           ...page.meta,
           total: page.meta.total + 1,
@@ -111,13 +110,14 @@ function buildOptimisticAttachments(
 }
 
 function buildOptimisticComment(params: {
+  id: string;
   content: string;
   parentQuote: CommentDto['parent'];
   attachments: CommentAttachmentDto[];
   author: NonNullable<ReturnType<typeof useAuthSessionStore.getState>['user']>;
 }): CommentDto {
   return {
-    id: `temp-${crypto.randomUUID()}`,
+    id: params.id,
     content: params.content,
     author: {
       id: params.author.id,
@@ -151,15 +151,15 @@ export function useCreateCommentMutation(
         entityType,
         entityId,
       );
-
       const user = useAuthSessionStore.getState().user;
+
       if (!user) {
         return { previousData };
       }
 
       const activeInfiniteData = previousData[0]?.[1];
-
       let parentQuote: CommentDto['parent'] = null;
+
       if (payload.parentId && activeInfiniteData) {
         const parentComment = findCommentInInfiniteData(
           activeInfiniteData,
@@ -173,8 +173,10 @@ export function useCreateCommentMutation(
       const optimisticAttachments = buildOptimisticAttachments(
         payload.attachments,
       );
+      const optimisticCommentId = `temp-${crypto.randomUUID()}`;
 
       const optimisticComment = buildOptimisticComment({
+        id: optimisticCommentId,
         content: payload.content?.trim() ?? '',
         parentQuote,
         attachments: optimisticAttachments,
@@ -185,7 +187,7 @@ export function useCreateCommentMutation(
         { queryKey: entityQueryKey },
         old =>
           old
-            ? appendCommentToInfiniteData(old, optimisticComment)
+            ? prependCommentToInfiniteData(old, optimisticComment)
             : {
                 pages: [
                   {
@@ -193,7 +195,7 @@ export function useCreateCommentMutation(
                     meta: {
                       total: 1,
                       page: 1,
-                      limit: 20,
+                      limit: COMMENTS_PAGE_SIZE,
                       totalPages: 1,
                       hasNextPage: false,
                     },
@@ -203,7 +205,38 @@ export function useCreateCommentMutation(
               },
       );
 
-      return { previousData, optimisticAttachments };
+      return { previousData, optimisticAttachments, optimisticCommentId };
+    },
+    onSuccess: (realComment, _variables, context) => {
+      queryClient.setQueriesData<InfiniteData<PaginatedCommentsResponse>>(
+        { queryKey: entityQueryKey },
+        old => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map(page => ({
+              ...page,
+              data: page.data.map(c =>
+                c.id === context?.optimisticCommentId ? realComment : c,
+              ),
+            })),
+          };
+        },
+      );
+
+      context?.optimisticAttachments?.forEach(att =>
+        URL.revokeObjectURL(att.url),
+      );
+
+      if (entityType === 'IDEA') {
+        void queryClient.invalidateQueries({
+          queryKey: ideaMutationKeys.detail(entityId),
+        });
+      } else {
+        void queryClient.invalidateQueries({
+          queryKey: problemMutationKeys.detail(entityId),
+        });
+      }
     },
     onError: (_error, _variables, context) => {
       toast.error('Could not post comment');
@@ -213,24 +246,9 @@ export function useCreateCommentMutation(
         entityId,
         context?.previousData,
       );
-    },
-    onSettled: (_data, _error, _variables, context) => {
       context?.optimisticAttachments?.forEach(att =>
         URL.revokeObjectURL(att.url),
       );
-
-      void queryClient.invalidateQueries({ queryKey: entityQueryKey });
-
-      if (entityType === 'IDEA') {
-        void queryClient.invalidateQueries({
-          queryKey: ideaMutationKeys.detail(entityId),
-        });
-        return;
-      }
-
-      void queryClient.invalidateQueries({
-        queryKey: problemMutationKeys.detail(entityId),
-      });
     },
   });
 }
