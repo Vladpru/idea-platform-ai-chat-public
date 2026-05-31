@@ -138,7 +138,7 @@ export class CommentService {
 
     this.assertContentLimits(content);
 
-    const uploadedMediaData: Array<{
+    let uploadedMediaData: Array<{
       url: string;
       publicId: string;
       mimeType: string;
@@ -152,19 +152,22 @@ export class CommentService {
         for (const file of files) {
           this.assertAllowedAttachmentMimeType(file);
         }
-        for (const file of files) {
-          const uploaded = await this.cloudinary.uploadCommentAttachment(
-            file,
-            commentId,
-          );
-          uploadedMediaData.push({
-            url: uploaded.url,
-            publicId: uploaded.publicId,
-            mimeType: file.mimetype,
-            byteSize: file.size,
-            originalFilename: file.originalname || 'attachment',
-          });
-        }
+
+        uploadedMediaData = await Promise.all(
+          files.map(async file => {
+            const uploaded = await this.cloudinary.uploadCommentAttachment(
+              file,
+              commentId,
+            );
+            return {
+              url: uploaded.url,
+              publicId: uploaded.publicId,
+              mimeType: file.mimetype,
+              byteSize: file.size,
+              originalFilename: file.originalname || 'attachment',
+            };
+          }),
+        );
       }
 
       const updatedComment = await this.prisma.$transaction(async tx => {
@@ -234,10 +237,21 @@ export class CommentService {
     await this.prisma.$transaction(async tx => {
       await this.assertCommentMutable(tx, commentId, userId);
 
+      const childComments = await tx.comment.findMany({
+        where: { parentId: commentId },
+        select: { id: true },
+      });
+
+      const allCommentIdsToDelete = [
+        commentId,
+        ...childComments.map(c => c.id),
+      ];
+
       const media = await tx.commentMedia.findMany({
-        where: { commentId },
+        where: { commentId: { in: allCommentIdsToDelete } },
         select: { publicId: true },
       });
+
       media.forEach(item => publicIdsToDelete.push(item.publicId));
 
       await tx.comment.delete({
@@ -355,7 +369,7 @@ export class CommentService {
     }
 
     const newCommentId = randomUUID();
-    const uploadedMediaData: Array<{
+    let uploadedMediaData: Array<{
       url: string;
       publicId: string;
       mimeType: string;
@@ -364,18 +378,22 @@ export class CommentService {
     }> = [];
 
     try {
-      for (const file of files) {
-        const uploaded = await this.cloudinary.uploadCommentAttachment(
-          file,
-          newCommentId,
+      if (files.length > 0) {
+        uploadedMediaData = await Promise.all(
+          files.map(async file => {
+            const uploaded = await this.cloudinary.uploadCommentAttachment(
+              file,
+              newCommentId,
+            );
+            return {
+              url: uploaded.url,
+              publicId: uploaded.publicId,
+              mimeType: file.mimetype,
+              byteSize: file.size,
+              originalFilename: file.originalname || 'attachment',
+            };
+          }),
         );
-        uploadedMediaData.push({
-          url: uploaded.url,
-          publicId: uploaded.publicId,
-          mimeType: file.mimetype,
-          byteSize: file.size,
-          originalFilename: file.originalname || 'attachment',
-        });
       }
 
       const fullComment = await this.prisma.$transaction(async tx => {
