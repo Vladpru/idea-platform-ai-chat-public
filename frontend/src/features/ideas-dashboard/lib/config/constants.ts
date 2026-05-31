@@ -1,9 +1,32 @@
 import type { ApiStage } from '@/features/ideas/model/idea.types';
+import {
+  COLUMN_COUNT_MAX,
+  COLUMN_COUNT_MIN,
+  COMPACT_CARD_COLUMN_THRESHOLD,
+  DASHBOARD_CARD_TAG_TO_SHOW_COUNT,
+  DEFAULT_COLUMN_COUNT,
+  STATS_BELOW_TAGS_COLUMN_THRESHOLD,
+  TABLET_COLUMN_COUNT_MAX,
+  TABLET_COLUMN_GRID_CLASSES,
+  type DashboardTabletColumnLayout,
+} from '@/shared/dashboard/lib/config/constants';
 
 import type {
   IdeaDashboardFilter,
   IdeaDashboardSort,
 } from '../../model/ideas-dashboard.types';
+
+export {
+  COLUMN_COUNT_MAX,
+  COLUMN_COUNT_MIN,
+  COMPACT_CARD_COLUMN_THRESHOLD,
+  DASHBOARD_CARD_TAG_TO_SHOW_COUNT,
+  DEFAULT_COLUMN_COUNT,
+  STATS_BELOW_TAGS_COLUMN_THRESHOLD,
+  TABLET_COLUMN_COUNT_MAX,
+  TABLET_COLUMN_GRID_CLASSES,
+  type DashboardTabletColumnLayout,
+};
 
 export const IDEA_DASHBOARD_FILTERS: {
   id: IdeaDashboardFilter;
@@ -46,23 +69,3 @@ export const IDEA_DASHBOARD_SORT_OPTIONS: {
   { value: 'likes', label: 'Most Popular' },
   { value: 'comments', label: 'Most Commented' },
 ];
-
-export const COLUMN_COUNT_MIN = 1;
-export const COLUMN_COUNT_MAX = 8;
-export const TABLET_COLUMN_COUNT_MAX = 3;
-export const COMPACT_CARD_COLUMN_THRESHOLD = 5;
-/** Standard cards stack engagement stats below tags at this column count and above. */
-export const STATS_BELOW_TAGS_COLUMN_THRESHOLD = 4;
-export const DEFAULT_COLUMN_COUNT = 2;
-export const DASHBOARD_CARD_TAG_TO_SHOW_COUNT = 3;
-
-export type DashboardTabletColumnLayout = 1 | 2 | 3;
-
-export const TABLET_COLUMN_GRID_CLASSES: Record<
-  DashboardTabletColumnLayout,
-  string
-> = {
-  1: 'grid-cols-1',
-  2: 'grid-cols-1 md:grid-cols-2',
-  3: 'grid-cols-1 md:grid-cols-3',
-};

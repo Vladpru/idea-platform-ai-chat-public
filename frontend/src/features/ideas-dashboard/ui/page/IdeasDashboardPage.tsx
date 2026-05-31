@@ -10,15 +10,15 @@ import {
   useIdeasDashboardQuery,
 } from '../../hooks/use-ideas-dashboard';
 import { IDEAS_DASHBOARD_LABELS } from '../../lib/config/ideas-dashboard-labels';
-import type { DashboardViewport } from '../../lib/layout/dashboard-grid-layout';
+import type { DashboardViewport } from '@/shared/dashboard/lib/layout/dashboard-grid-layout';
+import { DashboardGrid } from '@/shared/dashboard/ui/grid/DashboardGrid';
+import { LoadMoreFooter } from '@/shared/dashboard/ui/grid/LoadMoreFooter';
 import type {
   IdeaDashboardCard,
   IdeaDashboardSort,
 } from '../../model/ideas-dashboard.types';
 import { DashboardCardCompact } from '../cards/DashboardCardCompact';
 import { DashboardCardStandard } from '../cards/DashboardCardStandard';
-import { DashboardGrid } from '../grid/DashboardGrid';
-import { LoadMoreFooter } from '../grid/LoadMoreFooter';
 import { DashboardHeader } from '../header/DashboardHeader';
 
 function IdeasGridSkeleton() {

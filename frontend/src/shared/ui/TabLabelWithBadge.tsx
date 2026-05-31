@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   DashboardFilter,
   type DashboardFilterTab,
-} from '@/features/ideas-dashboard';
+} from '@/shared/dashboard';
 
 function TabLabelWithBadge({
   label,

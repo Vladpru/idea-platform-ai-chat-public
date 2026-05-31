@@ -1,6 +1,8 @@
 import type { ApiStage, IdeaStatus } from '@/features/ideas/model/idea.types';
-
-import type { DashboardCardBase, DashboardLinkedItem } from './dashboard.types';
+import type {
+  DashboardCardBase,
+  DashboardLinkedItem,
+} from '@/shared/dashboard/model/dashboard.types';
 
 export type IdeaDashboardFilter =
   | 'ALL'
@@ -27,19 +29,6 @@ export type IdeaDashboardCard =
     isAuthor: boolean;
     isLiked: boolean;
   };
-
-export type ProblemDashboardFilter =
-  | 'ALL'
-  | 'ACTIVE'
-  | 'COMPLETED'
-  | 'ARCHIVED';
-
-export type ProblemDashboardSort =
-  | 'newest'
-  | 'oldest'
-  | 'most-viewed'
-  | 'most-popular'
-  | 'most-ideas-linked';
 
 export type IdeaDashboardCardView = {
   domain: 'idea';
