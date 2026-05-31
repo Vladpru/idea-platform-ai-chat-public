@@ -2,7 +2,7 @@ import { cn } from '@/shared/lib/utils';
 import { AnimatedTabUnderline } from '@/shared/ui';
 import { ChevronDown, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import type { DashboardFilterTab } from '../../model/dashboard.types';
+import type { DashboardFilterTab } from '@/shared/dashboard/model/dashboard.types';
 
 type DashboardFilterProps<TFilter extends string> = {
   filters: DashboardFilterTab<TFilter>[];

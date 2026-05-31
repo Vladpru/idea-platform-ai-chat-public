@@ -11,8 +11,8 @@ import type {
   IdeaDashboardSort,
 } from '../../model/ideas-dashboard.types';
 
-import { DashboardControls } from './DashboardControls';
-import { DashboardFilter } from './DashboardFilter';
+import { DashboardControls } from '@/shared/dashboard/ui/header/DashboardControls';
+import { DashboardFilter } from '@/shared/dashboard/ui/header/DashboardFilter';
 
 export type DashboardHeaderProps = {
   activeFilter: IdeaDashboardFilter;

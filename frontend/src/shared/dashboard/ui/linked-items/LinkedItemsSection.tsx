@@ -1,9 +1,10 @@
 import { ChevronRight, ChevronUp } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
+import { COMPACT_CARD_COLUMN_THRESHOLD } from '@/shared/dashboard/lib/config/constants';
+import type { DashboardLinkedItem } from '@/shared/dashboard/model/dashboard.types';
 import { cn } from '@/shared/lib/utils';
 
-import type { DashboardLinkedItem } from '../../model/dashboard.types';
 import { LinkedItemMiniCard } from './LinkedItemMiniCard';
 import { linkedItemsScrollContainerClass } from './linked-items.styles';
 
@@ -11,11 +12,11 @@ type LinkedItemsSectionProps = {
   items: DashboardLinkedItem[];
   sectionLabel: string;
   getItemDetailHref: (id: string) => string;
-
+  entityType: 'IDEA' | 'PROBLEM';
   expanded: boolean;
   onToggleExpanded?: () => void;
   showToggle?: boolean;
-  compact?: boolean;
+  columnCount?: number;
   className?: string;
   linkedItemEmptyImageText?: string;
 };
@@ -24,16 +25,17 @@ export function LinkedItemsSection({
   items,
   sectionLabel,
   getItemDetailHref,
-
+  entityType,
   expanded,
   onToggleExpanded,
   showToggle = true,
-  compact = false,
+  columnCount = 1,
   className,
   linkedItemEmptyImageText,
 }: LinkedItemsSectionProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isScrollable, setIsScrollable] = useState(false);
+  const compact = !showToggle;
 
   useEffect(() => {
     const scrollContainer = scrollRef.current;
@@ -102,7 +104,8 @@ export function LinkedItemsSection({
                 key={item.id}
                 item={item}
                 detailHref={getItemDetailHref(item.id)}
-                compact={compact}
+                entityType={entityType}
+                columnCount={columnCount}
                 emptyImageText={linkedItemEmptyImageText}
               />
             ))}
@@ -110,7 +113,15 @@ export function LinkedItemsSection({
 
           {isScrollable ? (
             <div
-              className="pointer-events-none absolute inset-y-0 right-[-23px] flex w-10 items-center justify-end bg-linear-to-l from-white via-white/90 to-transparent pr-1"
+              className={cn(
+                'pointer-events-none absolute inset-y-0 flex w-10 items-center justify-end bg-linear-to-l from-white via-white/90 to-transparent pr-1',
+                entityType === 'PROBLEM' &&
+                  columnCount >= COMPACT_CARD_COLUMN_THRESHOLD
+                  ? 'right-[-8px]'
+                  : columnCount >= COMPACT_CARD_COLUMN_THRESHOLD
+                    ? 'right-[-15px]'
+                    : 'right-[-23px]',
+              )}
               aria-hidden
             >
               <ChevronRight className="text-brand-dark-blue size-4 shrink-0 opacity-90" />

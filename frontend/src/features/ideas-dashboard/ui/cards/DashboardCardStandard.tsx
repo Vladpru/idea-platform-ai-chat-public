@@ -3,23 +3,21 @@ import { IdeaTagCloud } from '@/features/idea-details/ui/IdeaTagCloud';
 import { Link } from '@tanstack/react-router';
 import { type ReactNode, memo, useCallback } from 'react';
 
-import { cn } from '@/shared/lib/utils';
-import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
-import { StageChevronBadge } from '@/shared/ui/stage-chevron-badge';
-
 import {
   DASHBOARD_CARD_TAG_TO_SHOW_COUNT,
   STATS_BELOW_TAGS_COLUMN_THRESHOLD,
-} from '../../lib/config/constants';
-import type { DashboardCardBase } from '../../model/dashboard.types';
-import { LinkedItemsSection } from '../linked-items/LinkedItemsSection';
-import { DashboardCardStats } from './DashboardCardStats';
+} from '@/shared/dashboard';
+import type { DashboardCardBase } from '@/shared/dashboard/model/dashboard.types';
+import { DashboardCardStats } from '@/shared/dashboard/ui/cards/DashboardCardStats';
+import { LinkedItemsSection } from '@/shared/dashboard/ui/linked-items/LinkedItemsSection';
+import { cn } from '@/shared/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
+import { StageChevronBadge } from '@/shared/ui/stage-chevron-badge';
 
 export type DashboardCardStandardProps<
   TCard extends DashboardCardBase = DashboardCardBase,
 > = {
   card: TCard;
-  entityType?: 'IDEA' | 'PROBLEM';
   detailHref: string;
   emptyDescriptionText: string;
   emptyImageText: string;
@@ -32,7 +30,6 @@ export type DashboardCardStandardProps<
   tagToShowCount?: number;
   isMobile: boolean;
   columnCount?: number;
-  showHeroImage?: boolean;
   linkedItemEmptyImageText?: string;
   actionMenu?: ReactNode;
   likeButton?: ReactNode;
@@ -43,7 +40,6 @@ function DashboardCardStandardInner<
   TCard extends DashboardCardBase = DashboardCardBase,
 >({
   card,
-  entityType,
   detailHref,
   emptyDescriptionText,
   emptyImageText,
@@ -55,19 +51,15 @@ function DashboardCardStandardInner<
   tagToShowCount = DASHBOARD_CARD_TAG_TO_SHOW_COUNT,
   isMobile,
   columnCount = 1,
-  showHeroImage = true,
   linkedItemEmptyImageText,
   actionMenu,
   likeButton,
   hideLinkedItems = false,
 }: DashboardCardStandardProps<TCard>) {
-  const isHorizontal = layout === 'horizontal' && showHeroImage;
-  const isCompactCard = !showHeroImage;
+  const isHorizontal = layout === 'horizontal';
   const hasLinkedItems =
     !hideLinkedItems && card.linkedItems && card.linkedItems.length > 0;
   const stackStatsBelowTags = columnCount >= STATS_BELOW_TAGS_COLUMN_THRESHOLD;
-  const resolvedEntityType: 'IDEA' | 'PROBLEM' =
-    entityType ?? (detailHref.includes('/problems/') ? 'PROBLEM' : 'IDEA');
   const resolvedIsLiked =
     'isLiked' in card && typeof card.isLiked === 'boolean'
       ? card.isLiked
@@ -80,155 +72,151 @@ function DashboardCardStandardInner<
   return (
     <article
       className={cn(
-        'group border-brand-gray-200 flex h-full w-full overflow-hidden rounded-lg border bg-white shadow-sm transition-shadow hover:shadow-md',
-        showHeroImage && isHorizontal
+        'group border-brand-gray-200 flex h-full w-full overflow-hidden rounded-lg border bg-white transition-shadow hover:shadow-md',
+        isHorizontal
           ? 'min-h-[260px] flex-col sm:flex-row'
-          : showHeroImage
-            ? 'min-h-[400px] flex-col'
-            : 'flex-col',
+          : 'min-h-[400px] flex-col',
       )}
     >
-      {showHeroImage ? (
-        <Link
-          to={detailHref}
-          className={cn(
-            'bg-brand-gray-100 focus-visible:ring-brand-dark-blue relative shrink-0 overflow-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
-            isHorizontal
-              ? 'aspect-[16/10] w-full sm:aspect-auto sm:min-h-[260px] sm:w-[320px] lg:w-[400px]'
-              : 'aspect-[16/10] w-full',
-          )}
-        >
-          {card.imageUrl ? (
-            <img
-              src={card.imageUrl}
-              alt=""
-              loading="lazy"
-              className="absolute inset-0 size-full object-cover transition-transform duration-300 group-hover:scale-[1.01]"
-            />
-          ) : (
-            <div className="text-brand-gray-400 absolute inset-0 flex size-full items-center justify-center text-xs font-semibold uppercase">
-              {emptyImageText}
-            </div>
-          )}
-        </Link>
-      ) : null}
-
-      <div
+      <Link
+        to={detailHref}
         className={cn(
-          'relative flex min-w-0 flex-col',
-          !isCompactCard && 'flex-1 overflow-hidden',
+          'bg-brand-gray-100 focus-visible:ring-brand-dark-blue relative block shrink-0 overflow-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+          isHorizontal
+            ? 'aspect-[16/10] w-full sm:aspect-auto sm:min-h-[260px] sm:w-[320px] lg:w-[400px]'
+            : 'aspect-[16/10] w-full',
         )}
       >
-        {actionMenu && (
+        {card.imageUrl ? (
+          <img
+            src={card.imageUrl}
+            alt=""
+            loading="lazy"
+            className="absolute inset-0 size-full object-cover transition-transform duration-300 group-hover:scale-[1.01]"
+          />
+        ) : (
+          <div className="text-brand-gray-400 absolute inset-0 flex size-full items-center justify-center text-xs font-semibold uppercase">
+            {emptyImageText}
+          </div>
+        )}
+      </Link>
+
+      <div className="relative flex h-full min-w-0 flex-1 flex-col justify-between overflow-hidden">
+        {actionMenu ? (
           <div className="absolute top-4 right-4 z-20 sm:top-5 sm:right-5">
             {actionMenu}
           </div>
-        )}
+        ) : null}
 
-        <Link
-          to={detailHref}
-          className={cn(
-            'focus-visible:ring-brand-dark-blue flex min-w-0 flex-col text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
-            !isCompactCard && 'flex-1',
-            isHorizontal
-              ? 'px-4 pt-4 sm:px-5 sm:pt-5 lg:px-6 lg:pt-6'
-              : 'px-4 pt-4 sm:px-5 sm:pt-5',
-          )}
-        >
-          <div className="space-y-2 sm:space-y-3">
-            <h3
+        <div>
+          <Link
+            to={detailHref}
+            className={cn(
+              'focus-visible:ring-brand-dark-blue flex min-w-0 flex-1 flex-col text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+              isHorizontal
+                ? 'px-4 pt-4 sm:px-5 sm:pt-5 lg:px-6 lg:pt-6'
+                : 'px-4 pt-4 sm:px-5 sm:pt-5',
+              actionMenu && 'pr-10 sm:pr-12',
+            )}
+          >
+            <div className="space-y-2 sm:space-y-3">
+              <h3
+                className={cn(
+                  'text-brand-black group-hover:text-brand-dark-blue font-bold tracking-wide transition-colors',
+                  isHorizontal
+                    ? 'line-clamp-2 text-sm sm:line-clamp-1 sm:text-base'
+                    : 'line-clamp-2 text-base',
+                )}
+              >
+                {card.title}
+              </h3>
+
+              <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+                <div className="flex min-w-0 items-center gap-2">
+                  <Avatar size="sm" className="ring-2 ring-white">
+                    {card.authorAvatarUrl ? (
+                      <AvatarImage
+                        src={card.authorAvatarUrl}
+                        alt={card.authorName}
+                      />
+                    ) : null}
+                    <AvatarFallback className="bg-brand-gray-200 text-brand-gray-800 text-[10px] font-semibold">
+                      {getInitials(card.authorName)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-brand-gray-600 line-clamp-1 text-xs font-medium">
+                    {card.authorName}
+                  </span>
+                </div>
+                {card.stage?.trim() ? (
+                  <StageChevronBadge stage={card.stage} stageText={false} />
+                ) : null}
+              </div>
+
+              <p className="text-brand-gray-600 line-clamp-3 text-sm leading-relaxed">
+                {card.description?.trim() || emptyDescriptionText}
+              </p>
+            </div>
+          </Link>
+
+          <div
+            className={cn(
+              'flex w-full flex-col gap-3 px-4 pb-4 sm:px-5 sm:pb-5 lg:px-6 lg:pb-6',
+              !stackStatsBelowTags &&
+                (isHorizontal
+                  ? 'pt-3 sm:flex-row sm:items-center sm:justify-between sm:pt-4'
+                  : 'pt-4 sm:flex-row sm:items-center sm:justify-between'),
+            )}
+          >
+            <div
               className={cn(
-                'text-brand-black group-hover:text-brand-dark-blue font-bold tracking-wide transition-colors',
-                isHorizontal
-                  ? 'line-clamp-2 text-sm sm:line-clamp-1 sm:text-base'
-                  : 'line-clamp-2 text-base',
-                actionMenu && 'pr-10 sm:pr-12',
+                'min-w-0 flex-1 shrink overflow-hidden',
+                !stackStatsBelowTags &&
+                  '[mask-image:linear-gradient(to_right,black_90%,transparent_100%)]',
               )}
             >
-              {card.title}
-            </h3>
-
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              <div className="flex min-w-0 items-center gap-2">
-                <Avatar size="sm" className="ring-2 ring-white">
-                  {card.authorAvatarUrl ? (
-                    <AvatarImage
-                      src={card.authorAvatarUrl}
-                      alt={card.authorName}
-                    />
-                  ) : null}
-                  <AvatarFallback className="bg-brand-gray-200 text-brand-gray-800 text-[10px] font-semibold">
-                    {getInitials(card.authorName)}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-brand-gray-600 line-clamp-1 text-xs font-medium">
-                  {card.authorName}
-                </span>
-              </div>
-              {card.stage?.trim() ? (
-                <StageChevronBadge stage={card.stage} stageText={false} />
-              ) : null}
+              <IdeaTagCloud
+                tags={card.tags}
+                compact={isMobile}
+                tagToShowCount={tagToShowCount}
+              />
             </div>
 
-            <p className="text-brand-gray-600 line-clamp-3 text-sm leading-relaxed">
-              {card.description?.trim() || emptyDescriptionText}
-            </p>
-          </div>
-        </Link>
-
-        <div
-          className={cn(
-            'flex w-full flex-col gap-3 px-4 pb-4 sm:px-5 sm:pb-5 lg:px-6 lg:pb-6',
-            !stackStatsBelowTags &&
-              (isHorizontal
-                ? 'pt-3 sm:flex-row sm:items-center sm:justify-between sm:pt-4'
-                : 'pt-4 sm:flex-row sm:items-center sm:justify-between'),
-          )}
-        >
-          <div
-            className={cn(
-              'min-w-0 flex-1 shrink overflow-hidden',
-              !stackStatsBelowTags &&
-                '[mask-image:linear-gradient(to_right,black_90%,transparent_100%)]',
-            )}
-          >
-            <IdeaTagCloud
-              tags={card.tags}
-              compact={isMobile}
-              tagToShowCount={tagToShowCount}
-            />
-          </div>
-
-          <div
-            className={cn(
-              'relative z-10 shrink-0 bg-white',
-              stackStatsBelowTags && 'w-full',
-            )}
-          >
-            <DashboardCardStats
-              stats={card.stats}
-              entityId={card.id}
-              entityType={resolvedEntityType}
-              isLiked={resolvedIsLiked}
-              likeButton={likeButton}
-            />
+            <div
+              className={cn(
+                'relative z-10 shrink-0 bg-white',
+                stackStatsBelowTags && 'w-full',
+              )}
+            >
+              <DashboardCardStats
+                stats={card.stats}
+                entityId={card.id}
+                entityType="IDEA"
+                isLiked={resolvedIsLiked}
+                likeButton={likeButton}
+              />
+            </div>
           </div>
         </div>
 
-        {hasLinkedItems && (
+        {hasLinkedItems ? (
           <div className="shrink-0 bg-white">
             <LinkedItemsSection
               items={card.linkedItems}
               sectionLabel={linkedSectionLabel}
               getItemDetailHref={getLinkedItemDetailHref}
+              entityType="IDEA"
               expanded={linkedItemsExpanded}
               onToggleExpanded={
                 onToggleLinkedItems ? handleToggleLinked : undefined
               }
-              linkedItemEmptyImageText={linkedItemEmptyImageText}
+              columnCount={columnCount}
+              linkedItemEmptyImageText={
+                linkedItemEmptyImageText ?? emptyImageText
+              }
             />
           </div>
-        )}
+        ) : null}
       </div>
     </article>
   );
@@ -257,7 +245,8 @@ function areDashboardCardStandardPropsEqual<
     prev.isMobile === next.isMobile &&
     prev.columnCount === next.columnCount &&
     prev.hideLinkedItems === next.hideLinkedItems &&
-    prev.likeButton === next.likeButton
+    prev.likeButton === next.likeButton &&
+    prev.actionMenu === next.actionMenu
   );
 }
 

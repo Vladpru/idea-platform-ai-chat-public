@@ -1,9 +1,11 @@
 import {
   DashboardControls,
   DashboardFilter,
-  type ProblemDashboardFilter,
-  type ProblemDashboardSort,
-} from '@/features/ideas-dashboard';
+} from '@/shared/dashboard';
+import type {
+  ProblemDashboardFilter,
+  ProblemDashboardSort,
+} from '../model/problems-dashboard.types';
 import { memo } from 'react';
 
 import { cn } from '@/shared/lib/utils';

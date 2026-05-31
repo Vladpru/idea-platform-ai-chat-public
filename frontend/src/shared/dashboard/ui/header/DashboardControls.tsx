@@ -1,6 +1,7 @@
 import { ChevronDown, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
+import { COMPACT_CARD_COLUMN_THRESHOLD } from '@/shared/dashboard/lib/config/constants';
 import { cn } from '@/shared/lib/utils';
 
 type DashboardControlsProps<TSort extends string> = {
@@ -59,34 +60,38 @@ export function DashboardControls<TSort extends string>({
     ? [activeSort, ...otherSortOptions]
     : sortOptions;
 
+  const showLinkedItemsToggle = columnCount < COMPACT_CARD_COLUMN_THRESHOLD;
+
   return (
     <div className={cn('flex flex-wrap items-center gap-4', className)}>
-      <div className="flex items-center gap-4">
-        <button
-          type="button"
-          onClick={onExpandAll}
-          className={cn(
-            'cursor-pointer text-xs font-bold tracking-wide uppercase transition-colors',
-            linkedProblemsExpanded
-              ? 'text-brand-dark-blue'
-              : 'text-brand-gray-500 hover:text-brand-dark-blue',
-          )}
-        >
-          {expandAllLabel}
-        </button>
-        <button
-          type="button"
-          onClick={onCollapseAll}
-          className={cn(
-            'cursor-pointer text-xs font-bold tracking-wide uppercase transition-colors',
-            !linkedProblemsExpanded
-              ? 'text-brand-dark-blue'
-              : 'text-brand-gray-500 hover:text-brand-dark-blue',
-          )}
-        >
-          {collapseAllLabel}
-        </button>
-      </div>
+      {showLinkedItemsToggle && (
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={onExpandAll}
+            className={cn(
+              'cursor-pointer text-xs font-bold tracking-wide uppercase transition-colors',
+              linkedProblemsExpanded
+                ? 'text-brand-dark-blue'
+                : 'text-brand-gray-500 hover:text-brand-dark-blue',
+            )}
+          >
+            {expandAllLabel}
+          </button>
+          <button
+            type="button"
+            onClick={onCollapseAll}
+            className={cn(
+              'cursor-pointer text-xs font-bold tracking-wide uppercase transition-colors',
+              !linkedProblemsExpanded
+                ? 'text-brand-dark-blue'
+                : 'text-brand-gray-500 hover:text-brand-dark-blue',
+            )}
+          >
+            {collapseAllLabel}
+          </button>
+        </div>
+      )}
 
       <div className="sm:hidden">
         <button

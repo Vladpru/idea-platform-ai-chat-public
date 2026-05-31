@@ -12,19 +12,19 @@ import {
   useState,
 } from 'react';
 
-import { chunkDashboardRows } from '../../lib/layout/chunk-dashboard-rows';
+import { chunkDashboardRows } from '@/shared/dashboard/lib/layout/chunk-dashboard-rows';
 import {
   type DashboardViewport,
   getIsCompactLayout,
   getStandardCardLayout,
-} from '../../lib/layout/dashboard-grid-layout';
+} from '@/shared/dashboard/lib/layout/dashboard-grid-layout';
 import {
   DASHBOARD_VIRTUAL_ROW_GAP_PX,
   getEstimatedDashboardRowHeight,
   getVirtualRowGridContainerClassName,
   getVirtualRowGridStyle,
-} from '../../lib/layout/dashboard-virtualization';
-import type { DashboardCardBase } from '../../model/dashboard.types';
+} from '@/shared/dashboard/lib/layout/dashboard-virtualization';
+import type { DashboardCardBase } from '@/shared/dashboard/model/dashboard.types';
 
 export type DashboardGridProps<TCard extends DashboardCardBase> = {
   items: TCard[];

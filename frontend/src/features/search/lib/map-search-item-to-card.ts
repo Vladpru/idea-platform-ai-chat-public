@@ -1,4 +1,4 @@
-import type { DashboardCardBase } from '@/features/ideas-dashboard/model/dashboard.types';
+import type { DashboardCardBase } from '@/features/ideas-dashboard';
 
 import type { GlobalSearchResultItem } from '../api/search.types';
 

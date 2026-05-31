@@ -17,7 +17,7 @@ import {
   getColumnSelectMax,
   getEffectiveColumnCount,
   resolveDashboardViewport,
-} from '../lib/layout/dashboard-grid-layout';
+} from '@/shared/dashboard/lib/layout/dashboard-grid-layout';
 import { selectIdeasDashboardCards } from '../lib/data/select-ideas-dashboard-cards';
 import { useDashboardGridPreferencesStore } from '../model/dashboard-grid-preferences.store';
 import type {
