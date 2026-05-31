@@ -1,3 +1,5 @@
+import { Prisma } from '../../generated/prisma/client';
+
 export const IDEA_NOT_FOUND = 'Idea not found';
 export const PROBLEM_NOT_FOUND = 'Problem not found';
 export const COMMENT_NOT_FOUND = 'Comment not found';
@@ -19,3 +21,44 @@ export const ALLOWED_COMMENT_ATTACHMENT_TYPES = new Set([
   'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 ]);
+
+export const COMMENT_AUTHOR_SELECT = {
+  id: true,
+  firstName: true,
+  lastName: true,
+  avatarUrl: true,
+} satisfies Prisma.UserSelect;
+
+export function commentListInclude(userId: string) {
+  return {
+    author: { select: COMMENT_AUTHOR_SELECT },
+    parent: {
+      select: {
+        id: true,
+        content: true,
+        createdAt: true,
+        author: { select: COMMENT_AUTHOR_SELECT },
+      },
+    },
+    media: {
+      select: {
+        id: true,
+        url: true,
+        mimeType: true,
+        originalFilename: true,
+      },
+      orderBy: { createdAt: 'asc' },
+    },
+    likes: {
+      where: { userId },
+      select: { userId: true },
+    },
+    _count: {
+      select: { likes: true },
+    },
+  } satisfies Prisma.CommentInclude;
+}
+
+export function commentDetailInclude(userId: string) {
+  return commentListInclude(userId);
+}

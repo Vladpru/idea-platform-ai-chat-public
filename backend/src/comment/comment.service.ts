@@ -5,19 +5,21 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 
 import {
-  CommentEntityType,
+  IdeaStatus,
   MediaProvider,
   Prisma,
+  ProblemStatus,
 } from '../../generated/prisma/client';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { PrismaService } from '../prisma/prisma.service';
 import {
-  COMMENT_ATTACHMENT_MIME_REGEX,
+  ALLOWED_COMMENT_ATTACHMENT_TYPES,
+  COMMENT_CONTENT_MAX_LENGTH,
   COMMENT_FORBIDDEN,
   COMMENT_NOT_FOUND,
-  COMMENT_CONTENT_MAX_LENGTH,
   IDEA_NOT_FOUND,
   MAX_COMMENT_ATTACHMENTS,
   PARENT_COMMENT_ENTITY_MISMATCH,
@@ -26,7 +28,7 @@ import {
   commentDetailInclude,
   commentListInclude,
 } from './comment.constants';
-import { type CommentRecord, toCommentResponse } from './comment.mapper';
+import { toCommentResponse } from './comment.mapper';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { GetCommentsQueryDto } from './dto/get-comments-query.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
@@ -34,6 +36,11 @@ import type {
   CommentDto,
   PaginatedCommentsResponse,
 } from './types/comment.types';
+
+export enum CommentTargetEntity {
+  IDEA = 'ideas',
+  PROBLEM = 'problems',
+}
 
 @Injectable()
 export class CommentService {
@@ -49,13 +56,18 @@ export class CommentService {
     query: GetCommentsQueryDto,
     userId: string,
   ): Promise<PaginatedCommentsResponse> {
-    await this.assertIdeaVisible(ideaId, userId);
-    return this.findCommentsForEntity({
-      entityType: CommentEntityType.IDEA,
+    await this.assertEntityVisible(
+      this.prisma,
+      CommentTargetEntity.IDEA,
+      ideaId,
+      userId,
+    );
+    return this.findCommentsForEntity(
+      CommentTargetEntity.IDEA,
       ideaId,
       query,
       userId,
-    });
+    );
   }
 
   async findProblemComments(
@@ -63,13 +75,18 @@ export class CommentService {
     query: GetCommentsQueryDto,
     userId: string,
   ): Promise<PaginatedCommentsResponse> {
-    await this.assertProblemVisible(problemId, userId);
-    return this.findCommentsForEntity({
-      entityType: CommentEntityType.PROBLEM,
+    await this.assertEntityVisible(
+      this.prisma,
+      CommentTargetEntity.PROBLEM,
+      problemId,
+      userId,
+    );
+    return this.findCommentsForEntity(
+      CommentTargetEntity.PROBLEM,
       problemId,
       query,
       userId,
-    });
+    );
   }
 
   async createIdeaComment(
@@ -78,14 +95,19 @@ export class CommentService {
     userId: string,
     files: Express.Multer.File[] = [],
   ): Promise<CommentDto> {
-    await this.assertIdeaVisible(ideaId, userId);
-    return this.createCommentForEntity({
-      entityType: CommentEntityType.IDEA,
+    await this.assertEntityVisible(
+      this.prisma,
+      CommentTargetEntity.IDEA,
+      ideaId,
+      userId,
+    );
+    return this.createCommentForEntity(
+      CommentTargetEntity.IDEA,
       ideaId,
       dto,
       userId,
       files,
-    });
+    );
   }
 
   async createProblemComment(
@@ -94,14 +116,19 @@ export class CommentService {
     userId: string,
     files: Express.Multer.File[] = [],
   ): Promise<CommentDto> {
-    await this.assertProblemVisible(problemId, userId);
-    return this.createCommentForEntity({
-      entityType: CommentEntityType.PROBLEM,
+    await this.assertEntityVisible(
+      this.prisma,
+      CommentTargetEntity.PROBLEM,
+      problemId,
+      userId,
+    );
+    return this.createCommentForEntity(
+      CommentTargetEntity.PROBLEM,
       problemId,
       dto,
       userId,
       files,
-    });
+    );
   }
 
   async updateComment(
@@ -110,11 +137,11 @@ export class CommentService {
     dto: UpdateCommentDto,
     files: Express.Multer.File[] = [],
   ): Promise<CommentDto> {
-    await this.findCommentForMutation(commentId, userId);
+    await this.assertCommentMutable(commentId, userId);
 
-    const content = dto.content.trim();
+    const content = (dto.content ?? '').trim();
     const deletedAttachmentIds = dto.deletedAttachmentIds ?? [];
-    const newFiles = files ?? [];
+    const newFiles = files;
 
     if (content.length > COMMENT_CONTENT_MAX_LENGTH) {
       throw new BadRequestException(
@@ -136,13 +163,12 @@ export class CommentService {
     }
 
     const deletedIdSet = new Set(deletedAttachmentIds);
-    const remainingCount =
-      existingMedia.length - deletedAttachmentIds.length;
-    const finalAttachmentCount = remainingCount + newFiles.length;
+    const finalAttachmentCount =
+      existingMedia.length - deletedAttachmentIds.length + newFiles.length;
 
     if (finalAttachmentCount > MAX_COMMENT_ATTACHMENTS) {
       throw new BadRequestException(
-        `A maximum of ${MAX_COMMENT_ATTACHMENTS} attachments is allowed per comment`,
+        `A maximum of ${MAX_COMMENT_ATTACHMENTS} attachments is allowed`,
       );
     }
 
@@ -160,50 +186,75 @@ export class CommentService {
       .filter(media => deletedIdSet.has(media.id))
       .map(media => media.publicId);
 
-    await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      if (deletedAttachmentIds.length > 0) {
-        await tx.commentMedia.deleteMany({
-          where: {
-            commentId,
-            id: { in: deletedAttachmentIds },
-          },
-        });
-      }
-
-      await tx.comment.update({
-        where: { id: commentId },
-        data: { content },
-        select: { id: true },
-      });
-    });
-
-    void this.cleanupCloudinaryAssets(publicIdsToDelete);
-
-    const uploadedPublicIds: string[] = [];
-
+    // 1. Upload new files FIRST
+    const uploadedMediaData: Array<{
+      url: string;
+      publicId: string;
+      mimeType: string;
+      byteSize: number;
+      originalFilename: string;
+    }> = [];
     try {
       for (const file of newFiles) {
         const uploaded = await this.cloudinary.uploadCommentAttachment(
           file,
           commentId,
         );
-        uploadedPublicIds.push(uploaded.publicId);
-
-        await this.prisma.commentMedia.create({
-          data: {
-            commentId,
-            provider: MediaProvider.CLOUDINARY,
-            url: uploaded.url,
-            publicId: uploaded.publicId,
-            mimeType: file.mimetype,
-            byteSize: file.size,
-            originalFilename: file.originalname || 'attachment',
-          },
+        uploadedMediaData.push({
+          url: uploaded.url,
+          publicId: uploaded.publicId,
+          mimeType: file.mimetype,
+          byteSize: file.size,
+          originalFilename: file.originalname || 'attachment',
         });
       }
     } catch (error) {
-      await this.cleanupCloudinaryAssets(uploadedPublicIds);
+      await this.cleanupCloudinaryAssetsSafe(
+        uploadedMediaData.map(m => m.publicId),
+      );
       throw error;
+    }
+
+    // 2. Fast Database Transaction
+    try {
+      await this.prisma.$transaction(async tx => {
+        if (deletedAttachmentIds.length > 0) {
+          await tx.commentMedia.deleteMany({
+            where: { commentId, id: { in: deletedAttachmentIds } },
+          });
+        }
+
+        if (uploadedMediaData.length > 0) {
+          await tx.commentMedia.createMany({
+            data: uploadedMediaData.map(media => ({
+              commentId,
+              provider: MediaProvider.CLOUDINARY,
+              ...media,
+            })),
+          });
+        }
+
+        await tx.comment.update({
+          where: { id: commentId },
+          data: { content },
+          select: { id: true },
+        });
+      });
+    } catch (error) {
+      await this.cleanupCloudinaryAssetsSafe(
+        uploadedMediaData.map(m => m.publicId),
+      );
+      throw error;
+    }
+
+    // 3. Cleanup old files
+    if (publicIdsToDelete.length > 0) {
+      this.cleanupCloudinaryAssetsSafe(publicIdsToDelete).catch(err => {
+        this.logger.error(
+          'Failed to cleanup deleted attachments in Cloudinary',
+          err,
+        );
+      });
     }
 
     const updated = await this.prisma.comment.findUnique({
@@ -215,68 +266,55 @@ export class CommentService {
       throw new NotFoundException(COMMENT_NOT_FOUND);
     }
 
-    return toCommentResponse(updated as CommentRecord);
+    return toCommentResponse(updated);
   }
 
   async deleteComment(commentId: string, userId: string): Promise<void> {
-    const comment = await this.findCommentForMutation(commentId, userId);
+    await this.assertCommentMutable(commentId, userId);
 
     const media = await this.prisma.commentMedia.findMany({
       where: { commentId },
       select: { publicId: true },
     });
 
-    await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      await tx.comment.delete({
-        where: { id: commentId },
-        select: { id: true },
-      });
-
-      if (comment.entityType === CommentEntityType.IDEA && comment.ideaId) {
-        await tx.idea.update({
-          where: { id: comment.ideaId },
-          data: { commentCount: { decrement: 1 } },
-          select: { id: true },
-        });
-      } else if (
-        comment.entityType === CommentEntityType.PROBLEM &&
-        comment.problemId
-      ) {
-        await tx.problem.update({
-          where: { id: comment.problemId },
-          data: { commentCount: { decrement: 1 } },
-          select: { id: true },
-        });
-      }
+    await this.prisma.comment.delete({
+      where: { id: commentId },
     });
 
-    void this.cleanupCloudinaryAssets(media.map(item => item.publicId));
+    if (media.length > 0) {
+      this.cleanupCloudinaryAssetsSafe(media.map(item => item.publicId)).catch(
+        err => {
+          this.logger.error(
+            'Failed to cleanup attachments for deleted comment',
+            err,
+          );
+        },
+      );
+    }
   }
 
   async toggleCommentLike(commentId: string, userId: string): Promise<void> {
-    await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    await this.prisma.$transaction(async tx => {
       const comment = await tx.comment.findUnique({
         where: { id: commentId },
-        select: {
-          id: true,
-          entityType: true,
-          ideaId: true,
-          problemId: true,
-        },
+        select: { id: true, ideaId: true, problemId: true },
       });
 
       if (!comment) {
         throw new NotFoundException(COMMENT_NOT_FOUND);
       }
 
-      if (comment.entityType === CommentEntityType.IDEA && comment.ideaId) {
-        await this.assertIdeaVisibleInTransaction(tx, comment.ideaId, userId);
-      } else if (
-        comment.entityType === CommentEntityType.PROBLEM &&
-        comment.problemId
-      ) {
-        await this.assertProblemVisibleInTransaction(
+      if (comment.ideaId) {
+        await this.assertEntityVisible(
           tx,
+          CommentTargetEntity.IDEA,
+          comment.ideaId,
+          userId,
+        );
+      } else if (comment.problemId) {
+        await this.assertEntityVisible(
+          tx,
+          CommentTargetEntity.PROBLEM,
           comment.problemId,
           userId,
         );
@@ -286,54 +324,37 @@ export class CommentService {
 
       const like = await tx.commentLike.findUnique({
         where: { commentId_userId: { commentId, userId } },
-        select: { commentId: true, userId: true },
+        select: { commentId: true },
       });
 
       if (like) {
         await tx.commentLike.delete({
           where: { commentId_userId: { commentId, userId } },
-          select: { commentId: true, userId: true },
         });
-
-        await tx.comment.update({
-          where: { id: commentId },
-          data: { likeCount: { decrement: 1 } },
-          select: { id: true },
+      } else {
+        await tx.commentLike.create({
+          data: { commentId, userId },
         });
-
-        return;
       }
-
-      await tx.commentLike.create({
-        data: { commentId, userId },
-        select: { commentId: true, userId: true },
-      });
-
-      await tx.comment.update({
-        where: { id: commentId },
-        data: { likeCount: { increment: 1 } },
-        select: { id: true },
-      });
     });
   }
 
-  private async findCommentsForEntity(params: {
-    entityType: CommentEntityType;
-    ideaId?: string;
-    problemId?: string;
-    query: GetCommentsQueryDto;
-    userId: string;
-  }): Promise<PaginatedCommentsResponse> {
-    const page = Math.max(1, params.query.page ?? 1);
-    const limit = Math.max(1, Math.min(params.query.limit ?? 20, 50));
+  private async findCommentsForEntity(
+    entityType: CommentTargetEntity,
+    entityId: string,
+    query: GetCommentsQueryDto,
+    userId: string,
+  ): Promise<PaginatedCommentsResponse> {
+    // Defense-in-depth: жорсткі ліміти незалежно від DTO
+    const page = Math.max(1, query.page ?? 1);
+    const limit = Math.max(1, Math.min(query.limit ?? 20, 50));
     const skip = (page - 1) * limit;
-    const createdAtOrder =
-      params.query.sort === 'oldest' ? ('asc' as const) : ('desc' as const);
+    const createdAtOrder = query.sort === 'oldest' ? 'asc' : 'desc';
 
     const where: Prisma.CommentWhereInput =
-      params.entityType === CommentEntityType.IDEA
-        ? { ideaId: params.ideaId }
-        : { problemId: params.problemId };
+      entityType === CommentTargetEntity.IDEA
+        ? { ideaId: entityId }
+        : { problemId: entityId };
 
     const [total, comments] = await this.prisma.$transaction([
       this.prisma.comment.count({ where }),
@@ -342,16 +363,14 @@ export class CommentService {
         orderBy: { createdAt: createdAtOrder },
         skip,
         take: limit,
-        include: commentListInclude(params.userId),
+        include: commentListInclude(userId),
       }),
     ]);
 
-    const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
+    const totalPages = Math.ceil(total / limit) || 1;
 
     return {
-      data: comments.map(comment =>
-        toCommentResponse(comment as CommentRecord),
-      ),
+      data: comments.map(toCommentResponse),
       meta: {
         total,
         page,
@@ -362,16 +381,14 @@ export class CommentService {
     };
   }
 
-  private async createCommentForEntity(params: {
-    entityType: CommentEntityType;
-    ideaId?: string;
-    problemId?: string;
-    dto: CreateCommentDto;
-    userId: string;
-    files: Express.Multer.File[];
-  }): Promise<CommentDto> {
-    const content = params.dto.content?.trim() ?? '';
-    const files = params.files ?? [];
+  private async createCommentForEntity(
+    entityType: CommentTargetEntity,
+    entityId: string,
+    dto: CreateCommentDto,
+    userId: string,
+    files: Express.Multer.File[],
+  ): Promise<CommentDto> {
+    const content = (dto.content ?? '').trim();
 
     if (content.length === 0 && files.length === 0) {
       throw new BadRequestException(
@@ -387,7 +404,7 @@ export class CommentService {
 
     if (files.length > MAX_COMMENT_ATTACHMENTS) {
       throw new BadRequestException(
-        `A maximum of ${MAX_COMMENT_ATTACHMENTS} attachments is allowed per comment`,
+        `A maximum of ${MAX_COMMENT_ATTACHMENTS} attachments is allowed`,
       );
     }
 
@@ -395,101 +412,100 @@ export class CommentService {
       this.assertAllowedAttachmentMimeType(file);
     }
 
-    const created = await this.prisma.$transaction(
-      async (tx: Prisma.TransactionClient) => {
-        if (params.dto.parentId) {
-          await this.validateParentComment(tx, {
-            parentId: params.dto.parentId,
-            entityType: params.entityType,
-            ideaId: params.ideaId,
-            problemId: params.problemId,
-          });
-        }
+    const newCommentId = randomUUID();
 
-        const comment = await tx.comment.create({
-          data: {
-            content,
-            authorId: params.userId,
-            entityType: params.entityType,
-            ideaId: params.ideaId ?? null,
-            problemId: params.problemId ?? null,
-            parentId: params.dto.parentId ?? null,
-          },
-          select: { id: true },
-        });
-
-        if (params.entityType === CommentEntityType.IDEA && params.ideaId) {
-          await tx.idea.update({
-            where: { id: params.ideaId },
-            data: { commentCount: { increment: 1 } },
-            select: { id: true },
-          });
-        } else if (
-          params.entityType === CommentEntityType.PROBLEM &&
-          params.problemId
-        ) {
-          await tx.problem.update({
-            where: { id: params.problemId },
-            data: { commentCount: { increment: 1 } },
-            select: { id: true },
-          });
-        }
-
-        return comment;
-      },
-    );
-
-    const uploadedPublicIds: string[] = [];
-
+    // 1. Upload files FIRST
+    const uploadedMediaData: Array<{
+      url: string;
+      publicId: string;
+      mimeType: string;
+      byteSize: number;
+      originalFilename: string;
+    }> = [];
     try {
       for (const file of files) {
         const uploaded = await this.cloudinary.uploadCommentAttachment(
           file,
-          created.id,
+          newCommentId,
         );
-        uploadedPublicIds.push(uploaded.publicId);
-
-        await this.prisma.commentMedia.create({
-          data: {
-            commentId: created.id,
-            provider: MediaProvider.CLOUDINARY,
-            url: uploaded.url,
-            publicId: uploaded.publicId,
-            mimeType: file.mimetype,
-            byteSize: file.size,
-            originalFilename: file.originalname || 'attachment',
-          },
+        uploadedMediaData.push({
+          url: uploaded.url,
+          publicId: uploaded.publicId,
+          mimeType: file.mimetype,
+          byteSize: file.size,
+          originalFilename: file.originalname || 'attachment',
         });
       }
     } catch (error) {
-      await this.cleanupCloudinaryAssets(uploadedPublicIds);
+      await this.cleanupCloudinaryAssetsSafe(
+        uploadedMediaData.map(m => m.publicId),
+      );
+      throw error;
+    }
+
+    // 2. Fast Database Transaction
+    try {
+      await this.prisma.$transaction(async tx => {
+        if (dto.parentId) {
+          await this.validateParentComment(
+            tx,
+            dto.parentId,
+            entityType,
+            entityId,
+          );
+        }
+
+        await tx.comment.create({
+          data: {
+            id: newCommentId,
+            content,
+            authorId: userId,
+            ideaId: entityType === CommentTargetEntity.IDEA ? entityId : null,
+            problemId:
+              entityType === CommentTargetEntity.PROBLEM ? entityId : null,
+            parentId: dto.parentId ?? null,
+            media: {
+              createMany: {
+                data: uploadedMediaData.map(media => ({
+                  provider: MediaProvider.CLOUDINARY,
+                  ...media,
+                })),
+              },
+            },
+          },
+        });
+      });
+    } catch (error) {
+      await this.cleanupCloudinaryAssetsSafe(
+        uploadedMediaData.map(m => m.publicId),
+      );
       throw error;
     }
 
     const fullComment = await this.prisma.comment.findUnique({
-      where: { id: created.id },
-      include: commentDetailInclude(params.userId),
+      where: { id: newCommentId },
+      include: commentDetailInclude(userId),
     });
 
     if (!fullComment) {
       throw new NotFoundException(COMMENT_NOT_FOUND);
     }
 
-    return toCommentResponse(fullComment as CommentRecord);
+    return toCommentResponse(fullComment);
   }
 
   private assertAllowedAttachmentMimeType(file: Express.Multer.File): void {
-    if (!COMMENT_ATTACHMENT_MIME_REGEX.test(file.mimetype)) {
+    if (!ALLOWED_COMMENT_ATTACHMENT_TYPES.has(file.mimetype)) {
       throw new BadRequestException(
         `Unsupported attachment type: ${file.mimetype}`,
       );
     }
   }
 
-  private async cleanupCloudinaryAssets(publicIds: string[]): Promise<void> {
-    if (publicIds.length === 0) {
-      return;
-    }
+  private async cleanupCloudinaryAssetsSafe(
+    publicIds: string[],
+  ): Promise<void> {
+    if (publicIds.length === 0) return;
 
     const results = await Promise.allSettled(
       publicIds.map(publicId => this.cloudinary.deleteByPublicId(publicId)),
@@ -503,25 +519,18 @@ export class CommentService {
     }
   }
 
-  private async findCommentForMutation(
+  private async assertCommentMutable(
     commentId: string,
     userId: string,
   ): Promise<{
     id: string;
     authorId: string;
-    entityType: CommentEntityType;
     ideaId: string | null;
     problemId: string | null;
   }> {
     const comment = await this.prisma.comment.findUnique({
       where: { id: commentId },
-      select: {
-        id: true,
-        authorId: true,
-        entityType: true,
-        ideaId: true,
-        problemId: true,
-      },
+      select: { id: true, authorId: true, ideaId: true, problemId: true },
     });
 
     if (!comment) {
@@ -532,13 +541,20 @@ export class CommentService {
       throw new ForbiddenException(COMMENT_FORBIDDEN);
     }
 
-    if (comment.entityType === CommentEntityType.IDEA && comment.ideaId) {
-      await this.assertIdeaVisible(comment.ideaId, userId);
-    } else if (
-      comment.entityType === CommentEntityType.PROBLEM &&
-      comment.problemId
-    ) {
-      await this.assertProblemVisible(comment.problemId, userId);
+    if (comment.ideaId) {
+      await this.assertEntityVisible(
+        this.prisma,
+        CommentTargetEntity.IDEA,
+        comment.ideaId,
+        userId,
+      );
+    } else if (comment.problemId) {
+      await this.assertEntityVisible(
+        this.prisma,
+        CommentTargetEntity.PROBLEM,
+        comment.problemId,
+        userId,
+      );
     } else {
       throw new NotFoundException(COMMENT_NOT_FOUND);
     }
@@ -548,107 +564,60 @@ export class CommentService {
 
   private async validateParentComment(
     tx: Prisma.TransactionClient,
-    params: {
-      parentId: string;
-      entityType: CommentEntityType;
-      ideaId?: string;
-      problemId?: string;
-    },
+    parentId: string,
+    entityType: CommentTargetEntity,
+    entityId: string,
   ): Promise<void> {
     const parent = await tx.comment.findUnique({
-      where: { id: params.parentId },
-      select: {
-        id: true,
-        entityType: true,
-        ideaId: true,
-        problemId: true,
-      },
+      where: { id: parentId },
+      select: { id: true, ideaId: true, problemId: true },
     });
 
     if (!parent) {
       throw new BadRequestException(PARENT_COMMENT_NOT_FOUND);
     }
 
-    if (params.entityType === CommentEntityType.IDEA) {
-      if (
-        parent.entityType !== CommentEntityType.IDEA ||
-        parent.ideaId !== params.ideaId
-      ) {
-        throw new BadRequestException(PARENT_COMMENT_ENTITY_MISMATCH);
-      }
-      return;
+    if (entityType === CommentTargetEntity.IDEA && parent.ideaId !== entityId) {
+      throw new BadRequestException(PARENT_COMMENT_ENTITY_MISMATCH);
     }
 
     if (
-      parent.entityType !== CommentEntityType.PROBLEM ||
-      parent.problemId !== params.problemId
+      entityType === CommentTargetEntity.PROBLEM &&
+      parent.problemId !== entityId
     ) {
       throw new BadRequestException(PARENT_COMMENT_ENTITY_MISMATCH);
     }
   }
 
-  private async assertIdeaVisible(
-    ideaId: string,
+  private async assertEntityVisible(
+    client: Prisma.TransactionClient | PrismaService,
+    entityType: CommentTargetEntity,
+    entityId: string,
     userId: string,
   ): Promise<void> {
-    const idea = await this.prisma.idea.findFirst({
-      where: { id: ideaId },
-      select: { id: true, status: true, authorId: true },
-    });
-
-    if (!idea || !this.isEntityVisible(idea, userId)) {
-      throw new NotFoundException(IDEA_NOT_FOUND);
+    if (entityType === CommentTargetEntity.IDEA) {
+      const idea = await client.idea.findUnique({
+        where: { id: entityId },
+        select: { status: true, authorId: true },
+      });
+      if (
+        !idea ||
+        (idea.authorId !== userId && idea.status !== IdeaStatus.PUBLISHED)
+      ) {
+        throw new NotFoundException(IDEA_NOT_FOUND);
+      }
+    } else {
+      const problem = await client.problem.findUnique({
+        where: { id: entityId },
+        select: { status: true, authorId: true },
+      });
+      if (
+        !problem ||
+        (problem.authorId !== userId &&
+          problem.status !== ProblemStatus.PUBLISHED)
+      ) {
+        throw new NotFoundException(PROBLEM_NOT_FOUND);
+      }
     }
-  }
-
-  private async assertProblemVisible(
-    problemId: string,
-    userId: string,
-  ): Promise<void> {
-    const problem = await this.prisma.problem.findFirst({
-      where: { id: problemId },
-      select: { id: true, status: true, authorId: true },
-    });
-
-    if (!problem || !this.isEntityVisible(problem, userId)) {
-      throw new NotFoundException(PROBLEM_NOT_FOUND);
-    }
-  }
-
-  private async assertIdeaVisibleInTransaction(
-    tx: Prisma.TransactionClient,
-    ideaId: string,
-    userId: string,
-  ): Promise<void> {
-    const idea = await tx.idea.findFirst({
-      where: { id: ideaId },
-      select: { id: true, status: true, authorId: true },
-    });
-
-    if (!idea || !this.isEntityVisible(idea, userId)) {
-      throw new NotFoundException(IDEA_NOT_FOUND);
-    }
-  }
-
-  private async assertProblemVisibleInTransaction(
-    tx: Prisma.TransactionClient,
-    problemId: string,
-    userId: string,
-  ): Promise<void> {
-    const problem = await tx.problem.findFirst({
-      where: { id: problemId },
-      select: { id: true, status: true, authorId: true },
-    });
-
-    if (!problem || !this.isEntityVisible(problem, userId)) {
-      throw new NotFoundException(PROBLEM_NOT_FOUND);
-    }
-  }
-
-  private isEntityVisible(
-    entity: { authorId: string; status: string },
-    userId: string,
-  ): boolean {
-    return entity.authorId === userId || entity.status === 'PUBLISHED';
   }
 }

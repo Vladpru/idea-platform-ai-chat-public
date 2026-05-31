@@ -1,6 +1,7 @@
+import { Prisma } from '../../generated/prisma/client';
 import {
-  COMMENT_AUTHOR_SELECT,
   PARENT_QUOTE_CONTENT_MAX_LENGTH,
+  commentListInclude,
 } from './comment.constants';
 import type {
   CommentAttachmentDto,
@@ -9,39 +10,13 @@ import type {
   CommentParentQuoteDto,
 } from './types/comment.types';
 
-type CommentAuthorRecord = {
-  id: string;
-  firstName: string | null;
-  lastName: string | null;
-  avatarUrl: string | null;
-};
+export type CommentRecord = Prisma.CommentGetPayload<{
+  include: ReturnType<typeof commentListInclude>;
+}>;
 
-type UserLikeRecord = { userId: string };
-
-type CommentParentRecord = {
-  id: string;
-  content: string;
-  createdAt: Date;
-  author: CommentAuthorRecord;
-};
-
-type CommentMediaRecord = {
-  id: string;
-  url: string;
-  mimeType: string;
-  originalFilename: string;
-};
-
-export type CommentRecord = {
-  id: string;
-  content: string;
-  likeCount: number;
-  createdAt: Date;
-  author: CommentAuthorRecord;
-  parent: CommentParentRecord | null;
-  likes?: UserLikeRecord[];
-  media?: CommentMediaRecord[];
-};
+type AuthorRecord = CommentRecord['author'];
+type ParentRecord = NonNullable<CommentRecord['parent']>;
+type MediaRecord = CommentRecord['media'][number];
 
 function toIsoString(date: Date): string {
   return date.toISOString();
@@ -55,7 +30,7 @@ function truncateContent(content: string, maxLength: number): string {
 }
 
 export function toCommentAuthorResponse(
-  author: CommentAuthorRecord,
+  author: AuthorRecord,
 ): CommentAuthorDto {
   return {
     id: author.id,
@@ -66,7 +41,7 @@ export function toCommentAuthorResponse(
 }
 
 function toCommentParentQuoteResponse(
-  parent: CommentParentRecord,
+  parent: ParentRecord,
 ): CommentParentQuoteDto {
   return {
     id: parent.id,
@@ -76,13 +51,7 @@ function toCommentParentQuoteResponse(
   };
 }
 
-function mapUserIsLiked(likes: UserLikeRecord[] | undefined): boolean {
-  return (likes?.length ?? 0) > 0;
-}
-
-function toCommentAttachmentResponse(
-  media: CommentMediaRecord,
-): CommentAttachmentDto {
+function toCommentAttachmentResponse(media: MediaRecord): CommentAttachmentDto {
   return {
     id: media.id,
     url: media.url,
@@ -100,10 +69,8 @@ export function toCommentResponse(comment: CommentRecord): CommentDto {
       ? toCommentParentQuoteResponse(comment.parent)
       : null,
     attachments: (comment.media ?? []).map(toCommentAttachmentResponse),
-    likeCount: comment.likeCount ?? 0,
-    isLiked: mapUserIsLiked(comment.likes),
+    likeCount: comment._count?.likes ?? 0,
+    isLiked: (comment.likes?.length ?? 0) > 0,
     createdAt: toIsoString(comment.createdAt),
   };
 }
-
-export type { CommentAuthorRecord };
