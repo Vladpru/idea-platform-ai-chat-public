@@ -61,7 +61,7 @@ export function CommentInputArea({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  const { mutate, isPending } = useCreateCommentMutation(entityType, entityId);
+  const { mutate } = useCreateCommentMutation(entityType, entityId);
 
   const { files, handleFileChange, removeFile, clearFiles, atLimit, accept } =
     useFileHandler({
@@ -81,8 +81,7 @@ export function CommentInputArea({
   const hasFiles = files.length > 0;
   const isOverLimit = contentLength > MAX_CHARS;
 
-  const canSubmit =
-    (contentLength > 0 || hasFiles) && !isPending && !isOverLimit;
+  const canSubmit = (contentLength > 0 || hasFiles) && !isOverLimit;
 
   useEffect(() => {
     const isDirty = contentLength > 0 || hasFiles;
@@ -132,16 +131,18 @@ export function CommentInputArea({
 
   const handleSubmit = () => {
     if (!canSubmit) return;
-    mutate(
-      {
-        content: trimmedContent,
-        parentId: replyTo?.id,
-        attachments: files.length > 0 ? files : undefined,
-      },
-      {
-        onSuccess: resetInput,
-      },
-    );
+
+    const payloadContent = trimmedContent;
+    const payloadParentId = replyTo?.id;
+    const payloadAttachments = files.length > 0 ? files : undefined;
+
+    resetInput();
+
+    mutate({
+      content: payloadContent,
+      parentId: payloadParentId,
+      attachments: payloadAttachments,
+    });
   };
 
   const handleQuoteClick = useCallback(
@@ -211,7 +212,7 @@ export function CommentInputArea({
                 <IdeaAttachmentCard
                   key={key}
                   file={file}
-                  disabled={isPending}
+                  disabled={false}
                   onRemove={() => removeFile(key)}
                 />
               );
@@ -251,7 +252,7 @@ export function CommentInputArea({
             multiple
             accept={accept}
             className="hidden"
-            disabled={isPending || isCurrentlyEditing || atLimit}
+            disabled={isCurrentlyEditing || atLimit}
             onChange={handleFileChange}
           />
 
@@ -265,7 +266,7 @@ export function CommentInputArea({
               'text-gray-400 hover:text-gray-600 disabled:opacity-50',
             )}
             aria-label="Attach file"
-            disabled={isPending || isCurrentlyEditing || atLimit}
+            disabled={isCurrentlyEditing || atLimit}
             onClick={() => fileInputRef.current?.click()}
           >
             <Paperclip className="size-5 shrink-0" aria-hidden />
@@ -292,7 +293,7 @@ export function CommentInputArea({
               id="discussion-comment-input"
               value={content}
               rows={1}
-              disabled={isPending || isCurrentlyEditing}
+              disabled={isCurrentlyEditing}
               placeholder={
                 isCurrentlyEditing
                   ? 'Finish editing to type a new message...'
@@ -331,7 +332,7 @@ export function CommentInputArea({
                 ? 'text-brand-dark-blue'
                 : 'cursor-not-allowed text-gray-300',
             )}
-            aria-label={isPending ? 'Sending message' : 'Send message'}
+            aria-label="Send message"
           >
             <Send className="size-5 shrink-0" aria-hidden />
           </button>

@@ -4,6 +4,10 @@ import type {
   PaginatedCommentsResponse,
 } from '@/features/discussion/api/comments-api.types';
 import { commentQueryKeys } from '@/features/discussion/hooks/comment-query-keys';
+import type { IdeaDetails } from '@/features/idea-details/model/idea-details.types';
+import { ideaMutationKeys } from '@/features/ideas/hooks/use-idea-mutations';
+import type { ProblemDetails } from '@/features/problem-details/model/problem-details.types';
+import { problemMutationKeys } from '@/features/problems/hooks/use-problem-mutations';
 import type { InfiniteData, QueryClient } from '@tanstack/react-query';
 
 export type CommentLikePatch = {
@@ -153,4 +157,41 @@ export function restoreCommentInfiniteQuery(
   for (const [queryKey, data] of snapshot) {
     queryClient.setQueryData(queryKey, data);
   }
+}
+
+function patchDiscussionCount<T extends IdeaDetails | ProblemDetails>(
+  details: T,
+  delta: number,
+): T {
+  return {
+    ...details,
+    counts: {
+      ...details.counts,
+      discussion: Math.max(0, details.counts.discussion + delta),
+    },
+    stats: {
+      ...details.stats,
+      comments: Math.max(0, details.stats.comments + delta),
+    },
+  };
+}
+
+export function adjustEntityDiscussionCountInCache(
+  queryClient: QueryClient,
+  entityType: DiscussionEntityType,
+  entityId: string,
+  delta: number,
+): void {
+  if (entityType === 'IDEA') {
+    queryClient.setQueryData<IdeaDetails>(
+      ideaMutationKeys.detail(entityId),
+      old => (old ? patchDiscussionCount(old, delta) : old),
+    );
+    return;
+  }
+
+  queryClient.setQueryData<ProblemDetails>(
+    problemMutationKeys.detail(entityId),
+    old => (old ? patchDiscussionCount(old, delta) : old),
+  );
 }

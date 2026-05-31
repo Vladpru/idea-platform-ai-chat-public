@@ -54,8 +54,5 @@ export function useCommentLikeToggle(
         context?.previousData,
       );
     },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: entityQueryKey });
-    },
   });
 }

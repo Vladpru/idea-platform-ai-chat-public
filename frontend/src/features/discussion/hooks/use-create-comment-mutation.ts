@@ -12,12 +12,11 @@ import type {
 } from '@/features/discussion/api/comments-api.types';
 import { commentQueryKeys } from '@/features/discussion/hooks/comment-query-keys';
 import {
-  snapshotCommentInfiniteQuery,
+  adjustEntityDiscussionCountInCache,
   restoreCommentInfiniteQuery,
+  snapshotCommentInfiniteQuery,
   type CommentInfiniteQueriesSnapshot,
 } from '@/features/discussion/lib/sync-comment-mutation-cache';
-import { ideaMutationKeys } from '@/features/ideas/hooks/use-idea-mutations';
-import { problemMutationKeys } from '@/features/problems/hooks/use-problem-mutations';
 import {
   useMutation,
   useQueryClient,
@@ -228,15 +227,7 @@ export function useCreateCommentMutation(
         URL.revokeObjectURL(att.url),
       );
 
-      if (entityType === 'IDEA') {
-        void queryClient.invalidateQueries({
-          queryKey: ideaMutationKeys.detail(entityId),
-        });
-      } else {
-        void queryClient.invalidateQueries({
-          queryKey: problemMutationKeys.detail(entityId),
-        });
-      }
+      adjustEntityDiscussionCountInCache(queryClient, entityType, entityId, 1);
     },
     onError: (_error, _variables, context) => {
       toast.error('Could not post comment');
