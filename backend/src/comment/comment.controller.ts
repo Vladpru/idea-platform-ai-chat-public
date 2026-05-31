@@ -14,9 +14,11 @@ import {
   Query,
   Req,
   UploadedFiles,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
+import { Throttle } from '@nestjs/throttler';
 import {
   ApiBearerAuth,
   ApiConsumes,
@@ -40,6 +42,7 @@ import {
 } from './comment.constants';
 import { CommentService } from './comment.service';
 import { CreateCommentDto, GetCommentsQueryDto, UpdateCommentDto } from './dto';
+import { CommentCreateThrottlerGuard } from './guards/comment-create-throttler.guard';
 import type {
   CommentDto,
   PaginatedCommentsResponse,
@@ -158,6 +161,8 @@ export class EntityCommentsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @Throttle({ default: { limit: 5, ttl: 10_000 } })
+  @UseGuards(CommentCreateThrottlerGuard)
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Create a comment on an entity' })
   @ApiCreatedResponse({ description: 'Comment created' })
