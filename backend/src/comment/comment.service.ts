@@ -56,8 +56,7 @@ export class CommentService {
     query: GetCommentsQueryDto,
     userId: string,
   ): Promise<PaginatedCommentsResponse> {
-    await this.assertEntityVisible(
-      this.prisma,
+    await this.assertEntityVisibleOutsideTx(
       CommentTargetEntity.IDEA,
       ideaId,
       userId,
@@ -75,8 +74,7 @@ export class CommentService {
     query: GetCommentsQueryDto,
     userId: string,
   ): Promise<PaginatedCommentsResponse> {
-    await this.assertEntityVisible(
-      this.prisma,
+    await this.assertEntityVisibleOutsideTx(
       CommentTargetEntity.PROBLEM,
       problemId,
       userId,
@@ -95,8 +93,7 @@ export class CommentService {
     userId: string,
     files: Express.Multer.File[] = [],
   ): Promise<CommentDto> {
-    await this.assertEntityVisible(
-      this.prisma,
+    await this.assertEntityVisibleOutsideTx(
       CommentTargetEntity.IDEA,
       ideaId,
       userId,
@@ -116,8 +113,7 @@ export class CommentService {
     userId: string,
     files: Express.Multer.File[] = [],
   ): Promise<CommentDto> {
-    await this.assertEntityVisible(
-      this.prisma,
+    await this.assertEntityVisibleOutsideTx(
       CommentTargetEntity.PROBLEM,
       problemId,
       userId,
@@ -137,56 +133,11 @@ export class CommentService {
     dto: UpdateCommentDto,
     files: Express.Multer.File[] = [],
   ): Promise<CommentDto> {
-    await this.assertCommentMutable(commentId, userId);
-
     const content = (dto.content ?? '').trim();
     const deletedAttachmentIds = dto.deletedAttachmentIds ?? [];
-    const newFiles = files;
 
-    if (content.length > COMMENT_CONTENT_MAX_LENGTH) {
-      throw new BadRequestException(
-        `Comment content must be at most ${COMMENT_CONTENT_MAX_LENGTH} characters`,
-      );
-    }
+    this.assertContentLimits(content);
 
-    const existingMedia = await this.prisma.commentMedia.findMany({
-      where: { commentId },
-      select: { id: true, publicId: true },
-    });
-
-    const existingMediaIds = new Set(existingMedia.map(media => media.id));
-
-    for (const attachmentId of deletedAttachmentIds) {
-      if (!existingMediaIds.has(attachmentId)) {
-        throw new BadRequestException('Invalid attachment id');
-      }
-    }
-
-    const deletedIdSet = new Set(deletedAttachmentIds);
-    const finalAttachmentCount =
-      existingMedia.length - deletedAttachmentIds.length + newFiles.length;
-
-    if (finalAttachmentCount > MAX_COMMENT_ATTACHMENTS) {
-      throw new BadRequestException(
-        `A maximum of ${MAX_COMMENT_ATTACHMENTS} attachments is allowed`,
-      );
-    }
-
-    if (content.length === 0 && finalAttachmentCount === 0) {
-      throw new BadRequestException(
-        'Comment must include text content or at least one attachment',
-      );
-    }
-
-    for (const file of newFiles) {
-      this.assertAllowedAttachmentMimeType(file);
-    }
-
-    const publicIdsToDelete = existingMedia
-      .filter(media => deletedIdSet.has(media.id))
-      .map(media => media.publicId);
-
-    // 1. Upload new files FIRST
     const uploadedMediaData: Array<{
       url: string;
       publicId: string;
@@ -194,30 +145,53 @@ export class CommentService {
       byteSize: number;
       originalFilename: string;
     }> = [];
-    try {
-      for (const file of newFiles) {
-        const uploaded = await this.cloudinary.uploadCommentAttachment(
-          file,
-          commentId,
-        );
-        uploadedMediaData.push({
-          url: uploaded.url,
-          publicId: uploaded.publicId,
-          mimeType: file.mimetype,
-          byteSize: file.size,
-          originalFilename: file.originalname || 'attachment',
-        });
-      }
-    } catch (error) {
-      await this.cleanupCloudinaryAssetsSafe(
-        uploadedMediaData.map(m => m.publicId),
-      );
-      throw error;
-    }
+    const publicIdsToDelete: string[] = [];
 
-    // 2. Fast Database Transaction
     try {
-      await this.prisma.$transaction(async tx => {
+      if (files.length > 0) {
+        for (const file of files) {
+          this.assertAllowedAttachmentMimeType(file);
+        }
+        for (const file of files) {
+          const uploaded = await this.cloudinary.uploadCommentAttachment(
+            file,
+            commentId,
+          );
+          uploadedMediaData.push({
+            url: uploaded.url,
+            publicId: uploaded.publicId,
+            mimeType: file.mimetype,
+            byteSize: file.size,
+            originalFilename: file.originalname || 'attachment',
+          });
+        }
+      }
+
+      const updatedComment = await this.prisma.$transaction(async tx => {
+        await this.assertCommentMutable(tx, commentId, userId);
+
+        const existingMedia = await tx.commentMedia.findMany({
+          where: { commentId },
+          select: { id: true, publicId: true },
+        });
+
+        const existingMediaIds = new Set(existingMedia.map(media => media.id));
+        for (const attachmentId of deletedAttachmentIds) {
+          if (!existingMediaIds.has(attachmentId)) {
+            throw new BadRequestException('Invalid attachment id');
+          }
+        }
+
+        const finalAttachmentCount =
+          existingMedia.length - deletedAttachmentIds.length + files.length;
+        this.assertAttachmentLimits(finalAttachmentCount);
+        this.assertCommentNotEmpty(content, finalAttachmentCount);
+
+        const deletedIdSet = new Set(deletedAttachmentIds);
+        existingMedia
+          .filter(media => deletedIdSet.has(media.id))
+          .forEach(media => publicIdsToDelete.push(media.publicId));
+
         if (deletedAttachmentIds.length > 0) {
           await tx.commentMedia.deleteMany({
             where: { commentId, id: { in: deletedAttachmentIds } },
@@ -234,62 +208,45 @@ export class CommentService {
           });
         }
 
-        await tx.comment.update({
+        return tx.comment.update({
           where: { id: commentId },
           data: { content },
-          select: { id: true },
+          include: commentDetailInclude(userId),
         });
       });
+
+      if (publicIdsToDelete.length > 0) {
+        void this.cleanupCloudinaryAssetsGraceful(publicIdsToDelete);
+      }
+
+      return toCommentResponse(updatedComment);
     } catch (error) {
-      await this.cleanupCloudinaryAssetsSafe(
+      await this.cleanupCloudinaryAssetsGraceful(
         uploadedMediaData.map(m => m.publicId),
       );
       throw error;
     }
-
-    // 3. Cleanup old files
-    if (publicIdsToDelete.length > 0) {
-      this.cleanupCloudinaryAssetsSafe(publicIdsToDelete).catch(err => {
-        this.logger.error(
-          'Failed to cleanup deleted attachments in Cloudinary',
-          err,
-        );
-      });
-    }
-
-    const updated = await this.prisma.comment.findUnique({
-      where: { id: commentId },
-      include: commentDetailInclude(userId),
-    });
-
-    if (!updated) {
-      throw new NotFoundException(COMMENT_NOT_FOUND);
-    }
-
-    return toCommentResponse(updated);
   }
 
   async deleteComment(commentId: string, userId: string): Promise<void> {
-    await this.assertCommentMutable(commentId, userId);
+    const publicIdsToDelete: string[] = [];
 
-    const media = await this.prisma.commentMedia.findMany({
-      where: { commentId },
-      select: { publicId: true },
+    await this.prisma.$transaction(async tx => {
+      await this.assertCommentMutable(tx, commentId, userId);
+
+      const media = await tx.commentMedia.findMany({
+        where: { commentId },
+        select: { publicId: true },
+      });
+      media.forEach(item => publicIdsToDelete.push(item.publicId));
+
+      await tx.comment.delete({
+        where: { id: commentId },
+      });
     });
 
-    await this.prisma.comment.delete({
-      where: { id: commentId },
-    });
-
-    if (media.length > 0) {
-      this.cleanupCloudinaryAssetsSafe(media.map(item => item.publicId)).catch(
-        err => {
-          this.logger.error(
-            'Failed to cleanup attachments for deleted comment',
-            err,
-          );
-        },
-      );
+    if (publicIdsToDelete.length > 0) {
+      void this.cleanupCloudinaryAssetsGraceful(publicIdsToDelete);
     }
   }
 
@@ -345,7 +302,6 @@ export class CommentService {
     query: GetCommentsQueryDto,
     userId: string,
   ): Promise<PaginatedCommentsResponse> {
-    // Defense-in-depth: жорсткі ліміти незалежно від DTO
     const page = Math.max(1, query.page ?? 1);
     const limit = Math.max(1, Math.min(query.limit ?? 20, 50));
     const skip = (page - 1) * limit;
@@ -390,31 +346,15 @@ export class CommentService {
   ): Promise<CommentDto> {
     const content = (dto.content ?? '').trim();
 
-    if (content.length === 0 && files.length === 0) {
-      throw new BadRequestException(
-        'Comment must include text content or at least one attachment',
-      );
-    }
-
-    if (content.length > COMMENT_CONTENT_MAX_LENGTH) {
-      throw new BadRequestException(
-        `Comment content must be at most ${COMMENT_CONTENT_MAX_LENGTH} characters`,
-      );
-    }
-
-    if (files.length > MAX_COMMENT_ATTACHMENTS) {
-      throw new BadRequestException(
-        `A maximum of ${MAX_COMMENT_ATTACHMENTS} attachments is allowed`,
-      );
-    }
+    this.assertCommentNotEmpty(content, files.length);
+    this.assertContentLimits(content);
+    this.assertAttachmentLimits(files.length);
 
     for (const file of files) {
       this.assertAllowedAttachmentMimeType(file);
     }
 
     const newCommentId = randomUUID();
-
-    // 1. Upload files FIRST
     const uploadedMediaData: Array<{
       url: string;
       publicId: string;
@@ -422,6 +362,7 @@ export class CommentService {
       byteSize: number;
       originalFilename: string;
     }> = [];
+
     try {
       for (const file of files) {
         const uploaded = await this.cloudinary.uploadCommentAttachment(
@@ -436,16 +377,8 @@ export class CommentService {
           originalFilename: file.originalname || 'attachment',
         });
       }
-    } catch (error) {
-      await this.cleanupCloudinaryAssetsSafe(
-        uploadedMediaData.map(m => m.publicId),
-      );
-      throw error;
-    }
 
-    // 2. Fast Database Transaction
-    try {
-      await this.prisma.$transaction(async tx => {
+      const fullComment = await this.prisma.$transaction(async tx => {
         if (dto.parentId) {
           await this.validateParentComment(
             tx,
@@ -455,7 +388,7 @@ export class CommentService {
           );
         }
 
-        await tx.comment.create({
+        return tx.comment.create({
           data: {
             id: newCommentId,
             content,
@@ -473,25 +406,44 @@ export class CommentService {
               },
             },
           },
+          include: commentDetailInclude(userId),
         });
       });
+
+      return toCommentResponse(fullComment);
     } catch (error) {
-      await this.cleanupCloudinaryAssetsSafe(
+      await this.cleanupCloudinaryAssetsGraceful(
         uploadedMediaData.map(m => m.publicId),
       );
       throw error;
     }
+  }
 
-    const fullComment = await this.prisma.comment.findUnique({
-      where: { id: newCommentId },
-      include: commentDetailInclude(userId),
-    });
-
-    if (!fullComment) {
-      throw new NotFoundException(COMMENT_NOT_FOUND);
+  private assertCommentNotEmpty(
+    content: string,
+    attachmentCount: number,
+  ): void {
+    if (content.length === 0 && attachmentCount === 0) {
+      throw new BadRequestException(
+        'Comment must include text content or at least one attachment',
+      );
     }
+  }
 
-    return toCommentResponse(fullComment);
+  private assertContentLimits(content: string): void {
+    if (content.length > COMMENT_CONTENT_MAX_LENGTH) {
+      throw new BadRequestException(
+        `Comment content must be at most ${COMMENT_CONTENT_MAX_LENGTH} characters`,
+      );
+    }
+  }
+
+  private assertAttachmentLimits(count: number): void {
+    if (count > MAX_COMMENT_ATTACHMENTS) {
+      throw new BadRequestException(
+        `A maximum of ${MAX_COMMENT_ATTACHMENTS} attachments is allowed`,
+      );
+    }
   }
 
   private assertAllowedAttachmentMimeType(file: Express.Multer.File): void {
@@ -502,24 +454,29 @@ export class CommentService {
     }
   }
 
-  private async cleanupCloudinaryAssetsSafe(
+  private async cleanupCloudinaryAssetsGraceful(
     publicIds: string[],
   ): Promise<void> {
     if (publicIds.length === 0) return;
 
-    const results = await Promise.allSettled(
-      publicIds.map(publicId => this.cloudinary.deleteByPublicId(publicId)),
-    );
-
-    const failedCount = results.filter(r => r.status === 'rejected').length;
-    if (failedCount > 0) {
-      this.logger.warn(
-        `Cloudinary cleanup failed for ${failedCount}/${publicIds.length} comment attachment(s)`,
+    try {
+      const results = await Promise.allSettled(
+        publicIds.map(publicId => this.cloudinary.deleteByPublicId(publicId)),
       );
+
+      const failedCount = results.filter(r => r.status === 'rejected').length;
+      if (failedCount > 0) {
+        this.logger.warn(
+          `Cloudinary cleanup failed for ${failedCount}/${publicIds.length} comment attachment(s)`,
+        );
+      }
+    } catch (error) {
+      this.logger.error('Unexpected error during Cloudinary cleanup', error);
     }
   }
 
   private async assertCommentMutable(
+    tx: Prisma.TransactionClient,
     commentId: string,
     userId: string,
   ): Promise<{
@@ -528,7 +485,7 @@ export class CommentService {
     ideaId: string | null;
     problemId: string | null;
   }> {
-    const comment = await this.prisma.comment.findUnique({
+    const comment = await tx.comment.findUnique({
       where: { id: commentId },
       select: { id: true, authorId: true, ideaId: true, problemId: true },
     });
@@ -543,14 +500,14 @@ export class CommentService {
 
     if (comment.ideaId) {
       await this.assertEntityVisible(
-        this.prisma,
+        tx,
         CommentTargetEntity.IDEA,
         comment.ideaId,
         userId,
       );
     } else if (comment.problemId) {
       await this.assertEntityVisible(
-        this.prisma,
+        tx,
         CommentTargetEntity.PROBLEM,
         comment.problemId,
         userId,
@@ -589,14 +546,13 @@ export class CommentService {
     }
   }
 
-  private async assertEntityVisible(
-    client: Prisma.TransactionClient | PrismaService,
+  private async assertEntityVisibleOutsideTx(
     entityType: CommentTargetEntity,
     entityId: string,
     userId: string,
   ): Promise<void> {
     if (entityType === CommentTargetEntity.IDEA) {
-      const idea = await client.idea.findUnique({
+      const idea = await this.prisma.idea.findUnique({
         where: { id: entityId },
         select: { status: true, authorId: true },
       });
@@ -607,7 +563,39 @@ export class CommentService {
         throw new NotFoundException(IDEA_NOT_FOUND);
       }
     } else {
-      const problem = await client.problem.findUnique({
+      const problem = await this.prisma.problem.findUnique({
+        where: { id: entityId },
+        select: { status: true, authorId: true },
+      });
+      if (
+        !problem ||
+        (problem.authorId !== userId &&
+          problem.status !== ProblemStatus.PUBLISHED)
+      ) {
+        throw new NotFoundException(PROBLEM_NOT_FOUND);
+      }
+    }
+  }
+
+  private async assertEntityVisible(
+    tx: Prisma.TransactionClient,
+    entityType: CommentTargetEntity,
+    entityId: string,
+    userId: string,
+  ): Promise<void> {
+    if (entityType === CommentTargetEntity.IDEA) {
+      const idea = await tx.idea.findUnique({
+        where: { id: entityId },
+        select: { status: true, authorId: true },
+      });
+      if (
+        !idea ||
+        (idea.authorId !== userId && idea.status !== IdeaStatus.PUBLISHED)
+      ) {
+        throw new NotFoundException(IDEA_NOT_FOUND);
+      }
+    } else {
+      const problem = await tx.problem.findUnique({
         where: { id: entityId },
         select: { status: true, authorId: true },
       });
