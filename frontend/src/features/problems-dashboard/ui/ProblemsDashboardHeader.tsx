@@ -47,6 +47,7 @@ function ProblemsDashboardHeaderInner({
     sortOptions: PROBLEM_DASHBOARD_SORT_OPTIONS,
     sortLabel: PROBLEMS_DASHBOARD_LABELS.sortLabel,
     sortSelectId: PROBLEMS_DASHBOARD_LABELS.sortSelectId,
+    showExpandControls: true,
     columnCount,
     onColumnCountChange,
     columnOptions: columnSelectOptions,

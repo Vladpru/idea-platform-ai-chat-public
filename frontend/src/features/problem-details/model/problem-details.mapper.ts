@@ -93,7 +93,7 @@ export function toProblemDetails(dto: ProblemForm): ProblemDetails {
     },
     counts: {
       attachments: dto.attachments?.length ?? 0,
-      discussion: 0,
+      discussion: dto.commentCount ?? 0,
       linkedIdeas: dto.ideas?.length ?? 0,
     },
   };

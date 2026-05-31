@@ -1,4 +1,5 @@
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
+import { DiscussionTab } from '@/features/discussion/ui/DiscussionTab';
 import { IdeaStatsFooter } from '@/features/idea-details/ui/IdeaStatsFooter';
 import { IdeaTagCloud } from '@/features/idea-details/ui/IdeaTagCloud';
 import {
@@ -8,8 +9,9 @@ import {
 import { DEFAULT_PROBLEMS_DASHBOARD_SEARCH } from '@/features/problems-dashboard/lib/constants';
 import type { ProblemTabId } from '@/features/problem-details/model/problem-details.types';
 import { Link, useNavigate, useRouter } from '@tanstack/react-router';
+import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
-import { type MouseEvent, useState } from 'react';
+import { type MouseEvent, useEffect, useState } from 'react';
 
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import { ROUTES } from '@/shared/config/paths';
@@ -56,6 +58,7 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
   const navigate = useNavigate();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<ProblemTabId>('description');
+  const [isScrolled, setIsScrolled] = useState(false);
   const userId = useAuthSessionStore(s => s.user?.id);
 
   const { data: problem, isLoading, isError, error } =
@@ -68,6 +71,29 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
     event.preventDefault();
     router.history.back();
   };
+
+  useEffect(() => {
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const scrollY = window.scrollY;
+          setIsScrolled(prev => {
+            if (scrollY > 150 && !prev) return true;
+            if (scrollY < 80 && prev) return false;
+            return prev;
+          });
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   if (isLoading) {
     return <ProblemDetailsPageSkeleton />;
@@ -91,37 +117,54 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
   return (
     <main className="bg-brand-neutral min-h-[calc(100vh-56px)] md:px-8 lg:px-12">
       <div className="mx-auto max-w-6xl space-y-6 bg-white px-4 py-6 sm:space-y-8 sm:px-6 sm:py-8">
-        <div className="flex items-center">
-          <button
-            type="button"
-            onClick={handleBackClick}
-            className="text-primary hover:text-primary/80 inline-flex cursor-pointer items-center gap-1 text-xs font-bold tracking-wide uppercase transition-colors"
-          >
-            <ArrowLeft className="size-4" />
-            Back
-          </button>
+        <AnimatePresence>
+          {!isScrolled ? (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="flex items-center pb-2">
+                <button
+                  type="button"
+                  onClick={handleBackClick}
+                  className="text-primary hover:text-primary/80 inline-flex cursor-pointer items-center gap-1 text-xs font-bold tracking-wide uppercase transition-colors"
+                >
+                  <ArrowLeft className="size-4" />
+                  Back
+                </button>
+              </div>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+
+        <div className="sticky top-[56px] z-30 -mx-4 bg-white px-4 py-3 shadow-sm transition-all duration-300 sm:-mx-6 sm:px-6">
+          <ProblemHeader
+            problem={problem}
+            isAuthor={isAuthor}
+            isCompact={isScrolled}
+            onDeleteSuccess={() => {
+              void navigate({
+                to: ROUTES.problems,
+                search: DEFAULT_PROBLEMS_DASHBOARD_SEARCH,
+              });
+            }}
+            onBackClick={handleBackClick}
+          />
+
+          <div className="pt-1">
+            <ProblemTabs
+              activeTab={activeTab}
+              onChange={setActiveTab}
+              counts={{
+                attachments: problem.attachments.length,
+                linkedIdeas: visibleIdeas.length,
+                discussion: problem.counts.discussion,
+              }}
+            />
+          </div>
         </div>
-
-        <ProblemHeader
-          problem={problem}
-          isAuthor={isAuthor}
-          onDeleteSuccess={() => {
-            void navigate({
-              to: ROUTES.problems,
-              search: DEFAULT_PROBLEMS_DASHBOARD_SEARCH,
-            });
-          }}
-        />
-
-        <ProblemTabs
-          activeTab={activeTab}
-          onChange={setActiveTab}
-          counts={{
-            attachments: problem.attachments.length,
-            linkedIdeas: visibleIdeas.length,
-            discussion: 0,
-          }}
-        />
 
         <div className="min-h-[280px]">
           <AnimatedPanelSwitch>
@@ -166,9 +209,11 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
 
             {activeTab === 'discussion' && (
               <AnimatedPanel panelKey="discussion">
-                <div className="py-16 text-center font-medium text-gray-500">
-                  This section will be available soon.
-                </div>
+                <DiscussionTab
+                  entityType="PROBLEM"
+                  entityId={problemId}
+                  enabled={activeTab === 'discussion'}
+                />
               </AnimatedPanel>
             )}
 

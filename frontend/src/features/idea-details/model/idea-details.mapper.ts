@@ -135,7 +135,7 @@ export function toIdeaDetails(dto: IdeaFormResponseDto): IdeaDetails {
     },
     counts: {
       attachments: dto.attachments?.length ?? 0,
-      discussion: 0,
+      discussion: dto.commentCount ?? 0,
       linkedProblems: dto.problems?.length ?? 0,
     },
   };

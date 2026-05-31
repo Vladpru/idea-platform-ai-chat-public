@@ -30,11 +30,15 @@ const TABS: TabConfig[] = [
 ];
 
 const tabsNavClass =
-  'scrollbar-none flex gap-4 overflow-x-auto border-b border-gray-200 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden sm:gap-6';
+  'scrollbar-none flex w-full min-w-0 touch-pan-x gap-3 overflow-x-auto overscroll-x-contain border-b border-gray-200 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-6';
 
 export function IdeaTabs({ activeTab, onChange, counts }: IdeaTabsProps) {
   return (
-    <nav className={tabsNavClass} role="tablist" aria-label="Idea sections">
+    <nav
+      className={cn(tabsNavClass, 'mt-2')}
+      role="tablist"
+      aria-label="Idea sections"
+    >
       {TABS.map(tab => {
         const count =
           tab.countKey !== undefined ? counts[tab.countKey] : undefined;
@@ -48,15 +52,15 @@ export function IdeaTabs({ activeTab, onChange, counts }: IdeaTabsProps) {
             aria-selected={isActive}
             onClick={() => onChange(tab.id)}
             className={cn(
-              'font-arial relative inline-flex shrink-0 cursor-pointer items-center gap-2 pb-3 text-base font-normal tracking-wide uppercase transition-colors',
+              'font-arial relative inline-flex shrink-0 cursor-pointer snap-start items-center gap-2 pb-2 text-sm font-normal tracking-wide uppercase transition-colors sm:pb-3 sm:text-base',
               isActive
                 ? 'text-brand-dark-blue font-bold'
                 : 'text-brand-black hover:text-brand-gray-600',
             )}
           >
-            <span>{tab.label}</span>
+            <span className="whitespace-nowrap">{tab.label}</span>
             {count !== undefined && count > 0 ? (
-              <span className="bg-brand-light-blue font-arial inline-flex h-6 min-w-6 items-center justify-center rounded-sm px-1 text-sm font-bold tabular-nums transition-colors">
+              <span className="bg-brand-light-blue font-arial inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-sm px-1 text-xs font-bold tabular-nums transition-colors sm:h-6 sm:min-w-6 sm:text-sm">
                 {count}
               </span>
             ) : null}

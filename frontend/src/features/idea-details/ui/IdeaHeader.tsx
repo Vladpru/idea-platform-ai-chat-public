@@ -9,9 +9,10 @@ import {
 
 import { outlineBtnClass, pageTitleClass } from '@/features/ideas/lib/styles';
 
-import { ChevronDown } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { ArrowLeft, ChevronDown } from 'lucide-react';
 
-import { useState } from 'react';
+import { type MouseEvent, useState } from 'react';
 
 import { cn } from '@/shared/lib/utils';
 
@@ -43,23 +44,90 @@ type IdeaHeaderProps = {
   idea: IdeaDetails;
   isAuthor?: boolean;
   isEditing?: boolean;
+  isCompact?: boolean;
   showProjectActions?: boolean;
   onStartEdit?: () => void;
   onDeleteSuccess?: () => void;
   onTeamClick?: () => void;
+  onBackClick?: (event: MouseEvent<HTMLButtonElement>) => void;
 };
 
 const metadataLabelClass =
   'text-brand-gray-600 text-xs font-semibold tracking-wide uppercase';
 
+function ManageDropdown({
+  isAuthor,
+  isEditing,
+  isCompact,
+  onStartEdit,
+  onDeleteClick,
+}: {
+  isAuthor: boolean;
+  isEditing: boolean;
+  isCompact: boolean;
+  onStartEdit?: () => void;
+  onDeleteClick: () => void;
+}) {
+  if (!isAuthor) {
+    return null;
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          className={cn(
+            outlineBtnClass,
+            'hover:bg-brand-blue-700 shrink-0 gap-1.5 hover:text-white',
+            isCompact ? 'h-8 px-2 text-xs' : 'w-full md:w-auto md:shrink-0',
+          )}
+        >
+          Manage
+          <ChevronDown className="size-4" aria-hidden />
+        </Button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align="end" className="w-44 rounded p-2">
+        {!isEditing ? (
+          <DropdownMenuItem
+            className="focus:bg-brand-blue-700/10 hover:bg-brand-blue-700/10 cursor-pointer px-3 py-2 text-sm font-normal"
+            onSelect={event => {
+              event.preventDefault();
+              onStartEdit?.();
+            }}
+          >
+            Edit idea
+          </DropdownMenuItem>
+        ) : null}
+
+        {!isEditing ? <DropdownMenuSeparator className="my-0" /> : null}
+
+        <DropdownMenuItem
+          className="focus:bg-brand-orange/10 hover:bg-brand-orange/10 cursor-pointer px-3 py-2 text-sm font-normal text-amber-600 focus:text-amber-600"
+          onSelect={event => {
+            event.preventDefault();
+            onDeleteClick();
+          }}
+        >
+          Delete idea
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export function IdeaHeader({
   idea,
   isAuthor = false,
   isEditing = false,
+  isCompact = false,
   showProjectActions = true,
   onStartEdit,
   onDeleteSuccess,
   onTeamClick,
+  onBackClick,
 }: IdeaHeaderProps) {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
@@ -74,129 +142,148 @@ export function IdeaHeader({
     });
   };
 
+  const title = idea.title || 'Untitled idea';
+
   return (
-    <header className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-      <div className="min-w-0 flex-1 space-y-4">
+    <header className="relative min-w-0">
+      <motion.div
+        initial={false}
+        animate={{
+          opacity: isCompact ? 1 : 0,
+          pointerEvents: isCompact ? 'auto' : 'none',
+          y: isCompact ? 0 : -10,
+        }}
+        transition={{ duration: 0.2 }}
+        className="absolute top-0 right-0 left-0 z-10 flex min-w-0 items-center gap-2 py-2"
+      >
+        <button
+          type="button"
+          onClick={onBackClick}
+          className="text-primary hover:text-primary/80 inline-flex shrink-0 cursor-pointer items-center gap-1 text-xs font-bold tracking-wide uppercase transition-colors"
+        >
+          <ArrowLeft className="size-4" />
+          Back
+        </button>
         {isEditing ? (
-          <p className="text-brand-gray-600 text-xs font-semibold tracking-wide uppercase">
+          <p className="text-brand-gray-600 line-clamp-1 min-w-0 flex-1 text-xs font-semibold tracking-wide uppercase">
             Editing idea
           </p>
         ) : (
-          <h1 className={cn(pageTitleClass, 'text-brand-black normal-case')}>
-            {idea.title || 'Untitled idea'}
+          <h1 className="text-brand-black line-clamp-1 min-w-0 flex-1 text-sm font-bold">
+            {title}
           </h1>
         )}
+        <ManageDropdown
+          isAuthor={isAuthor}
+          isEditing={isEditing}
+          isCompact={true}
+          onStartEdit={onStartEdit}
+          onDeleteClick={() => setDeleteModalOpen(true)}
+        />
+      </motion.div>
 
-        <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-6 md:gap-8">
-          {idea.team.length > 0 ? (
-            <button
-              type="button"
-              className="hover:bg-brand-gray-100/80 focus-visible:ring-brand-dark-blue -m-1 flex cursor-pointer items-center gap-1.5 rounded-md p-1 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-              aria-label="View team members"
-              onClick={onTeamClick}
-            >
-              <span className={metadataLabelClass}>Team</span>
-
-              <AvatarGroup aria-label="Team members">
-                {idea.team.slice(0, 4).map(member => (
-                  <Avatar
-                    key={member.id}
-                    size="sm"
-                    className="ring-2 ring-white"
-                    title={member.name}
-                  >
-                    {member.avatarUrl ? (
-                      <AvatarImage src={member.avatarUrl} alt={member.name} />
-                    ) : null}
-
-                    <AvatarFallback className="bg-brand-gray-200 text-brand-gray-800 text-[10px] font-semibold">
-                      {getInitials(member.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                ))}
-
-                {idea.team.length > 4 && (
-                  <Avatar
-                    size="sm"
-                    className="flex items-center justify-center bg-slate-700 ring-2 ring-white"
-                  >
-                    <span className="text-[11px] font-bold tracking-tight text-white">
-                      +{idea.team.length - 4}
-                    </span>
-                  </Avatar>
-                )}
-              </AvatarGroup>
-            </button>
-          ) : null}
-
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
-            <div className="flex flex-col gap-1.5">
-              <StageChevronBadge stage={idea.stage} />
-            </div>
-
-            {showProjectActions && !isEditing ? (
-              <IdeaProjectActions ideaId={idea.id} viewer={idea.viewer} />
-            ) : null}
-          </div>
-        </div>
-      </div>
-
-      {isAuthor ? (
-        <>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                className={cn(
-                  outlineBtnClass,
-                  'hover:bg-brand-blue-700 w-full gap-1.5 hover:text-white md:w-auto md:shrink-0',
-                )}
+      <motion.div
+        initial={false}
+        animate={{
+          opacity: isCompact ? 0 : 1,
+          pointerEvents: isCompact ? 'none' : 'auto',
+          height: isCompact ? 48 : 'auto',
+        }}
+        transition={{ duration: 0.2 }}
+        className="overflow-hidden"
+      >
+        <div className="flex flex-col gap-4 pb-4 md:flex-row md:items-start md:justify-between">
+          <div className="min-w-0 flex-1 space-y-4">
+            {isEditing ? (
+              <p className="text-brand-gray-600 text-xs font-semibold tracking-wide uppercase">
+                Editing idea
+              </p>
+            ) : (
+              <h1
+                className={cn(pageTitleClass, 'text-brand-black normal-case')}
               >
-                Manage
-                <ChevronDown className="size-4" aria-hidden />
-              </Button>
-            </DropdownMenuTrigger>
+                {title}
+              </h1>
+            )}
 
-            <DropdownMenuContent align="end" className="w-44 rounded p-2">
-              {!isEditing ? (
-                <DropdownMenuItem
-                  className="focus:bg-brand-blue-700/10 hover:bg-brand-blue-700/10 cursor-pointer px-3 py-2 text-sm font-normal"
-                  onSelect={event => {
-                    event.preventDefault();
-                    onStartEdit?.();
-                  }}
+            <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-6 md:gap-8">
+              {idea.team.length > 0 ? (
+                <button
+                  type="button"
+                  className="hover:bg-brand-gray-100/80 focus-visible:ring-brand-dark-blue -m-1 flex cursor-pointer items-center gap-1.5 rounded-md p-1 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                  aria-label="View team members"
+                  onClick={onTeamClick}
                 >
-                  Edit idea
-                </DropdownMenuItem>
+                  <span className={metadataLabelClass}>Team</span>
+
+                  <AvatarGroup aria-label="Team members">
+                    {idea.team.slice(0, 4).map(member => (
+                      <Avatar
+                        key={member.id}
+                        size="sm"
+                        className="ring-2 ring-white"
+                        title={member.name}
+                      >
+                        {member.avatarUrl ? (
+                          <AvatarImage
+                            src={member.avatarUrl}
+                            alt={member.name}
+                          />
+                        ) : null}
+
+                        <AvatarFallback className="bg-brand-gray-200 text-brand-gray-800 text-[10px] font-semibold">
+                          {getInitials(member.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                    ))}
+
+                    {idea.team.length > 4 && (
+                      <Avatar
+                        size="sm"
+                        className="flex items-center justify-center bg-slate-700 ring-2 ring-white"
+                      >
+                        <span className="text-[11px] font-bold tracking-tight text-white">
+                          +{idea.team.length - 4}
+                        </span>
+                      </Avatar>
+                    )}
+                  </AvatarGroup>
+                </button>
               ) : null}
 
-              {!isEditing ? <DropdownMenuSeparator className="my-0" /> : null}
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <StageChevronBadge stage={idea.stage} />
+                </div>
 
-              <DropdownMenuItem
-                className="focus:bg-brand-orange/10 hover:bg-brand-orange/10 cursor-pointer px-3 py-2 text-sm font-normal text-amber-600 focus:text-amber-600"
-                onSelect={event => {
-                  event.preventDefault();
+                {showProjectActions && !isEditing ? (
+                  <IdeaProjectActions ideaId={idea.id} viewer={idea.viewer} />
+                ) : null}
+              </div>
+            </div>
+          </div>
 
-                  setDeleteModalOpen(true);
-                }}
-              >
-                Delete idea
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <ConfirmModal
-            open={deleteModalOpen}
-            onOpenChange={setDeleteModalOpen}
-            title={IDEA_DELETE_CONFIRM_TITLE}
-            description={IDEA_DELETE_CONFIRM_DESCRIPTION}
-            confirmLabel="YES"
-            cancelLabel="NO"
-            onConfirm={handleConfirmDelete}
-            isPending={isDeletePending}
+          <ManageDropdown
+            isAuthor={isAuthor}
+            isEditing={isEditing}
+            isCompact={false}
+            onStartEdit={onStartEdit}
+            onDeleteClick={() => setDeleteModalOpen(true)}
           />
-        </>
+        </div>
+      </motion.div>
+
+      {isAuthor ? (
+        <ConfirmModal
+          open={deleteModalOpen}
+          onOpenChange={setDeleteModalOpen}
+          title={IDEA_DELETE_CONFIRM_TITLE}
+          description={IDEA_DELETE_CONFIRM_DESCRIPTION}
+          confirmLabel="YES"
+          cancelLabel="NO"
+          onConfirm={handleConfirmDelete}
+          isPending={isDeletePending}
+        />
       ) : null}
     </header>
   );

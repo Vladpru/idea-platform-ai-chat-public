@@ -9,17 +9,18 @@ type DashboardControlsProps<TSort extends string> = {
   sortOptions: { label: string; value: TSort }[];
   sortLabel: string;
   sortSelectId: string;
-  columnCount: number;
-  onColumnCountChange: (count: number) => void;
-  columnOptions: number[];
-  columnsLabel: string;
-  columnsSelectId: string;
-  showColumnSelect: boolean;
-  linkedProblemsExpanded: boolean;
-  expandAllLabel: string;
-  collapseAllLabel: string;
-  onExpandAll: () => void;
-  onCollapseAll: () => void;
+  showExpandControls?: boolean;
+  showColumnSelect?: boolean;
+  columnCount?: number;
+  onColumnCountChange?: (count: number) => void;
+  columnOptions?: number[];
+  columnsLabel?: string;
+  columnsSelectId?: string;
+  linkedProblemsExpanded?: boolean;
+  expandAllLabel?: string;
+  collapseAllLabel?: string;
+  onExpandAll?: () => void;
+  onCollapseAll?: () => void;
   className?: string;
 };
 
@@ -27,13 +28,14 @@ export function DashboardControls<TSort extends string>({
   sort,
   onSortChange,
   sortOptions,
+  showExpandControls = false,
+  showColumnSelect = false,
   columnCount,
   onColumnCountChange,
-  columnOptions,
-  showColumnSelect,
-  linkedProblemsExpanded,
-  expandAllLabel,
-  collapseAllLabel,
+  columnOptions = [],
+  linkedProblemsExpanded = false,
+  expandAllLabel = '',
+  collapseAllLabel = '',
   onExpandAll,
   onCollapseAll,
   className,
@@ -61,32 +63,34 @@ export function DashboardControls<TSort extends string>({
 
   return (
     <div className={cn('flex flex-wrap items-center gap-4', className)}>
-      <div className="flex items-center gap-4">
-        <button
-          type="button"
-          onClick={onExpandAll}
-          className={cn(
-            'cursor-pointer text-xs font-bold tracking-wide uppercase transition-colors',
-            linkedProblemsExpanded
-              ? 'text-brand-dark-blue'
-              : 'text-brand-gray-500 hover:text-brand-dark-blue',
-          )}
-        >
-          {expandAllLabel}
-        </button>
-        <button
-          type="button"
-          onClick={onCollapseAll}
-          className={cn(
-            'cursor-pointer text-xs font-bold tracking-wide uppercase transition-colors',
-            !linkedProblemsExpanded
-              ? 'text-brand-dark-blue'
-              : 'text-brand-gray-500 hover:text-brand-dark-blue',
-          )}
-        >
-          {collapseAllLabel}
-        </button>
-      </div>
+      {showExpandControls && (
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={onExpandAll}
+            className={cn(
+              'cursor-pointer text-xs font-bold tracking-wide uppercase transition-colors',
+              linkedProblemsExpanded
+                ? 'text-brand-dark-blue'
+                : 'text-brand-gray-500 hover:text-brand-dark-blue',
+            )}
+          >
+            {expandAllLabel}
+          </button>
+          <button
+            type="button"
+            onClick={onCollapseAll}
+            className={cn(
+              'cursor-pointer text-xs font-bold tracking-wide uppercase transition-colors',
+              !linkedProblemsExpanded
+                ? 'text-brand-dark-blue'
+                : 'text-brand-gray-500 hover:text-brand-dark-blue',
+            )}
+          >
+            {collapseAllLabel}
+          </button>
+        </div>
+      )}
 
       <div className="sm:hidden">
         <button
@@ -217,7 +221,7 @@ export function DashboardControls<TSort extends string>({
         )}
       </div>
 
-      {showColumnSelect && (
+      {showColumnSelect && columnCount !== undefined && onColumnCountChange && (
         <div className="relative hidden sm:block">
           <button
             type="button"

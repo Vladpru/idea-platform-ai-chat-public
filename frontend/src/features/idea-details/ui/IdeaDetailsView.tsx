@@ -1,4 +1,7 @@
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
+import { scheduleHighlightDirtyComment } from '@/features/discussion/lib/highlight-dirty-comment';
+import { useDiscussionUiStore } from '@/features/discussion/model/discussion-ui-store';
+import { DiscussionTab } from '@/features/discussion/ui/DiscussionTab';
 import {
   useIdeaDetailsQuery,
   useSimilarIdeasQuery,
@@ -20,7 +23,12 @@ import {
 import { outlineBtnClass, primaryBtnClass } from '@/features/ideas/lib/styles';
 import { useUpdateIdea } from '@/features/ideas/hooks/use-update-idea';
 import { IdeaForm } from '@/features/ideas/ui/idea-form/IdeaForm';
-import { Link, useNavigate, useRouter } from '@tanstack/react-router';
+import {
+  Link,
+  useBlocker,
+  useNavigate,
+  useRouter,
+} from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
 import {
   type MouseEvent,
@@ -39,6 +47,8 @@ import { AnimatedPanel, AnimatedPanelSwitch } from '@/shared/ui/motion';
 import { SuccessModal } from '@/shared/ui/success-modal';
 import { TeamModal } from '@/features/idea-details/modals/TeamModal';
 
+import { AnimatePresence, motion } from 'framer-motion';
+
 import { IdeaHeader } from './IdeaHeader';
 import { IdeaStatsFooter } from './IdeaStatsFooter';
 import { IdeaTabs } from './IdeaTabs';
@@ -52,7 +62,7 @@ type IdeaDetailsViewProps = {
   ideaId: string;
 };
 
-type PendingDiscardAction = 'cancel-edit' | 'navigate-back';
+type PendingDiscardAction = 'cancel-edit' | 'navigate-back' | 'tab-switch';
 
 type IdeaDetailsErrorStateProps = {
   message: string;
@@ -88,10 +98,17 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
     useState<IdeaEditFormValues | null>(null);
   const [hasUnsavedEdits, setHasUnsavedEdits] = useState(false);
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
-  const [undoModalOpen, setUndoModalOpen] = useState(false);
+  const [ideaDiscardModalOpen, setIdeaDiscardModalOpen] = useState(false);
   const [updatedSuccessOpen, setUpdatedSuccessOpen] = useState(false);
   const [pendingDiscardAction, setPendingDiscardAction] =
     useState<PendingDiscardAction | null>(null);
+  const [pendingTab, setPendingTab] = useState<IdeaTabId | null>(null);
+  const [showDiscussionDiscardModal, setShowDiscussionDiscardModal] =
+    useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  const isEditingDirty = useDiscussionUiStore(s => s.isEditingDirty);
+  const discardAllUnsaved = useDiscussionUiStore(s => s.discardAllUnsaved);
   const userId = useAuthSessionStore(s => s.user?.id);
 
   const { data: idea, isLoading, isError, error } = useIdeaDetailsQuery(ideaId);
@@ -100,10 +117,21 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
   const { data: similarIdeas = [], isLoading: isSimilarLoading } =
     useSimilarIdeasQuery(ideaId, { enabled: !isEditing });
 
+  const hasUnsavedIdeaEdits = isEditing && hasUnsavedEdits;
+
+  const { proceed, reset, status } = useBlocker({
+    shouldBlockFn: () => hasUnsavedIdeaEdits,
+    withResolver: true,
+  });
+
+  const isIdeaDiscardModalOpen = ideaDiscardModalOpen || status === 'blocked';
+
+  const isDiscussionDiscardModalOpen = showDiscussionDiscardModal;
+
   const requestDiscardConfirmation = useCallback(
     (action: PendingDiscardAction) => {
       setPendingDiscardAction(action);
-      setUndoModalOpen(true);
+      setIdeaDiscardModalOpen(true);
     },
     [],
   );
@@ -138,21 +166,36 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
     exitEditMode();
   };
 
-  const handleConfirmDiscard = () => {
+  const handleConfirmIdeaDiscard = () => {
     const action = pendingDiscardAction;
-    setUndoModalOpen(false);
-    setPendingDiscardAction(null);
+    const tab = pendingTab;
+    const wasBlocked = status === 'blocked';
+
     exitEditMode();
+    setIdeaDiscardModalOpen(false);
+    setPendingDiscardAction(null);
+    setPendingTab(null);
+
+    if (wasBlocked) {
+      proceed?.();
+      return;
+    }
 
     if (action === 'navigate-back') {
       router.history.back();
+    } else if (action === 'tab-switch' && tab) {
+      setActiveTab(tab);
     }
   };
 
-  const handleUndoModalOpenChange = (open: boolean) => {
-    setUndoModalOpen(open);
+  const handleIdeaDiscardModalOpenChange = (open: boolean) => {
     if (!open) {
+      if (status === 'blocked') {
+        reset?.();
+      }
+      setIdeaDiscardModalOpen(false);
       setPendingDiscardAction(null);
+      setPendingTab(null);
     }
   };
 
@@ -169,18 +212,84 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
     setUpdatedSuccessOpen(false);
   };
 
+  const handleTabChange = useCallback(
+    (tab: IdeaTabId) => {
+      if (tab === activeTab) {
+        return;
+      }
+
+      if (hasUnsavedIdeaEdits) {
+        setPendingDiscardAction('tab-switch');
+        setPendingTab(tab);
+        setIdeaDiscardModalOpen(true);
+        return;
+      }
+
+      if (activeTab === 'discussion' && isEditingDirty && tab !== activeTab) {
+        setPendingTab(tab);
+        scheduleHighlightDirtyComment(() => {
+          setShowDiscussionDiscardModal(true);
+        });
+        return;
+      }
+
+      setActiveTab(tab);
+    },
+    [activeTab, hasUnsavedIdeaEdits, isEditingDirty],
+  );
+
+  const handleConfirmDiscussionTabDiscard = () => {
+    discardAllUnsaved();
+    if (pendingTab) {
+      setActiveTab(pendingTab);
+    }
+    setPendingTab(null);
+    setShowDiscussionDiscardModal(false);
+  };
+
+  const handleDiscussionDiscardModalOpenChange = (open: boolean) => {
+    if (!open) {
+      setPendingTab(null);
+      setShowDiscussionDiscardModal(false);
+    }
+  };
+
   useEffect(() => {
-    if (!isEditing || !hasUnsavedEdits) {
+    if (!hasUnsavedIdeaEdits) {
       return;
     }
 
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
+      event.returnValue = '';
     };
 
     window.addEventListener('beforeunload', onBeforeUnload);
     return () => window.removeEventListener('beforeunload', onBeforeUnload);
-  }, [isEditing, hasUnsavedEdits]);
+  }, [hasUnsavedIdeaEdits]);
+
+  useEffect(() => {
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const scrollY = window.scrollY;
+          setIsScrolled(prev => {
+            if (scrollY > 150 && !prev) return true;
+            if (scrollY < 80 && prev) return false;
+            return prev;
+          });
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   if (isLoading) {
     return <IdeaDetailsPageSkeleton />;
@@ -206,40 +315,55 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
   return (
     <main className="bg-brand-neutral min-h-[calc(100vh-56px)] md:px-8 lg:px-12">
       <div className="mx-auto max-w-6xl space-y-6 bg-white px-4 py-6 sm:space-y-8 sm:px-6 sm:py-8">
-        <div className="flex items-center">
-          <button
-            type="button"
-            onClick={handleBackClick}
-            className="text-primary hover:text-primary/80 inline-flex cursor-pointer items-center gap-1 text-xs font-bold tracking-wide uppercase transition-colors"
-          >
-            <ArrowLeft className="size-4" />
-            Back
-          </button>
-        </div>
+        <AnimatePresence>
+          {!isScrolled ? (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="flex items-center pb-2">
+                <button
+                  type="button"
+                  onClick={handleBackClick}
+                  className="text-primary hover:text-primary/80 inline-flex cursor-pointer items-center gap-1 text-xs font-bold tracking-wide uppercase transition-colors"
+                >
+                  <ArrowLeft className="size-4" />
+                  Back
+                </button>
+              </div>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
 
-        <IdeaHeader
-          idea={idea}
-          isAuthor={isAuthor}
-          isEditing={isEditing}
-          showProjectActions={!isEditing}
-          onStartEdit={() => handleStartEdit(idea)}
-          onDeleteSuccess={() => {
-            void navigate({ to: ROUTES.ideas, search: { sort: 'newest' } });
-          }}
-          onTeamClick={() => setIsTeamModalOpen(true)}
-        />
-
-        {!isEditing ? (
-          <IdeaTabs
-            activeTab={activeTab}
-            onChange={setActiveTab}
-            counts={{
-              attachments: idea.attachments.length,
-              linkedProblems: visibleProblems.length,
-              discussion: 0,
+        <div className="sticky top-[56px] z-30 -mx-4 bg-white px-4 py-2 shadow-sm transition-all duration-300 sm:-mx-6 sm:px-6">
+          <IdeaHeader
+            idea={idea}
+            isAuthor={isAuthor}
+            isEditing={isEditing}
+            isCompact={isScrolled}
+            showProjectActions={!isEditing}
+            onStartEdit={() => handleStartEdit(idea)}
+            onDeleteSuccess={() => {
+              void navigate({ to: ROUTES.ideas, search: { sort: 'newest' } });
             }}
+            onTeamClick={() => setIsTeamModalOpen(true)}
+            onBackClick={handleBackClick}
           />
-        ) : null}
+
+          {!isEditing ? (
+            <IdeaTabs
+              activeTab={activeTab}
+              onChange={handleTabChange}
+              counts={{
+                attachments: idea.attachments.length,
+                linkedProblems: visibleProblems.length,
+                discussion: idea.counts.discussion,
+              }}
+            />
+          ) : null}
+        </div>
 
         <div className="min-h-[280px]">
           {isEditing && editFormSnapshot ? (
@@ -304,9 +428,11 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
 
               {activeTab === 'discussion' && (
                 <AnimatedPanel panelKey="discussion">
-                  <div className="py-16 text-center font-medium text-gray-500">
-                    This section will be available soon.
-                  </div>
+                  <DiscussionTab
+                    entityType="IDEA"
+                    entityId={ideaId}
+                    enabled={activeTab === 'discussion'}
+                  />
                 </AnimatedPanel>
               )}
 
@@ -368,13 +494,23 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
       ) : null}
 
       <ConfirmModal
-        open={undoModalOpen}
-        onOpenChange={handleUndoModalOpenChange}
+        open={isIdeaDiscardModalOpen}
+        onOpenChange={handleIdeaDiscardModalOpenChange}
         title={IDEA_UNDO_CHANGES_TITLE}
         description={IDEA_UNDO_CHANGES_DESCRIPTION}
         confirmLabel="YES"
         cancelLabel="NO"
-        onConfirm={handleConfirmDiscard}
+        onConfirm={handleConfirmIdeaDiscard}
+      />
+
+      <ConfirmModal
+        open={isDiscussionDiscardModalOpen}
+        onOpenChange={handleDiscussionDiscardModalOpenChange}
+        title="Discard unsaved changes?"
+        description="You have unsaved changes in your comment edit. Leaving this tab will discard them."
+        confirmLabel="DISCARD"
+        cancelLabel="STAY"
+        onConfirm={handleConfirmDiscussionTabDiscard}
       />
 
       <SuccessModal
