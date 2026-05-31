@@ -11,7 +11,7 @@ import { useDiscussionUiStore } from '@/features/discussion/model/discussion-ui-
 import { DashboardControls } from '@/features/ideas-dashboard';
 import { CommentInputArea } from '@/features/discussion/ui/CommentInputArea';
 import { CommentList } from '@/features/discussion/ui/CommentList';
-import { ReplyProvider } from '@/features/discussion/ui/reply-context';
+import { ReplyProvider } from '@/features/discussion/ui/ReplyProvider';
 import { Route as IdeaDetailsRoute } from '@/routes/_auth/ideas/$ideaId';
 import { Route as ProblemDetailsRoute } from '@/routes/_auth/problems/$problemId';
 import { cn } from '@/shared/lib/utils';

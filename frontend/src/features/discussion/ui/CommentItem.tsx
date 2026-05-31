@@ -28,7 +28,7 @@ import { scheduleHighlightDirtyComment } from '@/features/discussion/lib/highlig
 import { CommentAttachmentPreview } from '@/features/discussion/ui/CommentAttachmentPreview';
 import { CommentItemActions } from '@/features/discussion/ui/CommentItemActions';
 import { CommentLikeButton } from '@/features/discussion/ui/CommentLikeButton';
-import { QuotedReplyBlock } from '@/features/discussion/ui/QuotedReplyBlock';
+
 import { useDiscussionUiStore } from '@/features/discussion/model/discussion-ui-store';
 import { useReplyContext } from '@/features/discussion/ui/reply-context';
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
@@ -36,24 +36,21 @@ import { getAttachmentFileKey } from '@/features/ideas/lib/create-idea/attachmen
 import DeleteImageButton from '@/features/ideas/ui/create-idea/DeleteImageButton';
 import { IdeaAttachmentCard } from '@/features/ideas/ui/create-idea/IdeaAttachmentCard';
 import { useFileHandler } from '@/shared/hooks/use-file-handler';
-import { formatUserDisplayName } from '@/shared/lib/user-display';
+import {
+  formatUserDisplayName,
+  getAuthorInitials,
+} from '@/shared/lib/user-display';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { ConfirmModal } from '@/shared/ui/confirm-modal';
 import { ImageLightbox } from '@/shared/ui/image-lightbox';
 import { cn } from '@/shared/lib/utils';
+import { QuotedReplyBlock } from './QuotedReplyBlock';
 
 type CommentItemProps = {
   comment: CommentDto;
   entityType: DiscussionEntityType;
   entityId: string;
 };
-
-function getAuthorInitials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '?';
-  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
-  return `${parts[0]![0] ?? ''}${parts[1]![0] ?? ''}`.toUpperCase();
-}
 
 function FooterActionButton({
   children,
@@ -112,11 +109,11 @@ export function CommentItem({
   );
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [showCrossEditModal, setShowCrossEditModal] = useState(false);
-  const [navigationBlockModalOpen, setNavigationBlockModalOpen] =
-    useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const navigationBlockedHandledRef = useRef(false);
+  const [navigationBlockConfirmed, setNavigationBlockConfirmed] =
+    useState(false);
 
+  const navigationBlockedHandledRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const authorName = formatUserDisplayName({
@@ -294,10 +291,13 @@ export function CommentItem({
     withResolver: true,
   });
 
+  // ВІДНОВЛЕНО: Читання змінної для відкриття модалки блокування
+  const navigationBlockModalOpen =
+    status === 'blocked' && navigationBlockConfirmed;
+
   useEffect(() => {
     if (status !== 'blocked') {
       navigationBlockedHandledRef.current = false;
-      setNavigationBlockModalOpen(false);
       return;
     }
 
@@ -307,7 +307,7 @@ export function CommentItem({
     navigationBlockedHandledRef.current = true;
 
     return scheduleHighlightDirtyComment(() => {
-      setNavigationBlockModalOpen(true);
+      setNavigationBlockConfirmed(true);
     });
   }, [status]);
 
@@ -315,6 +315,7 @@ export function CommentItem({
     if (!isDirty) return;
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
+      event.returnValue = '';
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
@@ -366,7 +367,6 @@ export function CommentItem({
             <QuotedReplyBlock
               quote={comment.parent}
               className="bg-brand-neutral"
-              variant="inline"
             />
           ) : null}
 
@@ -377,7 +377,7 @@ export function CommentItem({
                 onChange={e => setEditContent(e.target.value)}
                 rows={4}
                 disabled={updateMutation.isPending}
-                className="border-brand-gray-200 text-brand-gray-800 focus:border-brand-dark-blue focus:ring-brand-dark-blue/20 w-full resize-y rounded-md border bg-white px-3 py-2 text-sm leading-relaxed focus:ring-2 focus:outline-none"
+                className="border-brand-gray-200 text-brand-gray-800 focus:border-brand-dark-blue focus:ring-brand-dark-blue/20 w-full resize-y rounded-md border bg-white px-3 py-2 text-sm leading-relaxed focus:ring-2 focus:outline-none disabled:opacity-50"
                 aria-label="Edit comment"
               />
 
@@ -556,14 +556,17 @@ export function CommentItem({
         onOpenChange={open => {
           if (!open) {
             reset?.();
-            setNavigationBlockModalOpen(false);
+            setNavigationBlockConfirmed(false);
           }
         }}
         title="Discard unsaved changes?"
         description="You are trying to leave. Any unsaved edits will be lost."
         confirmLabel="DISCARD"
         cancelLabel="STAY"
-        onConfirm={() => proceed?.()}
+        onConfirm={() => {
+          proceed?.();
+          setNavigationBlockConfirmed(false);
+        }}
       />
 
       {lightboxIndex !== null && imageAttachments.length > 0 ? (

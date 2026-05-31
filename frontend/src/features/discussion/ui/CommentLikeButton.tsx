@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import { ThumbsUp } from 'lucide-react';
 
@@ -34,8 +32,16 @@ export function CommentLikeButton({
   likeCount,
   className,
 }: CommentLikeButtonProps) {
-  const [hasInteracted, setHasInteracted] = useState(false);
+  const [shouldAnimate, setShouldAnimate] = useState(false);
   const { mutate } = useCommentLikeToggle(entityType, entityId);
+
+  const handleClick = () => {
+    const next = getNextLikeState({ isLiked, likeCount });
+
+    setShouldAnimate(next.isLiked);
+
+    mutate({ commentId, nextState: next });
+  };
 
   return (
     <button
@@ -46,28 +52,15 @@ export function CommentLikeButton({
       )}
       aria-label={isLiked ? 'Unlike comment' : 'Like comment'}
       aria-pressed={isLiked}
-      onClick={event => {
-        event.preventDefault();
-        event.stopPropagation();
-
-        if (!hasInteracted) {
-          setHasInteracted(true);
-        }
-
-        mutate({
-          commentId,
-          nextState: getNextLikeState({ isLiked, likeCount }),
-        });
-      }}
+      onClick={handleClick}
     >
       <ThumbsUp
         className={cn(
-          'size-4',
-          'transition-colors duration-200',
+          'size-4 transition-colors duration-200',
           isLiked
-            ? 'text-brand-dark-blue fill-brand-dark-blue'
+            ? 'fill-brand-dark-blue text-brand-dark-blue'
             : 'text-brand-dark-blue fill-transparent',
-          hasInteracted && isLiked && 'animate-like-pop',
+          shouldAnimate && 'animate-like-pop',
         )}
       />
       <span aria-live="polite" className="tabular-nums">

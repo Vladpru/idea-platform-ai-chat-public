@@ -16,12 +16,12 @@ import {
 } from '@/features/discussion/lib/comment-attachments.constants';
 import { useCreateCommentMutation } from '@/features/discussion/hooks/use-create-comment-mutation';
 import { useDiscussionUiStore } from '@/features/discussion/model/discussion-ui-store';
-import { QuotedReplyBlock } from '@/features/discussion/ui/QuotedReplyBlock';
 import { useReplyContext } from '@/features/discussion/ui/reply-context';
 import { getAttachmentFileKey } from '@/features/ideas/lib/create-idea/attachments';
 import { IdeaAttachmentCard } from '@/features/ideas/ui/create-idea/IdeaAttachmentCard';
 import { useFileHandler } from '@/shared/hooks/use-file-handler';
 import { cn } from '@/shared/lib/utils';
+import { QuotedReplyPreview } from './QuotedReplyBlock';
 
 const MAX_CHARS = 5000;
 
@@ -140,7 +140,6 @@ export function CommentInputArea({
       },
       {
         onSuccess: resetInput,
-        onError: resetInput,
       },
     );
   };
@@ -189,9 +188,8 @@ export function CommentInputArea({
                 tabIndex={0}
                 className="cursor-pointer"
               >
-                <QuotedReplyBlock
+                <QuotedReplyPreview
                   quote={displayQuote}
-                  variant="input-preview"
                   onCancel={clearReply}
                   className="w-full"
                 />
