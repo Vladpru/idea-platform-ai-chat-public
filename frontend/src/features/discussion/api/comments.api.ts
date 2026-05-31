@@ -11,13 +11,8 @@ import type {
 
 export const COMMENTS_PAGE_SIZE = 20;
 
-function commentsPath(
-  entityType: DiscussionEntityType,
-  entityId: string,
-): string {
-  const base =
-    entityType === 'IDEA' ? `/ideas/${entityId}` : `/problems/${entityId}`;
-  return `${base}/comments`;
+function getEndpointPrefix(entityType: DiscussionEntityType): string {
+  return entityType === 'IDEA' ? 'ideas' : 'problems';
 }
 
 export async function fetchComments({
@@ -28,7 +23,7 @@ export async function fetchComments({
   sort,
 }: FetchCommentsParams): Promise<PaginatedCommentsResponse> {
   const { data } = await api.get<PaginatedCommentsResponse>(
-    commentsPath(entityType, entityId),
+    `/${getEndpointPrefix(entityType)}/${entityId}/comments`,
     { params: { page, limit, sort } },
   );
   return data;
@@ -55,13 +50,8 @@ export async function createComment({
   }
 
   const { data } = await api.post<CommentDto>(
-    commentsPath(entityType, entityId),
+    `/${getEndpointPrefix(entityType)}/${entityId}/comments`,
     formData,
-    {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    },
   );
 
   return data;
@@ -89,11 +79,6 @@ export async function updateComment(
   const { data } = await api.patch<CommentDto>(
     `/comments/${commentId}`,
     formData,
-    {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    },
   );
   return data;
 }
