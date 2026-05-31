@@ -4,16 +4,17 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 import { AuthModule } from './auth/auth.module';
+import { CommentModule } from './comment/comment.module';
 import { IdeaModule } from './idea/idea.module';
 import { MailModule } from './mail/mail.module';
 import { PasswordResetModule } from './password-reset/password-reset.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProblemModule } from './problem/problem.module';
 import { SearchModule } from './search/search.module';
-import { TokenModule } from './token/token.module';
-import { UserModule } from './user/user.module';
 import { StatisticsModule } from './statistics/statistics.module';
 import { TagModule } from './tag/tag.module';
+import { TokenModule } from './token/token.module';
+import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { TagModule } from './tag/tag.module';
     UserModule,
     IdeaModule,
     ProblemModule,
+    CommentModule,
     PrismaModule,
     AuthModule,
     PasswordResetModule,
