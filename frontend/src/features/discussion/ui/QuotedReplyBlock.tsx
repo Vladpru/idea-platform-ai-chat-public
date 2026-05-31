@@ -1,74 +1,28 @@
 import type { CommentParentQuoteDto } from '@/features/discussion/api/comments-api.types';
 import { formatCommentTime } from '@/features/discussion/lib/format-discussion-date';
-import { formatUserDisplayName } from '@/shared/lib/user-display';
+import {
+  formatUserDisplayName,
+  getAuthorInitials,
+} from '@/shared/lib/user-display';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { cn } from '@/shared/lib/utils';
 
 type QuotedReplyBlockProps = {
   quote: CommentParentQuoteDto;
-  variant?: 'inline' | 'input-preview';
-  onCancel?: () => void;
   className?: string;
 };
 
-function getAuthorInitials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) {
-    return '?';
-  }
-  if (parts.length === 1) {
-    return parts[0]!.slice(0, 2).toUpperCase();
-  }
-  return `${parts[0]![0] ?? ''}${parts[1]![0] ?? ''}`.toUpperCase();
-}
-
-export function QuotedReplyBlock({
-  quote,
-  variant = 'inline',
-  onCancel,
-  className,
-}: QuotedReplyBlockProps) {
+export function QuotedReplyBlock({ quote, className }: QuotedReplyBlockProps) {
   const authorName = formatUserDisplayName({
     firstName: quote.author.firstName,
     lastName: quote.author.lastName,
     email: null,
   });
 
-  const isPreview = variant === 'input-preview';
-
-  if (isPreview) {
-    return (
-      <div
-        className={cn(
-          'hover:border-brand-orange border-brand-gray-200 bg-brand-neutral mb-2 flex items-start justify-between gap-2 rounded-md border p-3 transition-all duration-500 ease-in-out',
-          className,
-        )}
-      >
-        <div className="min-w-0 flex-1">
-          <p className="text-brand-gray-500 mb-1 text-xs font-semibold tracking-wide uppercase">
-            Replying to {authorName}
-          </p>
-          <p className="text-brand-gray-800 line-clamp-2 text-sm whitespace-pre-wrap">
-            {quote.content}
-          </p>
-        </div>
-        {onCancel ? (
-          <button
-            type="button"
-            onClick={onCancel}
-            className="text-brand-gray-500 hover:text-brand-black shrink-0 cursor-pointer text-xs font-semibold tracking-wide uppercase"
-          >
-            Cancel
-          </button>
-        ) : null}
-      </div>
-    );
-  }
-
   return (
     <div
       className={cn(
-        'border-brand-dark-blue bg-brand-gray-50 mt-3 rounded-r-md border-l-4 py-3 pr-3 pl-3',
+        'border-brand-dark-blue bg-brand-gray-50 mt-3 rounded-r-md border-l-4 p-3',
         className,
       )}
     >
@@ -98,6 +52,49 @@ export function QuotedReplyBlock({
           </p>
         </div>
       </div>
+    </div>
+  );
+}
+
+type QuotedReplyPreviewProps = {
+  quote: CommentParentQuoteDto;
+  onCancel: () => void;
+  className?: string;
+};
+
+export function QuotedReplyPreview({
+  quote,
+  onCancel,
+  className,
+}: QuotedReplyPreviewProps) {
+  const authorName = formatUserDisplayName({
+    firstName: quote.author.firstName,
+    lastName: quote.author.lastName,
+    email: null,
+  });
+
+  return (
+    <div
+      className={cn(
+        'border-brand-gray-200 bg-brand-neutral mb-2 flex items-start justify-between gap-2 rounded-md border p-3',
+        className,
+      )}
+    >
+      <div className="min-w-0 flex-1">
+        <p className="text-brand-gray-500 mb-1 text-xs font-semibold tracking-wide uppercase">
+          Replying to {authorName}
+        </p>
+        <p className="text-brand-gray-800 line-clamp-2 text-sm whitespace-pre-wrap">
+          {quote.content}
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onCancel}
+        className="text-brand-gray-500 hover:text-brand-black shrink-0 cursor-pointer text-xs font-semibold tracking-wide uppercase"
+      >
+        Cancel
+      </button>
     </div>
   );
 }
