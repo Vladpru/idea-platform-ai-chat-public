@@ -1,7 +1,10 @@
-import type { IdeaDetailsStats } from '@/features/idea-details/model/idea-details.types';
 import type React from 'react';
 
-export type DashboardEngagementStats = IdeaDetailsStats;
+export type DashboardEngagementStats = {
+  views: number;
+  comments: number;
+  likes: number;
+};
 
 export type DashboardLinkedItem = {
   id: string;

@@ -9,7 +9,7 @@ import { cn } from '@/shared/lib/utils';
 import { StatIcon } from '@/shared/ui/icons/stat-icon';
 import { LikeButton } from '@/shared/ui/LikeButton';
 
-import type { DashboardEngagementStats } from '../../model/dashboard.types';
+import type { DashboardEngagementStats } from '@/shared/dashboard/model/dashboard.types';
 
 type DashboardCardStatsProps = {
   stats: DashboardEngagementStats;

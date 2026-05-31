@@ -3,19 +3,17 @@ import { IdeaTagCloud } from '@/features/idea-details/ui/IdeaTagCloud';
 import { Link } from '@tanstack/react-router';
 import { type ReactNode, memo } from 'react';
 
+import type { DashboardCardBase } from '@/shared/dashboard/model/dashboard.types';
+import { DashboardCardStats } from '@/shared/dashboard/ui/cards/DashboardCardStats';
+import { LinkedItemsSection } from '@/shared/dashboard/ui/linked-items/LinkedItemsSection';
 import { cn } from '@/shared/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { StageChevronBadge } from '@/shared/ui/stage-chevron-badge';
-
-import type { DashboardCardBase } from '../../model/dashboard.types';
-import { LinkedItemsSection } from '../linked-items/LinkedItemsSection';
-import { DashboardCardStats } from './DashboardCardStats';
 
 export type DashboardCardCompactProps<
   TCard extends DashboardCardBase = DashboardCardBase,
 > = {
   card: TCard;
-  entityType?: 'IDEA' | 'PROBLEM';
   detailHref: string;
   emptyImageText: string;
   linkedSectionLabel: string;
@@ -25,11 +23,13 @@ export type DashboardCardCompactProps<
   likeButton?: ReactNode;
 };
 
+const cardLinkClassName =
+  'focus-visible:ring-brand-dark-blue rounded-xl focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none';
+
 function DashboardCardCompactInner<
   TCard extends DashboardCardBase = DashboardCardBase,
 >({
   card,
-  entityType,
   detailHref,
   emptyImageText,
   linkedSectionLabel,
@@ -39,10 +39,8 @@ function DashboardCardCompactInner<
   likeButton,
 }: DashboardCardCompactProps<TCard>) {
   const linkedItems = card.linkedItems;
-  const showLinkedOnHover = forceShowLinkedItems || linkedItems.length > 0;
   const isNarrow = columnCount > 5;
-  const resolvedEntityType: 'IDEA' | 'PROBLEM' =
-    entityType ?? (detailHref.includes('/problems/') ? 'PROBLEM' : 'IDEA');
+  const showHover = forceShowLinkedItems || linkedItems.length > 0;
   const resolvedIsLiked =
     'isLiked' in card && typeof card.isLiked === 'boolean'
       ? card.isLiked
@@ -51,143 +49,142 @@ function DashboardCardCompactInner<
   const statsProps = {
     stats: card.stats,
     entityId: card.id,
-    entityType: resolvedEntityType,
+    entityType: 'IDEA' as const,
     isLiked: resolvedIsLiked,
     likeButton,
   };
 
+  const titleClassName = cn(
+    'text-brand-dark-blue leading-snug font-bold',
+    isNarrow ? 'line-clamp-2 text-sm' : 'line-clamp-2 text-lg',
+  );
+
+  const authorClassName = cn(
+    'text-brand-gray-800 truncate font-medium',
+    isNarrow ? 'text-[11px]' : 'text-sm',
+  );
+
+  const avatarClassName = cn(isNarrow ? 'size-6' : 'size-8');
+
+  const statsClassName = cn(
+    'text-slate-600',
+    isNarrow ? 'text-[11px]' : 'text-[15px]',
+  );
+
+  const statsIconClassName = isNarrow ? 'size-3' : 'size-3.5';
+
+  const cardPadding = isNarrow ? 'p-3' : 'p-4';
+
+  const authorRow = (
+    <div className="flex min-w-0 items-center gap-2">
+      <Avatar className={avatarClassName}>
+        <AvatarImage src={card.authorAvatarUrl ?? undefined} />
+        <AvatarFallback>{getInitials(card.authorName)}</AvatarFallback>
+      </Avatar>
+      <span className={authorClassName}>{card.authorName}</span>
+    </div>
+  );
+
+  const stageBadge = card.stage?.trim() ? (
+    <StageChevronBadge
+      stage={card.stage}
+      stageText={false}
+      compact={isNarrow}
+    />
+  ) : null;
+
   return (
-    <article className="group border-brand-gray-200 relative flex h-full cursor-pointer flex-col overflow-hidden rounded-xl border bg-white shadow-sm transition-all hover:shadow-md">
+    <article className="group border-brand-gray-200 relative flex h-full flex-col overflow-hidden rounded-xl border bg-white transition-shadow hover:shadow-md">
       <Link
         to={detailHref}
+        aria-label={card.title}
         className={cn(
-          'flex h-full flex-col transition-opacity duration-300',
-          showLinkedOnHover && 'group-hover:opacity-0',
+          cardLinkClassName,
+          'absolute inset-0 z-[1]',
+          showHover &&
+            'transition-opacity duration-300 group-hover:pointer-events-none group-hover:opacity-0',
+        )}
+      />
+
+      <div
+        className={cn(
+          'relative z-[2] flex h-full flex-col pointer-events-none',
+          showHover && 'transition-opacity duration-300 group-hover:opacity-0',
         )}
       >
-        <div className="bg-brand-gray-100 aspect-[16/10] w-full shrink-0 overflow-hidden">
+        <div className="bg-brand-gray-100 relative aspect-16/10 w-full shrink-0 overflow-hidden">
           {card.imageUrl ? (
             <img
               src={card.imageUrl}
               alt=""
               loading="lazy"
-              className="size-full object-cover"
+              className="absolute inset-0 size-full object-cover transition-transform duration-300 group-hover:scale-[1.01]"
             />
           ) : (
-            <div className="text-brand-gray-400 flex size-full items-center justify-center text-[10px] uppercase">
+            <div className="text-brand-gray-400 absolute inset-0 flex size-full items-center justify-center text-xs font-semibold uppercase">
               {emptyImageText}
             </div>
           )}
         </div>
 
-        <div className="flex flex-1 flex-col p-4">
-          <h3
-            className={cn(
-              'text-brand-dark-blue leading-snug font-bold',
-              isNarrow ? 'line-clamp-2 text-sm' : 'line-clamp-2 text-lg',
-            )}
-          >
-            {card.title}
-          </h3>
+        <div className={cn('flex flex-1 flex-col', cardPadding)}>
+          <h3 className={titleClassName}>{card.title}</h3>
 
-          <div className="mt-3 flex items-center gap-2">
-            <Avatar className={cn(isNarrow ? 'size-6' : 'size-8')}>
-              <AvatarImage src={card.authorAvatarUrl ?? undefined} />
-              <AvatarFallback>{getInitials(card.authorName)}</AvatarFallback>
-            </Avatar>
-            <span
-              className={cn(
-                'text-brand-gray-800 truncate font-medium',
-                isNarrow ? 'text-[11px]' : 'text-sm',
-              )}
-            >
-              {card.authorName}
-            </span>
-          </div>
+          <div className="mt-3">{authorRow}</div>
 
           <DashboardCardStats
             {...statsProps}
-            className={cn(
-              'mt-auto text-slate-600',
-              isNarrow ? 'pt-3 text-[11px]' : 'pt-6 text-[15px]',
-            )}
-            iconClassName={isNarrow ? 'size-3' : 'size-3.5'}
+            className={cn('relative z-[3] mt-auto pt-3 pointer-events-auto', statsClassName)}
+            iconClassName={statsIconClassName}
           />
         </div>
-      </Link>
+      </div>
 
-      {showLinkedOnHover ? (
+      {showHover ? (
         <div
           className={cn(
-            'absolute inset-0 z-10 flex flex-col overflow-hidden bg-white',
-            'pointer-events-none transition-opacity duration-300 group-hover:pointer-events-auto',
-            'opacity-0 group-hover:opacity-100',
-            isNarrow ? 'p-3' : 'p-4',
+            'absolute inset-0 z-[3] flex flex-col overflow-hidden bg-white',
+            'pointer-events-none opacity-0 transition-opacity duration-300',
+            'group-hover:pointer-events-auto group-hover:opacity-100',
+            cardPadding,
           )}
         >
-          <Link to={detailHref} className="shrink-0">
-            <h3
+          <Link
+            to={detailHref}
+            className={cn(
+              cardLinkClassName,
+              'pointer-events-auto flex min-w-0 shrink-0 flex-col gap-3',
+            )}
+          >
+            <h3 className={titleClassName}>{card.title}</h3>
+
+            <div
               className={cn(
-                'text-brand-dark-blue leading-snug font-bold',
-                isNarrow ? 'line-clamp-2 text-sm' : 'line-clamp-2 text-lg',
+                'flex min-w-0',
+                isNarrow
+                  ? 'flex-col items-start gap-2'
+                  : 'flex-row items-center gap-2',
               )}
             >
-              {card.title}
-            </h3>
+              {authorRow}
+              {stageBadge}
+            </div>
+
+            <IdeaTagCloud tags={card.tags} compact />
           </Link>
 
-          <div
-            className={cn(
-              'flex min-w-0 shrink-0',
-              isNarrow
-                ? 'mt-3 flex-col items-start gap-2'
-                : 'mt-3 flex-row items-center gap-2',
-            )}
-          >
-            <div className="flex min-w-0 items-center gap-2">
-              <Avatar className={cn(isNarrow ? 'size-6' : 'size-8')}>
-                <AvatarImage src={card.authorAvatarUrl ?? undefined} />
-                <AvatarFallback>{getInitials(card.authorName)}</AvatarFallback>
-              </Avatar>
-              <span
-                className={cn(
-                  'text-brand-gray-800 truncate font-medium',
-                  isNarrow ? 'text-[11px]' : 'text-sm',
-                )}
-              >
-                {card.authorName}
-              </span>
-            </div>
-            <div className={cn(isNarrow ? 'mx-2' : '')}>
-              <StageChevronBadge
-                stage={card.stage}
-                stageText={false}
-                compact={isNarrow}
-              />
-            </div>
-          </div>
-
-          <div
-            className={cn(
-              'flex min-w-0 shrink-0 flex-col',
-              isNarrow ? 'mt-3 gap-2' : 'mt-4 gap-3',
-            )}
-          >
-            <IdeaTagCloud tags={card.tags} compact={true} />
+          <div className="pointer-events-auto relative z-[4] shrink-0">
             <DashboardCardStats
               {...statsProps}
-              className={cn(
-                'text-slate-600',
-                isNarrow ? 'text-[11px]' : 'text-[15px]',
-              )}
-              iconClassName={isNarrow ? 'size-3' : 'size-3.5'}
+              className={statsClassName}
+              iconClassName={statsIconClassName}
             />
           </div>
 
           {linkedItems.length > 0 ? (
             <div
               className={cn(
-                'border-brand-gray-200 mt-auto flex min-h-0 min-w-0 flex-col border-t',
+                'border-brand-gray-200 pointer-events-auto relative z-[4] mt-auto flex min-h-0 min-w-0 flex-col border-t',
                 isNarrow ? 'pt-1' : 'pt-2',
               )}
             >
@@ -195,9 +192,10 @@ function DashboardCardCompactInner<
                 items={linkedItems}
                 sectionLabel={linkedSectionLabel}
                 getItemDetailHref={getLinkedItemDetailHref}
+                entityType="IDEA"
                 expanded
                 showToggle={false}
-                compact
+                columnCount={columnCount}
                 className="min-h-0 px-0 pt-2 pb-0"
                 linkedItemEmptyImageText={emptyImageText}
               />
@@ -227,7 +225,10 @@ function areDashboardCardCompactPropsEqual<
     prev.forceShowLinkedItems === next.forceShowLinkedItems &&
     prev.columnCount === next.columnCount &&
     prev.detailHref === next.detailHref &&
-    prev.likeButton === next.likeButton
+    prev.likeButton === next.likeButton &&
+    prev.getLinkedItemDetailHref === next.getLinkedItemDetailHref &&
+    prev.linkedSectionLabel === next.linkedSectionLabel &&
+    prev.emptyImageText === next.emptyImageText
   );
 }
 

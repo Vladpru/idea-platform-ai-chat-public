@@ -1,9 +1,11 @@
 import {
   DashboardControls,
   DashboardFilter,
-  type ProblemDashboardFilter,
-  type ProblemDashboardSort,
-} from '@/features/ideas-dashboard';
+} from '@/shared/dashboard';
+import type {
+  ProblemDashboardFilter,
+  ProblemDashboardSort,
+} from '../model/problems-dashboard.types';
 import { memo } from 'react';
 
 import { cn } from '@/shared/lib/utils';
@@ -47,7 +49,6 @@ function ProblemsDashboardHeaderInner({
     sortOptions: PROBLEM_DASHBOARD_SORT_OPTIONS,
     sortLabel: PROBLEMS_DASHBOARD_LABELS.sortLabel,
     sortSelectId: PROBLEMS_DASHBOARD_LABELS.sortSelectId,
-    showExpandControls: true,
     columnCount,
     onColumnCountChange,
     columnOptions: columnSelectOptions,

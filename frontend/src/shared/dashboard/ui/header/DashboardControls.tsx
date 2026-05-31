@@ -1,6 +1,7 @@
 import { ChevronDown, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
+import { COMPACT_CARD_COLUMN_THRESHOLD } from '@/shared/dashboard/lib/config/constants';
 import { cn } from '@/shared/lib/utils';
 
 type DashboardControlsProps<TSort extends string> = {
@@ -9,7 +10,6 @@ type DashboardControlsProps<TSort extends string> = {
   sortOptions: { label: string; value: TSort }[];
   sortLabel: string;
   sortSelectId: string;
-  showExpandControls?: boolean;
   showColumnSelect?: boolean;
   columnCount?: number;
   onColumnCountChange?: (count: number) => void;
@@ -28,7 +28,6 @@ export function DashboardControls<TSort extends string>({
   sort,
   onSortChange,
   sortOptions,
-  showExpandControls = false,
   showColumnSelect = false,
   columnCount,
   onColumnCountChange,
@@ -61,9 +60,13 @@ export function DashboardControls<TSort extends string>({
     ? [activeSort, ...otherSortOptions]
     : sortOptions;
 
+  const showLinkedItemsToggle =
+    columnCount !== undefined &&
+    columnCount < COMPACT_CARD_COLUMN_THRESHOLD;
+
   return (
     <div className={cn('flex flex-wrap items-center gap-4', className)}>
-      {showExpandControls && (
+      {showLinkedItemsToggle && (
         <div className="flex items-center gap-4">
           <button
             type="button"

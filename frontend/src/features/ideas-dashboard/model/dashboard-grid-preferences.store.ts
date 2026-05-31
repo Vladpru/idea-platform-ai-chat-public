@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import { DEFAULT_COLUMN_COUNT } from '../lib/config/constants';
+import { DEFAULT_COLUMN_COUNT } from '@/shared/dashboard/lib/config/constants';
 
 type DashboardGridPreferencesState = {
   columnCount: number;

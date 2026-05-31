@@ -2,8 +2,8 @@ import type { IdeaDetails } from '@/features/idea-details/model/idea-details.typ
 import { LinkExistingProblemModal } from '@/features/idea-details/modals/LinkExistingProblemModal';
 import { useUnlinkProblemMutation } from '@/features/ideas/hooks/use-idea-mutations';
 import { outlineBtnClass } from '@/features/ideas/lib/styles';
-import { DashboardCardStandard } from '@/features/ideas-dashboard';
-import type { DashboardCardBase } from '@/features/ideas-dashboard/model/dashboard.types';
+import type { ProblemDashboardCard } from '@/features/problems-dashboard/model/problems-dashboard.types';
+import { ProblemDashboardCardStandard } from '@/features/problems-dashboard/ui/cards/ProblemDashboardCardStandard';
 import { PROBLEMS_DASHBOARD_LABELS } from '@/features/problems-dashboard/lib/problems-dashboard-labels';
 import { MoreVertical, Unlink } from 'lucide-react';
 import { useState } from 'react';
@@ -74,7 +74,7 @@ type LinkedProblemCardProps = {
 
 function mapLinkedProblemToDashboardCard(
   problem: IdeaDetails['linkedProblems'][number],
-): DashboardCardBase & { isLiked?: boolean } {
+): ProblemDashboardCard {
   return {
     id: problem.id,
     authorId: '',
@@ -84,9 +84,13 @@ function mapLinkedProblemToDashboardCard(
     authorName: problem.authorName,
     authorAvatarUrl: problem.authorAvatarUrl,
     stage: problem.stage || problem.status,
+    stageValue: null,
     tags: problem.tags,
     stats: problem.stats,
     linkedItems: [],
+    publishedAt: null,
+    status: 'PUBLISHED',
+    isAuthor: false,
     isLiked: problem.isLiked ?? false,
   };
 }
@@ -141,21 +145,15 @@ function LinkedProblemCard({
   ) : undefined;
 
   return (
-    <DashboardCardStandard
+    <ProblemDashboardCardStandard
       card={card}
-      entityType="PROBLEM"
       detailHref={ROUTES.problemDetail(problem.id)}
-      layout="horizontal"
       emptyDescriptionText={PROBLEMS_DASHBOARD_LABELS.emptyDescription}
       emptyImageText={PROBLEMS_DASHBOARD_LABELS.emptyImage}
       linkedSectionLabel={PROBLEMS_DASHBOARD_LABELS.linkedSectionLabel}
       getLinkedItemDetailHref={ROUTES.ideaDetail}
-      linkedItemsScrollLeftAriaLabel={
-        PROBLEMS_DASHBOARD_LABELS.linkedItemsScrollLeftAriaLabel
-      }
       linkedItemsExpanded={false}
       isMobile={false}
-      showHeroImage={false}
       hideLinkedItems
       actionMenu={actionMenu}
       likeButton={likeButton}

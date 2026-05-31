@@ -8,7 +8,7 @@ import type {
 } from '@/features/discussion/api/comments-api.types';
 import { useCommentsInfiniteQuery } from '@/features/discussion/hooks/use-comments-infinite-query';
 import { useDiscussionUiStore } from '@/features/discussion/model/discussion-ui-store';
-import { DashboardControls } from '@/features/ideas-dashboard';
+import { DashboardControls } from '@/shared/dashboard';
 import { CommentInputArea } from '@/features/discussion/ui/CommentInputArea';
 import { CommentList } from '@/features/discussion/ui/CommentList';
 import { ReplyProvider } from '@/features/discussion/ui/ReplyProvider';

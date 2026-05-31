@@ -11,8 +11,8 @@ import type {
   IdeaDashboardSort,
 } from '../../model/ideas-dashboard.types';
 
-import { DashboardControls } from './DashboardControls';
-import { DashboardFilter } from './DashboardFilter';
+import { DashboardControls } from '@/shared/dashboard/ui/header/DashboardControls';
+import { DashboardFilter } from '@/shared/dashboard/ui/header/DashboardFilter';
 
 export type DashboardHeaderProps = {
   activeFilter: IdeaDashboardFilter;
@@ -47,7 +47,6 @@ function DashboardHeaderInner({
     sortOptions: IDEA_DASHBOARD_SORT_OPTIONS,
     sortLabel: IDEAS_DASHBOARD_LABELS.sortLabel,
     sortSelectId: IDEAS_DASHBOARD_LABELS.sortSelectId,
-    showExpandControls: true,
     columnCount,
     onColumnCountChange,
     columnOptions: columnSelectOptions,
