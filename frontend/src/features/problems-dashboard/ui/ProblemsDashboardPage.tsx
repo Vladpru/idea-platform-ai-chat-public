@@ -1,13 +1,9 @@
 import {
-  DashboardCardCompact,
-  DashboardCardStandard,
   DashboardGrid,
   LoadMoreFooter,
-} from '@/features/ideas-dashboard';
-import type {
-  DashboardViewport,
-  ProblemDashboardSort,
-} from '@/features/ideas-dashboard';
+  type DashboardViewport,
+} from '@/shared/dashboard';
+import type { ProblemDashboardSort } from '../model/problems-dashboard.types';
 import type { ProblemStage } from '@/features/problems/api/problems-api.types';
 import { memo, useEffect, useRef } from 'react';
 
@@ -21,6 +17,8 @@ import {
 } from '../hooks/use-problems-dashboard';
 import { PROBLEMS_DASHBOARD_LABELS } from '../lib/problems-dashboard-labels';
 import type { ProblemDashboardCard } from '../model/problems-dashboard.types';
+import { ProblemDashboardCardCompact } from './cards/ProblemDashboardCardCompact';
+import { ProblemDashboardCardStandard } from './cards/ProblemDashboardCardStandard';
 import { ProblemsDashboardHeader } from './ProblemsDashboardHeader';
 
 function ProblemsGridSkeleton() {
@@ -41,13 +39,12 @@ function renderProblemCompactCard(
   options: { forceShowLinkedItems: boolean; columnCount: number },
 ) {
   return (
-    <DashboardCardCompact
+    <ProblemDashboardCardCompact
       card={card}
       detailHref={ROUTES.problemDetail(card.id)}
       emptyImageText={PROBLEMS_DASHBOARD_LABELS.emptyImage}
       linkedSectionLabel={PROBLEMS_DASHBOARD_LABELS.linkedSectionLabel}
       getLinkedItemDetailHref={ROUTES.ideaDetail}
-      forceShowLinkedItems={options.forceShowLinkedItems}
       columnCount={options.columnCount}
     />
   );
@@ -64,22 +61,17 @@ function renderProblemStandardCard(
   },
 ) {
   return (
-    <DashboardCardStandard
+    <ProblemDashboardCardStandard
       card={card}
       detailHref={ROUTES.problemDetail(card.id)}
       emptyDescriptionText={PROBLEMS_DASHBOARD_LABELS.emptyDescription}
       emptyImageText={PROBLEMS_DASHBOARD_LABELS.emptyImage}
       linkedSectionLabel={PROBLEMS_DASHBOARD_LABELS.linkedSectionLabel}
       getLinkedItemDetailHref={ROUTES.ideaDetail}
-      linkedItemsScrollLeftAriaLabel={
-        PROBLEMS_DASHBOARD_LABELS.linkedItemsScrollLeftAriaLabel
-      }
-      layout="vertical"
       linkedItemsExpanded={options.linkedItemsExpanded}
       onToggleLinkedItems={options.onToggleLinkedItems}
       isMobile={options.isMobile}
       columnCount={options.columnCount}
-      showHeroImage={false}
       linkedItemEmptyImageText={PROBLEMS_DASHBOARD_LABELS.emptyImage}
     />
   );

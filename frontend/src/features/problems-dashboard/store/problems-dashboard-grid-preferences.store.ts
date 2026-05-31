@@ -1,4 +1,4 @@
-import { DEFAULT_COLUMN_COUNT } from '@/features/ideas-dashboard';
+import { DEFAULT_COLUMN_COUNT } from '@/shared/dashboard/lib/config/constants';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 

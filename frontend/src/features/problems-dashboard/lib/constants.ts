@@ -2,7 +2,7 @@ import type { ProblemStage } from '@/features/problems/api/problems-api.types';
 import type {
   ProblemDashboardFilter,
   ProblemDashboardSort,
-} from '@/features/ideas-dashboard';
+} from '../model/problems-dashboard.types';
 
 export const PROBLEM_DASHBOARD_FILTERS: {
   id: ProblemDashboardFilter;
