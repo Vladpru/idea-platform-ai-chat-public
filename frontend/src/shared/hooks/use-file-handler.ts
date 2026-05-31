@@ -1,11 +1,11 @@
 'use client';
 
-import { getFileKey, mergeFiles, validateFile } from '@/shared/lib/file-validation';
 import {
-  useCallback,
-  useState,
-  type ChangeEvent,
-} from 'react';
+  getFileKey,
+  mergeFiles,
+  validateFile,
+} from '@/shared/lib/file-validation';
+import { useCallback, useState, type ChangeEvent } from 'react';
 import { toast } from 'sonner';
 
 export type UseFileHandlerOptions = {
@@ -20,32 +20,31 @@ export type UseFileHandlerOptions = {
   onValidationError?: (message: string) => void;
 };
 
-export function useFileHandler(options: UseFileHandlerOptions) {
+export function useFileHandler({
+  maxFiles,
+  allowedMimeTypes,
+  maxBytes,
+  accept,
+  allowedMessage,
+  validateAllowed,
+  files: externalFiles,
+  onFilesChange,
+  onValidationError,
+}: UseFileHandlerOptions) {
   const [internalFiles, setInternalFiles] = useState<File[]>([]);
 
-  const files = options.files ?? internalFiles;
-  const setFiles = options.onFilesChange ?? setInternalFiles;
-
-  const reportError = useCallback(
-    (message: string) => {
-      if (options.onValidationError) {
-        options.onValidationError(message);
-        return;
-      }
-      toast.error(message);
-    },
-    [options],
-  );
+  const files = externalFiles ?? internalFiles;
+  const setFiles = onFilesChange ?? setInternalFiles;
 
   const validate = useCallback(
     (file: File) =>
       validateFile(file, {
-        allowedMimeTypes: options.allowedMimeTypes,
-        maxBytes: options.maxBytes,
-        validateAllowed: options.validateAllowed,
-        allowedMessage: options.allowedMessage,
+        allowedMimeTypes,
+        maxBytes,
+        validateAllowed,
+        allowedMessage,
       }),
-    [options],
+    [allowedMimeTypes, maxBytes, validateAllowed, allowedMessage],
   );
 
   const addFiles = useCallback(
@@ -55,17 +54,32 @@ export function useFileHandler(options: UseFileHandlerOptions) {
       }
 
       const { merged, errors } = mergeFiles(files, incoming, {
-        maxCount: options.maxFiles,
+        maxCount: maxFiles,
         validate,
       });
 
-      errors.forEach(reportError);
+      if (errors.length > 0) {
+        const uniqueErrors = Array.from(new Set(errors));
+
+        if (onValidationError) {
+          onValidationError(uniqueErrors.join('\n'));
+        } else {
+          if (uniqueErrors.length > 3) {
+            const displayed = uniqueErrors.slice(0, 3).join('\n');
+            toast.error(
+              `${displayed}\n...and ${uniqueErrors.length - 3} more errors`,
+            );
+          } else {
+            toast.error(uniqueErrors.join('\n'));
+          }
+        }
+      }
 
       if (merged.length !== files.length) {
         setFiles(merged);
       }
     },
-    [files, options.maxFiles, reportError, setFiles, validate],
+    [files, maxFiles, onValidationError, setFiles, validate],
   );
 
   const handleFileChange = useCallback(
@@ -88,7 +102,7 @@ export function useFileHandler(options: UseFileHandlerOptions) {
     setFiles([]);
   }, [setFiles]);
 
-  const atLimit = files.length >= options.maxFiles;
+  const atLimit = files.length >= maxFiles;
 
   return {
     files,
@@ -97,7 +111,7 @@ export function useFileHandler(options: UseFileHandlerOptions) {
     clearFiles,
     addFiles,
     atLimit,
-    accept: options.accept,
+    accept,
     getFileKey,
   };
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 
@@ -36,9 +36,10 @@ export function ImageLightbox({
 }: ImageLightboxProps) {
   const [[page, direction], setPage] = useState([initialIndex, 0]);
   const imageIndex = ((page % images.length) + images.length) % images.length;
+  const isMultiple = images.length > 1;
 
-  const handleNext = () => setPage([page + 1, 1]);
-  const handlePrev = () => setPage([page - 1, -1]);
+  const handleNext = useCallback(() => setPage(prev => [prev[0] + 1, 1]), []);
+  const handlePrev = useCallback(() => setPage(prev => [prev[0] - 1, -1]), []);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -51,9 +52,9 @@ export function ImageLightbox({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         onClose();
-      } else if (event.key === 'ArrowRight') {
+      } else if (event.key === 'ArrowRight' && isMultiple) {
         handleNext();
-      } else if (event.key === 'ArrowLeft') {
+      } else if (event.key === 'ArrowLeft' && isMultiple) {
         handlePrev();
       }
     };
@@ -62,7 +63,7 @@ export function ImageLightbox({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onClose, page]);
+  }, [handleNext, handlePrev, onClose, isMultiple]);
 
   return (
     <div
@@ -80,7 +81,7 @@ export function ImageLightbox({
         <X />
       </button>
 
-      {images.length > 1 ? (
+      {isMultiple ? (
         <>
           <button
             type="button"
@@ -119,10 +120,11 @@ export function ImageLightbox({
             x: { type: 'spring', stiffness: 300, damping: 30 },
             opacity: { duration: 0.2 },
           }}
-          drag="x"
+          drag={isMultiple ? 'x' : false}
           dragConstraints={{ left: 0, right: 0 }}
           dragElastic={1}
           onDragEnd={(_event, { offset, velocity }) => {
+            if (!isMultiple) return;
             const swipe = swipePower(offset.x, velocity.x);
             if (swipe < -swipeConfidenceThreshold) {
               handleNext();
