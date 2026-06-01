@@ -1,9 +1,11 @@
+import { z } from 'zod';
 import {
   isAllowedAttachment,
   MAX_ATTACHMENT_BYTES,
   MAX_ATTACHMENT_FILES,
 } from '@/features/ideas/lib/create-idea/attachments';
-import { z } from 'zod';
+import { submitProblemCostBenefitSchema } from './cost-benefit';
+import { PROBLEM_STAGES, type ProblemStageValue } from './stages';
 
 const fileSchema = z.custom<File>(
   value => typeof File !== 'undefined' && value instanceof File,
@@ -22,9 +24,6 @@ const attachmentsSchema = z
   .array(attachmentFileSchema)
   .max(MAX_ATTACHMENT_FILES, `You can add up to ${MAX_ATTACHMENT_FILES} files`);
 
-import { submitProblemCostBenefitSchema } from './cost-benefit';
-import { PROBLEM_STAGES, type ProblemStageValue } from './stages';
-
 const problemStageValues = PROBLEM_STAGES.map(stage => stage.value) as [
   ProblemStageValue,
   ...ProblemStageValue[],
@@ -32,24 +31,29 @@ const problemStageValues = PROBLEM_STAGES.map(stage => stage.value) as [
 
 export const problemStageSchema = z.enum(problemStageValues);
 
-/** Matches backend `PROBLEM_TITLE_MIN_LENGTH` / DTO max length. */
 export const submitProblemTitleSchema = z
   .string()
   .trim()
-  .min(3, 'Title is required and must be at least 3 characters')
-  .max(200, 'Title must be at most 200 characters');
+  .min(1, 'This field is required')
+  .max(200, 'Title cannot exceed 200 characters');
 
-/** Matches backend `PROBLEM_DESCRIPTION_MIN_LENGTH`. */
 export const submitProblemDescriptionSchema = z
   .string()
   .trim()
-  .min(8, 'Description is required and must be at least 8 characters');
+  .min(1, 'This field is required')
+  .max(5000, 'Description cannot exceed 5000 characters');
 
 const submitProblemCoreFields = {
   stage: problemStageSchema,
   title: submitProblemTitleSchema,
-  description: z.string().optional(),
-  valueProposition: z.string().optional(),
+  description: z
+    .string()
+    .max(5000, 'Description cannot exceed 5000 characters')
+    .optional(),
+  valueProposition: z
+    .string()
+    .max(5000, 'Value proposition cannot exceed 5000 characters')
+    .optional(),
   costBenefit: submitProblemCostBenefitSchema,
   ideaIds: z.string().optional(),
   tags: z.string().optional(),
@@ -78,13 +82,18 @@ export const submitProblemDefaultValues: SubmitProblemFormValues = {
 
 const submitProblemDraftSaveSchema = z.object({
   title: submitProblemTitleSchema,
-  description: z.string().optional(),
+  description: z
+    .string()
+    .max(5000, 'Description cannot exceed 5000 characters')
+    .optional(),
 });
 
 export function validateSubmitProblemForDraft(values: SubmitProblemFormValues) {
   return submitProblemDraftSaveSchema.safeParse(values);
 }
 
-export function validateSubmitProblemForPublish(values: SubmitProblemFormValues) {
+export function validateSubmitProblemForPublish(
+  values: SubmitProblemFormValues,
+) {
   return submitProblemPublishSchema.safeParse(values);
 }
