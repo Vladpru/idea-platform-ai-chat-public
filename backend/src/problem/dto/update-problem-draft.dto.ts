@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
@@ -32,24 +33,33 @@ export class UpdateProblemDraftDto {
   @ApiPropertyOptional({
     example:
       'Teams lack real-time insight into how assets are used across sites.',
+    maxLength: 5000,
   })
   @IsOptional()
   @IsString()
+  @MaxLength(5000)
   description?: string;
 
   @ApiPropertyOptional({
     example: 'Reduced downtime and improved planning accuracy.',
+    maxLength: 5000,
   })
   @IsOptional()
   @IsString()
+  @MaxLength(5000)
   valueProposition?: string;
 
   @ApiPropertyOptional({
     example: '1000.00',
-    description: 'USD amount as a decimal string (commas allowed)',
+    description: 'USD amount as a decimal string',
+    maxLength: 13,
   })
   @IsOptional()
   @IsString()
+  @MaxLength(13)
+  @Matches(/^\d+(\.\d{1,2})?$/, {
+    message: 'costBenefit must be a valid monetary amount',
+  })
   costBenefit?: string;
 
   @ApiPropertyOptional({ example: 'Operations' })
