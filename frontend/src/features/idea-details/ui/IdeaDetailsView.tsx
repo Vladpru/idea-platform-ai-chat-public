@@ -23,12 +23,7 @@ import {
 import { outlineBtnClass, primaryBtnClass } from '@/features/ideas/lib/styles';
 import { useUpdateIdea } from '@/features/ideas/hooks/use-update-idea';
 import { IdeaForm } from '@/features/ideas/ui/idea-form/IdeaForm';
-import {
-  Link,
-  useBlocker,
-  useNavigate,
-  useRouter,
-} from '@tanstack/react-router';
+import { useBlocker, useNavigate, useRouter } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
 import {
   type MouseEvent,
@@ -38,7 +33,6 @@ import {
   useState,
 } from 'react';
 
-import { getApiErrorMessage } from '@/shared/api/api-error';
 import { ROUTES } from '@/shared/config/paths';
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
@@ -56,6 +50,8 @@ import { IdeaTagCloud } from './IdeaTagCloud';
 import { IdeaAttachmentsTab } from './attachments/IdeaAttachmentsTab';
 import { IdeaLinkedProblemsTab } from './linked-problems/IdeaLinkedProblemsTab';
 import { SimilarIdeasWidget } from './similar/SimilarIdeasWidget';
+import { NotFoundPage } from '@/pages/not-found';
+
 import { IdeaDetailsPageSkeleton } from './skeletons/IdeaDetailsPageSkeleton';
 
 type IdeaDetailsViewProps = {
@@ -63,30 +59,6 @@ type IdeaDetailsViewProps = {
 };
 
 type PendingDiscardAction = 'cancel-edit' | 'navigate-back' | 'tab-switch';
-
-type IdeaDetailsErrorStateProps = {
-  message: string;
-};
-
-function IdeaDetailsErrorState({ message }: IdeaDetailsErrorStateProps) {
-  return (
-    <main className="bg-brand-neutral flex min-h-[calc(100vh-56px)] items-center justify-center px-4 py-12">
-      <div className="border-brand-gray-200 max-w-md rounded-lg border bg-white px-8 py-10 text-center shadow-sm">
-        <p className="text-brand-black text-lg font-bold tracking-wide uppercase">
-          Idea not found
-        </p>
-        <p className="text-brand-gray-600 mt-3 text-sm">{message}</p>
-        <Link
-          to={ROUTES.ideas}
-          className="bg-brand-dark-blue hover:bg-brand-dark-blue/90 mt-6 inline-flex h-10 items-center justify-center rounded-sm px-6 text-xs font-bold tracking-wide text-white uppercase transition-colors"
-          search={{ sort: 'newest' }}
-        >
-          Back to ideas
-        </Link>
-      </div>
-    </main>
-  );
-}
 
 export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
   const navigate = useNavigate();
@@ -111,11 +83,14 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
   const discardAllUnsaved = useDiscussionUiStore(s => s.discardAllUnsaved);
   const userId = useAuthSessionStore(s => s.user?.id);
 
-  const { data: idea, isLoading, isError, error } = useIdeaDetailsQuery(ideaId);
+  const { data: idea, isPending, isError, isSuccess } =
+    useIdeaDetailsQuery(ideaId);
   const updateMutation = useUpdateIdea(ideaId, idea?.status ?? 'DRAFT');
 
   const { data: similarIdeas = [], isLoading: isSimilarLoading } =
-    useSimilarIdeasQuery(ideaId, { enabled: !isEditing });
+    useSimilarIdeasQuery(ideaId, {
+      enabled: isSuccess && Boolean(idea) && !isEditing,
+    });
 
   const hasUnsavedIdeaEdits = isEditing && hasUnsavedEdits;
 
@@ -291,18 +266,12 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  if (isLoading) {
+  if (isPending) {
     return <IdeaDetailsPageSkeleton />;
   }
 
   if (isError || !idea) {
-    const message = isError
-      ? getApiErrorMessage(error, {
-          invalidCredentialsMessage:
-            'We could not load this idea. It may have been removed or you may not have access.',
-        })
-      : 'This idea does not exist or is no longer available.';
-    return <IdeaDetailsErrorState message={message} />;
+    return <NotFoundPage variant="content" />;
   }
 
   const isAuthor =

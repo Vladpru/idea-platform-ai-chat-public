@@ -7,6 +7,7 @@ import {
   toIdeaDetails,
   toSimilarIdeaCard,
 } from '@/features/idea-details/model/idea-details.mapper';
+import { shouldRetryDetailResourceQuery } from '@/shared/lib/detail-resource-query';
 import { useQuery } from '@tanstack/react-query';
 
 export function useIdeaDetailsQuery(ideaId: string) {
@@ -14,9 +15,13 @@ export function useIdeaDetailsQuery(ideaId: string) {
     queryKey: ideaMutationKeys.detail(ideaId),
     queryFn: async () => {
       const dto = await fetchIdeaFormById(ideaId);
+      if (!dto?.id) {
+        return null;
+      }
       return toIdeaDetails(dto);
     },
     enabled: Boolean(ideaId),
+    retry: shouldRetryDetailResourceQuery,
   });
 }
 

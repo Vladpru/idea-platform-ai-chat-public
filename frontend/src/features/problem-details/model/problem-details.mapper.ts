@@ -10,11 +10,11 @@ import type {
 
 function toAuthor(author: ProblemForm['author']): ProblemDetailsAuthor {
   return {
-    id: author.id,
-    email: author.email,
-    firstName: author.firstName,
-    lastName: author.lastName,
-    avatarUrl: author.avatarUrl,
+    id: author?.id ?? '',
+    email: author?.email ?? '',
+    firstName: author?.firstName ?? null,
+    lastName: author?.lastName ?? null,
+    avatarUrl: author?.avatarUrl ?? null,
   };
 }
 
