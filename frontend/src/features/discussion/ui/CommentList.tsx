@@ -23,6 +23,7 @@ type CommentListProps = {
   isFetchingNextPage: boolean;
   onLoadMore: () => void;
   onRetry?: () => void;
+  onQuoteClick?: (commentId: string) => void;
   className?: string;
 };
 
@@ -63,6 +64,7 @@ export function CommentList({
   isFetchingNextPage,
   onLoadMore,
   onRetry,
+  onQuoteClick,
   className,
 }: CommentListProps) {
   const listItems = useMemo(() => buildCommentListItems(comments), [comments]);
@@ -132,6 +134,7 @@ export function CommentList({
                 comment={item.comment}
                 entityType={entityType}
                 entityId={entityId}
+                onQuoteClick={onQuoteClick}
               />
             </li>
           );

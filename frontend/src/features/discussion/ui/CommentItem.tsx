@@ -15,8 +15,13 @@ import type {
   CommentDto,
   DiscussionEntityType,
 } from '@/features/discussion/api/comments-api.types';
+import {
+  revokeCommentAttachmentObjectUrls,
+  useCreateCommentMutation,
+} from '@/features/discussion/hooks/use-create-comment-mutation';
 import { useDeleteCommentMutation } from '@/features/discussion/hooks/use-delete-comment-mutation';
 import { useUpdateCommentMutation } from '@/features/discussion/hooks/use-update-comment-mutation';
+import { removeCommentFromCache } from '@/features/discussion/lib/sync-comment-mutation-cache';
 import {
   COMMENT_ATTACHMENT_ACCEPT,
   COMMENT_ATTACHMENT_ALLOWED_MESSAGE,
@@ -44,12 +49,14 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { ConfirmModal } from '@/shared/ui/confirm-modal';
 import { ImageLightbox } from '@/shared/ui/image-lightbox';
 import { cn } from '@/shared/lib/utils';
+import { useQueryClient } from '@tanstack/react-query';
 import { QuotedReplyBlock } from './QuotedReplyBlock';
 
 type CommentItemProps = {
   comment: CommentDto;
   entityType: DiscussionEntityType;
   entityId: string;
+  onQuoteClick?: (commentId: string) => void;
 };
 
 function FooterActionButton({
@@ -83,13 +90,17 @@ export function CommentItem({
   comment,
   entityType,
   entityId,
+  onQuoteClick,
 }: CommentItemProps) {
+  const queryClient = useQueryClient();
   const { setReplyTo } = useReplyContext();
   const currentUserId = useAuthSessionStore(s => s.user?.id);
   const isAuthor = Boolean(
     currentUserId && comment.author.id === currentUserId,
   );
+  const isClientError = Boolean(comment.isClientError);
 
+  const createMutation = useCreateCommentMutation(entityType, entityId);
   const deleteMutation = useDeleteCommentMutation(entityType, entityId);
   const updateMutation = useUpdateCommentMutation(entityType, entityId);
 
@@ -259,7 +270,23 @@ export function CommentItem({
     });
   }, [comment.id, deleteMutation]);
 
-  const isMutating = deleteMutation.isPending || updateMutation.isPending;
+  const handleRetryFailedComment = useCallback(() => {
+    if (!comment.retryPayload) {
+      return;
+    }
+
+    createMutation.mutate(comment.retryPayload);
+  }, [comment.retryPayload, createMutation]);
+
+  const handleDiscardFailedComment = useCallback(() => {
+    revokeCommentAttachmentObjectUrls(comment.attachments);
+    removeCommentFromCache(queryClient, entityType, entityId, comment.id);
+  }, [comment.attachments, comment.id, entityId, entityType, queryClient]);
+
+  const isMutating =
+    deleteMutation.isPending ||
+    updateMutation.isPending ||
+    createMutation.isPending;
   const trimmedEditContent = editContent.trim();
   const canSave =
     (trimmedEditContent.length > 0 ||
@@ -291,7 +318,6 @@ export function CommentItem({
     withResolver: true,
   });
 
-  // ВІДНОВЛЕНО: Читання змінної для відкриття модалки блокування
   const navigationBlockModalOpen =
     status === 'blocked' && navigationBlockConfirmed;
 
@@ -337,7 +363,10 @@ export function CommentItem({
     <>
       <article
         id={`comment-${comment.id}`}
-        className="data-[highlighted=true]:!bg-brand-dark-blue/10 mb-4 rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition-colors duration-500"
+        className={cn(
+          'data-[highlighted=true]:!bg-brand-dark-blue/10 mb-4 rounded-lg border bg-white p-5 shadow-sm transition-colors duration-500',
+          isClientError ? 'border-red-200 bg-red-50/40' : 'border-gray-200',
+        )}
         aria-label={`Comment by ${authorName}`}
       >
         <header className="flex gap-3">
@@ -362,10 +391,11 @@ export function CommentItem({
           </div>
         </header>
 
-        <div className="mt-3">
+        <div className={cn('mt-3', isClientError && 'opacity-60')}>
           {comment.parent ? (
             <QuotedReplyBlock
               quote={comment.parent}
+              onQuoteClick={onQuoteClick}
               className="bg-brand-neutral"
             />
           ) : null}
@@ -490,38 +520,72 @@ export function CommentItem({
         </div>
 
         <footer className="mt-4 flex items-center justify-end gap-6">
-          {' '}
-          {isAuthor ? (
-            isEditing ? (
+          {isClientError ? (
+            <div className="flex w-full flex-wrap items-center justify-between gap-3 sm:justify-end">
+              <p className="text-sm font-medium text-red-600">Failed to send</p>
+              <div className="flex flex-wrap items-center gap-4">
+                <FooterActionButton
+                  onClick={handleRetryFailedComment}
+                  disabled={isMutating || !comment.retryPayload}
+                  className="cursor-pointer text-red-700"
+                >
+                  Retry
+                </FooterActionButton>
+                <FooterActionButton
+                  onClick={handleDiscardFailedComment}
+                  disabled={isMutating}
+                  className="cursor-pointer text-red-700"
+                >
+                  Delete
+                </FooterActionButton>
+              </div>
+            </div>
+          ) : (
+            <>
+              {isAuthor ? (
+                isEditing ? (
+                  <div className="flex items-center gap-4">
+                    <FooterActionButton
+                      onClick={() => {
+                        resetEditState();
+                        stopEditing();
+                      }}
+                      className="cursor-pointer text-gray-500 hover:text-gray-700"
+                    >
+                      Cancel
+                    </FooterActionButton>
+                    <FooterActionButton
+                      onClick={handleSaveEdit}
+                      disabled={!canSave}
+                      className="cursor-pointer"
+                    >
+                      Save
+                    </FooterActionButton>
+                  </div>
+                ) : (
+                  <CommentItemActions
+                    isMutating={isMutating}
+                    onEdit={handleStartEdit}
+                    onDelete={() => setDeleteModalOpen(true)}
+                  />
+                )
+              ) : null}
               <FooterActionButton
-                onClick={handleSaveEdit}
-                disabled={!canSave}
+                onClick={() => setReplyTo(comment)}
+                disabled={isMutating || isEditing}
                 className="cursor-pointer"
               >
-                Save
+                REPLY
               </FooterActionButton>
-            ) : (
-              <CommentItemActions
-                isMutating={isMutating}
-                onEdit={handleStartEdit}
-                onDelete={() => setDeleteModalOpen(true)}
+              <CommentLikeButton
+                commentId={comment.id}
+                entityType={entityType}
+                entityId={entityId}
+                isLiked={comment.isLiked}
+                likeCount={comment.likeCount}
               />
-            )
-          ) : null}
-          <FooterActionButton
-            onClick={() => setReplyTo(comment)}
-            disabled={isMutating || isEditing}
-            className="cursor-pointer"
-          >
-            REPLY
-          </FooterActionButton>
-          <CommentLikeButton
-            commentId={comment.id}
-            entityType={entityType}
-            entityId={entityId}
-            isLiked={comment.isLiked}
-            likeCount={comment.likeCount}
-          />
+            </>
+          )}
         </footer>
       </article>
 

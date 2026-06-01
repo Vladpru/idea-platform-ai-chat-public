@@ -1,3 +1,7 @@
+'use client';
+
+import { useCallback, type MouseEvent } from 'react';
+
 import type { CommentParentQuoteDto } from '@/features/discussion/api/comments-api.types';
 import { formatCommentTime } from '@/features/discussion/lib/format-discussion-date';
 import {
@@ -9,20 +13,34 @@ import { cn } from '@/shared/lib/utils';
 
 type QuotedReplyBlockProps = {
   quote: CommentParentQuoteDto;
+  onQuoteClick?: (commentId: string) => void;
   className?: string;
 };
 
-export function QuotedReplyBlock({ quote, className }: QuotedReplyBlockProps) {
+export function QuotedReplyBlock({
+  quote,
+  onQuoteClick,
+  className,
+}: QuotedReplyBlockProps) {
   const authorName = formatUserDisplayName({
     firstName: quote.author.firstName,
     lastName: quote.author.lastName,
     email: null,
   });
 
+  const handleClick = useCallback(
+    (event: MouseEvent<HTMLDivElement>) => {
+      event.stopPropagation();
+      onQuoteClick?.(quote.id);
+    },
+    [onQuoteClick, quote.id],
+  );
+
   return (
     <div
+      onClick={handleClick}
       className={cn(
-        'border-brand-dark-blue bg-brand-gray-50 mt-3 rounded-r-md border-l-4 p-3',
+        'border-brand-dark-blue bg-brand-gray-50 mt-3 cursor-pointer rounded-r-md border-l-4 p-3 transition-colors hover:bg-brand-gray-100/80',
         className,
       )}
     >

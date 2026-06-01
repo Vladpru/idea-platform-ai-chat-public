@@ -7,6 +7,7 @@ import type {
   DiscussionEntityType,
 } from '@/features/discussion/api/comments-api.types';
 import { useCommentsInfiniteQuery } from '@/features/discussion/hooks/use-comments-infinite-query';
+import { useScrollToComment } from '@/features/discussion/hooks/use-scroll-to-comment';
 import { useDiscussionUiStore } from '@/features/discussion/model/discussion-ui-store';
 import { DashboardControls } from '@/shared/dashboard';
 import { CommentInputArea } from '@/features/discussion/ui/CommentInputArea';
@@ -89,6 +90,18 @@ function DiscussionTabLayout({
     refetch,
   } = useCommentsInfiniteQuery(entityType, entityId, { enabled, sort });
 
+  const { scrollTo: scrollToComment } = useScrollToComment({
+    fetchNextPage,
+    hasNextPage: hasNextPage ?? false,
+  });
+
+  const handleQuoteClick = useCallback(
+    (commentId: string) => {
+      void scrollToComment(commentId);
+    },
+    [scrollToComment],
+  );
+
   const comments = useMemo(
     () => data?.pages.flatMap(page => page.data) ?? [],
     [data],
@@ -124,6 +137,7 @@ function DiscussionTabLayout({
         onRetry={() => {
           void refetch();
         }}
+        onQuoteClick={handleQuoteClick}
       />
       <CommentInputArea
         key={`comment-input-${draftClearToken}`}
