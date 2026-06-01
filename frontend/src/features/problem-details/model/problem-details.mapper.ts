@@ -47,8 +47,11 @@ export function toProblemDetails(dto: ProblemForm): ProblemDetails {
   const author = toAuthor(dto.author);
   const authorTeamMember = toTeamMember(author, 'Author');
 
+  const commentCount = dto.commentCount ?? 0;
+
   return {
     id: dto.id,
+    commentCount,
     authorId: author.id,
     status: dto.status,
     title: dto.title?.trim() ?? '',
@@ -88,12 +91,12 @@ export function toProblemDetails(dto: ProblemForm): ProblemDetails {
     isLiked: dto.isLiked ?? false,
     stats: {
       views: dto.viewCount ?? 0,
-      comments: dto.commentCount ?? 0,
+      comments: commentCount,
       likes: dto.likeCount ?? 0,
     },
     counts: {
       attachments: dto.attachments?.length ?? 0,
-      discussion: dto.commentCount ?? 0,
+      discussion: commentCount,
       linkedIdeas: dto.ideas?.length ?? 0,
     },
   };

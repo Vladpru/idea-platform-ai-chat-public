@@ -14,10 +14,6 @@ export const IDEA_FORM_MEMBER_INCLUDE = {
   },
 } as const satisfies Prisma.IdeaMemberInclude;
 
-export type IdeaFormMemberRecord = Prisma.IdeaMemberGetPayload<{
-  include: typeof IDEA_FORM_MEMBER_INCLUDE;
-}>;
-
 const IDEA_FORM_PROBLEM_SELECT = {
   id: true,
   title: true,
@@ -64,6 +60,9 @@ export const IDEA_FORM_INCLUDE = {
     include: IDEA_FORM_MEMBER_INCLUDE,
   },
   media: true,
+  _count: {
+    select: { comments: true },
+  },
 } as const satisfies Prisma.IdeaInclude;
 
 export function ideaFormInclude(currentUserId: string) {
@@ -85,6 +84,9 @@ export function ideaFormInclude(currentUserId: string) {
     members: IDEA_FORM_INCLUDE.members,
     media: IDEA_FORM_INCLUDE.media,
     likes,
+    _count: {
+      select: { comments: true },
+    },
   } as const satisfies Prisma.IdeaInclude;
 }
 

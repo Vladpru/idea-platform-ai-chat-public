@@ -9,19 +9,20 @@ import { AnimatedTabUnderline } from '@/shared/ui/motion';
 type ProblemTabsProps = {
   activeTab: ProblemTabId;
   onChange: (tab: ProblemTabId) => void;
-  counts: ProblemDetailsCounts;
+  counts: Pick<ProblemDetailsCounts, 'attachments' | 'linkedIdeas'>;
+  commentCount: number;
 };
 
 type TabConfig = {
   id: ProblemTabId;
   label: string;
-  countKey?: keyof ProblemDetailsCounts;
+  countKey?: keyof Pick<ProblemDetailsCounts, 'attachments' | 'linkedIdeas'>;
 };
 
 const TABS: TabConfig[] = [
   { id: 'description', label: 'Description' },
   { id: 'attachments', label: 'Attachments', countKey: 'attachments' },
-  { id: 'discussion', label: 'Discussion', countKey: 'discussion' },
+  { id: 'discussion', label: 'Discussion' },
   {
     id: 'linked-ideas',
     label: 'Linked Ideas',
@@ -32,12 +33,21 @@ const TABS: TabConfig[] = [
 const tabsNavClass =
   'scrollbar-none flex w-full min-w-0 touch-pan-x gap-3 overflow-x-auto overscroll-x-contain border-b border-gray-200 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-6';
 
-export function ProblemTabs({ activeTab, onChange, counts }: ProblemTabsProps) {
+export function ProblemTabs({
+  activeTab,
+  onChange,
+  counts,
+  commentCount,
+}: ProblemTabsProps) {
   return (
     <nav className={tabsNavClass} role="tablist" aria-label="Problem sections">
       {TABS.map(tab => {
         const count =
-          tab.countKey !== undefined ? counts[tab.countKey] : undefined;
+          tab.id === 'discussion'
+            ? commentCount
+            : tab.countKey !== undefined
+              ? counts[tab.countKey]
+              : undefined;
         const isActive = activeTab === tab.id;
 
         return (

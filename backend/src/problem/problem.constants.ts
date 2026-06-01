@@ -8,7 +8,14 @@ export const PROBLEM_FORM_AUTHOR_SELECT = {
   avatarUrl: true,
 } as const;
 
+export const PROBLEM_COMMENT_COUNT_SELECT = {
+  _count: {
+    select: { comments: true },
+  },
+} as const satisfies Pick<Prisma.ProblemInclude, '_count'>;
+
 export const PROBLEM_FORM_INCLUDE = {
+  ...PROBLEM_COMMENT_COUNT_SELECT,
   author: {
     select: PROBLEM_FORM_AUTHOR_SELECT,
   },
@@ -47,6 +54,7 @@ export const PROBLEM_FORM_INCLUDE = {
 
 export function problemFormInclude(currentUserId: string) {
   return {
+    ...PROBLEM_COMMENT_COUNT_SELECT,
     author: PROBLEM_FORM_INCLUDE.author,
     members: PROBLEM_FORM_INCLUDE.members,
     ideas: PROBLEM_FORM_INCLUDE.ideas,

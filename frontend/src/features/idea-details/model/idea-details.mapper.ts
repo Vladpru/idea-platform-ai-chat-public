@@ -73,8 +73,11 @@ export function toIdeaDetails(dto: IdeaFormResponseDto): IdeaDetails {
     ? { id: dto.mainImage.id, url: dto.mainImage.url }
     : null;
 
+  const commentCount = dto.commentCount ?? 0;
+
   return {
     id: dto.id,
+    commentCount,
     authorId: author.id,
     status: dto.status,
     title: dto.title?.trim() ?? '',
@@ -130,12 +133,12 @@ export function toIdeaDetails(dto: IdeaFormResponseDto): IdeaDetails {
     isLiked: dto.isLiked ?? false,
     stats: {
       views: dto.viewCount ?? 0,
-      comments: dto.commentCount ?? 0,
+      comments: commentCount,
       likes: dto.likeCount ?? 0,
     },
     counts: {
       attachments: dto.attachments?.length ?? 0,
-      discussion: dto.commentCount ?? 0,
+      discussion: commentCount,
       linkedProblems: dto.problems?.length ?? 0,
     },
   };

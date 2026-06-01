@@ -69,11 +69,15 @@ function toProblemLinkedIdea(
   };
 }
 
+function resolveProblemCommentCount(problem: ProblemFormRecord): number {
+  return problem._count?.comments ?? problem.commentCount ?? 0;
+}
+
 function mapProblemEngagementMetrics(problem: ProblemFormRecord) {
   return {
     viewCount: problem.viewCount ?? 0,
     likeCount: problem.likeCount ?? 0,
-    commentCount: problem.commentCount ?? 0,
+    commentCount: resolveProblemCommentCount(problem),
     isLiked: Boolean(problem.likes && problem.likes.length > 0),
   };
 }

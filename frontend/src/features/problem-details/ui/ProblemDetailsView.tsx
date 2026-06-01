@@ -157,10 +157,10 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
             <ProblemTabs
               activeTab={activeTab}
               onChange={setActiveTab}
+              commentCount={problem.commentCount}
               counts={{
                 attachments: problem.attachments.length,
                 linkedIdeas: visibleIdeas.length,
-                discussion: problem.counts.discussion,
               }}
             />
           </div>

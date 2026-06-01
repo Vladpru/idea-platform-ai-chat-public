@@ -1,4 +1,5 @@
 import type {
+  IdeaDetails,
   IdeaDetailsCounts,
   IdeaTabId,
 } from '@/features/idea-details/model/idea-details.types';
@@ -9,7 +10,8 @@ import { AnimatedTabUnderline } from '@/shared/ui/motion';
 type IdeaTabsProps = {
   activeTab: IdeaTabId;
   onChange: (tab: IdeaTabId) => void;
-  counts: IdeaDetailsCounts;
+  idea: Pick<IdeaDetails, 'commentCount'>;
+  counts: Pick<IdeaDetailsCounts, 'attachments' | 'linkedProblems'>;
 };
 
 type TabConfig = {
@@ -32,7 +34,18 @@ const TABS: TabConfig[] = [
 const tabsNavClass =
   'scrollbar-none flex w-full min-w-0 touch-pan-x gap-3 overflow-x-auto overscroll-x-contain border-b border-gray-200 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-6';
 
-export function IdeaTabs({ activeTab, onChange, counts }: IdeaTabsProps) {
+export function IdeaTabs({
+  activeTab,
+  onChange,
+  idea,
+  counts,
+}: IdeaTabsProps) {
+  const tabCounts: IdeaDetailsCounts = {
+    attachments: counts.attachments,
+    linkedProblems: counts.linkedProblems,
+    discussion: idea.commentCount,
+  };
+
   return (
     <nav
       className={cn(tabsNavClass, 'mt-2')}
@@ -41,7 +54,7 @@ export function IdeaTabs({ activeTab, onChange, counts }: IdeaTabsProps) {
     >
       {TABS.map(tab => {
         const count =
-          tab.countKey !== undefined ? counts[tab.countKey] : undefined;
+          tab.countKey !== undefined ? tabCounts[tab.countKey] : undefined;
         const isActive = activeTab === tab.id;
 
         return (

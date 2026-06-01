@@ -58,6 +58,7 @@ export type ProblemDetailsLinkedIdea = {
 
 export type ProblemDetails = {
   id: string;
+  commentCount: number;
   authorId: string;
   status: ProblemStatus;
   title: string;

@@ -356,10 +356,10 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
             <IdeaTabs
               activeTab={activeTab}
               onChange={handleTabChange}
+              idea={{ commentCount: idea.commentCount }}
               counts={{
                 attachments: idea.attachments.length,
                 linkedProblems: visibleProblems.length,
-                discussion: idea.counts.discussion,
               }}
             />
           ) : null}
