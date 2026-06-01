@@ -79,7 +79,7 @@ function ProblemDashboardCardStandardInner({
                 {card.title}
               </h3>
 
-              <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 <div className="flex min-w-0 items-center gap-2">
                   <Avatar size="sm" className="ring-2 ring-white">
                     {card.authorAvatarUrl ? (
