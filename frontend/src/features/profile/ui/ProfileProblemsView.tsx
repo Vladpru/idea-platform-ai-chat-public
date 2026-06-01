@@ -6,6 +6,7 @@ import { PROBLEMS_DASHBOARD_LABELS } from '@/features/problems-dashboard/lib/pro
 import { useDeleteProblemMutation } from '@/features/problems/hooks/use-problem-mutations';
 import type { TabDefinition } from '@/shared/ui/TabLabelWithBadge';
 import { Button } from '@/shared/ui/button';
+import { SkeletonCard } from '@/shared/ui/skeleton';
 
 import { useMyProblemsDashboard } from '../hooks/use-my-problems-dashboard';
 import { ProblemCardActions } from './ProblemCardActions';
@@ -106,12 +107,7 @@ export function ProfileProblemsView() {
       loadingMoreLabel={PROBLEMS_DASHBOARD_LABELS.loadingMore}
       layoutId="profile-problems-dashboard-tabs-underline"
       deleteMutation={deleteMutation}
-      renderSkeletonCard={i => (
-        <div
-          key={i}
-          className="border-brand-gray-200 h-64 animate-pulse rounded-lg border bg-white"
-        />
-      )}
+      renderSkeletonCard={i => <SkeletonCard key={i} className="h-64" />}
       renderCard={({ item: card, isMobile, isDeleting, onDelete }) => (
         <DashboardCardStandard
           key={card.id}

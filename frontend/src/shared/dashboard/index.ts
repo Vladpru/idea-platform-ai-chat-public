@@ -1,5 +1,7 @@
 export { DashboardGrid } from './ui/grid/DashboardGrid';
 export type { DashboardGridProps } from './ui/grid/DashboardGrid';
+export { DashboardGridSkeleton } from './ui/grid/DashboardGridSkeleton';
+export type { DashboardGridSkeletonProps } from './ui/grid/DashboardGridSkeleton';
 export { LoadMoreFooter } from './ui/grid/LoadMoreFooter';
 export { DashboardControls } from './ui/header/DashboardControls';
 export { DashboardFilter } from './ui/header/DashboardFilter';

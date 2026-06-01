@@ -1,5 +1,6 @@
 import {
   DashboardGrid,
+  DashboardGridSkeleton,
   LoadMoreFooter,
   type DashboardViewport,
 } from '@/shared/dashboard';
@@ -20,19 +21,6 @@ import type { ProblemDashboardCard } from '../model/problems-dashboard.types';
 import { ProblemDashboardCardCompact } from './cards/ProblemDashboardCardCompact';
 import { ProblemDashboardCardStandard } from './cards/ProblemDashboardCardStandard';
 import { ProblemsDashboardHeader } from './ProblemsDashboardHeader';
-
-function ProblemsGridSkeleton() {
-  return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      {Array.from({ length: 4 }).map((_, index) => (
-        <div
-          key={index}
-          className="border-brand-gray-200 h-72 animate-pulse rounded-lg border bg-white"
-        />
-      ))}
-    </div>
-  );
-}
 
 function renderProblemCompactCard(
   card: ProblemDashboardCard,
@@ -110,7 +98,13 @@ const ProblemsDashboardBody = memo(function ProblemsDashboardBody({
   }, [isFetchingNextPage]);
 
   if (isLoading) {
-    return <ProblemsGridSkeleton />;
+    return (
+      <DashboardGridSkeleton
+        columnCount={columnCount}
+        viewport={viewport}
+        standardCardClassName="h-72"
+      />
+    );
   }
 
   if (isError) {

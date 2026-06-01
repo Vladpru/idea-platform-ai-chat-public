@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import type { LucideIcon } from 'lucide-react';
 
 import { cn } from '@/shared/lib/utils';
+import { Skeleton } from '@/shared/ui/skeleton';
 
 type ActivityMetric = {
   label: string;
@@ -20,8 +21,8 @@ type HomeActivityCardProps = {
 function ActivityMetricSkeleton() {
   return (
     <div className="flex items-baseline justify-between gap-4">
-      <div className="bg-brand-gray-200 h-4 w-20 animate-pulse rounded" />
-      <div className="bg-brand-gray-200 h-5 w-8 animate-pulse rounded" />
+      <Skeleton className="h-4 w-20" />
+      <Skeleton className="h-5 w-8" />
     </div>
   );
 }
