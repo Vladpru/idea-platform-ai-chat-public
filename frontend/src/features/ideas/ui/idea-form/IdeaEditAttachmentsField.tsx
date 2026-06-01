@@ -9,13 +9,15 @@ import { AddImageModal } from '@/features/ideas/ui/modals/AddImageModal';
 import fileImageSvg from '@/assets/svg/file-image.svg';
 import DeleteImageButton from '@/features/ideas/ui/create-idea/DeleteImageButton';
 import { Upload } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { Control } from 'react-hook-form';
 import { Controller, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 
+import { useAttachmentUrlLightbox } from '@/shared/hooks/use-attachment-url-lightbox';
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
+import { ImageLightbox } from '@/shared/ui/image-lightbox';
 import {
   Tooltip,
   TooltipContent,
@@ -32,22 +34,31 @@ function ExistingAttachmentCard({
   filename,
   mimeTypeHint,
   onRemove,
+  onPreview,
   disabled,
 }: {
   url: string;
   filename: string;
   mimeTypeHint?: string;
   onRemove: () => void;
+  onPreview: () => void;
   disabled?: boolean;
 }) {
   const isImage =
     mimeTypeHint?.startsWith('image/') === true ||
-    /\.(png|jpe?g|webp|gif)$/i.test(filename);
+    /\.(png|jpe?g|webp|gif|svg|bmp|avif)$/i.test(filename);
 
   return (
     <div className="flex w-20 flex-col items-center gap-1.5" title={filename}>
       <div className="relative size-20 shrink-0">
-        <div className="border-brand-gray-200 size-full overflow-hidden rounded-md border bg-white">
+        <button
+          type="button"
+          className="border-brand-gray-200 size-full cursor-pointer overflow-hidden rounded-md border bg-white transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+          onClick={onPreview}
+          aria-label={
+            isImage ? `Preview ${filename}` : `Open ${filename}`
+          }
+        >
           {isImage ? (
             <img src={url} alt="" className="size-full object-cover" />
           ) : (
@@ -60,17 +71,25 @@ function ExistingAttachmentCard({
               />
             </div>
           )}
-        </div>
+        </button>
         <DeleteImageButton
           variant="compact"
-          onClick={onRemove}
+          onClick={event => {
+            event.stopPropagation();
+            onRemove();
+          }}
           isBusy={disabled ?? false}
           aria-label="Remove attachment"
         />
       </div>
-      <span className="text-foreground line-clamp-2 w-full text-center text-xs leading-tight">
+      <button
+        type="button"
+        className="text-foreground line-clamp-2 w-full cursor-pointer text-center text-xs leading-tight hover:underline focus-visible:underline focus-visible:outline-none"
+        onClick={onPreview}
+        aria-label={isImage ? `Preview ${filename}` : `Open ${filename}`}
+      >
         {filename}
-      </span>
+      </button>
     </div>
   );
 }
@@ -92,6 +111,23 @@ export function IdeaEditAttachmentsField({
   const totalCount = visibleExisting.length + newFiles.length;
   const atLimit = totalCount >= MAX_ATTACHMENT_FILES;
   const remainingSlots = MAX_ATTACHMENT_FILES - totalCount;
+
+  const existingPreviewItems = useMemo(
+    () =>
+      visibleExisting.map(attachment => ({
+        id: attachment.id,
+        url: attachment.url,
+        alt: attachment.filename,
+      })),
+    [visibleExisting],
+  );
+
+  const {
+    openAttachment,
+    closeLightbox,
+    lightboxIndex,
+    lightboxImages,
+  } = useAttachmentUrlLightbox(existingPreviewItems);
 
   return (
     <Controller
@@ -126,6 +162,13 @@ export function IdeaEditAttachmentsField({
                     <ExistingAttachmentCard
                       url={attachment.url}
                       filename={attachment.filename}
+                      onPreview={() =>
+                        openAttachment({
+                          id: attachment.id,
+                          url: attachment.url,
+                          alt: attachment.filename,
+                        })
+                      }
                       onRemove={() => {
                         if (removedSet.has(attachment.id)) return;
                         removedField.onChange([
@@ -145,6 +188,7 @@ export function IdeaEditAttachmentsField({
                   <IdeaAttachmentCard
                     key={key}
                     file={file}
+                    allFiles={newFiles}
                     disabled={disabled}
                     onRemove={() => removeNewFile(key)}
                   />
@@ -195,6 +239,14 @@ export function IdeaEditAttachmentsField({
               maxFiles={remainingSlots}
               onAdd={handleAdd}
             />
+
+            {lightboxIndex !== null && lightboxImages.length > 0 ? (
+              <ImageLightbox
+                images={lightboxImages}
+                initialIndex={lightboxIndex}
+                onClose={closeLightbox}
+              />
+            ) : null}
           </>
         );
       }}

@@ -53,13 +53,14 @@ export function ProblemFilesField({
 
         return (
           <>
-            <div className="mt-2 flex flex-wrap items-center gap-3 pt-2 pr-2">
+            <div className="mt-2 flex flex-wrap items-start gap-3 pt-2 pr-2">
               {files.map(file => {
                 const key = getAttachmentFileKey(file);
                 return (
                   <IdeaAttachmentCard
                     key={key}
                     file={file}
+                    allFiles={files}
                     onRemove={() => removeFile(key)}
                     disabled={disabled}
                   />

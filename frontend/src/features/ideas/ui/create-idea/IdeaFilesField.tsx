@@ -1,3 +1,4 @@
+import type { IdeaCreateFormValues } from '@/features/ideas/lib/create-idea';
 import {
   ATTACHMENT_ACCEPT,
   IDEA_ATTACHMENT_ALLOWED_MIME_TYPES,
@@ -11,7 +12,6 @@ import { useState } from 'react';
 import type { Control } from 'react-hook-form';
 import { Controller } from 'react-hook-form';
 
-import type { IdeaCreateFormValues } from '@/features/ideas/lib/create-idea';
 import { useFileHandler } from '@/shared/hooks/use-file-handler';
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
@@ -58,6 +58,7 @@ function IdeaFilesFieldContent({
             <IdeaAttachmentCard
               key={key}
               file={file}
+              allFiles={files}
               disabled={disabled}
               onRemove={() => removeFile(key)}
             />
@@ -73,7 +74,7 @@ function IdeaFilesFieldContent({
                   variant="outline"
                   size="icon"
                   disabled
-                  className="border-brand-dark-blue text-brand-dark-blue size-20 rounded-md"
+                  className="border-brand-dark-blue text-brand-dark-blue size-12 rounded-md"
                   tabIndex={-1}
                   aria-label="Add files"
                 >
@@ -91,7 +92,7 @@ function IdeaFilesFieldContent({
             variant="outline"
             size="icon"
             className={cn(
-              'border-brand-dark-blue text-brand-dark-blue size-20 rounded-md',
+              'border-brand-dark-blue text-brand-dark-blue size-12 rounded-md',
             )}
             aria-label="Add files"
             disabled={disabled}
