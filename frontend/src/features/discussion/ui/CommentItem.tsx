@@ -458,6 +458,7 @@ export function CommentItem({
                     <IdeaAttachmentCard
                       key={key}
                       file={file}
+                      allFiles={newAttachments}
                       disabled={updateMutation.isPending}
                       onRemove={() => removeFile(key)}
                     />

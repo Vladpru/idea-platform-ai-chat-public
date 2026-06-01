@@ -69,6 +69,7 @@ export function IdeaCreateForm() {
     onSaveDraft,
     onPublish,
     isPublishedIdea,
+    isEditing,
     isBusy,
     isSavingDraft,
     isPublishing,
@@ -88,8 +89,14 @@ export function IdeaCreateForm() {
   const titleValue = watch('title') || '';
   const descriptionValue = watch('description') || '';
 
-  const hasUnsavedProgress = useCreateIdeaStore(
-    state => hasCreateIdeaUnsavedProgress(state) || formIsDirty,
+  const draft = useCreateIdeaStore(state => state.draft);
+  const localFiles = useCreateIdeaStore(state => state.localFiles);
+  const remoteMedia = useCreateIdeaStore(state => state.remoteMedia);
+
+  const hasUnsavedProgress = hasCreateIdeaUnsavedProgress(
+    formIsDirty,
+    { draft, localFiles, remoteMedia },
+    isEditing,
   );
 
   const {
@@ -134,7 +141,9 @@ export function IdeaCreateForm() {
       );
       form.setError('mainImage', {
         type: 'manual',
-        message: tooLarge ? FILE_TOO_LARGE_MESSAGE : INVALID_MAIN_IMAGE_TYPE_MESSAGE,
+        message: tooLarge
+          ? FILE_TOO_LARGE_MESSAGE
+          : INVALID_MAIN_IMAGE_TYPE_MESSAGE,
       });
     },
   });

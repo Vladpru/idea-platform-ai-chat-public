@@ -1,8 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 
 type ImageLightboxProps = {
   images: { url: string; alt: string }[];

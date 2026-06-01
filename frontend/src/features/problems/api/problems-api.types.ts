@@ -115,6 +115,39 @@ export type CreateProblemDraftPayload = Pick<
 
 export type UpdateProblemPayload = Omit<CreateProblemPayload, 'isPublished'>;
 
+export type SuggestedIdeasParams = {
+  title?: string;
+  description?: string;
+  tags?: string;
+  exclude?: string[];
+  limit?: number;
+};
+
+export type SuggestedIdeaItem = {
+  id: string;
+  title: string;
+};
+
+export type SuggestedIdeasResponse = {
+  data: SuggestedIdeaItem[];
+};
+
+export type SuggestedTagsParams = {
+  title?: string;
+  description?: string;
+  exclude?: string[];
+  limit?: number;
+};
+
+export type SuggestedTagItem = {
+  name: string;
+  label: string;
+};
+
+export type SuggestedTagsResponse = {
+  data: SuggestedTagItem[];
+};
+
 export type UploadProblemAttachmentPayload = {
   file: File;
 };

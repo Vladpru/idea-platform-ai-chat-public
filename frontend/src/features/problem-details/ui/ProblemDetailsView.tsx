@@ -8,12 +8,11 @@ import {
 } from '@/features/problem-details/lib/use-problem-details-queries';
 import { DEFAULT_PROBLEMS_DASHBOARD_SEARCH } from '@/features/problems-dashboard/lib/constants';
 import type { ProblemTabId } from '@/features/problem-details/model/problem-details.types';
-import { Link, useNavigate, useRouter } from '@tanstack/react-router';
+import { useNavigate, useRouter } from '@tanstack/react-router';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { type MouseEvent, useEffect, useState } from 'react';
 
-import { getApiErrorMessage } from '@/shared/api/api-error';
 import { ROUTES } from '@/shared/config/paths';
 import { cn } from '@/shared/lib/utils';
 import { AnimatedPanel, AnimatedPanelSwitch } from '@/shared/ui/motion';
@@ -24,35 +23,13 @@ import { ProblemInfoCards } from './ProblemInfoCards';
 import { ProblemLinkedIdeasTab } from './linked-ideas/ProblemLinkedIdeasTab';
 import { ProblemTabs } from './ProblemTabs';
 import { SimilarProblemsWidget } from './similar/SimilarProblemsWidget';
+import { NotFoundPage } from '@/pages/not-found';
+
 import { ProblemDetailsPageSkeleton } from './skeletons/ProblemDetailsPageSkeleton';
 
 type ProblemDetailsViewProps = {
   problemId: string;
 };
-
-type ProblemDetailsErrorStateProps = {
-  message: string;
-};
-
-function ProblemDetailsErrorState({ message }: ProblemDetailsErrorStateProps) {
-  return (
-    <main className="bg-brand-neutral flex min-h-[calc(100vh-56px)] items-center justify-center px-4 py-12">
-      <div className="border-brand-gray-200 max-w-md rounded-lg border bg-white px-8 py-10 text-center shadow-sm">
-        <p className="text-brand-black text-lg font-bold tracking-wide uppercase">
-          Problem not found
-        </p>
-        <p className="text-brand-gray-600 mt-3 text-sm">{message}</p>
-        <Link
-          to={ROUTES.problems}
-          search={DEFAULT_PROBLEMS_DASHBOARD_SEARCH}
-          className="bg-brand-dark-blue hover:bg-brand-dark-blue/90 mt-6 inline-flex h-10 items-center justify-center rounded-sm px-6 text-xs font-bold tracking-wide text-white uppercase transition-colors"
-        >
-          Back to problems
-        </Link>
-      </div>
-    </main>
-  );
-}
 
 export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
   const navigate = useNavigate();
@@ -61,11 +38,13 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const userId = useAuthSessionStore(s => s.user?.id);
 
-  const { data: problem, isLoading, isError, error } =
+  const { data: problem, isPending, isError, isSuccess } =
     useProblemDetailsQuery(problemId);
 
   const { data: similarProblems = [], isLoading: isSimilarLoading } =
-    useSimilarProblemsQuery(problemId);
+    useSimilarProblemsQuery(problemId, {
+      enabled: isSuccess && Boolean(problem),
+    });
 
   const handleBackClick = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -95,18 +74,12 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  if (isLoading) {
+  if (isPending) {
     return <ProblemDetailsPageSkeleton />;
   }
 
   if (isError || !problem) {
-    const message = isError
-      ? getApiErrorMessage(error, {
-          invalidCredentialsMessage:
-            'We could not load this problem. It may have been removed or you may not have access.',
-        })
-      : 'This problem does not exist or is no longer available.';
-    return <ProblemDetailsErrorState message={message} />;
+    return <NotFoundPage variant="content" />;
   }
 
   const isAuthor =
@@ -115,8 +88,8 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
   const visibleIdeas = problem.linkedIdeas;
 
   return (
-    <main className="bg-brand-neutral min-h-[calc(100vh-56px)] md:px-8 lg:px-12">
-      <div className="mx-auto max-w-6xl space-y-6 bg-white px-4 py-6 sm:space-y-8 sm:px-6 sm:py-8">
+    <main className="bg-brand-neutral min-h-[calc(100vh-56px)] px-4 md:px-8 lg:px-12">
+      <div className="mx-auto max-w-5xl space-y-6 bg-white px-4 py-6 sm:space-y-8 sm:px-6 sm:py-8">
         <AnimatePresence>
           {!isScrolled ? (
             <motion.div

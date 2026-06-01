@@ -240,6 +240,7 @@ export function CommentInputArea({
                 <IdeaAttachmentCard
                   key={key}
                   file={file}
+                  allFiles={files}
                   disabled={false}
                   onRemove={() => removeFile(key)}
                 />

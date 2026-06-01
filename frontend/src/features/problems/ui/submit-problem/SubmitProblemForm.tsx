@@ -26,7 +26,7 @@ import {
   UNDO_CHANGES_TITLE,
 } from '@/shared/lib/create-form-leave/copy';
 import { cn } from '@/shared/lib/utils';
-import { TagsInput, selectClass } from '@/shared/ui/TagsInput';
+import { selectClass } from '@/shared/ui/TagsInput';
 import { Button } from '@/shared/ui/button';
 import { ConfirmModal } from '@/shared/ui/confirm-modal';
 import { Input } from '@/shared/ui/input';
@@ -34,6 +34,7 @@ import { SaveProgressBeforeLeavingModal } from '@/shared/ui/save-progress-before
 
 import { IdeaSelect } from './IdeaSelect';
 import { ProblemFilesField } from './ProblemFilesField';
+import { ProblemTagsField } from './ProblemTagsField';
 
 function AiAssistLink({
   children,
@@ -96,6 +97,7 @@ export function SubmitProblemForm() {
   const hasUnsavedProgress = hasSubmitProblemUnsavedProgress(
     formIsDirty,
     watchedValues,
+    isEditing,
   );
 
   const navigateToProblems = () => {
@@ -350,10 +352,45 @@ export function SubmitProblemForm() {
           <FieldError message={errors.files?.message} />
         </FieldGroup>
 
-        <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
-          <button
-            type="button"
-            onClick={handleCancel}
+      <ProblemTagsField
+        formId={formId}
+        control={control}
+        errors={errors}
+        disabled={isBusy}
+      />
+
+      <FieldGroup>
+        <FieldLabel>Files</FieldLabel>
+        <ProblemFilesField control={control} disabled={isBusy} />
+        <FieldError message={errors.files?.message} />
+      </FieldGroup>
+
+      <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
+        <button
+          type="button"
+          onClick={handleCancel}
+          disabled={isBusy}
+          className="text-brand-orange hover:text-brand-orange-hover px-2 text-sm font-bold tracking-wide uppercase transition-colors disabled:opacity-50"
+        >
+          Cancel
+        </button>
+        {!isEditing ? (
+          <SaveDraftButton
+            canSave={canSaveDraft}
+            isSaving={isSavingDraft}
+            disabled={isBusy}
+            onSave={() => void handleSaveDraft()}
+          />
+        ) : null}
+        <Button
+          type="submit"
+          className={publishBtnClass}
+          disabled={isBusy}
+          isLoading={isPublishing}
+        >
+          {isEditing ? 'Save changes' : 'Publish problem'}
+        </Button>
+      </div>
             disabled={isBusy}
             className="text-brand-orange hover:text-brand-orange-hover px-2 text-sm font-bold tracking-wide uppercase transition-colors disabled:opacity-50"
           >

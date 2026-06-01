@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import { Card } from '@/shared/ui';
 import { Button } from '@/shared/ui/button';
+import { SkeletonCard } from '@/shared/ui/skeleton';
 
 import { useStatisticsSnapshot } from '../hooks/use-statistics-snapshot';
 import type { StatisticsPeriod } from '../model/statistics.types';
@@ -17,13 +18,13 @@ function StatisticsGridSkeleton() {
   return (
     <div className="mt-6 flex flex-col gap-4 lg:mt-8 lg:gap-5">
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-4 lg:gap-5">
-        <div className="border-brand-gray-200 h-72 animate-pulse rounded-lg border bg-white lg:col-span-3" />
-        <div className="border-brand-gray-200 h-72 animate-pulse rounded-lg border bg-white lg:col-span-1" />
+        <SkeletonCard className="h-72 lg:col-span-3" />
+        <SkeletonCard className="h-72 lg:col-span-1" />
       </div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:gap-5">
-        <div className="border-brand-gray-200 h-40 animate-pulse rounded-lg border bg-white" />
-        <div className="border-brand-gray-200 h-40 animate-pulse rounded-lg border bg-white" />
-        <div className="border-brand-gray-200 h-40 animate-pulse rounded-lg border bg-white" />
+        <SkeletonCard className="h-40" />
+        <SkeletonCard className="h-40" />
+        <SkeletonCard className="h-40" />
       </div>
     </div>
   );

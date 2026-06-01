@@ -7,8 +7,8 @@ import type {
 
 import { normalizeCostBenefitForApi } from './cost-benefit';
 import { formatIdeaIds, parseIdeaIds } from './idea-ids';
-import { PROBLEM_STAGES, type ProblemStageValue } from './stages';
 import type { SubmitProblemFormValues } from './schema';
+import { PROBLEM_STAGES, type ProblemStageValue } from './stages';
 
 const problemStageValues = new Set<ProblemStageValue>(
   PROBLEM_STAGES.map(stage => stage.value),
@@ -48,10 +48,8 @@ export function problemFormToSubmitFormValues(
 export function formValuesToUpdateProblemPayload(
   values: SubmitProblemFormValues,
 ): UpdateProblemPayload {
-  const { isPublished: _isPublished, ...payload } = formValuesToCreateProblemPayload(
-    values,
-    false,
-  );
+  const { isPublished: _isPublished, ...payload } =
+    formValuesToCreateProblemPayload(values, false);
   return payload;
 }
 

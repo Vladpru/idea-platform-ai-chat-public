@@ -1,8 +1,10 @@
 import { Link } from '@tanstack/react-router';
+import { type RefObject } from 'react';
 
 import { COMPACT_CARD_COLUMN_THRESHOLD } from '@/shared/dashboard/lib/config/constants';
 import type { DashboardLinkedItem } from '@/shared/dashboard/model/dashboard.types';
 import { DashboardCardStats } from '@/shared/dashboard/ui/cards/DashboardCardStats';
+import { getSuppressClickAfterDragLinkProps } from '@/shared/hooks/use-horizontal-drag-scroll';
 import { cn } from '@/shared/lib/utils';
 
 type LinkedItemMiniCardProps = {
@@ -11,6 +13,7 @@ type LinkedItemMiniCardProps = {
   entityType: 'IDEA' | 'PROBLEM';
   columnCount?: number;
   emptyImageText?: string;
+  suppressClickRef?: RefObject<boolean>;
 };
 
 export function LinkedItemMiniCard({
@@ -19,15 +22,20 @@ export function LinkedItemMiniCard({
   entityType,
   columnCount = 1,
   emptyImageText = 'No image',
+  suppressClickRef,
 }: LinkedItemMiniCardProps) {
   const narrow = columnCount >= COMPACT_CARD_COLUMN_THRESHOLD;
   const showImageCard =
     entityType === 'PROBLEM' && item.imageUrl !== null && !narrow;
+  const suppressNavigationProps =
+    getSuppressClickAfterDragLinkProps(suppressClickRef);
 
   if (showImageCard) {
     return (
       <Link
         to={detailHref}
+        draggable={false}
+        {...suppressNavigationProps}
         className={cn(
           'border-brand-gray-200 hover:border-brand-dark-blue group/linked-item flex shrink-0 flex-col overflow-hidden rounded-lg border bg-white transition-all hover:shadow-md',
           narrow ? 'w-[120px]' : 'w-[200px] sm:w-[210px]',
@@ -77,6 +85,8 @@ export function LinkedItemMiniCard({
   return (
     <Link
       to={detailHref}
+      draggable={false}
+      {...suppressNavigationProps}
       className={cn(
         'border-brand-gray-200 hover:border-brand-dark-blue focus-visible:ring-brand-dark-blue flex shrink-0 items-center rounded-lg border bg-white transition-colors hover:shadow-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
         narrow ? 'w-[140px] px-2.5 py-1.5' : 'w-[260px] px-4 py-2',

@@ -6,10 +6,12 @@ import {
   useIdeaDetailsQuery,
   useSimilarIdeasQuery,
 } from '@/features/idea-details/lib/use-idea-details-queries';
+import { TeamModal } from '@/features/idea-details/modals/TeamModal';
 import type {
   IdeaDetails,
   IdeaTabId,
 } from '@/features/idea-details/model/idea-details.types';
+import { useUpdateIdea } from '@/features/ideas/hooks/use-update-idea';
 import {
   type IdeaEditFormValues,
   ideaDetailsToEditFormValues,
@@ -21,14 +23,11 @@ import {
   IDEA_UPDATED_SUCCESS_TITLE,
 } from '@/features/ideas/lib/modals/copy';
 import { outlineBtnClass, primaryBtnClass } from '@/features/ideas/lib/styles';
-import { useUpdateIdea } from '@/features/ideas/hooks/use-update-idea';
+import { IdeaEditorPageHeading } from '@/features/ideas/ui/IdeaEditorPageHeading';
 import { IdeaForm } from '@/features/ideas/ui/idea-form/IdeaForm';
-import {
-  Link,
-  useBlocker,
-  useNavigate,
-  useRouter,
-} from '@tanstack/react-router';
+import { NotFoundPage } from '@/pages/not-found';
+import { useBlocker, useNavigate, useRouter } from '@tanstack/react-router';
+import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import {
   type MouseEvent,
@@ -38,16 +37,12 @@ import {
   useState,
 } from 'react';
 
-import { getApiErrorMessage } from '@/shared/api/api-error';
 import { ROUTES } from '@/shared/config/paths';
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
 import { ConfirmModal } from '@/shared/ui/confirm-modal';
 import { AnimatedPanel, AnimatedPanelSwitch } from '@/shared/ui/motion';
 import { SuccessModal } from '@/shared/ui/success-modal';
-import { TeamModal } from '@/features/idea-details/modals/TeamModal';
-
-import { AnimatePresence, motion } from 'framer-motion';
 
 import { IdeaHeader } from './IdeaHeader';
 import { IdeaStatsFooter } from './IdeaStatsFooter';
@@ -63,30 +58,6 @@ type IdeaDetailsViewProps = {
 };
 
 type PendingDiscardAction = 'cancel-edit' | 'navigate-back' | 'tab-switch';
-
-type IdeaDetailsErrorStateProps = {
-  message: string;
-};
-
-function IdeaDetailsErrorState({ message }: IdeaDetailsErrorStateProps) {
-  return (
-    <main className="bg-brand-neutral flex min-h-[calc(100vh-56px)] items-center justify-center px-4 py-12">
-      <div className="border-brand-gray-200 max-w-md rounded-lg border bg-white px-8 py-10 text-center shadow-sm">
-        <p className="text-brand-black text-lg font-bold tracking-wide uppercase">
-          Idea not found
-        </p>
-        <p className="text-brand-gray-600 mt-3 text-sm">{message}</p>
-        <Link
-          to={ROUTES.ideas}
-          className="bg-brand-dark-blue hover:bg-brand-dark-blue/90 mt-6 inline-flex h-10 items-center justify-center rounded-sm px-6 text-xs font-bold tracking-wide text-white uppercase transition-colors"
-          search={{ sort: 'newest' }}
-        >
-          Back to ideas
-        </Link>
-      </div>
-    </main>
-  );
-}
 
 export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
   const navigate = useNavigate();
@@ -111,11 +82,18 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
   const discardAllUnsaved = useDiscussionUiStore(s => s.discardAllUnsaved);
   const userId = useAuthSessionStore(s => s.user?.id);
 
-  const { data: idea, isLoading, isError, error } = useIdeaDetailsQuery(ideaId);
+  const {
+    data: idea,
+    isPending,
+    isError,
+    isSuccess,
+  } = useIdeaDetailsQuery(ideaId);
   const updateMutation = useUpdateIdea(ideaId, idea?.status ?? 'DRAFT');
 
   const { data: similarIdeas = [], isLoading: isSimilarLoading } =
-    useSimilarIdeasQuery(ideaId, { enabled: !isEditing });
+    useSimilarIdeasQuery(ideaId, {
+      enabled: isSuccess && Boolean(idea) && !isEditing,
+    });
 
   const hasUnsavedIdeaEdits = isEditing && hasUnsavedEdits;
 
@@ -155,6 +133,8 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
     setActiveTab('description');
     setEditFormSnapshot(ideaDetailsToEditFormValues(currentIdea));
     setHasUnsavedEdits(false);
+    setIdeaDiscardModalOpen(false);
+    setPendingDiscardAction(null);
     setIsEditing(true);
   };
 
@@ -201,8 +181,12 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
 
   const handleBackClick = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    if (isEditing && hasUnsavedEdits) {
-      requestDiscardConfirmation('navigate-back');
+    if (isEditing) {
+      if (hasUnsavedEdits) {
+        requestDiscardConfirmation('navigate-back');
+        return;
+      }
+      exitEditMode();
       return;
     }
     router.history.back();
@@ -291,18 +275,12 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  if (isLoading) {
+  if (isPending) {
     return <IdeaDetailsPageSkeleton />;
   }
 
   if (isError || !idea) {
-    const message = isError
-      ? getApiErrorMessage(error, {
-          invalidCredentialsMessage:
-            'We could not load this idea. It may have been removed or you may not have access.',
-        })
-      : 'This idea does not exist or is no longer available.';
-    return <IdeaDetailsErrorState message={message} />;
+    return <NotFoundPage variant="content" />;
   }
 
   const isAuthor =
@@ -313,57 +291,73 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
   );
 
   return (
-    <main className="bg-brand-neutral min-h-[calc(100vh-56px)] md:px-8 lg:px-12">
-      <div className="mx-auto max-w-6xl space-y-6 bg-white px-4 py-6 sm:space-y-8 sm:px-6 sm:py-8">
-        <AnimatePresence>
-          {!isScrolled ? (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden"
+    <main className="bg-brand-neutral min-h-[calc(100vh-56px)] px-4 md:px-8 lg:px-12">
+      <div className="mx-auto max-w-5xl space-y-6 bg-white px-4 py-6 sm:space-y-8 sm:px-6 sm:py-8">
+        {isEditing ? (
+          <div className="pb-2">
+            <button
+              type="button"
+              onClick={handleBackClick}
+              className="text-primary hover:text-primary/80 inline-flex cursor-pointer items-center gap-1 text-xs font-bold tracking-wide uppercase transition-colors"
             >
-              <div className="flex items-center pb-2">
-                <button
-                  type="button"
-                  onClick={handleBackClick}
-                  className="text-primary hover:text-primary/80 inline-flex cursor-pointer items-center gap-1 text-xs font-bold tracking-wide uppercase transition-colors"
+              <ArrowLeft className="size-4" />
+              Back
+            </button>
+          </div>
+        ) : (
+          <>
+            <AnimatePresence>
+              {!isScrolled ? (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
                 >
-                  <ArrowLeft className="size-4" />
-                  Back
-                </button>
-              </div>
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
+                  <div className="flex items-center pb-2">
+                    <button
+                      type="button"
+                      onClick={handleBackClick}
+                      className="text-primary hover:text-primary/80 inline-flex cursor-pointer items-center gap-1 text-xs font-bold tracking-wide uppercase transition-colors"
+                    >
+                      <ArrowLeft className="size-4" />
+                      Back
+                    </button>
+                  </div>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
 
-        <div className="sticky top-[56px] z-30 -mx-4 bg-white px-4 py-2 shadow-sm transition-all duration-300 sm:-mx-6 sm:px-6">
-          <IdeaHeader
-            idea={idea}
-            isAuthor={isAuthor}
-            isEditing={isEditing}
-            isCompact={isScrolled}
-            showProjectActions={!isEditing}
-            onStartEdit={() => handleStartEdit(idea)}
-            onDeleteSuccess={() => {
-              void navigate({ to: ROUTES.ideas, search: { sort: 'newest' } });
-            }}
-            onTeamClick={() => setIsTeamModalOpen(true)}
-            onBackClick={handleBackClick}
-          />
+            <div className="sticky top-[56px] z-30 -mx-4 bg-white px-4 py-2 shadow-sm transition-all duration-300 sm:-mx-6 sm:px-6">
+              <IdeaHeader
+                idea={idea}
+                isAuthor={isAuthor}
+                isEditing={false}
+                isCompact={isScrolled}
+                showProjectActions={true}
+                onStartEdit={() => handleStartEdit(idea)}
+                onDeleteSuccess={() => {
+                  void navigate({
+                    to: ROUTES.ideas,
+                    search: { sort: 'newest' },
+                  });
+                }}
+                onTeamClick={() => setIsTeamModalOpen(true)}
+                onBackClick={handleBackClick}
+              />
 
-          {!isEditing ? (
-            <IdeaTabs
-              activeTab={activeTab}
-              onChange={handleTabChange}
-              idea={{ commentCount: idea.commentCount }}
-              counts={{
-                attachments: idea.attachments.length,
-                linkedProblems: visibleProblems.length,
-              }}
-            />
-          ) : null}
-        </div>
+              <IdeaTabs
+                activeTab={activeTab}
+                onChange={handleTabChange}
+                idea={{ commentCount: idea.commentCount }}
+                counts={{
+                  attachments: idea.attachments.length,
+                  linkedProblems: visibleProblems.length,
+                }}
+              />
+            </div>
+          </>
+        )}
 
         <div className="min-h-[280px]">
           {isEditing && editFormSnapshot ? (
@@ -372,6 +366,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
               className="animate-in fade-in duration-200"
               aria-label="Edit idea"
             >
+              <IdeaEditorPageHeading />
               <IdeaForm
                 key={`edit-${idea.id}`}
                 formId={formId}
@@ -399,7 +394,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
                     </div>
                   ) : null}
                   {idea.description ? (
-                    <p className="text-brand-gray-800 font-EB-Garamond max-w-3xl text-sm leading-relaxed whitespace-pre-wrap sm:text-base">
+                    <p className="text-brand-gray-800 font-EB-Garamond min-w-0 max-w-3xl wrap-break-word text-sm leading-relaxed whitespace-pre-wrap sm:text-base">
                       {idea.description}
                     </p>
                   ) : (

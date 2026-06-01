@@ -1,4 +1,5 @@
 import {
+  areIdeaEditFormValuesEqual,
   type IdeaEditFormValues,
   ideaEditSchema,
 } from '@/features/ideas/lib/edit-idea';
@@ -44,23 +45,32 @@ export function IdeaForm({
     register,
     control,
     handleSubmit,
-    reset,
     setValue,
     setError,
     clearErrors,
-    formState: { errors, isDirty },
+    formState: { errors },
+    getValues,
+    watch,
   } = useForm<IdeaEditFormValues>({
     resolver: zodResolver(ideaEditSchema),
-    defaultValues: initialData,
+    values: initialData,
   });
 
   useEffect(() => {
-    reset(initialData);
-  }, [initialData, reset]);
+    if (!onDirtyChange) {
+      return;
+    }
 
-  useEffect(() => {
-    onDirtyChange?.(isDirty);
-  }, [isDirty, onDirtyChange]);
+    const syncDirty = () => {
+      onDirtyChange(
+        !areIdeaEditFormValuesEqual(getValues(), initialData),
+      );
+    };
+
+    syncDirty();
+    const subscription = watch(() => syncDirty());
+    return () => subscription.unsubscribe();
+  }, [watch, getValues, initialData, onDirtyChange]);
 
   return (
     <form

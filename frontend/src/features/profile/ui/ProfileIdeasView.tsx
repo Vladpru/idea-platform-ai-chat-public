@@ -8,6 +8,7 @@ import {
 import { useDeleteIdeaMutation } from '@/features/ideas/hooks/use-idea-mutations';
 import type { TabDefinition } from '@/shared/ui/TabLabelWithBadge';
 import { Button } from '@/shared/ui/button';
+import { SkeletonCard } from '@/shared/ui/skeleton';
 import { Link } from '@tanstack/react-router';
 import { useMemo } from 'react';
 
@@ -107,12 +108,7 @@ export function ProfileIdeasView() {
       layoutId="profile-ideas-dashboard-tabs-underline"
       tabsMobileMode="row"
       deleteMutation={deleteMutation}
-      renderSkeletonCard={i => (
-        <div
-          key={i}
-          className="border-brand-gray-200 h-64 animate-pulse rounded-lg border bg-white"
-        />
-      )}
+      renderSkeletonCard={i => <SkeletonCard key={i} className="h-64" />}
       renderCard={({ item: card, isMobile, isDeleting, onDelete }) => (
         <DashboardCardStandard
           key={card.id}

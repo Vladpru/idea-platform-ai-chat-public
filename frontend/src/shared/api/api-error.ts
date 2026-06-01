@@ -10,6 +10,17 @@ function isUserFacingAuthMessage(message: string): boolean {
   return trimmed.length > 0 && !TECHNICAL_AUTH_MESSAGE.test(trimmed);
 }
 
+export function getApiErrorStatus(error: unknown): number | undefined {
+  if (axios.isAxiosError(error)) {
+    return error.response?.status;
+  }
+  return undefined;
+}
+
+export function isApiNotFoundError(error: unknown): boolean {
+  return getApiErrorStatus(error) === 404;
+}
+
 function messageFromResponseBody(
   data: { message?: string | string[] } | undefined,
 ): string | null {
@@ -41,6 +52,12 @@ export function getApiErrorMessage(
       return apiMessage;
     }
     const status = error.response?.status;
+    if (status === 404) {
+      return (
+        apiMessage ??
+        'This content no longer exists or could not be found.'
+      );
+    }
     if (status === 401 || status === 403) {
       return wrongCreds;
     }

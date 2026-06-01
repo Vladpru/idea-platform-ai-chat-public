@@ -1,18 +1,23 @@
-import type { IdeaDetails } from '@/features/idea-details/model/idea-details.types';
 import { LinkExistingProblemModal } from '@/features/idea-details/modals/LinkExistingProblemModal';
-import { useUnlinkProblemMutation } from '@/features/ideas/hooks/use-idea-mutations';
+import type { IdeaDetails } from '@/features/idea-details/model/idea-details.types';
+import {
+  useLinkProblemMutation,
+  useUnlinkProblemMutation,
+} from '@/features/ideas/hooks/use-idea-mutations';
 import { outlineBtnClass } from '@/features/ideas/lib/styles';
+import { AddProblemModal } from '@/features/ideas/ui/modals/AddProblemModal';
+import type { ProblemDraft } from '@/features/problems';
+import { PROBLEMS_DASHBOARD_LABELS } from '@/features/problems-dashboard/lib/problems-dashboard-labels';
 import type { ProblemDashboardCard } from '@/features/problems-dashboard/model/problems-dashboard.types';
 import { ProblemDashboardCardStandard } from '@/features/problems-dashboard/ui/cards/ProblemDashboardCardStandard';
-import { PROBLEMS_DASHBOARD_LABELS } from '@/features/problems-dashboard/lib/problems-dashboard-labels';
 import { MoreVertical, Unlink } from 'lucide-react';
 import { useState } from 'react';
 
 import { ROUTES } from '@/shared/config/paths';
 import { cn } from '@/shared/lib/utils';
-import { Button } from '@/shared/ui/button';
 import { AppDropdown, type DropdownItem } from '@/shared/ui/AppDropdown';
 import { LikeButton } from '@/shared/ui/LikeButton';
+import { Button } from '@/shared/ui/button';
 
 type IdeaLinkedProblemsTabProps = {
   ideaId: string;
@@ -29,12 +34,12 @@ const headerActionsLayoutClass =
   'flex w-full flex-row gap-3 md:w-auto md:flex-nowrap';
 
 type LinkedProblemsHeaderProps = {
-  ideaId: string;
+  onCreateNew: () => void;
   onLinkExisting: () => void;
 };
 
 function LinkedProblemsHeader({
-  ideaId,
+  onCreateNew,
   onLinkExisting,
 }: LinkedProblemsHeaderProps) {
   return (
@@ -43,15 +48,14 @@ function LinkedProblemsHeader({
         Linked problems
       </h2>
       <div className={headerActionsLayoutClass}>
-        <a
-          href={`/problems/new?fromIdeaId=${encodeURIComponent(ideaId)}`}
-          className={cn(
-            headerActionClass,
-            'inline-flex flex-1 items-center justify-center md:flex-initial',
-          )}
+        <Button
+          type="button"
+          variant="outline"
+          className={cn(headerActionClass, 'flex-1 md:flex-initial')}
+          onClick={onCreateNew}
         >
           Create new problem
-        </a>
+        </Button>
         <Button
           type="button"
           variant="outline"
@@ -167,17 +171,36 @@ export function IdeaLinkedProblemsTab({
   isAuthor = false,
 }: IdeaLinkedProblemsTabProps) {
   const [linkModalOpen, setLinkModalOpen] = useState(false);
+  const [createProblemOpen, setCreateProblemOpen] = useState(false);
+  const linkMutation = useLinkProblemMutation();
   const unlinkMutation = useUnlinkProblemMutation();
   const linkedProblemIds = problems.map(problem => problem.id);
+  const linkedSet = new Set(linkedProblemIds);
 
   const handleUnlink = (problemId: string) => {
     unlinkMutation.mutate({ ideaId, problemId });
   };
 
+  const handleProblemCreated = (problem: ProblemDraft) => {
+    if (linkedSet.has(problem.id)) {
+      setCreateProblemOpen(false);
+      return;
+    }
+
+    linkMutation.mutate(
+      { ideaId, problemIds: [problem.id] },
+      {
+        onSuccess: () => {
+          setCreateProblemOpen(false);
+        },
+      },
+    );
+  };
+
   return (
     <section className="space-y-6">
       <LinkedProblemsHeader
-        ideaId={ideaId}
+        onCreateNew={() => setCreateProblemOpen(true)}
         onLinkExisting={() => setLinkModalOpen(true)}
       />
 
@@ -186,6 +209,12 @@ export function IdeaLinkedProblemsTab({
         onOpenChange={setLinkModalOpen}
         ideaId={ideaId}
         linkedProblemIds={linkedProblemIds}
+      />
+
+      <AddProblemModal
+        open={createProblemOpen}
+        onOpenChange={setCreateProblemOpen}
+        onCreated={handleProblemCreated}
       />
 
       {problems.length === 0 ? (

@@ -38,8 +38,8 @@ export function ideaDetailsToEditFormValues(idea: IdeaDetails): IdeaEditFormValu
   return {
     stage:
       apiStageToFormStage(idea.stageValue) ?? ideaEditDefaultValues.stage,
-    title: idea.title,
-    description: idea.description,
+    title: idea.title.trim(),
+    description: idea.description.trim(),
     tags: formatTags(idea.tags),
     existingMainImage: idea.mainImage,
     removeMainImage: false,

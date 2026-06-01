@@ -10,9 +10,12 @@ import {
   useIdeasDashboardQuery,
 } from '../../hooks/use-ideas-dashboard';
 import { IDEAS_DASHBOARD_LABELS } from '../../lib/config/ideas-dashboard-labels';
-import type { DashboardViewport } from '@/shared/dashboard/lib/layout/dashboard-grid-layout';
-import { DashboardGrid } from '@/shared/dashboard/ui/grid/DashboardGrid';
-import { LoadMoreFooter } from '@/shared/dashboard/ui/grid/LoadMoreFooter';
+import {
+  DashboardGrid,
+  DashboardGridSkeleton,
+  LoadMoreFooter,
+  type DashboardViewport,
+} from '@/shared/dashboard';
 import type {
   IdeaDashboardCard,
   IdeaDashboardSort,
@@ -20,19 +23,6 @@ import type {
 import { DashboardCardCompact } from '../cards/DashboardCardCompact';
 import { DashboardCardStandard } from '../cards/DashboardCardStandard';
 import { DashboardHeader } from '../header/DashboardHeader';
-
-function IdeasGridSkeleton() {
-  return (
-    <div className="grid grid-cols-1 gap-4">
-      {Array.from({ length: 4 }).map((_, index) => (
-        <div
-          key={index}
-          className="border-brand-gray-200 h-80 animate-pulse rounded-lg border bg-white"
-        />
-      ))}
-    </div>
-  );
-}
 
 function renderIdeaCompactCard(
   card: IdeaDashboardCard,
@@ -114,7 +104,9 @@ const IdeasDashboardBody = memo(function IdeasDashboardBody({
   }, [isFetchingNextPage]);
 
   if (isLoading) {
-    return <IdeasGridSkeleton />;
+    return (
+      <DashboardGridSkeleton columnCount={columnCount} viewport={viewport} />
+    );
   }
 
   if (isError) {

@@ -3,6 +3,11 @@ export {
   SAVE_IDEA_PROGRESS_DESCRIPTION as IDEA_SAVE_PROGRESS_DESCRIPTION,
 } from '@/shared/lib/create-form-leave/copy';
 
+export const IDEA_EDITOR_TITLE = 'Idea editor';
+
+export const IDEA_EDITOR_QUOTE =
+  '\u201cCertainty of purpose is the starting point of all achievement\u201d \u2014 W. Clement Stone.';
+
 export const IDEA_UNDO_CHANGES_TITLE = 'Undo changes?';
 export const IDEA_UNDO_CHANGES_DESCRIPTION =
   'All completed data will be deleted';
