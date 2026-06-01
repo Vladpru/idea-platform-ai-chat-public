@@ -132,6 +132,22 @@ export type SuggestedIdeasResponse = {
   data: SuggestedIdeaItem[];
 };
 
+export type SuggestedTagsParams = {
+  title?: string;
+  description?: string;
+  exclude?: string[];
+  limit?: number;
+};
+
+export type SuggestedTagItem = {
+  name: string;
+  label: string;
+};
+
+export type SuggestedTagsResponse = {
+  data: SuggestedTagItem[];
+};
+
 export type UploadProblemAttachmentPayload = {
   file: File;
 };

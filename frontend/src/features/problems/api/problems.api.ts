@@ -8,6 +8,8 @@ import type {
   ProblemsListParams,
   SuggestedIdeasParams,
   SuggestedIdeasResponse,
+  SuggestedTagsParams,
+  SuggestedTagsResponse,
   UpdateProblemPayload,
   UploadProblemAttachmentPayload,
 } from '@/features/problems/api/problems-api.types';
@@ -42,6 +44,16 @@ export async function fetchSuggestedIdeas(
 ): Promise<SuggestedIdeasResponse> {
   const { data } = await api.get<SuggestedIdeasResponse>(
     PROBLEMS_ROUTES.suggestedIdeas,
+    { params },
+  );
+  return data;
+}
+
+export async function fetchSuggestedTags(
+  params: SuggestedTagsParams,
+): Promise<SuggestedTagsResponse> {
+  const { data } = await api.get<SuggestedTagsResponse>(
+    PROBLEMS_ROUTES.suggestedTags,
     { params },
   );
   return data;

@@ -4,6 +4,10 @@ import { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { SuggestedIdeasQueryDto } from './dto/suggested-ideas-query.dto';
 import type { SuggestedIdeasResponse } from './types/suggested-idea.types';
+import {
+  buildProblemSearchText,
+  formatTsQuery,
+} from './utils/problem-fts.util';
 
 type SuggestedIdeaRow = {
   id: string;
@@ -19,18 +23,6 @@ function parseTagLabels(value?: string): string[] {
     .filter(Boolean);
 }
 
-function formatTsQuery(text: string): string | null {
-  const formatted = text
-    .replace(/[^\p{L}\p{N}]+/gu, ' ')
-    .trim()
-    .split(/\s+/)
-    .filter(word => word.length > 0)
-    .map(word => `${word}:*`)
-    .join(' & ');
-
-  return formatted || null;
-}
-
 @Injectable()
 export class ProblemSuggestedIdeasService {
   private readonly logger = new Logger(ProblemSuggestedIdeasService.name);
@@ -44,9 +36,7 @@ export class ProblemSuggestedIdeasService {
     const limit = query.limit ?? 6;
     const excludeIds = query.exclude ?? [];
     const tagLabels = parseTagLabels(query.tags).map(tag => tag.toLowerCase());
-    const searchText = [query.title?.trim(), query.description?.trim()]
-      .filter(Boolean)
-      .join(' ');
+    const searchText = buildProblemSearchText(query.title, query.description);
     const formattedQuery = searchText ? formatTsQuery(searchText) : null;
 
     try {

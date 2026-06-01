@@ -13,6 +13,8 @@ export {
 } from './mappers';
 export { hasSubmitProblemUnsavedProgress } from './unsaved-progress';
 export type { SuggestedIdeaChip, SuggestedIdeaContext } from './suggested-ideas';
+export type { SuggestedTagChip, SuggestedTagContext } from './suggested-tags';
+export { getSelectedTagNames, toggleTagInValue } from './suggested-tags';
 export {
   problemStageSchema,
   submitProblemDefaultValues,
