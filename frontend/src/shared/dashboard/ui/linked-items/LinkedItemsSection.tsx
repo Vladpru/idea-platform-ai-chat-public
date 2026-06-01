@@ -1,12 +1,23 @@
 import { ChevronRight, ChevronUp } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { COMPACT_CARD_COLUMN_THRESHOLD } from '@/shared/dashboard/lib/config/constants';
 import type { DashboardLinkedItem } from '@/shared/dashboard/model/dashboard.types';
+import { useHorizontalDragScroll } from '@/shared/hooks/use-horizontal-drag-scroll';
 import { cn } from '@/shared/lib/utils';
 
 import { LinkedItemMiniCard } from './LinkedItemMiniCard';
 import { linkedItemsScrollContainerClass } from './linked-items.styles';
+
+function getScrollHintOffsetClass(
+  entityType: 'IDEA' | 'PROBLEM',
+  columnCount: number,
+): string {
+  const compact = columnCount >= COMPACT_CARD_COLUMN_THRESHOLD;
+  if (!compact) return 'right-[-23px]';
+  if (entityType === 'PROBLEM') return 'right-[-8px]';
+  return 'right-[-15px]';
+}
 
 type LinkedItemsSectionProps = {
   items: DashboardLinkedItem[];
@@ -33,8 +44,9 @@ export function LinkedItemsSection({
   className,
   linkedItemEmptyImageText,
 }: LinkedItemsSectionProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
   const [isScrollable, setIsScrollable] = useState(false);
+  const { scrollRef, isDragging, suppressClickRef, dragScrollProps } =
+    useHorizontalDragScroll(isScrollable);
   const compact = !showToggle;
 
   useEffect(() => {
@@ -98,7 +110,15 @@ export function LinkedItemsSection({
 
       {expanded ? (
         <div className="relative">
-          <div ref={scrollRef} className={linkedItemsScrollContainerClass}>
+          <div
+            ref={scrollRef}
+            className={cn(
+              linkedItemsScrollContainerClass,
+              isScrollable && 'cursor-grab touch-pan-y',
+              isDragging && 'cursor-grabbing select-none',
+            )}
+            {...dragScrollProps}
+          >
             {items.map(item => (
               <LinkedItemMiniCard
                 key={item.id}
@@ -107,6 +127,9 @@ export function LinkedItemsSection({
                 entityType={entityType}
                 columnCount={columnCount}
                 emptyImageText={linkedItemEmptyImageText}
+                suppressClickRef={
+                  isScrollable ? suppressClickRef : undefined
+                }
               />
             ))}
           </div>
@@ -115,12 +138,7 @@ export function LinkedItemsSection({
             <div
               className={cn(
                 'pointer-events-none absolute inset-y-0 flex w-10 items-center justify-end bg-linear-to-l from-white via-white/90 to-transparent pr-1',
-                entityType === 'PROBLEM' &&
-                  columnCount >= COMPACT_CARD_COLUMN_THRESHOLD
-                  ? 'right-[-8px]'
-                  : columnCount >= COMPACT_CARD_COLUMN_THRESHOLD
-                    ? 'right-[-15px]'
-                    : 'right-[-23px]',
+                getScrollHintOffsetClass(entityType, columnCount),
               )}
               aria-hidden
             >
