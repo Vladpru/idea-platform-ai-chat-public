@@ -6,10 +6,12 @@ import {
   useIdeaDetailsQuery,
   useSimilarIdeasQuery,
 } from '@/features/idea-details/lib/use-idea-details-queries';
+import { TeamModal } from '@/features/idea-details/modals/TeamModal';
 import type {
   IdeaDetails,
   IdeaTabId,
 } from '@/features/idea-details/model/idea-details.types';
+import { useUpdateIdea } from '@/features/ideas/hooks/use-update-idea';
 import {
   type IdeaEditFormValues,
   ideaDetailsToEditFormValues,
@@ -21,10 +23,11 @@ import {
   IDEA_UPDATED_SUCCESS_TITLE,
 } from '@/features/ideas/lib/modals/copy';
 import { outlineBtnClass, primaryBtnClass } from '@/features/ideas/lib/styles';
-import { useUpdateIdea } from '@/features/ideas/hooks/use-update-idea';
-import { IdeaForm } from '@/features/ideas/ui/idea-form/IdeaForm';
 import { IdeaEditorPageHeading } from '@/features/ideas/ui/IdeaEditorPageHeading';
+import { IdeaForm } from '@/features/ideas/ui/idea-form/IdeaForm';
+import { NotFoundPage } from '@/pages/not-found';
 import { useBlocker, useNavigate, useRouter } from '@tanstack/react-router';
+import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import {
   type MouseEvent,
@@ -40,9 +43,6 @@ import { Button } from '@/shared/ui/button';
 import { ConfirmModal } from '@/shared/ui/confirm-modal';
 import { AnimatedPanel, AnimatedPanelSwitch } from '@/shared/ui/motion';
 import { SuccessModal } from '@/shared/ui/success-modal';
-import { TeamModal } from '@/features/idea-details/modals/TeamModal';
-
-import { AnimatePresence, motion } from 'framer-motion';
 
 import { IdeaHeader } from './IdeaHeader';
 import { IdeaStatsFooter } from './IdeaStatsFooter';
@@ -51,8 +51,6 @@ import { IdeaTagCloud } from './IdeaTagCloud';
 import { IdeaAttachmentsTab } from './attachments/IdeaAttachmentsTab';
 import { IdeaLinkedProblemsTab } from './linked-problems/IdeaLinkedProblemsTab';
 import { SimilarIdeasWidget } from './similar/SimilarIdeasWidget';
-import { NotFoundPage } from '@/pages/not-found';
-
 import { IdeaDetailsPageSkeleton } from './skeletons/IdeaDetailsPageSkeleton';
 
 type IdeaDetailsViewProps = {
@@ -84,8 +82,12 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
   const discardAllUnsaved = useDiscussionUiStore(s => s.discardAllUnsaved);
   const userId = useAuthSessionStore(s => s.user?.id);
 
-  const { data: idea, isPending, isError, isSuccess } =
-    useIdeaDetailsQuery(ideaId);
+  const {
+    data: idea,
+    isPending,
+    isError,
+    isSuccess,
+  } = useIdeaDetailsQuery(ideaId);
   const updateMutation = useUpdateIdea(ideaId, idea?.status ?? 'DRAFT');
 
   const { data: similarIdeas = [], isLoading: isSimilarLoading } =
@@ -135,12 +137,6 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
     setPendingDiscardAction(null);
     setIsEditing(true);
   };
-
-  useEffect(() => {
-    if (!isEditing) {
-      setHasUnsavedEdits(false);
-    }
-  }, [isEditing]);
 
   const handleCancelEdit = () => {
     if (hasUnsavedEdits) {
@@ -398,7 +394,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
                     </div>
                   ) : null}
                   {idea.description ? (
-                    <p className="text-brand-gray-800 font-EB-Garamond max-w-3xl text-sm leading-relaxed whitespace-pre-wrap sm:text-base">
+                    <p className="text-brand-gray-800 font-EB-Garamond min-w-0 max-w-3xl wrap-break-word text-sm leading-relaxed whitespace-pre-wrap sm:text-base">
                       {idea.description}
                     </p>
                   ) : (

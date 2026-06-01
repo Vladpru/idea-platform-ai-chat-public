@@ -96,13 +96,13 @@ export class ProblemSuggestedIdeasService {
         (
           ${tagScoreSql} * 3
           ${ftsRankSql}
-          + CASE WHEN i.author_id = ${userId}::uuid THEN 1 ELSE 0 END
+          + CASE WHEN i.author_id = ${userId} THEN 1 ELSE 0 END
           + CASE WHEN i.status::text = 'PUBLISHED' THEN 0.5 ELSE 0 END
         ) AS relevance_score
       FROM idea i
-      WHERE (i.status::text = 'PUBLISHED' OR (i.status::text = 'DRAFT' AND i.author_id = ${userId}::uuid))
+      WHERE (i.status::text = 'PUBLISHED' OR (i.status::text = 'DRAFT' AND i.author_id = ${userId}))
         AND (i.stage IS NULL OR i.stage::text <> 'ARCHIVED')
-        ${hasExclude ? Prisma.sql`AND NOT (i.id = ANY(${excludeIds}::uuid[]))` : Prisma.empty}
+        ${hasExclude ? Prisma.sql`AND NOT (i.id = ANY(${excludeIds}::text[]))` : Prisma.empty}
       ORDER BY relevance_score DESC, i.created_at DESC
       LIMIT ${limit}
     `;

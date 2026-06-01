@@ -93,8 +93,7 @@ function ManageDropdown({
         {!isEditing ? (
           <DropdownMenuItem
             className="focus:bg-brand-blue-700/10 hover:bg-brand-blue-700/10 cursor-pointer px-3 py-2 text-sm font-normal"
-            onSelect={event => {
-              event.preventDefault();
+            onSelect={() => {
               onStartEdit?.();
             }}
           >
@@ -106,8 +105,7 @@ function ManageDropdown({
 
         <DropdownMenuItem
           className="focus:bg-brand-orange/10 hover:bg-brand-orange/10 cursor-pointer px-3 py-2 text-sm font-normal text-amber-600 focus:text-amber-600"
-          onSelect={event => {
-            event.preventDefault();
+          onSelect={() => {
             onDeleteClick();
           }}
         >

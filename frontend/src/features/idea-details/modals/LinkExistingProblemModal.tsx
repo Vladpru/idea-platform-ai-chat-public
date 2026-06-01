@@ -7,9 +7,9 @@ import {
   selectClass,
 } from '@/features/ideas/lib/styles';
 
-import { type ProblemDraft, useMyProblemsQuery } from '@/features/problems';
+import { type ProblemDraft, useProblemsListQuery } from '@/features/problems';
 import { cancelOutlineBtn } from '@/features/profile/ui/profile-view-classes';
-import { Check, ChevronDown, Search, X } from 'lucide-react';
+import { Check, ChevronDown, Plus, Search, X } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 
 import { cn } from '@/shared/lib/utils';
@@ -48,8 +48,10 @@ export function LinkExistingProblemModal({
 
   const [addProblemOpen, setAddProblemOpen] = useState(false);
 
-  const { data: myProblemsFeed, isLoading } = useMyProblemsQuery();
-  const myProblems = myProblemsFeed?.data ?? [];
+  const { data: problemsFeed, isLoading } = useProblemsListQuery({
+    sort: 'newest',
+    limit: 50,
+  });
   const linkMutation = useLinkProblemMutation();
 
   const linkedSet = useMemo(
@@ -58,13 +60,13 @@ export function LinkExistingProblemModal({
   );
 
   const availableProblems = useMemo(() => {
-    return myProblems
+    return (problemsFeed?.data ?? [])
       .filter(problem => !linkedSet.has(problem.id))
       .map(problem => ({
         id: problem.id,
         label: problem.title,
       }));
-  }, [linkedSet, myProblems]);
+  }, [linkedSet, problemsFeed?.data]);
 
   const filteredProblems = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -122,6 +124,24 @@ export function LinkExistingProblemModal({
 
     linkMutation.mutate(
       { ideaId, problemIds: selectedProblemIds },
+      {
+        onSuccess: () => {
+          handleOpenChange(false);
+        },
+      },
+    );
+  };
+
+  const handleProblemCreated = (problem: ProblemDraft) => {
+    setAddProblemOpen(false);
+    setDropdownOpen(false);
+
+    if (linkedSet.has(problem.id)) {
+      return;
+    }
+
+    linkMutation.mutate(
+      { ideaId, problemIds: [problem.id] },
       {
         onSuccess: () => {
           handleOpenChange(false);
@@ -349,6 +369,19 @@ export function LinkExistingProblemModal({
                           })
                         )}
                       </ul>
+                      <hr className="mx-auto w-[95%]" />
+                      <button
+                        type="button"
+                        onClick={event => {
+                          event.stopPropagation();
+                          setDropdownOpen(false);
+                          setAddProblemOpen(true);
+                        }}
+                        className="text-brand-dark-blue hover:bg-brand-light-blue/25 flex w-full items-center gap-2 px-3 py-3 text-xs font-bold uppercase transition-colors"
+                      >
+                        <Plus className="size-4" aria-hidden />
+                        Add new problem
+                      </button>
                     </div>
                   ) : null}
                 </div>
@@ -401,15 +434,7 @@ export function LinkExistingProblemModal({
       <AddProblemModal
         open={addProblemOpen}
         onOpenChange={setAddProblemOpen}
-        onCreated={(problem: ProblemDraft) => {
-          if (
-            !linkedSet.has(problem.id) &&
-            !selectedProblemIds.includes(problem.id)
-          ) {
-            setSelectedProblemIds(prev => [...prev, problem.id]);
-          }
-          setDropdownOpen(false);
-        }}
+        onCreated={handleProblemCreated}
       />
     </>
   );

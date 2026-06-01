@@ -1,8 +1,8 @@
+import { hasValidSession } from '@/features/auth/model/auth-session-store';
 import { LoginPage } from '@/pages/login';
-import { pageDocumentHead } from '@/shared/lib/document-head';
 import { createFileRoute, redirect } from '@tanstack/react-router';
 
-import { hasValidSession } from '@/features/auth/model/auth-session-store';
+import { pageDocumentHead } from '@/shared/lib/document-head';
 
 export const Route = createFileRoute('/login')({
   beforeLoad: () => {
