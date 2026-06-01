@@ -163,15 +163,18 @@ function patchDiscussionCount<T extends IdeaDetails | ProblemDetails>(
   details: T,
   delta: number,
 ): T {
+  const comments = Math.max(0, details.commentCount + delta);
+
   return {
     ...details,
+    commentCount: comments,
     counts: {
       ...details.counts,
-      discussion: Math.max(0, details.counts.discussion + delta),
+      discussion: comments,
     },
     stats: {
       ...details.stats,
-      comments: Math.max(0, details.stats.comments + delta),
+      comments,
     },
   };
 }

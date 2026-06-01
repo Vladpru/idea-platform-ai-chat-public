@@ -45,7 +45,7 @@ export function CommentInputArea({
   entityId,
   className,
 }: CommentInputAreaProps) {
-  const { replyTo, clearReply } = useReplyContext();
+  const { replyTo, clearReply, setReplyTo } = useReplyContext();
   const [content, setContent] = useState('');
   const [isFloating, setIsFloating] = useState(true);
 
@@ -63,13 +63,20 @@ export function CommentInputArea({
 
   const { mutate } = useCreateCommentMutation(entityType, entityId);
 
-  const { files, handleFileChange, removeFile, clearFiles, atLimit, accept } =
-    useFileHandler({
-      maxFiles: MAX_COMMENT_ATTACHMENTS,
-      allowedMimeTypes: [...COMMENT_ATTACHMENT_MIME_TYPES],
-      accept: COMMENT_ATTACHMENT_ACCEPT,
-      allowedMessage: COMMENT_ATTACHMENT_ALLOWED_MESSAGE,
-    });
+  const {
+    files,
+    handleFileChange,
+    removeFile,
+    clearFiles,
+    atLimit,
+    accept,
+    addFiles,
+  } = useFileHandler({
+    maxFiles: MAX_COMMENT_ATTACHMENTS,
+    allowedMimeTypes: [...COMMENT_ATTACHMENT_MIME_TYPES],
+    accept: COMMENT_ATTACHMENT_ACCEPT,
+    allowedMessage: COMMENT_ATTACHMENT_ALLOWED_MESSAGE,
+  });
 
   const editingCommentId = useDiscussionUiStore(s => s.editingCommentId);
   const setDraftDirty = useDiscussionUiStore(s => s.setDraftDirty);
@@ -83,11 +90,22 @@ export function CommentInputArea({
 
   const canSubmit = (contentLength > 0 || hasFiles) && !isOverLimit;
 
+  const adjustTextareaHeight = useCallback(() => {
+    const element = textareaRef.current;
+    if (!element) return;
+    element.style.height = 'auto';
+    element.style.height = `${Math.min(element.scrollHeight, 120)}px`;
+  }, []);
+
   useEffect(() => {
     const isDirty = contentLength > 0 || hasFiles;
     setDraftDirty(isDirty);
     return () => setDraftDirty(false);
   }, [contentLength, hasFiles, setDraftDirty]);
+
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [content, adjustTextareaHeight]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -110,13 +128,6 @@ export function CommentInputArea({
     };
   }, []);
 
-  const adjustTextareaHeight = useCallback(() => {
-    const element = textareaRef.current;
-    if (!element) return;
-    element.style.height = 'auto';
-    element.style.height = `${Math.min(element.scrollHeight, 120)}px`;
-  }, []);
-
   const resetInput = useCallback(() => {
     setContent('');
     clearFiles();
@@ -134,15 +145,32 @@ export function CommentInputArea({
 
     const payloadContent = trimmedContent;
     const payloadParentId = replyTo?.id;
-    const payloadAttachments = files.length > 0 ? files : undefined;
+    const payloadAttachments = [...files];
+    const payloadReplyTo = replyTo;
 
     resetInput();
 
-    mutate({
-      content: payloadContent,
-      parentId: payloadParentId,
-      attachments: payloadAttachments,
-    });
+    mutate(
+      {
+        content: payloadContent,
+        parentId: payloadParentId,
+        attachments:
+          payloadAttachments.length > 0 ? payloadAttachments : undefined,
+      },
+      {
+        onError: () => {
+          setContent(prev =>
+            prev ? `${prev}\n\n${payloadContent}` : payloadContent,
+          );
+          if (payloadAttachments.length > 0) {
+            addFiles(payloadAttachments);
+          }
+          if (payloadReplyTo && setReplyTo) {
+            setReplyTo(payloadReplyTo);
+          }
+        },
+      },
+    );
   };
 
   const handleQuoteClick = useCallback(
@@ -308,7 +336,6 @@ export function CommentInputArea({
               )}
               onChange={event => {
                 setContent(event.target.value);
-                adjustTextareaHeight();
               }}
               onKeyDown={event => {
                 if (event.key === 'Enter' && !event.shiftKey) {

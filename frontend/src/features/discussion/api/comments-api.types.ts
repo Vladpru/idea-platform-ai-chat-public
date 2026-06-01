@@ -28,6 +28,8 @@ export type CommentDto = {
   likeCount: number;
   isLiked: boolean;
   createdAt: string;
+  isClientError?: boolean;
+  retryPayload?: CreateCommentPayload;
 };
 
 export type PaginatedCommentsMeta = {
