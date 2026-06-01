@@ -52,7 +52,6 @@ type CreateIdeaState = {
 type PersistedCreateIdeaState = {
   draft: CreateIdeaDraft;
   remoteMedia: IdeaMediaItem[];
-  persistedLocalFiles: PersistedLocalFiles;
 };
 
 const initialState = {
@@ -199,11 +198,18 @@ export const useCreateIdeaStore = create<CreateIdeaState>()(
     {
       name: 'create-idea-session',
       storage: createJSONStorage(() => sessionStorage),
-      partialize: state => ({
-        draft: state.draft,
-        remoteMedia: state.remoteMedia,
-        persistedLocalFiles: state.persistedLocalFiles,
-      }),
+      partialize: state => {
+        const {
+          localFiles: _localFiles,
+          persistedLocalFiles: _persistedLocalFiles,
+          localFilesPersistenceKey: _localFilesPersistenceKey,
+          ...rest
+        } = state;
+        return {
+          draft: rest.draft,
+          remoteMedia: rest.remoteMedia,
+        };
+      },
       merge: (persisted, current) => {
         const saved = persisted as Partial<PersistedCreateIdeaState> | undefined;
         if (!saved?.draft) return current;

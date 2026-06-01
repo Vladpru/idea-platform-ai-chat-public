@@ -27,9 +27,11 @@ import {
 import { useCreateIdeaStore } from '@/features/ideas/store/create-idea.store';
 import { IDEA_STATUS } from '@/features/ideas/model/idea.types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
 import { toast } from 'sonner';
 
 import { getApiErrorMessage } from '@/shared/api/api-error';
+import { ROUTES } from '@/shared/config/paths';
 
 export const ideaMutationKeys = {
   all: ['ideas'] as const,
@@ -60,6 +62,8 @@ export function invalidateIdeaQueries(
 }
 
 export function useSaveIdeaDraftMutation() {
+  const navigate = useNavigate();
+
   return useMutation({
     mutationKey: [...ideaMutationKeys.all, 'save-draft'],
     mutationFn: async (values: IdeaCreateFormValues) => {
@@ -93,7 +97,17 @@ export function useSaveIdeaDraftMutation() {
     },
     onSuccess: idea => {
       useCreateIdeaStore.getState().applyServerIdea(idea);
-      toast.success('Draft saved');
+      toast.success('Draft saved', {
+        action: {
+          label: 'View Drafts',
+          onClick: () => {
+            void navigate({
+              to: ROUTES.profileIdeas,
+              search: { tab: 'drafts' },
+            });
+          },
+        },
+      });
     },
     onError: error => {
       const message = getApiErrorMessage(error, {
@@ -147,7 +161,9 @@ export function useDeleteIdeaMutation() {
     mutationKey: [...ideaMutationKeys.all, 'delete'],
     mutationFn: (ideaId: string) => deleteIdea(ideaId),
     onSuccess: (_void, ideaId) => {
-      invalidateIdeaQueries(queryClient, undefined, { invalidateDashboard: true });
+      invalidateIdeaQueries(queryClient, undefined, {
+        invalidateDashboard: true,
+      });
       queryClient.removeQueries({ queryKey: ideaMutationKeys.detail(ideaId) });
 
       const store = useCreateIdeaStore.getState();
@@ -223,7 +239,9 @@ export function usePublishIdeaMutation() {
     },
     onSuccess: ({ idea, action }) => {
       useCreateIdeaStore.getState().applyServerIdea(idea);
-      invalidateIdeaQueries(queryClient, idea.id, { invalidateDashboard: true });
+      invalidateIdeaQueries(queryClient, idea.id, {
+        invalidateDashboard: true,
+      });
       toast.success(action === 'update' ? 'Idea updated' : 'Idea published');
     },
     onError: error => {

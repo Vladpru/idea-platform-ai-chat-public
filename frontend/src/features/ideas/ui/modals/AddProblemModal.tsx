@@ -7,6 +7,7 @@ import {
   type ProblemDraft,
   useCreateProblemDraftMutation,
 } from '@/features/problems';
+import { FieldError } from '@/features/ideas/ui/create-idea/Fields';
 import {
   fieldLabelClass,
   primaryBtnClass,
@@ -17,7 +18,7 @@ import { cancelOutlineBtn } from '@/features/profile/ui/profile-view-classes';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { X } from 'lucide-react';
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
@@ -30,11 +31,7 @@ import {
 } from '@/shared/ui/dialog';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/shared/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip';
 
 const SAVE_TOOLTIP =
   'Enter a problem title and description to save and link this problem.';
@@ -54,12 +51,16 @@ export function AddProblemModal({
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors, isValid },
   } = useForm<AddProblemValues>({
     resolver: zodResolver(addProblemSchema),
     defaultValues: addProblemDefaultValues,
     mode: 'onChange',
   });
+
+  const titleValue = useWatch({ control, name: 'title' }) || '';
+  const descriptionValue = useWatch({ control, name: 'description' }) || '';
 
   const createDraftMutation = useCreateProblemDraftMutation();
 
@@ -126,17 +127,22 @@ export function AddProblemModal({
                 className="mt-2 bg-white"
                 placeholder="Keep it short and specific, e.g., 'Low visibility into equipment usage'..."
                 aria-invalid={!!errors.title}
+                maxLength={200}
                 {...register('title')}
               />
-              {errors.title ? (
-                <p className="text-destructive mt-1 text-xs font-medium">
-                  {errors.title.message}
-                </p>
-              ) : null}
+              <div className="flex items-start justify-between gap-4 pt-1">
+                <FieldError message={errors.title?.message} />
+                <span className="text-brand-gray-500 ml-auto text-xs">
+                  {titleValue.length}/200
+                </span>
+              </div>
             </div>
 
             <div>
-              <Label htmlFor="add-problem-description" className={fieldLabelClass}>
+              <Label
+                htmlFor="add-problem-description"
+                className={fieldLabelClass}
+              >
                 Description
               </Label>
               <textarea
@@ -144,13 +150,15 @@ export function AddProblemModal({
                 className={cn(textareaClass, 'mt-2 min-h-[120px]')}
                 placeholder="Add context, why this is a problem, and who it affects..."
                 aria-invalid={!!errors.description}
+                maxLength={5000}
                 {...register('description')}
               />
-              {errors.description ? (
-                <p className="text-destructive mt-1 text-xs font-medium">
-                  {errors.description.message}
-                </p>
-              ) : null}
+              <div className="flex items-start justify-between gap-4 pt-1">
+                <FieldError message={errors.description?.message} />
+                <span className="text-brand-gray-500 ml-auto text-xs">
+                  {descriptionValue.length}/5000
+                </span>
+              </div>
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
@@ -169,7 +177,9 @@ export function AddProblemModal({
                   className={primaryBtnClass}
                   disabled={createDraftMutation.isPending}
                 >
-                  {createDraftMutation.isPending ? 'Saving…' : 'Save & link problem'}
+                  {createDraftMutation.isPending
+                    ? 'Saving…'
+                    : 'Save & link problem'}
                 </Button>
               ) : (
                 <Tooltip>
