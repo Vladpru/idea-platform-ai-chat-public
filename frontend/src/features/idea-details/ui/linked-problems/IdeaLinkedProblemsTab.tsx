@@ -1,23 +1,23 @@
-import type { IdeaDetails } from '@/features/idea-details/model/idea-details.types';
 import { LinkExistingProblemModal } from '@/features/idea-details/modals/LinkExistingProblemModal';
+import type { IdeaDetails } from '@/features/idea-details/model/idea-details.types';
 import {
   useLinkProblemMutation,
   useUnlinkProblemMutation,
 } from '@/features/ideas/hooks/use-idea-mutations';
+import { outlineBtnClass } from '@/features/ideas/lib/styles';
 import { AddProblemModal } from '@/features/ideas/ui/modals/AddProblemModal';
 import type { ProblemDraft } from '@/features/problems';
-import { outlineBtnClass } from '@/features/ideas/lib/styles';
+import { PROBLEMS_DASHBOARD_LABELS } from '@/features/problems-dashboard/lib/problems-dashboard-labels';
 import type { ProblemDashboardCard } from '@/features/problems-dashboard/model/problems-dashboard.types';
 import { ProblemDashboardCardStandard } from '@/features/problems-dashboard/ui/cards/ProblemDashboardCardStandard';
-import { PROBLEMS_DASHBOARD_LABELS } from '@/features/problems-dashboard/lib/problems-dashboard-labels';
 import { MoreVertical, Unlink } from 'lucide-react';
 import { useState } from 'react';
 
 import { ROUTES } from '@/shared/config/paths';
 import { cn } from '@/shared/lib/utils';
-import { Button } from '@/shared/ui/button';
 import { AppDropdown, type DropdownItem } from '@/shared/ui/AppDropdown';
 import { LikeButton } from '@/shared/ui/LikeButton';
+import { Button } from '@/shared/ui/button';
 
 type IdeaLinkedProblemsTabProps = {
   ideaId: string;

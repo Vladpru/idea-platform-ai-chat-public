@@ -1,32 +1,25 @@
+import { getInitials } from '@/features/idea-details/lib/get-initials';
 import type { IdeaDetails } from '@/features/idea-details/model/idea-details.types';
-
+import { IdeaProjectActions } from '@/features/idea-details/ui/IdeaProjectActions';
 import { useDeleteIdea } from '@/features/ideas/hooks/use-delete-idea';
-
 import {
   IDEA_DELETE_CONFIRM_DESCRIPTION,
   IDEA_DELETE_CONFIRM_TITLE,
 } from '@/features/ideas/lib/modals/copy';
-
 import { outlineBtnClass, pageTitleClass } from '@/features/ideas/lib/styles';
-
 import { motion } from 'framer-motion';
 import { ArrowLeft, ChevronDown } from 'lucide-react';
-
 import { type MouseEvent, useState } from 'react';
 
 import { cn } from '@/shared/lib/utils';
-
-import { ConfirmModal } from '@/shared/ui/confirm-modal';
-
 import {
   Avatar,
   AvatarFallback,
   AvatarGroup,
   AvatarImage,
 } from '@/shared/ui/avatar';
-
 import { Button } from '@/shared/ui/button';
-
+import { ConfirmModal } from '@/shared/ui/confirm-modal';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,10 +27,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
-
-import { getInitials } from '@/features/idea-details/lib/get-initials';
-
-import { IdeaProjectActions } from '@/features/idea-details/ui/IdeaProjectActions';
 import { StageChevronBadge } from '@/shared/ui/stage-chevron-badge';
 
 type IdeaHeaderProps = {
