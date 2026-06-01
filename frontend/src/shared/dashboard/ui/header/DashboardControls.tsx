@@ -10,17 +10,17 @@ type DashboardControlsProps<TSort extends string> = {
   sortOptions: { label: string; value: TSort }[];
   sortLabel: string;
   sortSelectId: string;
-  columnCount: number;
-  onColumnCountChange: (count: number) => void;
-  columnOptions: number[];
-  columnsLabel: string;
-  columnsSelectId: string;
-  showColumnSelect: boolean;
-  linkedProblemsExpanded: boolean;
-  expandAllLabel: string;
-  collapseAllLabel: string;
-  onExpandAll: () => void;
-  onCollapseAll: () => void;
+  showColumnSelect?: boolean;
+  columnCount?: number;
+  onColumnCountChange?: (count: number) => void;
+  columnOptions?: number[];
+  columnsLabel?: string;
+  columnsSelectId?: string;
+  linkedProblemsExpanded?: boolean;
+  expandAllLabel?: string;
+  collapseAllLabel?: string;
+  onExpandAll?: () => void;
+  onCollapseAll?: () => void;
   className?: string;
 };
 
@@ -28,13 +28,13 @@ export function DashboardControls<TSort extends string>({
   sort,
   onSortChange,
   sortOptions,
+  showColumnSelect = false,
   columnCount,
   onColumnCountChange,
-  columnOptions,
-  showColumnSelect,
-  linkedProblemsExpanded,
-  expandAllLabel,
-  collapseAllLabel,
+  columnOptions = [],
+  linkedProblemsExpanded = false,
+  expandAllLabel = '',
+  collapseAllLabel = '',
   onExpandAll,
   onCollapseAll,
   className,
@@ -60,7 +60,9 @@ export function DashboardControls<TSort extends string>({
     ? [activeSort, ...otherSortOptions]
     : sortOptions;
 
-  const showLinkedItemsToggle = columnCount < COMPACT_CARD_COLUMN_THRESHOLD;
+  const showLinkedItemsToggle =
+    columnCount !== undefined &&
+    columnCount < COMPACT_CARD_COLUMN_THRESHOLD;
 
   return (
     <div className={cn('flex flex-wrap items-center gap-4', className)}>
@@ -222,7 +224,7 @@ export function DashboardControls<TSort extends string>({
         )}
       </div>
 
-      {showColumnSelect && (
+      {showColumnSelect && columnCount !== undefined && onColumnCountChange && (
         <div className="relative hidden sm:block">
           <button
             type="button"

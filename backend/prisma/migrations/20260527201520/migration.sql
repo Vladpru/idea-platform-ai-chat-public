@@ -1,3 +1,0 @@
--- no-op
--- `search_vector` is a generated column, so dropping defaults is invalid in Postgres.
--- Kept migration folder for history compatibility.

@@ -73,6 +73,7 @@ export type IdeaDetailsMainImage = {
 
 export type IdeaDetails = {
   id: string;
+  commentCount: number;
   authorId: string;
   status: IdeaStatus;
   title: string;

@@ -44,23 +44,25 @@ enum MediaProvider {
 }
 
 model User {
-  id                  String               @id @default(uuid())
-  email               String               @unique
-  firstName           String?              @map("first_name")
-  lastName            String?              @map("last_name")
-  password            String?
-  createdAt           DateTime             @default(now()) @map("created_at")
-  updatedAt           DateTime             @updatedAt @map("updated_at")
-  avatarUrl           String?              @map("avatar_url")
+  id                 String               @id @default(uuid())
+  email              String               @unique
+  firstName          String?              @map("first_name")
+  lastName           String?              @map("last_name")
+  password           String?
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @updatedAt @map("updated_at")
+  avatarUrl          String?              @map("avatar_url")
   passwordResetTokens PasswordResetToken[]
-  ideas               Idea[]               @relation("IdeaAuthor")
-  problems            Problem[]
-  joinedIdeas         IdeaMember[]
-  joinedProblems      ProblemMember[]
-  ideaLikes           IdeaLike[]
-  problemLikes        ProblemLike[]
-  ideaViews           IdeaView[]
-  problemViews        ProblemView[]
+  ideas              Idea[]               @relation("IdeaAuthor")
+  problems           Problem[]
+  joinedIdeas        IdeaMember[]
+  joinedProblems     ProblemMember[]
+  ideaLikes          IdeaLike[]
+  problemLikes       ProblemLike[]
+  ideaViews          IdeaView[]
+  problemViews       ProblemView[]
+  comments           Comment[]            @relation("CommentAuthor")
+  commentLikes       CommentLike[]
 
   @@map("user")
 }
@@ -101,6 +103,7 @@ model Idea {
   members  IdeaMember[]
   likes    IdeaLike[]
   views    IdeaView[]
+  comments Comment[]
 
   @@index([authorId, status])
   @@index([status, publishedAt])
@@ -174,6 +177,7 @@ model Problem {
   tags     ProblemTag[]
   likes    ProblemLike[]
   views    ProblemView[]
+  comments Comment[]
 
   @@index([authorId, status])
   @@index([status])
@@ -194,6 +198,7 @@ model ProblemView {
   @@index([userId])
   @@map("problem_view")
 }
+
 model ProblemLike {
   problemId String   @map("problem_id")
   userId    String   @map("user_id")
@@ -302,4 +307,58 @@ model ProblemMember {
   @@id([problemId, userId])
   @@index([userId])
   @@map("problem_member")
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String   @db.Text
+  authorId  String   @map("author_id")
+  ideaId    String?  @map("idea_id")
+  problemId String?  @map("problem_id")
+  parentId  String?  @map("parent_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  author  User           @relation("CommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  idea    Idea?          @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  problem Problem?       @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  parent  Comment?       @relation("CommentQuote", fields: [parentId], references: [id], onDelete: SetNull)
+  quotes  Comment[]      @relation("CommentQuote")
+  likes   CommentLike[]
+  media   CommentMedia[]
+
+  @@index([ideaId, createdAt])
+  @@index([problemId, createdAt])
+  @@index([parentId])
+  @@index([authorId])
+  @@map("comment")
+}
+
+model CommentLike {
+  commentId String   @map("comment_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([commentId, userId])
+  @@index([userId])
+  @@map("comment_like")
+}
+
+model CommentMedia {
+  id               String        @id @default(uuid())
+  commentId        String        @map("comment_id")
+  provider         MediaProvider @default(CLOUDINARY)
+  url              String
+  publicId         String        @map("public_id")
+  mimeType         String        @map("mime_type")
+  byteSize         Int           @map("byte_size")
+  originalFilename String        @map("original_filename")
+  createdAt        DateTime      @default(now()) @map("created_at")
+
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@index([commentId])
+  @@map("comment_media")
 }

@@ -43,11 +43,15 @@ function mapUserIsLiked(likes: UserLikeRecord[] | undefined): boolean {
   return (likes?.length ?? 0) > 0;
 }
 
+function resolveIdeaCommentCount(idea: IdeaFormRecord): number {
+  return idea._count?.comments ?? idea.commentCount ?? 0;
+}
+
 function mapIdeaEngagementMetrics(idea: IdeaFormRecord) {
   return {
     viewCount: idea.viewCount ?? 0,
     likeCount: idea.likeCount ?? 0,
-    commentCount: idea.commentCount ?? 0,
+    commentCount: resolveIdeaCommentCount(idea),
     isLiked: mapUserIsLiked(idea.likes),
   };
 }
