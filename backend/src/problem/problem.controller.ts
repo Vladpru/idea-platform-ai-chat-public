@@ -38,14 +38,17 @@ import { JwtAuth } from '../shared/decorators/jwt-auth.decorator';
 import { CreateProblemDto } from './dto/create-problem.dto';
 import { GetProblemsQueryDto } from './dto/get-problems-query.dto';
 import { MyProblemsQueryDto } from './dto/my-problems.dto';
+import { SuggestedIdeasQueryDto } from './dto/suggested-ideas-query.dto';
 import { UpdateProblemDraftDto } from './dto/update-problem-draft.dto';
 import { ProblemStage } from './enum/problem-stage.enum';
 import { ProblemQueryService } from './problem-query.service';
+import { ProblemSuggestedIdeasService } from './problem-suggested-ideas.service';
 import { ProblemService } from './problem.service';
 import type {
   ProblemFormResponse,
   ProblemsFeedResponse,
 } from './types/problem-form.types';
+import type { SuggestedIdeasResponse } from './types/suggested-idea.types';
 
 type AuthenticatedRequest = Request & { user: { id: string } };
 
@@ -55,6 +58,7 @@ export class ProblemController {
   constructor(
     private readonly problemService: ProblemService,
     private readonly problemQueryService: ProblemQueryService,
+    private readonly problemSuggestedIdeasService: ProblemSuggestedIdeasService,
   ) {}
 
   @Post()
@@ -104,6 +108,24 @@ export class ProblemController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.problemService.getDashboardFeed(req.user.id, query);
+  }
+
+  @Get('suggested-ideas')
+  @JwtAuth()
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Suggest ideas to link while creating or editing a problem',
+  })
+  @ApiOkResponse({ description: 'Ranked idea suggestions' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  getSuggestedIdeas(
+    @Query() query: SuggestedIdeasQueryDto,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<SuggestedIdeasResponse> {
+    return this.problemSuggestedIdeasService.getSuggestedIdeas(
+      req.user.id,
+      query,
+    );
   }
 
   @Get(':id')

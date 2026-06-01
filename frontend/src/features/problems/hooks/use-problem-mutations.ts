@@ -40,6 +40,8 @@ export const problemMutationKeys = {
   details: () => [...problemMutationKeys.all, 'detail'] as const,
   detail: (problemId: string) =>
     [...problemMutationKeys.details(), problemId] as const,
+  suggestedIdeas: (params: Record<string, unknown>) =>
+    [...problemMutationKeys.all, 'suggested-ideas', params] as const,
 };
 
 function invalidateProblemQueries(

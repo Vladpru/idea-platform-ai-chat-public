@@ -1,0 +1,120 @@
+import { Injectable, Logger } from '@nestjs/common';
+
+import { Prisma } from '../../generated/prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
+import { SuggestedIdeasQueryDto } from './dto/suggested-ideas-query.dto';
+import type { SuggestedIdeasResponse } from './types/suggested-idea.types';
+
+type SuggestedIdeaRow = {
+  id: string;
+  title: string;
+  relevance_score: number | bigint | string;
+};
+
+function parseTagLabels(value?: string): string[] {
+  if (!value) return [];
+  return value
+    .split(',')
+    .map(tag => tag.trim())
+    .filter(Boolean);
+}
+
+function formatTsQuery(text: string): string | null {
+  const formatted = text
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim()
+    .split(/\s+/)
+    .filter(word => word.length > 0)
+    .map(word => `${word}:*`)
+    .join(' & ');
+
+  return formatted || null;
+}
+
+@Injectable()
+export class ProblemSuggestedIdeasService {
+  private readonly logger = new Logger(ProblemSuggestedIdeasService.name);
+
+  constructor(private readonly prisma: PrismaService) {}
+
+  async getSuggestedIdeas(
+    userId: string,
+    query: SuggestedIdeasQueryDto,
+  ): Promise<SuggestedIdeasResponse> {
+    const limit = query.limit ?? 6;
+    const excludeIds = query.exclude ?? [];
+    const tagLabels = parseTagLabels(query.tags).map(tag => tag.toLowerCase());
+    const searchText = [query.title?.trim(), query.description?.trim()]
+      .filter(Boolean)
+      .join(' ');
+    const formattedQuery = searchText ? formatTsQuery(searchText) : null;
+
+    try {
+      const rows = await this.fetchRankedIdeas({
+        userId,
+        limit,
+        excludeIds,
+        tagLabels,
+        formattedQuery,
+      });
+
+      return {
+        data: rows.map(row => ({
+          id: row.id,
+          title: row.title?.trim() || 'Untitled idea',
+        })),
+      };
+    } catch (error) {
+      this.logger.error('Suggested ideas query failed', error as Error);
+      throw error;
+    }
+  }
+
+  private tagMatchScoreSql(hasTags: boolean, tagLabels: string[]) {
+    if (!hasTags) {
+      return Prisma.sql`0::float`;
+    }
+
+    return Prisma.sql`(
+      SELECT COUNT(*)::float
+      FROM idea_tag it
+      INNER JOIN tag t ON t.id = it.tag_id
+      WHERE it.idea_id = i.id
+        AND lower(t.name) = ANY(${tagLabels}::text[])
+    )`;
+  }
+
+  private async fetchRankedIdeas(params: {
+    userId: string;
+    limit: number;
+    excludeIds: string[];
+    tagLabels: string[];
+    formattedQuery: string | null;
+  }): Promise<SuggestedIdeaRow[]> {
+    const { userId, limit, excludeIds, tagLabels, formattedQuery } = params;
+    const hasExclude = excludeIds.length > 0;
+    const hasTags = tagLabels.length > 0;
+    const tagScoreSql = this.tagMatchScoreSql(hasTags, tagLabels);
+    const ftsRankSql = formattedQuery
+      ? Prisma.sql`+ COALESCE(ts_rank(i.search_vector, to_tsquery('english', ${formattedQuery})), 0)`
+      : Prisma.empty;
+
+    return this.prisma.$queryRaw<SuggestedIdeaRow[]>`
+      SELECT
+        i.id,
+        COALESCE(i.title, '') AS title,
+        (
+          ${tagScoreSql} * 3
+          ${ftsRankSql}
+          + CASE WHEN i.author_id = ${userId}::uuid THEN 1 ELSE 0 END
+          + CASE WHEN i.status::text = 'PUBLISHED' THEN 0.5 ELSE 0 END
+        ) AS relevance_score
+      FROM idea i
+      WHERE (i.status::text = 'PUBLISHED' OR (i.status::text = 'DRAFT' AND i.author_id = ${userId}::uuid))
+        AND (i.stage IS NULL OR i.stage::text <> 'ARCHIVED')
+        ${hasExclude ? Prisma.sql`AND NOT (i.id = ANY(${excludeIds}::uuid[]))` : Prisma.empty}
+      ORDER BY relevance_score DESC, i.created_at DESC
+      LIMIT ${limit}
+    `;
+  }
+}

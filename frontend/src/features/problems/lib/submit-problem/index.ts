@@ -12,6 +12,7 @@ export {
   problemFormToSubmitFormValues,
 } from './mappers';
 export { hasSubmitProblemUnsavedProgress } from './unsaved-progress';
+export type { SuggestedIdeaChip, SuggestedIdeaContext } from './suggested-ideas';
 export {
   problemStageSchema,
   submitProblemDefaultValues,

@@ -6,6 +6,8 @@ import type {
   ProblemsDashboardParams,
   ProblemsFeedResponse,
   ProblemsListParams,
+  SuggestedIdeasParams,
+  SuggestedIdeasResponse,
   UpdateProblemPayload,
   UploadProblemAttachmentPayload,
 } from '@/features/problems/api/problems-api.types';
@@ -32,6 +34,16 @@ export async function fetchProblems(
   const { data } = await api.get<ProblemsFeedResponse>(PROBLEMS_ROUTES.root, {
     params,
   });
+  return data;
+}
+
+export async function fetchSuggestedIdeas(
+  params: SuggestedIdeasParams,
+): Promise<SuggestedIdeasResponse> {
+  const { data } = await api.get<SuggestedIdeasResponse>(
+    PROBLEMS_ROUTES.suggestedIdeas,
+    { params },
+  );
   return data;
 }
 
