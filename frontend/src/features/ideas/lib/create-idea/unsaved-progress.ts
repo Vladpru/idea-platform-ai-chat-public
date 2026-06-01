@@ -6,21 +6,23 @@ import type {
 
 import { EMPTY_CREATE_IDEA_DRAFT } from './defaults';
 
-type UnsavedProgressState = {
-  isDirty: boolean;
+type UnsavedProgressDraftState = {
   draft: CreateIdeaDraft;
   localFiles: CreateIdeaLocalFiles;
   remoteMedia: IdeaMediaItem[];
 };
 
-export function hasCreateIdeaUnsavedProgress({
-  isDirty,
-  draft,
-  localFiles,
-  remoteMedia,
-}: UnsavedProgressState): boolean {
-  if (isDirty) {
+export function hasCreateIdeaUnsavedProgress(
+  formIsDirty: boolean,
+  { draft, localFiles, remoteMedia }: UnsavedProgressDraftState,
+  isEditing = false,
+): boolean {
+  if (formIsDirty) {
     return true;
+  }
+
+  if (isEditing) {
+    return false;
   }
 
   if (draft.title.trim() || draft.description.trim()) {

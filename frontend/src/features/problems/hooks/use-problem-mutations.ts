@@ -9,12 +9,12 @@ import {
   updateProblem,
   uploadProblemAttachment,
 } from '@/features/problems/api/problems.api';
-import { myProblemsDashboardKeys } from '@/features/profile/hooks/use-my-problems-dashboard';
 import {
+  type SubmitProblemFormValues,
   formValuesToCreateProblemPayload,
   formValuesToUpdateProblemPayload,
-  type SubmitProblemFormValues,
 } from '@/features/problems/lib/submit-problem';
+import { myProblemsDashboardKeys } from '@/features/profile/hooks/use-my-problems-dashboard';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 

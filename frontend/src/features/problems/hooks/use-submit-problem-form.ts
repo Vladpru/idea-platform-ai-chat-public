@@ -75,7 +75,7 @@ export function useSubmitProblemForm() {
         const problem = await fetchProblemById(urlProblemId);
         setEditingProblemId(problem.id);
         setEditingProblemStatus(problem.status);
-        form.reset(problemFormToSubmitFormValues(problem));
+        form.reset(problemFormToSubmitFormValues(problem), { keepDirty: false });
       } catch (err) {
         setError(getApiErrorMessage(err));
         setEditingProblemId(null);

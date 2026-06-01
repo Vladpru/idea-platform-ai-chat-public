@@ -86,6 +86,7 @@ export function SubmitProblemForm() {
   const hasUnsavedProgress = hasSubmitProblemUnsavedProgress(
     formIsDirty,
     watchedValues,
+    isEditing,
   );
 
   const navigateToProblems = () => {

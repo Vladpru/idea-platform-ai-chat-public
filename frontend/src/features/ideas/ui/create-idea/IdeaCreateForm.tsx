@@ -68,6 +68,7 @@ export function IdeaCreateForm() {
     onPublish,
     canPublish,
     isPublishedIdea,
+    isEditing,
     isBusy,
     isSavingDraft,
     isPublishing,
@@ -82,8 +83,14 @@ export function IdeaCreateForm() {
     formState: { errors, isDirty: formIsDirty },
   } = form;
 
-  const hasUnsavedProgress = useCreateIdeaStore(
-    state => hasCreateIdeaUnsavedProgress(state) || formIsDirty,
+  const draft = useCreateIdeaStore(state => state.draft);
+  const localFiles = useCreateIdeaStore(state => state.localFiles);
+  const remoteMedia = useCreateIdeaStore(state => state.remoteMedia);
+
+  const hasUnsavedProgress = hasCreateIdeaUnsavedProgress(
+    formIsDirty,
+    { draft, localFiles, remoteMedia },
+    isEditing,
   );
 
   const {

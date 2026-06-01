@@ -88,8 +88,8 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
   const visibleIdeas = problem.linkedIdeas;
 
   return (
-    <main className="bg-brand-neutral min-h-[calc(100vh-56px)] md:px-8 lg:px-12">
-      <div className="mx-auto max-w-6xl space-y-6 bg-white px-4 py-6 sm:space-y-8 sm:px-6 sm:py-8">
+    <main className="bg-brand-neutral min-h-[calc(100vh-56px)] px-4 md:px-8 lg:px-12">
+      <div className="mx-auto max-w-5xl space-y-6 bg-white px-4 py-6 sm:space-y-8 sm:px-6 sm:py-8">
         <AnimatePresence>
           {!isScrolled ? (
             <motion.div

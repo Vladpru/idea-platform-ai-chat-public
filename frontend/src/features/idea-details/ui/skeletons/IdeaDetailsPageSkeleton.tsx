@@ -19,7 +19,7 @@ export function IdeaDetailsPageSkeleton() {
       aria-busy
       aria-label="Loading idea details"
     >
-      <div className="mx-auto max-w-6xl space-y-8">
+      <div className="mx-auto max-w-5xl space-y-8">
         <IdeaHeaderSkeleton />
 
         <nav

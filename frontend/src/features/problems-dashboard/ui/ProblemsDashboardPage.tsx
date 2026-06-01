@@ -1,15 +1,14 @@
-import {
-  DashboardGrid,
-  DashboardGridSkeleton,
-  LoadMoreFooter,
-  type DashboardViewport,
-} from '@/shared/dashboard';
-import type { ProblemDashboardSort } from '../model/problems-dashboard.types';
 import type { ProblemStage } from '@/features/problems/api/problems-api.types';
 import { memo, useEffect, useRef } from 'react';
 
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import { ROUTES } from '@/shared/config/paths';
+import {
+  DashboardGrid,
+  DashboardGridSkeleton,
+  type DashboardViewport,
+  LoadMoreFooter,
+} from '@/shared/dashboard';
 import { Button } from '@/shared/ui/button';
 
 import {
@@ -17,10 +16,11 @@ import {
   useProblemsDashboardQuery,
 } from '../hooks/use-problems-dashboard';
 import { PROBLEMS_DASHBOARD_LABELS } from '../lib/problems-dashboard-labels';
+import type { ProblemDashboardSort } from '../model/problems-dashboard.types';
 import type { ProblemDashboardCard } from '../model/problems-dashboard.types';
+import { ProblemsDashboardHeader } from './ProblemsDashboardHeader';
 import { ProblemDashboardCardCompact } from './cards/ProblemDashboardCardCompact';
 import { ProblemDashboardCardStandard } from './cards/ProblemDashboardCardStandard';
-import { ProblemsDashboardHeader } from './ProblemsDashboardHeader';
 
 function renderProblemCompactCard(
   card: ProblemDashboardCard,
