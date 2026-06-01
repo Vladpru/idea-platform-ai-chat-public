@@ -15,6 +15,7 @@ import { ROUTES } from '@/shared/config/paths';
 import { formatUserDisplayName } from '@/shared/lib/user-display';
 import { Card } from '@/shared/ui';
 import { Button } from '@/shared/ui/button';
+import { SkeletonCard } from '@/shared/ui/skeleton';
 
 import { useHomeOverview } from '../hooks/use-home-overview';
 import { HOME_LABELS } from '../lib/home-labels';
@@ -22,9 +23,7 @@ import { HomeActivityCard } from './HomeActivityCard';
 import { HomeQuickLinkCard } from './HomeQuickLinkCard';
 
 function HomeSectionSkeleton() {
-  return (
-    <div className="border-brand-gray-200 h-40 animate-pulse rounded-lg border bg-white" />
-  );
+  return <SkeletonCard className="h-40" />;
 }
 
 export function HomeDashboardPage() {

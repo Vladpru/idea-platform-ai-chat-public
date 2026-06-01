@@ -1,11 +1,11 @@
-import type { ProblemDetails } from '@/features/problem-details/model/problem-details.types';
 import { getInitials } from '@/features/idea-details/lib/get-initials';
 import { outlineBtnClass, pageTitleClass } from '@/features/ideas/lib/styles';
+import type { ProblemDetails } from '@/features/problem-details/model/problem-details.types';
 import { useDeleteProblemMutation } from '@/features/problems/hooks/use-problem-mutations';
+import { useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ChevronDown } from 'lucide-react';
 import { type MouseEvent, useState } from 'react';
-import { useNavigate } from '@tanstack/react-router';
 
 import { ROUTES } from '@/shared/config/paths';
 import { cn } from '@/shared/lib/utils';

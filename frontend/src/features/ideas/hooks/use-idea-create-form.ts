@@ -54,6 +54,9 @@ export function useIdeaCreateForm() {
   const initializedRef = useRef(false);
   const formSyncEnabledRef = useRef(false);
   const [createdProblems, setCreatedProblems] = useState<MockProblem[]>([]);
+  const [editingIdeaId, setEditingIdeaId] = useState<string | null>(
+    urlIdeaId ?? null,
+  );
 
   const form = useForm<IdeaCreateFormValues>({
     resolver: zodResolver(
@@ -102,12 +105,18 @@ export function useIdeaCreateForm() {
         } catch (err) {
           const message = getApiErrorMessage(err);
           store.setError(message);
+          setEditingIdeaId(null);
         } finally {
           store.setHydrating(false);
         }
       }
 
-      form.reset(useCreateIdeaStore.getState().getFormValues());
+      form.reset(useCreateIdeaStore.getState().getFormValues(), {
+        keepDirty: false,
+      });
+
+      const loadedDraftId = useCreateIdeaStore.getState().draft.id;
+      setEditingIdeaId(loadedDraftId || null);
 
       const restoredMainImage =
         useCreateIdeaStore.getState().localFiles.mainImage;
@@ -170,6 +179,7 @@ export function useIdeaCreateForm() {
   const clearCreateIdeaSession = useCallback(() => {
     formSyncEnabledRef.current = false;
     useCreateIdeaStore.getState().reset();
+    setEditingIdeaId(null);
     form.reset(ideaCreateDefaultValues);
     setImagePreviewUrl(prev => {
       if (prev) {
@@ -259,6 +269,7 @@ export function useIdeaCreateForm() {
     hasRemoteMainImage: remoteMedia.some(media => media.kind === 'main'),
   }).success;
   const isPublishedIdea = ideaStatus === IDEA_STATUS.PUBLISHED;
+  const isEditing = Boolean(editingIdeaId);
 
   return {
     form,
@@ -274,6 +285,7 @@ export function useIdeaCreateForm() {
     onPublish,
     canPublish,
     isPublishedIdea,
+    isEditing,
     isBusy,
     isSavingDraft,
     isPublishing,

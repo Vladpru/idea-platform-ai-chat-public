@@ -1,4 +1,5 @@
-import { useIdeasListQuery } from '@/features/ideas/hooks/use-idea-queries';
+import { useIdeaSuggestions } from '@/features/problems/hooks/use-idea-suggestions';
+import { SuggestedIdeasChips } from '@/features/problems/ui/submit-problem/SuggestedIdeasChips';
 import { ArrowLink } from '@/features/ideas/ui/icons/ArrowLink';
 import {
   FieldError,
@@ -12,9 +13,9 @@ import {
 } from '@/features/problems/lib/submit-problem';
 import { Link } from '@tanstack/react-router';
 import { Check, ChevronDown, Search, X } from 'lucide-react';
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { Control, FieldErrors } from 'react-hook-form';
-import { Controller } from 'react-hook-form';
+import { Controller, useWatch } from 'react-hook-form';
 
 import { ROUTES } from '@/shared/config/paths';
 import { cn } from '@/shared/lib/utils';
@@ -32,18 +33,24 @@ export function IdeaSelect({ formId, control, errors }: IdeaSelectProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const { data: ideasFeed, isLoading } = useIdeasListQuery({
-    sort: 'newest',
-    limit: 50,
-  });
 
-  const allIdeas = useMemo(() => {
-    const ideas = ideasFeed?.data ?? [];
-    return ideas.map(idea => ({
-        id: idea.id,
-        label: idea.title?.trim() || 'Untitled idea',
-      }));
-  }, [ideasFeed]);
+  const problemTitle = useWatch({ control, name: 'title' });
+  const problemDescription = useWatch({ control, name: 'description' });
+  const problemTags = useWatch({ control, name: 'tags' });
+  const ideaIdsValue = useWatch({ control, name: 'ideaIds' });
+  const excludeIds = parseIdeaIds(ideaIdsValue);
+
+  const {
+    allIdeas,
+    suggestedIdeas,
+    isIdeasListLoading,
+    isSuggestionsLoading,
+  } = useIdeaSuggestions({
+    title: problemTitle,
+    description: problemDescription,
+    tags: problemTags,
+    excludeIds,
+  });
 
   const resolveIdeaLabel = (id: string) =>
     allIdeas.find(idea => idea.id === id)?.label;
@@ -190,7 +197,7 @@ export function IdeaSelect({ formId, control, errors }: IdeaSelectProps) {
                   )}
 
                   <ul className="max-h-52 overflow-y-auto py-1">
-                    {isLoading ? (
+                    {isIdeasListLoading ? (
                       <li className="text-brand-gray-600 px-3 py-2 text-sm">
                         Loading ideas…
                       </li>
@@ -259,6 +266,13 @@ export function IdeaSelect({ formId, control, errors }: IdeaSelectProps) {
                 </div>
               ) : null}
             </div>
+
+            <SuggestedIdeasChips
+              ideas={suggestedIdeas}
+              selectedIds={selectedIds}
+              onToggle={toggleIdea}
+              isLoading={isSuggestionsLoading}
+            />
 
             <FieldError message={errors.ideaIds?.message} />
           </FieldGroup>

@@ -59,3 +59,9 @@ export {
   AlertDialogTrigger,
 } from './alert-dialog';
 export { ScrollArea, ScrollBar } from './scroll-area';
+export { SuggestionChip, type SuggestionChipProps } from './suggestion-chip';
+export {
+  SuggestionChipGroup,
+  SuggestionGroupLabel,
+  SuggestionsLoadingMessage,
+} from './suggestion-chip-group';

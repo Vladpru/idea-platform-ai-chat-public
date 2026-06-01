@@ -108,6 +108,13 @@
 
   --animate-quote-in: quote-in 300ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-quote-out: quote-out 300ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-skeleton-glimmer: skeleton-glimmer 1.2s ease-in-out infinite;
+
+  @keyframes skeleton-glimmer {
+    to {
+      background-position-x: -20%;
+    }
+  }
 
   @keyframes quote-in {
     from {
@@ -223,6 +230,9 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  --skeleton-base: #ededed;
+  --skeleton-shine-peak: rgba(255, 255, 255, 0.5);
 }
 
 .dark {
@@ -278,6 +288,31 @@
 
   --active-background: #161b22;
   --non-active-background: #0e1217;
+
+  --skeleton-base: #252d38;
+  --skeleton-shine-peak: rgba(255, 255, 255, 0.22);
+}
+
+@layer utilities {
+  .skeleton-glimmer {
+    background: linear-gradient(
+        100deg,
+        rgba(255, 255, 255, 0) 40%,
+        var(--skeleton-shine-peak) 50%,
+        rgba(255, 255, 255, 0) 60%
+      )
+      var(--skeleton-base);
+    background-size: 200% 100%;
+    background-position-x: 180%;
+    animation: var(--animate-skeleton-glimmer);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton-glimmer {
+      animation: none;
+      background: var(--skeleton-base);
+    }
+  }
 }
 
 @layer base {

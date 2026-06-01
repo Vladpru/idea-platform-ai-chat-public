@@ -1,8 +1,9 @@
 import { discussionSearchSchema } from '@/features/discussion/lib/discussion-search';
 import { IdeaDetailsPage } from '@/pages/ideas';
-import { pageDocumentHead } from '@/shared/lib/document-head';
 import { createFileRoute, useParams } from '@tanstack/react-router';
 import { z } from 'zod';
+
+import { pageDocumentHead } from '@/shared/lib/document-head';
 
 const ideaDetailsParamsSchema = z.object({
   ideaId: z.string().min(1),

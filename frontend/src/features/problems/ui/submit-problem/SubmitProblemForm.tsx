@@ -26,7 +26,7 @@ import {
   UNDO_CHANGES_TITLE,
 } from '@/shared/lib/create-form-leave/copy';
 import { cn } from '@/shared/lib/utils';
-import { TagsInput, selectClass } from '@/shared/ui/TagsInput';
+import { selectClass } from '@/shared/ui/TagsInput';
 import { Button } from '@/shared/ui/button';
 import { ConfirmModal } from '@/shared/ui/confirm-modal';
 import { Input } from '@/shared/ui/input';
@@ -34,6 +34,7 @@ import { SaveProgressBeforeLeavingModal } from '@/shared/ui/save-progress-before
 
 import { IdeaSelect } from './IdeaSelect';
 import { ProblemFilesField } from './ProblemFilesField';
+import { ProblemTagsField } from './ProblemTagsField';
 
 function AiAssistLink({
   children,
@@ -86,6 +87,7 @@ export function SubmitProblemForm() {
   const hasUnsavedProgress = hasSubmitProblemUnsavedProgress(
     formIsDirty,
     watchedValues,
+    isEditing,
   );
 
   const navigateToProblems = () => {
@@ -277,23 +279,12 @@ export function SubmitProblemForm() {
 
       <IdeaSelect formId={formId} control={control} errors={errors} />
 
-      <FieldGroup>
-        <FieldLabel htmlFor={`${formId}-tags`}>Tags</FieldLabel>
-        <Controller
-          name="tags"
-          control={control}
-          render={({ field }) => (
-            <TagsInput
-              id={`${formId}-tags`}
-              value={field.value ?? ''}
-              onChange={field.onChange}
-              disabled={isBusy}
-              aria-invalid={!!errors.tags}
-            />
-          )}
-        />
-        <FieldError message={errors.tags?.message} />
-      </FieldGroup>
+      <ProblemTagsField
+        formId={formId}
+        control={control}
+        errors={errors}
+        disabled={isBusy}
+      />
 
       <FieldGroup>
         <FieldLabel>Files</FieldLabel>

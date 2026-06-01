@@ -17,7 +17,7 @@ export function ProblemDetailsPageSkeleton() {
       aria-busy
       aria-label="Loading problem details"
     >
-      <div className="mx-auto max-w-6xl space-y-8">
+      <div className="mx-auto max-w-5xl space-y-8">
         <Skeleton className="h-4 w-16" />
         <IdeaHeaderSkeleton />
 

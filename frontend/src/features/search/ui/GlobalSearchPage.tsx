@@ -10,6 +10,7 @@ import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui';
 import { Input } from '@/shared/ui/input';
 import { AnimatedTabUnderline } from '@/shared/ui/motion';
+import { SkeletonCard } from '@/shared/ui/skeleton';
 
 import type { GlobalSearchResultItem, SearchTab } from '../api/search.types';
 import { useGlobalSearch } from '../hooks/use-global-search';
@@ -34,10 +35,7 @@ function SearchSkeleton() {
   return (
     <div className="space-y-4">
       {Array.from({ length: 3 }).map((_, i) => (
-        <div
-          key={i}
-          className="border-brand-gray-200 h-[260px] animate-pulse rounded-lg border bg-white"
-        />
+        <SkeletonCard key={i} className="h-[260px]" />
       ))}
     </div>
   );

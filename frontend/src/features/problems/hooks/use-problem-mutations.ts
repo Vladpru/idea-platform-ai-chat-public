@@ -9,12 +9,12 @@ import {
   updateProblem,
   uploadProblemAttachment,
 } from '@/features/problems/api/problems.api';
-import { myProblemsDashboardKeys } from '@/features/profile/hooks/use-my-problems-dashboard';
 import {
+  type SubmitProblemFormValues,
   formValuesToCreateProblemPayload,
   formValuesToUpdateProblemPayload,
-  type SubmitProblemFormValues,
 } from '@/features/problems/lib/submit-problem';
+import { myProblemsDashboardKeys } from '@/features/profile/hooks/use-my-problems-dashboard';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -40,6 +40,10 @@ export const problemMutationKeys = {
   details: () => [...problemMutationKeys.all, 'detail'] as const,
   detail: (problemId: string) =>
     [...problemMutationKeys.details(), problemId] as const,
+  suggestedIdeas: (params: Record<string, unknown>) =>
+    [...problemMutationKeys.all, 'suggested-ideas', params] as const,
+  suggestedTags: (params: Record<string, unknown>) =>
+    [...problemMutationKeys.all, 'suggested-tags', params] as const,
 };
 
 function invalidateProblemQueries(

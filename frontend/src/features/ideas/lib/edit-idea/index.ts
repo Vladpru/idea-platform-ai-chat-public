@@ -9,3 +9,4 @@ export {
   editFormValuesToPayload,
 } from './mappers';
 export { applyEditMediaChanges, saveEditedIdea } from './save';
+export { areIdeaEditFormValuesEqual } from './form-equality';

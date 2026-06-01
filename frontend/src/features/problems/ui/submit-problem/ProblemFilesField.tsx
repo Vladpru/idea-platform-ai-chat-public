@@ -1,7 +1,7 @@
 import {
   MAX_ATTACHMENT_FILES,
-  mergeAttachmentFiles,
   getAttachmentFileKey,
+  mergeAttachmentFiles,
 } from '@/features/ideas/lib/create-idea/attachments';
 import { IdeaAttachmentCard } from '@/features/ideas/ui/create-idea/IdeaAttachmentCard';
 import { AddImageModal } from '@/features/ideas/ui/modals/AddImageModal';
@@ -60,6 +60,7 @@ export function ProblemFilesField({
                   <IdeaAttachmentCard
                     key={key}
                     file={file}
+                    allFiles={files}
                     onRemove={() => removeFile(key)}
                     disabled={disabled}
                   />
@@ -74,7 +75,7 @@ export function ProblemFilesField({
                         variant="outline"
                         size="icon"
                         disabled
-                        className="border-brand-dark-blue text-brand-dark-blue size-20 rounded-md"
+                        className="border-brand-dark-blue text-brand-dark-blue size-12 rounded-md"
                         tabIndex={-1}
                         aria-label="Add files"
                       >
@@ -91,7 +92,7 @@ export function ProblemFilesField({
                   type="button"
                   variant="outline"
                   size="icon"
-                  className="border-brand-dark-blue text-brand-dark-blue size-20 rounded-md"
+                  className="border-brand-dark-blue text-brand-dark-blue size-12 rounded-md"
                   aria-label="Add files"
                   disabled={disabled}
                   onClick={() => setAddFilesOpen(true)}

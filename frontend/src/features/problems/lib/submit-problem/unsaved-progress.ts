@@ -4,9 +4,14 @@ import { submitProblemDefaultValues } from './schema';
 export function hasSubmitProblemUnsavedProgress(
   formIsDirty: boolean,
   values: SubmitProblemFormValues,
+  isEditing = false,
 ): boolean {
   if (formIsDirty) {
     return true;
+  }
+
+  if (isEditing) {
+    return false;
   }
 
   if (values.title.trim() || (values.description ?? '').trim()) {

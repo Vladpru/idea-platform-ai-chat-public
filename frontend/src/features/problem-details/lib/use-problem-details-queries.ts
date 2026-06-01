@@ -3,6 +3,7 @@ import {
   fetchProblems,
 } from '@/features/problems/api/problems.api';
 import { problemMutationKeys } from '@/features/problems/hooks/use-problem-mutations';
+import { shouldRetryDetailResourceQuery } from '@/shared/lib/detail-resource-query';
 import { useQuery } from '@tanstack/react-query';
 
 import {
@@ -15,8 +16,13 @@ export function useProblemDetailsQuery(problemId: string) {
     queryKey: problemMutationKeys.detail(problemId),
     queryFn: async () => {
       const dto = await fetchProblemById(problemId);
+      if (!dto?.id) {
+        return null;
+      }
       return toProblemDetails(dto);
     },
+    enabled: Boolean(problemId),
+    retry: shouldRetryDetailResourceQuery,
   });
 }
 
@@ -37,6 +43,6 @@ export function useSimilarProblemsQuery(
         .slice(0, 3)
         .map(toSimilarProblemCard);
     },
-    enabled: options?.enabled ?? true,
+    enabled: Boolean(problemId) && (options?.enabled ?? true),
   });
 }

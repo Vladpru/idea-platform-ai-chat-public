@@ -5,7 +5,9 @@ import {
 } from '@/features/ideas/lib/create-idea/attachments';
 import { useEffect, useState } from 'react';
 
+import { useAttachmentFileLightbox } from '@/shared/hooks/use-attachment-file-lightbox';
 import { cn } from '@/shared/lib/utils';
+import { ImageLightbox } from '@/shared/ui/image-lightbox';
 
 import DeleteImageButton from './DeleteImageButton';
 
@@ -13,6 +15,8 @@ type IdeaAttachmentCardProps = {
   file: File;
   onRemove: () => void;
   disabled?: boolean;
+  /** All files in the field — enables multi-image lightbox navigation */
+  allFiles?: File[];
 };
 
 function AttachmentImagePreview({ file }: { file: File }) {
@@ -27,45 +31,76 @@ export function IdeaAttachmentCard({
   file,
   onRemove,
   disabled = false,
+  allFiles,
 }: IdeaAttachmentCardProps) {
   const isImage = isImageAttachment(file);
+  const filesForPreview = allFiles ?? [file];
+  const { openFile, closeLightbox, lightbox } =
+    useAttachmentFileLightbox(filesForPreview);
 
   return (
-    <div
-      className={cn(
-        'flex w-20 flex-col items-center gap-1.5',
-        disabled && 'opacity-60',
-      )}
-      title={file.name}
-    >
-      <div className="relative size-20 shrink-0">
-        <div className="border-brand-gray-200 size-full overflow-hidden rounded-md border bg-white">
-          {isImage ? (
-            <AttachmentImagePreview
-              key={getAttachmentFileKey(file)}
-              file={file}
-            />
-          ) : (
-            <div className="flex size-full items-center justify-center">
-              <img
-                src={fileImageSvg}
-                alt=""
-                className="size-11 shrink-0"
-                aria-hidden
+    <>
+      <div
+        className={cn(
+          'flex w-20 flex-col items-center gap-1.5',
+          disabled && 'opacity-60',
+        )}
+        title={file.name}
+      >
+        <div className="relative size-20 shrink-0">
+          <button
+            type="button"
+            className="border-brand-gray-200 size-full cursor-pointer overflow-hidden rounded-md border bg-white transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+            onClick={() => openFile(file)}
+            aria-label={
+              isImage ? `Preview ${file.name}` : `Open ${file.name}`
+            }
+          >
+            {isImage ? (
+              <AttachmentImagePreview
+                key={getAttachmentFileKey(file)}
+                file={file}
               />
-            </div>
-          )}
+            ) : (
+              <div className="flex size-full items-center justify-center">
+                <img
+                  src={fileImageSvg}
+                  alt=""
+                  className="size-11 shrink-0"
+                  aria-hidden
+                />
+              </div>
+            )}
+          </button>
+          <DeleteImageButton
+            variant="compact"
+            onClick={event => {
+              event.stopPropagation();
+              onRemove();
+            }}
+            isBusy={disabled}
+            aria-label="Remove file"
+          />
         </div>
-        <DeleteImageButton
-          variant="compact"
-          onClick={onRemove}
-          isBusy={disabled}
-          aria-label="Remove file"
-        />
+        <button
+          type="button"
+          className="text-foreground line-clamp-2 w-full cursor-pointer text-center text-xs leading-tight hover:underline focus-visible:underline focus-visible:outline-none"
+          onClick={() => openFile(file)}
+          aria-label={
+            isImage ? `Preview ${file.name}` : `Open ${file.name}`
+          }
+        >
+          {file.name}
+        </button>
       </div>
-      <span className="text-foreground line-clamp-2 w-full text-center text-xs leading-tight">
-        {file.name}
-      </span>
-    </div>
+
+      {lightbox ? (
+        <ImageLightbox
+          images={lightbox.images}
+          initialIndex={lightbox.initialIndex}
+          onClose={closeLightbox}
+        />
+      ) : null}
+    </>
   );
 }
