@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 
 import { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { tsRankSql } from '../shared/utils/fts.util';
 import { SuggestedTagsQueryDto } from './dto/suggested-tags-query.dto';
 import type { SuggestedTagsResponse } from './types/suggested-tag.types';
 import {
@@ -66,11 +67,11 @@ export class ProblemSuggestedTagsService {
       : Prisma.empty;
 
     const ftsBoostSql = hasFts
-      ? Prisma.sql`+ COALESCE(ts_rank(p.search_vector, to_tsquery('english', ${formattedQuery})), 0)`
+      ? Prisma.sql`+ ${tsRankSql('p.search_vector', formattedQuery ? formattedQuery : '')}`
       : Prisma.empty;
 
     const ideaFtsBoostSql = hasFts
-      ? Prisma.sql`+ COALESCE(ts_rank(i.search_vector, to_tsquery('english', ${formattedQuery})), 0)`
+      ? Prisma.sql`+ ${tsRankSql('i.search_vector', formattedQuery ? formattedQuery : '')}`
       : Prisma.empty;
 
     return this.prisma.$queryRaw<SuggestedTagRow[]>`

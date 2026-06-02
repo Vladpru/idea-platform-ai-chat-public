@@ -1,26 +1,27 @@
 'use client';
 
-import { Paperclip, Send } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import type { MouseEvent } from 'react';
-
 import type {
   CommentDto,
   DiscussionEntityType,
 } from '@/features/discussion/api/comments-api.types';
+import { useCreateCommentMutation } from '@/features/discussion/hooks/use-create-comment-mutation';
 import {
   COMMENT_ATTACHMENT_ACCEPT,
   COMMENT_ATTACHMENT_ALLOWED_MESSAGE,
   COMMENT_ATTACHMENT_MIME_TYPES,
   MAX_COMMENT_ATTACHMENTS,
 } from '@/features/discussion/lib/comment-attachments.constants';
-import { useCreateCommentMutation } from '@/features/discussion/hooks/use-create-comment-mutation';
 import { useDiscussionUiStore } from '@/features/discussion/model/discussion-ui-store';
 import { useReplyContext } from '@/features/discussion/ui/reply-context';
 import { getAttachmentFileKey } from '@/features/ideas/lib/create-idea/attachments';
 import { IdeaAttachmentCard } from '@/features/ideas/ui/create-idea/IdeaAttachmentCard';
+import { Paperclip, Send } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { MouseEvent } from 'react';
+
 import { useFileHandler } from '@/shared/hooks/use-file-handler';
 import { cn } from '@/shared/lib/utils';
+
 import { QuotedReplyPreview } from './QuotedReplyBlock';
 
 const MAX_CHARS = 5000;
