@@ -166,6 +166,16 @@ export function GlobalSearchPage() {
     });
   };
 
+  const dismissSearch = () => {
+    if (window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+    navigate({
+      to: ROUTES.home,
+    });
+  };
+
   return (
     <main className="bg-brand-neutral min-h-[calc(100vh-56px)]">
       <div className="mx-auto max-w-[1600px] px-4 py-4 sm:px-8 sm:py-8 lg:px-12">
@@ -176,6 +186,13 @@ export function GlobalSearchPage() {
               <Input
                 value={localQuery}
                 onChange={e => setLocalQuery(e.target.value)}
+                onKeyDown={event => {
+                  if (event.key === 'Escape') {
+                    event.preventDefault();
+                    event.currentTarget.blur();
+                    dismissSearch();
+                  }
+                }}
                 placeholder="Search ideas or problems..."
                 className="border-brand-gray-200 focus:border-brand-dark-blue focus:ring-brand-dark-blue h-12 w-full rounded-lg bg-white pr-4 pl-12 text-base shadow-sm ring-0 focus:ring-1 sm:h-14 sm:rounded-sm"
                 autoFocus={!isMobile}

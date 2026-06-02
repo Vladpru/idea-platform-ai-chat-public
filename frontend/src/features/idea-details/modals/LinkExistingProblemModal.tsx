@@ -13,6 +13,10 @@ import { Check, ChevronDown, Plus, Search, X } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 
 import { cn } from '@/shared/lib/utils';
+import {
+  handleComboboxKeyboard,
+  handleSearchInputEscape,
+} from '@/shared/lib/keyboard';
 import { Button } from '@/shared/ui/button';
 import {
   Dialog,
@@ -43,6 +47,9 @@ export function LinkExistingProblemModal({
   const containerRef = useRef<HTMLDivElement>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const closeDropdown = () => {
+    setDropdownOpen(false);
+  };
 
   const [selectedProblemIds, setSelectedProblemIds] = useState<string[]>([]);
 
@@ -205,10 +212,10 @@ export function LinkExistingProblemModal({
                     tabIndex={0}
                     onClick={() => setDropdownOpen(previous => !previous)}
                     onKeyDown={event => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        setDropdownOpen(previous => !previous);
-                      }
+                      handleComboboxKeyboard(event, {
+                        onToggle: () => setDropdownOpen(previous => !previous),
+                        onClose: closeDropdown,
+                      });
                     }}
                     className={cn(
                       selectClass,
@@ -280,6 +287,9 @@ export function LinkExistingProblemModal({
                           <Input
                             value={search}
                             onChange={event => setSearch(event.target.value)}
+                            onKeyDown={event => {
+                              handleSearchInputEscape(event, closeDropdown);
+                            }}
                             placeholder="Search problems..."
                             className="focus-visible:ring-brand-gray-200 text-brand-gray-500 h-8 rounded-xs bg-white pr-9 text-xs focus-visible:ring-1"
                             aria-label="Search problems"

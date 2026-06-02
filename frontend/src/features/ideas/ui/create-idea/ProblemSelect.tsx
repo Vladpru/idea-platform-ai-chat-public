@@ -12,6 +12,10 @@ import type { Control, FieldErrors } from 'react-hook-form';
 import { Controller } from 'react-hook-form';
 
 import { ROUTES } from '@/shared/config/paths';
+import {
+  handleComboboxKeyboard,
+  handleSearchInputEscape,
+} from '@/shared/lib/keyboard';
 import { cn } from '@/shared/lib/utils';
 import { selectClass } from '@/shared/ui/TagsInput';
 import { Input } from '@/shared/ui/input';
@@ -40,6 +44,9 @@ function ProblemSelect({
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [addProblemOpen, setAddProblemOpen] = useState(false);
+  const closeDropdown = () => {
+    setOpen(false);
+  };
   const { data: problemsFeed } = useProblemsListQuery({
     sort: 'newest',
     limit: 50,
@@ -121,10 +128,10 @@ function ProblemSelect({
                   tabIndex={0}
                   onClick={() => setOpen(previous => !previous)}
                   onKeyDown={event => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
-                      setOpen(previous => !previous);
-                    }
+                    handleComboboxKeyboard(event, {
+                      onToggle: () => setOpen(previous => !previous),
+                      onClose: closeDropdown,
+                    });
                   }}
                   className={cn(
                     selectClass,
@@ -197,6 +204,9 @@ function ProblemSelect({
                           <Input
                             value={search}
                             onChange={event => setSearch(event.target.value)}
+                            onKeyDown={event => {
+                              handleSearchInputEscape(event, closeDropdown);
+                            }}
                             placeholder="Search"
                             className="focus-visible:ring-brand-gray-200 text-brand-gray-500 h-8 rounded-xs bg-white pr-9 text-xs focus-visible:ring-1"
                             aria-label="Search problems"

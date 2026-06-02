@@ -13,6 +13,10 @@ import { Check, ChevronDown, Search, X } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 
 import { ROUTES } from '@/shared/config/paths';
+import {
+  handleComboboxKeyboard,
+  handleSearchInputEscape,
+} from '@/shared/lib/keyboard';
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
 import {
@@ -45,10 +49,13 @@ export function LinkExistingIdeaModal({
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedIdeaIds, setSelectedIdeaIds] = useState<string[]>([]);
+  const closeDropdown = () => {
+    setDropdownOpen(false);
+  };
 
   const { data: myIdeasFeed, isLoading } = useMyIdeasQuery();
-  const myIdeas = myIdeasFeed?.data ?? [];
   const linkMutation = useLinkIdeasToProblemMutation(problemId);
+  const myIdeas = useMemo(() => myIdeasFeed?.data ?? [], [myIdeasFeed?.data]);
 
   const linkedSet = useMemo(() => new Set(linkedIdeaIds), [linkedIdeaIds]);
 
@@ -158,10 +165,10 @@ export function LinkExistingIdeaModal({
                   tabIndex={0}
                   onClick={() => setDropdownOpen(previous => !previous)}
                   onKeyDown={event => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
-                      setDropdownOpen(previous => !previous);
-                    }
+                    handleComboboxKeyboard(event, {
+                      onToggle: () => setDropdownOpen(previous => !previous),
+                      onClose: closeDropdown,
+                    });
                   }}
                   className={cn(
                     selectClass,
@@ -232,6 +239,9 @@ export function LinkExistingIdeaModal({
                         <Input
                           value={search}
                           onChange={event => setSearch(event.target.value)}
+                          onKeyDown={event => {
+                            handleSearchInputEscape(event, closeDropdown);
+                          }}
                           placeholder="Search ideas..."
                           className="focus-visible:ring-brand-gray-200 text-brand-gray-500 h-8 rounded-xs bg-white pr-9 text-xs focus-visible:ring-1"
                           aria-label="Search ideas"
