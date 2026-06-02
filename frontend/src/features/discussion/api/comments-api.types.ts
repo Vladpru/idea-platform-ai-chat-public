@@ -7,9 +7,10 @@ export type CommentAuthorDto = {
 
 export type CommentParentQuoteDto = {
   id: string;
-  content: string;
-  author: CommentAuthorDto;
+  content: string | null;
+  author: CommentAuthorDto | null;
   createdAt: string;
+  isDeleted?: boolean;
 };
 
 export type CommentAttachmentDto = {
