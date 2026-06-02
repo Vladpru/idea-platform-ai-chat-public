@@ -1,6 +1,7 @@
 export const IDEAS_ROUTES = {
   root: '/ideas',
   myDashboard: '/ideas/my-dashboard',
+  prefill: '/ideas/prefill',
 
   byId: (ideaId: string) => `/ideas/${ideaId}`,
   publish: (ideaId: string) => `/ideas/${ideaId}/publish`,

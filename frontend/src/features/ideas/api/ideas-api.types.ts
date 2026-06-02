@@ -76,3 +76,19 @@ export type UploadIdeaMediaPayload = {
   file: File;
   kind?: 'main' | 'attachment';
 };
+
+export type IdeaAIPrefillMode = 'draft' | 'title' | 'description';
+
+export type GenerateIdeaPrefillPayload = {
+  mode: IdeaAIPrefillMode;
+  userPrompt: string;
+  title?: string;
+  description?: string;
+};
+
+export type IdeaAIPrefillResponse = {
+  title: string;
+  description: string;
+  problemStatement: string;
+  tags: string[];
+};

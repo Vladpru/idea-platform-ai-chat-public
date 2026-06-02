@@ -1,5 +1,7 @@
 import type {
   CreateIdeaPayload,
+  GenerateIdeaPrefillPayload,
+  IdeaAIPrefillResponse,
   IdeasDashboardParams,
   IdeasFeedResponse,
   IdeasListParams,
@@ -160,6 +162,16 @@ export async function uploadIdeaMainImage(
   return data;
 }
 
+export async function generateIdeaPrefill(
+  payload: GenerateIdeaPrefillPayload,
+): Promise<IdeaAIPrefillResponse> {
+  const { data } = await api.post<{ data: IdeaAIPrefillResponse }>(
+    IDEAS_ROUTES.prefill,
+    payload,
+  );
+  return data.data;
+}
+
 export async function deleteIdeaMedia(
   ideaId: string,
   mediaId: string,
@@ -217,4 +229,7 @@ export type {
   SaveIdeaDraftPayload,
   UpdateIdeaPayload,
   UploadIdeaMediaPayload,
+  GenerateIdeaPrefillPayload,
+  IdeaAIPrefillMode,
+  IdeaAIPrefillResponse,
 } from '@/features/ideas/api/ideas-api.types';

@@ -1,3 +1,5 @@
+import { generateIdeaPrefill } from '@/features/ideas/api/ideas.api';
+import type { IdeaAIPrefillResponse } from '@/features/ideas/api/ideas-api.types';
 import { useIdeaCreateForm } from '@/features/ideas/hooks/use-idea-create-form';
 import { hasCreateIdeaUnsavedProgress } from '@/features/ideas/lib/create-idea/unsaved-progress';
 import { IDEA_STAGES } from '@/features/ideas/lib/stages';
@@ -11,10 +13,12 @@ import {
 import { SparklesIcon } from '@/features/ideas/ui/icons/SparklesIcon';
 import { useNavigate } from '@tanstack/react-router';
 import { ChevronDown, Upload } from 'lucide-react';
-import { useId } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Controller } from 'react-hook-form';
+import { toast } from 'sonner';
 
+import { getApiErrorMessage } from '@/shared/api/api-error';
 import { ROUTES } from '@/shared/config/paths';
 import { useCreateFormLeaveGuard } from '@/shared/hooks/use-create-form-leave-guard';
 import { SAVE_IDEA_PROGRESS_DESCRIPTION } from '@/shared/lib/create-form-leave/copy';
@@ -28,6 +32,7 @@ import DeleteImageButton from './DeleteImageButton';
 import { FieldError, FieldGroup, FieldLabel } from './Fields';
 import { IdeaFilesField } from './IdeaFilesField';
 import ProblemSelect from './ProblemSelect';
+import { AiGenerationModal } from '../modals/AiGenerationModal';
 
 const ALLOWED_MAIN_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 const INVALID_MAIN_IMAGE_TYPE_MESSAGE = 'Main image must be PNG, JPEG, or WEBP';
@@ -37,15 +42,21 @@ const FILE_TOO_LARGE_MESSAGE = 'File size must be less than 5MB';
 function AiAssistLink({
   children,
   onClick,
+  disabled = false,
 }: {
   children: string;
   onClick?: () => void;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="group text-brand-dark-blue dark:text-brand-light-blue inline-flex items-center gap-1 text-xs font-semibold tracking-wide transition-colors"
+      disabled={disabled}
+      className={cn(
+        'group text-brand-dark-blue dark:text-brand-light-blue inline-flex items-center gap-1 text-xs font-semibold tracking-wide transition-colors',
+        disabled && 'cursor-not-allowed opacity-50',
+      )}
     >
       <SparklesIcon className="group-hover:text-brand-dark-blue/80 dark:group-hover:text-brand-light-blue/80 size-5 transition-colors" />
       <span className="group-hover:text-brand-dark-blue/80 dark:group-hover:text-brand-light-blue/80 transition-colors">
@@ -55,9 +66,23 @@ function AiAssistLink({
   );
 }
 
-export function IdeaCreateForm() {
+type IdeaCreateFormProps = {
+  aiDraftPrefill?: IdeaAIPrefillResponse | null;
+  onAiDraftPrefillApplied?: () => void;
+};
+
+type AssistMode = 'title' | 'description' | 'image';
+
+export function IdeaCreateForm({
+  aiDraftPrefill,
+  onAiDraftPrefillApplied,
+}: IdeaCreateFormProps) {
   const navigate = useNavigate();
   const formId = useId();
+  const [assistModalOpen, setAssistModalOpen] = useState(false);
+  const [assistMode, setAssistMode] = useState<AssistMode>('title');
+  const [assistPrompt, setAssistPrompt] = useState('');
+  const [isAssistLoading, setIsAssistLoading] = useState(false);
 
   const {
     form,
@@ -88,6 +113,21 @@ export function IdeaCreateForm() {
 
   const titleValue = watch('title') || '';
   const descriptionValue = watch('description') || '';
+  const trimmedTitle = titleValue.trim();
+  const trimmedDescription = descriptionValue.trim();
+  const canRegenerateTitle = trimmedDescription.length >= 8;
+  const canGenerateImage = Boolean(trimmedTitle || trimmedDescription);
+
+  const openAssistModal = (mode: AssistMode) => {
+    setAssistMode(mode);
+    setAssistPrompt('');
+    setAssistModalOpen(true);
+  };
+
+  const closeAssistModal = () => {
+    setAssistPrompt('');
+    setAssistModalOpen(false);
+  };
 
   const draft = useCreateIdeaStore(state => state.draft);
   const localFiles = useCreateIdeaStore(state => state.localFiles);
@@ -170,6 +210,59 @@ export function IdeaCreateForm() {
     });
   };
 
+  const applyGeneratedFields = useCallback((generated: IdeaAIPrefillResponse) => {
+    const nextTitle = generated.title.trim();
+    const nextDescription = (generated.description || generated.problemStatement).trim();
+    const nextTags = generated.tags.filter(Boolean).join(', ');
+
+    if (nextTitle) {
+      form.setValue('title', nextTitle, { shouldDirty: true, shouldValidate: true });
+    }
+    if (nextDescription) {
+      form.setValue('description', nextDescription, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+    if (nextTags) {
+      form.setValue('tags', nextTags, { shouldDirty: true, shouldValidate: true });
+    }
+  }, [form]);
+
+  const handleAssistGenerate = async () => {
+    if (assistMode === 'image') {
+      toast.info('AI image generation will be added next.');
+      return;
+    }
+
+    const fallbackPrompt =
+      assistMode === 'title'
+        ? `Generate a concise title for this description: ${trimmedDescription}`
+        : `Generate an idea description based on this title: ${trimmedTitle}`;
+
+    setIsAssistLoading(true);
+    try {
+      const generated = await generateIdeaPrefill({
+        mode: assistMode,
+        userPrompt: assistPrompt.trim() || fallbackPrompt,
+        title: trimmedTitle,
+        description: trimmedDescription,
+      });
+      applyGeneratedFields(generated);
+      closeAssistModal();
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+    } finally {
+      setIsAssistLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!aiDraftPrefill) return;
+    applyGeneratedFields(aiDraftPrefill);
+    onAiDraftPrefillApplied?.();
+  }, [aiDraftPrefill, applyGeneratedFields, onAiDraftPrefillApplied]);
+
   return (
     <>
       <form
@@ -232,7 +325,12 @@ export function IdeaCreateForm() {
             <FieldLabel htmlFor={`${formId}-title`} required>
               Title
             </FieldLabel>
-            <AiAssistLink>Re-Generate title from description</AiAssistLink>
+            <AiAssistLink
+              disabled={!canRegenerateTitle}
+              onClick={canRegenerateTitle ? () => openAssistModal('title') : undefined}
+            >
+              Re-Generate title from description
+            </AiAssistLink>
           </div>
           <Input
             id={`${formId}-title`}
@@ -256,7 +354,9 @@ export function IdeaCreateForm() {
             <FieldLabel htmlFor={`${formId}-description`} required>
               Description
             </FieldLabel>
-            <AiAssistLink>Write description with AI prompt</AiAssistLink>
+            <AiAssistLink onClick={() => openAssistModal('description')}>
+              Write description with AI prompt
+            </AiAssistLink>
           </div>
           <textarea
             id={`${formId}-description`}
@@ -283,7 +383,17 @@ export function IdeaCreateForm() {
             >
               Main image
             </FieldLabel>
-            <AiAssistLink>
+            {!canGenerateImage ? (
+              <span className="text-brand-gray-500 text-xs">
+                Add title or description first
+              </span>
+            ) : null}
+          </div>
+          <div className="mt-2">
+            <AiAssistLink
+              disabled={!canGenerateImage}
+              onClick={canGenerateImage ? () => openAssistModal('image') : undefined}
+            >
               Generate image from title &amp; description
             </AiAssistLink>
           </div>
@@ -405,6 +515,35 @@ export function IdeaCreateForm() {
         onSaveAsDraft={() => void handleLeaveSaveAsDraft()}
         isSaving={isSavingDraft}
         description={SAVE_IDEA_PROGRESS_DESCRIPTION}
+      />
+
+      <AiGenerationModal
+        open={assistModalOpen}
+        onOpenChange={setAssistModalOpen}
+        title={
+          assistMode === 'title'
+            ? 'Generate title with AI'
+            : assistMode === 'description'
+              ? 'Generate description with AI'
+              : 'Generate image with AI'
+        }
+        description={
+          assistMode === 'title'
+            ? 'Provide extra context, and AI will suggest a title from your description.'
+            : assistMode === 'description'
+              ? 'Describe what to focus on, and AI will draft the description.'
+              : 'This modal is reusable for image generation once media AI is added.'
+        }
+        inputLabel="Prompt"
+        inputPlaceholder="Add guidance for AI generation..."
+        inputValue={assistPrompt}
+        onInputChange={setAssistPrompt}
+        submitLabel={assistMode === 'image' ? 'Generate image' : 'Generate'}
+        secondaryLabel="Cancel"
+        onSecondary={closeAssistModal}
+        onSubmit={() => void handleAssistGenerate()}
+        canSubmit={assistMode === 'image' ? canGenerateImage : true}
+        isSubmitting={isAssistLoading}
       />
     </>
   );

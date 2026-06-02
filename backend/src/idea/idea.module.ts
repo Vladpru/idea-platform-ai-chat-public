@@ -1,17 +1,31 @@
 import { Module } from '@nestjs/common';
 
+import { AiModule } from '../ai/ai.module';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { IdeaMediaService } from './idea-media.service';
 import { IdeaMemberService } from './idea-member.service';
+import { IdeaPrefillService } from './idea-prefill.service';
 import { IdeaQueryService } from './idea-query.service';
 import { IdeaController } from './idea.controller';
 import { IdeaService } from './idea.service';
 
 @Module({
-  imports: [PrismaModule, CloudinaryModule],
+  imports: [PrismaModule, CloudinaryModule, AiModule],
   controllers: [IdeaController],
-  providers: [IdeaService, IdeaMediaService, IdeaQueryService, IdeaMemberService],
-  exports: [IdeaService, IdeaMediaService, IdeaQueryService, IdeaMemberService],
+  providers: [
+    IdeaService,
+    IdeaMediaService,
+    IdeaQueryService,
+    IdeaMemberService,
+    IdeaPrefillService,
+  ],
+  exports: [
+    IdeaService,
+    IdeaMediaService,
+    IdeaQueryService,
+    IdeaMemberService,
+    IdeaPrefillService,
+  ],
 })
 export class IdeaModule {}
