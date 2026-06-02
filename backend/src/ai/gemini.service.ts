@@ -1,5 +1,4 @@
 import {
-  BadGatewayException,
   GatewayTimeoutException,
   HttpException,
   Injectable,
@@ -72,7 +71,7 @@ export class GeminiService implements AiProvider {
       }
 
       this.logger.error('Gemini prefill generation failed', error);
-      if (error instanceof Error && error.name === 'AbortError') {
+      if (this.isAbortError(error)) {
         throw new GatewayTimeoutException('AI generation timed out');
       }
       throw new InternalServerErrorException('Unable to generate AI draft');
@@ -91,12 +90,20 @@ export class GeminiService implements AiProvider {
     let retryAfterSeconds: number | undefined;
 
     for (const model of buildModelsToTry(this.configuredModel)) {
-      const result = await this.tryModel(model, input, signal, {
-        lastProviderMessage,
-        lastStatus,
-        lastQuotaMessage,
-        retryAfterSeconds,
-      });
+      let result: Awaited<ReturnType<GeminiService['tryModel']>>;
+      try {
+        result = await this.tryModel(model, input, signal, {
+          lastProviderMessage,
+          lastStatus,
+          lastQuotaMessage,
+          retryAfterSeconds,
+        });
+      } catch (error) {
+        if (this.isAbortError(error)) {
+          throw error;
+        }
+        throw error;
+      }
 
       if (result.kind === 'success') {
         return result.data;
@@ -236,12 +243,16 @@ export class GeminiService implements AiProvider {
     };
   }
 
-  private isKnownHttpError(error: unknown): boolean {
+  private isAbortError(error: unknown): boolean {
     return (
-      error instanceof HttpException ||
-      error instanceof BadGatewayException ||
-      error instanceof GatewayTimeoutException ||
-      error instanceof InternalServerErrorException
+      typeof error === 'object' &&
+      error !== null &&
+      'name' in error &&
+      (error as { name: string }).name === 'AbortError'
     );
+  }
+
+  private isKnownHttpError(error: unknown): boolean {
+    return error instanceof HttpException;
   }
 }

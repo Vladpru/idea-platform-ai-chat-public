@@ -16,7 +16,7 @@ import { CreationPageTemplate } from '@/shared/ui/pages/CreationPageTemplate';
 import { Button } from '@/shared/ui/button';
 
 export function IdeaCreationPage() {
-  const [generateDraftOpen, setGenerateDraftOpen] = useState(true);
+  const [generateDraftOpen, setGenerateDraftOpen] = useState(false);
   const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
   const [aiDraftPrefill, setAiDraftPrefill] = useState<IdeaAIPrefillResponse | null>(
     null,
