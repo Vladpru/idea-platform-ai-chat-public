@@ -58,6 +58,23 @@ export function updateCommentContentInInfiniteData(
   );
 }
 
+function tombstoneDeletedParentQuote(
+  parent: CommentDto['parent'],
+  deletedCommentId: string,
+): CommentDto['parent'] {
+  if (!parent || parent.id !== deletedCommentId) {
+    return parent;
+  }
+
+  return {
+    id: parent.id,
+    content: null,
+    author: null,
+    createdAt: parent.createdAt,
+    isDeleted: true,
+  };
+}
+
 export function removeCommentFromInfiniteData(
   data: InfiniteData<PaginatedCommentsResponse>,
   commentId: string,
@@ -70,7 +87,10 @@ export function removeCommentFromInfiniteData(
 
       return {
         ...page,
-        data: filtered,
+        data: filtered.map(comment => ({
+          ...comment,
+          parent: tombstoneDeletedParentQuote(comment.parent, commentId),
+        })),
         meta: {
           ...page.meta,
           total: Math.max(0, page.meta.total - removedCount),

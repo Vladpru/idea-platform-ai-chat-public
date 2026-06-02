@@ -16,7 +16,13 @@ import { useReplyContext } from '@/features/discussion/ui/reply-context';
 import { getAttachmentFileKey } from '@/features/ideas/lib/create-idea/attachments';
 import { IdeaAttachmentCard } from '@/features/ideas/ui/create-idea/IdeaAttachmentCard';
 import { Paperclip, Send } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import type { MouseEvent } from 'react';
 
 import { useFileHandler } from '@/shared/hooks/use-file-handler';
@@ -94,8 +100,11 @@ export function CommentInputArea({
   const adjustTextareaHeight = useCallback(() => {
     const element = textareaRef.current;
     if (!element) return;
-    element.style.height = 'auto';
-    element.style.height = `${Math.min(element.scrollHeight, 120)}px`;
+
+    element.style.height = '0px';
+    const currentScrollHeight = element.scrollHeight;
+
+    element.style.height = `${Math.min(Math.max(currentScrollHeight, 40), 120)}px`;
   }, []);
 
   useEffect(() => {
@@ -104,9 +113,9 @@ export function CommentInputArea({
     return () => setDraftDirty(false);
   }, [contentLength, hasFiles, setDraftDirty]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     adjustTextareaHeight();
-  }, [content, adjustTextareaHeight]);
+  }, [content, isFloating, adjustTextareaHeight]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -116,7 +125,7 @@ export function CommentInputArea({
       {
         root: null,
         threshold: 0,
-        rootMargin: '16px',
+        rootMargin: '100px 0px 0px 0px',
       },
     );
 
@@ -133,13 +142,11 @@ export function CommentInputArea({
     setContent('');
     clearFiles();
     clearReply();
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-    }
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-  }, [clearFiles, clearReply]);
+    setTimeout(adjustTextareaHeight, 0);
+  }, [clearFiles, clearReply, adjustTextareaHeight]);
 
   const handleSubmit = () => {
     if (!canSubmit) return;
@@ -231,7 +238,7 @@ export function CommentInputArea({
         {files.length > 0 ? (
           <div
             className={cn(
-              'mb-3 flex flex-wrap items-start gap-3 transition-all duration-500 ease-in-out',
+              'mb-3 flex flex-wrap items-start gap-3 transition-all duration-300 ease-in-out',
               isFloating ? 'mx-auto max-w-4xl' : 'w-full',
             )}
           >
@@ -252,7 +259,7 @@ export function CommentInputArea({
 
         <div
           className={cn(
-            'relative flex items-end transition-all duration-500 ease-in-out',
+            'relative flex items-end',
             isFloating ? 'mx-auto max-w-4xl gap-3' : 'w-full gap-2 p-2',
           )}
         >
@@ -281,7 +288,7 @@ export function CommentInputArea({
             type="file"
             multiple
             accept={accept}
-            className="hidden"
+            className="center flex hidden"
             disabled={isCurrentlyEditing || atLimit}
             onChange={handleFileChange}
           />
@@ -289,7 +296,7 @@ export function CommentInputArea({
           <button
             type="button"
             className={cn(
-              'relative z-10 flex shrink-0 cursor-pointer items-center justify-center border transition-all duration-500 ease-in-out',
+              'relative z-10 flex shrink-0 cursor-pointer items-center justify-center border transition-all duration-300',
               isFloating
                 ? 'size-[52px] rounded-full border-gray-200 bg-white shadow-sm hover:bg-gray-50'
                 : 'size-10 rounded-md border-transparent bg-transparent shadow-none hover:bg-gray-100',
@@ -304,7 +311,7 @@ export function CommentInputArea({
 
           <div
             className={cn(
-              'relative z-10 flex flex-1 items-end border transition-all duration-500 ease-in-out',
+              'relative z-10 flex flex-1 items-end border transition-colors duration-200',
               isFloating
                 ? 'rounded-[28px] bg-white px-5 shadow-sm'
                 : 'rounded-md border-transparent bg-transparent px-2 shadow-none',
@@ -330,10 +337,10 @@ export function CommentInputArea({
                   : 'Type your message...'
               }
               className={cn(
-                'max-h-[120px] min-w-0 flex-1 resize-none border-0 bg-transparent text-sm placeholder:text-gray-400',
+                'max-h-[120px] min-h-[40px] min-w-0 flex-1 resize-none overflow-y-auto border-0 bg-transparent text-sm leading-[20px] placeholder:text-gray-400',
                 'focus-visible:ring-0 focus-visible:outline-none disabled:opacity-60',
                 'data-[highlighted=true]:ring-brand-dark-blue/30 transition-shadow duration-500 data-[highlighted=true]:ring-2',
-                isFloating ? 'py-4 pr-2' : 'py-2.5',
+                isFloating ? 'py-4 pr-2' : 'py-[10px]',
                 isOverLimit ? 'text-red-600' : 'text-brand-gray-800',
               )}
               onChange={event => {
@@ -353,7 +360,7 @@ export function CommentInputArea({
             disabled={!canSubmit || isCurrentlyEditing}
             onClick={handleSubmit}
             className={cn(
-              'relative z-10 flex shrink-0 cursor-pointer items-center justify-center border transition-all duration-500 ease-in-out',
+              'relative z-10 flex shrink-0 cursor-pointer items-center justify-center border transition-all duration-300',
               isFloating
                 ? 'size-[52px] rounded-full border-gray-200 bg-white shadow-sm hover:bg-gray-50'
                 : 'size-10 rounded-md border-transparent bg-transparent shadow-none hover:bg-gray-100',

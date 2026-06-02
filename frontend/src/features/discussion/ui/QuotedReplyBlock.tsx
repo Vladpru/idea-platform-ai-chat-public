@@ -22,11 +22,7 @@ export function QuotedReplyBlock({
   onQuoteClick,
   className,
 }: QuotedReplyBlockProps) {
-  const authorName = formatUserDisplayName({
-    firstName: quote.author.firstName,
-    lastName: quote.author.lastName,
-    email: null,
-  });
+  const isDeleted = quote.isDeleted || !quote.content;
 
   const handleClick = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {
@@ -35,6 +31,27 @@ export function QuotedReplyBlock({
     },
     [onQuoteClick, quote.id],
   );
+
+  if (isDeleted) {
+    return (
+      <div
+        className={cn(
+          'mt-3 rounded-r-md border-l-4 border-slate-300 bg-slate-50 p-3',
+          className,
+        )}
+      >
+        <p className="text-sm text-slate-500 italic">
+          This message has been deleted
+        </p>
+      </div>
+    );
+  }
+
+  const authorName = formatUserDisplayName({
+    firstName: quote.author!.firstName,
+    lastName: quote.author!.lastName,
+    email: null,
+  });
 
   return (
     <div
@@ -46,8 +63,8 @@ export function QuotedReplyBlock({
     >
       <div className="flex gap-2">
         <Avatar size="sm" className="shrink-0">
-          {quote.author.avatarUrl ? (
-            <AvatarImage src={quote.author.avatarUrl} alt="" />
+          {quote.author!.avatarUrl ? (
+            <AvatarImage src={quote.author!.avatarUrl} alt="" />
           ) : null}
           <AvatarFallback className="bg-brand-gray-100 text-brand-gray-700 text-[10px] font-semibold">
             {getAuthorInitials(authorName)}
@@ -85,9 +102,33 @@ export function QuotedReplyPreview({
   onCancel,
   className,
 }: QuotedReplyPreviewProps) {
+  const isDeleted = quote.isDeleted || !quote.content;
+
+  if (isDeleted) {
+    return (
+      <div
+        className={cn(
+          'mb-2 rounded-md border border-slate-300 bg-slate-50 p-3',
+          className,
+        )}
+      >
+        <p className="text-sm text-slate-500 italic">
+          This message has been deleted
+        </p>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="text-brand-gray-500 hover:text-brand-black mt-2 cursor-pointer text-xs font-semibold tracking-wide uppercase"
+        >
+          Cancel
+        </button>
+      </div>
+    );
+  }
+
   const authorName = formatUserDisplayName({
-    firstName: quote.author.firstName,
-    lastName: quote.author.lastName,
+    firstName: quote.author!.firstName,
+    lastName: quote.author!.lastName,
     email: null,
   });
 
