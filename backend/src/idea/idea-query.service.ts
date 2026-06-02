@@ -2,6 +2,12 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { IdeaStatus, Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import {
+  buildSearchText,
+  formatTsQuery,
+  tsQueryMatchSql,
+  tsRankSql,
+} from '../shared/utils/fts.util';
 import { MyIdeasQueryDto } from './dto';
 import {
   GetIdeasQueryDto,
@@ -196,23 +202,29 @@ export class IdeaQueryService {
   ): Promise<IdeaFormResponse[]> {
     const currentIdea = await this.prisma.idea.findUnique({
       where: { id },
-      select: { id: true, title: true },
+      select: { id: true, title: true, description: true },
     });
 
-    if (!currentIdea || !currentIdea.title) {
+    if (!currentIdea) {
       throw new NotFoundException(IDEA_NOT_FOUND);
     }
 
-    const searchQuery = currentIdea.title
-      .replace(/[^\p{L}\p{N}\s]/gu, ' ')
-      .trim()
-      .split(/\s+/)
-      .filter(word => word.length > 2)
-      .join(' | ');
+    const searchText = buildSearchText(
+      currentIdea.title,
+      currentIdea.description,
+    );
+    const searchQuery = formatTsQuery(searchText, {
+      minWordLength: 3,
+      joinOperator: '|',
+      prefixMatch: true,
+    });
 
     if (!searchQuery) {
       return [];
     }
+
+    const matchSql = tsQueryMatchSql('i.search_vector', searchQuery);
+    const rankSql = tsRankSql('i.search_vector', searchQuery);
 
     const scoredRecords = await this.prisma.$queryRaw<{ id: string }[]>`
       SELECT i.id
@@ -220,17 +232,9 @@ export class IdeaQueryService {
       WHERE 
         i.status = 'PUBLISHED' 
         AND i.id != ${id}
-        AND to_tsvector('english', coalesce(i.title, '') || ' ' || coalesce(i.description, '')) @@ to_tsquery('english', ${searchQuery})
-        AND ts_rank(
-          setweight(to_tsvector('english', coalesce(i.title, '')), 'A') ||
-          setweight(to_tsvector('english', coalesce(i.description, '')), 'B'),
-          to_tsquery('english', ${searchQuery})
-        ) > 0.05
-      ORDER BY ts_rank(
-        setweight(to_tsvector('english', coalesce(i.title, '')), 'A') ||
-        setweight(to_tsvector('english', coalesce(i.description, '')), 'B'),
-        to_tsquery('english', ${searchQuery})
-      ) DESC, i."published_at" DESC
+        AND ${matchSql}
+        AND ${rankSql} > 0.05
+      ORDER BY ${rankSql} DESC, i."published_at" DESC
       LIMIT 3;
     `;
 

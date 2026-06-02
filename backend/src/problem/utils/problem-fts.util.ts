@@ -1,18 +1,19 @@
-export function formatTsQuery(text: string): string | null {
-  const formatted = text
-    .replace(/[^\p{L}\p{N}]+/gu, ' ')
-    .trim()
-    .split(/\s+/)
-    .filter(word => word.length > 0)
-    .map(word => `${word}:*`)
-    .join(' & ');
+import {
+  buildSearchText,
+  formatTsQuery as formatSharedTsQuery,
+} from '../../shared/utils/fts.util';
 
-  return formatted || null;
+export function formatTsQuery(text: string): string | null {
+  return formatSharedTsQuery(text, {
+    minWordLength: 1,
+    joinOperator: '&',
+    prefixMatch: true,
+  });
 }
 
 export function buildProblemSearchText(
   title?: string,
   description?: string,
 ): string {
-  return [title?.trim(), description?.trim()].filter(Boolean).join(' ');
+  return buildSearchText(title, description);
 }
