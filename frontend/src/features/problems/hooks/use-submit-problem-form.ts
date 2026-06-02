@@ -10,34 +10,21 @@ import {
   problemFormToSubmitFormValues,
   submitProblemDefaultValues,
   submitProblemDraftSchema,
-  validateSubmitProblemForDraft,
-  validateSubmitProblemForPublish,
+  submitProblemPublishSchema,
 } from '@/features/problems/lib/submit-problem';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useSearch } from '@tanstack/react-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useForm, type UseFormReturn } from 'react-hook-form';
-import type { ZodIssue } from 'zod';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type Resolver, useForm, useWatch } from 'react-hook-form';
 
 import { getApiErrorMessage } from '@/shared/api/api-error';
 
-function applyValidationIssuesToForm(
-  form: UseFormReturn<SubmitProblemFormValues>,
-  issues: ZodIssue[],
-) {
-  for (const issue of issues) {
-    const path = issue.path[0];
-    if (path && typeof path === 'string') {
-      form.setError(path as keyof SubmitProblemFormValues, {
-        type: 'manual',
-        message: issue.message,
-      });
-    }
-  }
-}
+type ValidationMode = 'draft' | 'publish';
 
 export function useSubmitProblemForm() {
-  const { problemId: urlProblemId } = useSearch({ from: '/_auth/problems/new' });
+  const { problemId: urlProblemId } = useSearch({
+    from: '/_auth/problems/new',
+  });
   const [error, setError] = useState<string | null>(null);
   const [isHydrating, setIsHydrating] = useState(Boolean(urlProblemId));
   const [editingProblemId, setEditingProblemId] = useState<string | null>(
@@ -50,8 +37,30 @@ export function useSubmitProblemForm() {
   const publishMutation = usePublishProblemMutation();
   const updateMutation = useUpdateProblemMutation(editingProblemId ?? '');
 
+  const [, setValidationMode] = useState<ValidationMode>('draft');
+
+  const validationModeRef = useRef<ValidationMode>('draft');
+
+  const setValidationModeBoth = useCallback((mode: ValidationMode) => {
+    validationModeRef.current = mode;
+    setValidationMode(mode);
+  }, []);
+
+  const resolver = useMemo((): Resolver<SubmitProblemFormValues> => {
+    return async (values, context, options) => {
+      const schema =
+        validationModeRef.current === 'publish'
+          ? submitProblemPublishSchema
+          : submitProblemDraftSchema;
+      const nextResolver = zodResolver(
+        schema,
+      ) as Resolver<SubmitProblemFormValues>;
+      return nextResolver(values, context, options);
+    };
+  }, []);
+
   const form = useForm<SubmitProblemFormValues>({
-    resolver: zodResolver(submitProblemDraftSchema),
+    resolver,
     defaultValues: submitProblemDefaultValues,
     mode: 'onChange',
   });
@@ -63,7 +72,6 @@ export function useSubmitProblemForm() {
     initializedRef.current = true;
 
     if (!urlProblemId) {
-      setIsHydrating(false);
       return;
     }
 
@@ -75,7 +83,9 @@ export function useSubmitProblemForm() {
         const problem = await fetchProblemById(urlProblemId);
         setEditingProblemId(problem.id);
         setEditingProblemStatus(problem.status);
-        form.reset(problemFormToSubmitFormValues(problem), { keepDirty: false });
+        form.reset(problemFormToSubmitFormValues(problem), {
+          keepDirty: false,
+        });
       } catch (err) {
         setError(getApiErrorMessage(err));
         setEditingProblemId(null);
@@ -89,7 +99,8 @@ export function useSubmitProblemForm() {
     void loadProblem();
   }, [form, urlProblemId]);
 
-  const isSavingDraft = createDraftMutation.isPending || updateMutation.isPending;
+  const isSavingDraft =
+    createDraftMutation.isPending || updateMutation.isPending;
   const isPublishing = publishMutation.isPending;
   const isBusy = isHydrating || isSavingDraft || isPublishing;
   const isEditing = Boolean(editingProblemId);
@@ -100,34 +111,33 @@ export function useSubmitProblemForm() {
     setEditingProblemId(null);
     setEditingProblemStatus(null);
     setError(null);
-  }, [form]);
+    setValidationModeBoth('draft');
+  }, [form, setValidationModeBoth]);
 
   const onSaveDraft = useCallback(async () => {
     setError(null);
-    const values = form.getValues();
-    const validation = validateSubmitProblemForDraft(values);
-
-    if (!validation.success) {
-      applyValidationIssuesToForm(form, validation.error.issues);
-      const firstIssue = validation.error.issues[0];
-      setError(firstIssue?.message ?? 'Please fix the highlighted fields');
+    setValidationModeBoth('draft');
+    const isValid = await form.trigger(undefined, { shouldFocus: true });
+    if (!isValid) {
+      setError('Please fix the highlighted fields');
       return null;
     }
 
-    const trimmedDescription = validation.data.description?.trim();
+    const values = form.getValues();
+    const trimmedDescription = values.description?.trim();
 
     try {
       let savedProblemId: string;
 
       if (editingProblemId) {
         const problem = await updateMutation.mutateAsync({
-          title: validation.data.title,
+          title: values.title,
           ...(trimmedDescription ? { description: trimmedDescription } : {}),
         });
         savedProblemId = problem.id;
       } else {
         const problem = await createDraftMutation.mutateAsync({
-          title: validation.data.title,
+          title: values.title,
           ...(trimmedDescription ? { description: trimmedDescription } : {}),
         });
         savedProblemId = problem.id;
@@ -139,23 +149,27 @@ export function useSubmitProblemForm() {
       setError(getApiErrorMessage(err));
       return null;
     }
-  }, [clearSession, createDraftMutation, editingProblemId, form, updateMutation]);
+  }, [
+    clearSession,
+    createDraftMutation,
+    editingProblemId,
+    form,
+    setValidationModeBoth,
+    updateMutation,
+  ]);
 
   const onPublish = useCallback(async () => {
     setError(null);
-    const values = form.getValues();
-    const validation = validateSubmitProblemForPublish(values);
-
-    if (!validation.success) {
-      applyValidationIssuesToForm(form, validation.error.issues);
-      const firstIssue = validation.error.issues[0];
-      setError(firstIssue?.message ?? 'Please fix the highlighted fields');
+    setValidationModeBoth('publish');
+    const isValid = await form.trigger(undefined, { shouldFocus: true });
+    if (!isValid) {
+      setError('Please fix the highlighted fields');
       return null;
     }
 
     try {
       const problem = await publishMutation.mutateAsync({
-        values: validation.data,
+        values: form.getValues(),
         ...(editingProblemId ? { problemId: editingProblemId } : {}),
       });
       clearSession();
@@ -164,11 +178,21 @@ export function useSubmitProblemForm() {
       setError(getApiErrorMessage(err));
       return null;
     }
-  }, [clearSession, editingProblemId, form, publishMutation]);
+  }, [
+    clearSession,
+    editingProblemId,
+    form,
+    publishMutation,
+    setValidationModeBoth,
+  ]);
 
-  const watchedValues = form.watch();
-  const canSaveDraft = validateSubmitProblemForDraft(watchedValues).success;
-  const canPublish = validateSubmitProblemForPublish(watchedValues).success;
+  const watchedValues = useWatch({
+    control: form.control,
+  }) as SubmitProblemFormValues;
+  const canSaveDraft =
+    submitProblemDraftSchema.safeParse(watchedValues).success;
+  const canPublish =
+    submitProblemPublishSchema.safeParse(watchedValues).success;
 
   const resetForm = clearSession;
 

@@ -85,7 +85,6 @@ export function SubmitProblemForm() {
   const {
     register,
     control,
-    handleSubmit,
     formState: { errors, isDirty: formIsDirty },
     watch,
   } = form;
@@ -175,7 +174,10 @@ export function SubmitProblemForm() {
       <form
         id={formId}
         className="space-y-8"
-        onSubmit={e => void handleSubmit(handlePublish)(e)}
+        onSubmit={event => {
+          event.preventDefault();
+          void handlePublish();
+        }}
         noValidate
       >
         {isHydrating ? (

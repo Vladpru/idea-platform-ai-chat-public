@@ -35,12 +35,14 @@ export const submitProblemTitleSchema = z
   .string()
   .trim()
   .min(1, 'This field is required')
+  .min(3, 'Title must be at least 3 characters')
   .max(200, 'Title cannot exceed 200 characters');
 
 export const submitProblemDescriptionSchema = z
   .string()
   .trim()
   .min(1, 'This field is required')
+  .min(8, 'Description must be at least 8 characters')
   .max(5000, 'Description cannot exceed 5000 characters');
 
 const submitProblemCoreFields = {
