@@ -1,17 +1,12 @@
 import { pageTitleClass } from '@/features/ideas/lib/styles';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 import { cn } from '@/shared/lib/utils';
 import { Switch } from '@/shared/ui';
-
-type NotificationKey =
-  | 'newSimilarIdeas'
-  | 'newSimilarProblems'
-  | 'statusChange'
-  | 'newSupporters'
-  | 'newComments'
-  | 'assignedIdeasAndProblems'
-  | 'followUps';
+import {
+  useNotificationStore,
+  type NotificationKey,
+} from '../model/notification-store';
 
 type NotificationItem = {
   key: NotificationKey;
@@ -38,21 +33,6 @@ const NOTIFICATION_ITEMS: NotificationItem[] = [
   },
 ];
 
-type NotificationChannels = Record<
-  NotificationKey,
-  { inApp: boolean; email: boolean }
->;
-
-const DEFAULT_CHANNELS: NotificationChannels = {
-  newSimilarIdeas: { inApp: true, email: true },
-  newSimilarProblems: { inApp: true, email: true },
-  statusChange: { inApp: true, email: true },
-  newSupporters: { inApp: true, email: true },
-  newComments: { inApp: true, email: true },
-  assignedIdeasAndProblems: { inApp: true, email: true },
-  followUps: { inApp: true, email: true },
-};
-
 const actionButtonClassName =
   'text-xs font-semibold tracking-wider uppercase transition-colors sm:text-sm';
 
@@ -72,8 +52,9 @@ function ChannelToggle({ checked, onChange, label }: ChannelToggleProps) {
 }
 
 export function SettingsNotificationsPanel() {
-  const [channels, setChannels] =
-    useState<NotificationChannels>(DEFAULT_CHANNELS);
+  const channels = useNotificationStore(s => s.channels);
+  const setAll = useNotificationStore(s => s.setAll);
+  const setOneChannel = useNotificationStore(s => s.setOneChannel);
 
   const isAllEnabled = useMemo(
     () =>
@@ -81,30 +62,13 @@ export function SettingsNotificationsPanel() {
     [channels],
   );
 
-  const setAll = (value: boolean) => {
-    setChannels(
-      Object.fromEntries(
-        NOTIFICATION_ITEMS.map(item => [
-          item.key,
-          { inApp: value, email: value },
-        ]),
-      ) as NotificationChannels,
-    );
-  };
-
-  const setOneChannel = (
-    key: NotificationKey,
-    channel: 'inApp' | 'email',
-    value: boolean,
-  ) => {
-    setChannels(prev => ({
-      ...prev,
-      [key]: {
-        ...prev[key],
-        [channel]: value,
-      },
-    }));
-  };
+  const isAllDisabled = useMemo(
+    () =>
+      Object.values(channels).every(
+        channel => !channel.inApp && !channel.email,
+      ),
+    [channels],
+  );
 
   return (
     <main className="bg-brand-neutral min-h-[calc(100vh-72px)]">
@@ -120,10 +84,12 @@ export function SettingsNotificationsPanel() {
               <button
                 className={cn(
                   actionButtonClassName,
-                  'text-slate-400 hover:text-slate-600',
-                  isAllEnabled && 'text-slate-500',
+                  isAllEnabled
+                    ? 'cursor-not-allowed text-slate-300'
+                    : 'text-brand-dark-blue hover:text-brand-dark-blue/80 cursor-pointer',
                 )}
                 onClick={() => setAll(true)}
+                disabled={isAllEnabled}
                 type="button"
               >
                 Enable all
@@ -131,10 +97,12 @@ export function SettingsNotificationsPanel() {
               <button
                 className={cn(
                   actionButtonClassName,
-                  'text-brand-dark-blue hover:text-brand-dark-blue/80',
-                  !isAllEnabled && 'text-brand-dark-blue',
+                  isAllDisabled
+                    ? 'cursor-not-allowed text-slate-300'
+                    : 'text-brand-dark-blue hover:text-brand-dark-blue/80 cursor-pointer',
                 )}
                 onClick={() => setAll(false)}
+                disabled={isAllDisabled}
                 type="button"
               >
                 Disable all
