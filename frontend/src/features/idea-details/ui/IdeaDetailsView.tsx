@@ -99,6 +99,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
 
   const { proceed, reset, status } = useBlocker({
     shouldBlockFn: () => hasUnsavedIdeaEdits,
+    enableBeforeUnload: () => hasUnsavedIdeaEdits,
     withResolver: true,
   });
 
@@ -239,20 +240,6 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
   };
 
   useEffect(() => {
-    if (!hasUnsavedIdeaEdits) {
-      return;
-    }
-
-    const onBeforeUnload = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = '';
-    };
-
-    window.addEventListener('beforeunload', onBeforeUnload);
-    return () => window.removeEventListener('beforeunload', onBeforeUnload);
-  }, [hasUnsavedIdeaEdits]);
-
-  useEffect(() => {
     let ticking = false;
 
     const handleScroll = () => {
@@ -359,7 +346,11 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
           </>
         )}
 
-        <div className="min-h-[280px]">
+        <div
+          className={cn(
+            !isEditing && activeTab !== 'description' && 'min-h-[280px]',
+          )}
+        >
           {isEditing && editFormSnapshot ? (
             <section
               key="edit"

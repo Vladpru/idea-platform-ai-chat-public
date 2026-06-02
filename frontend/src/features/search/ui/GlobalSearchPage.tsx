@@ -31,6 +31,70 @@ function getLinkedItemDetailHref(id: string): string {
   return ROUTES.problemDetail(id);
 }
 
+function buildSimilarSearches(query: string, activeTab: SearchTab): string[] {
+  const normalized = query.replace(/[^\p{L}\p{N}\s]+/gu, ' ').trim();
+  const words = normalized.split(/\s+/).filter(word => word.length >= 3);
+  const first = words[0];
+  const firstTwo = words.slice(0, 2).join(' ');
+  const withoutDigits = normalized.replace(/\d+/g, '').trim();
+  const singular =
+    words.length === 1 && words[0].endsWith('s') ? words[0].slice(0, -1) : '';
+  const tabDefaults =
+    activeTab === 'ideas'
+      ? ['automation', 'mobile app', 'ai assistant']
+      : ['workflow issue', 'performance bottleneck', 'team communication'];
+
+  return [first, firstTwo, withoutDigits, singular, ...tabDefaults].filter(
+    (value, index, arr): value is string => {
+      if (!value) return false;
+      if (value.toLowerCase() === query.toLowerCase()) return false;
+      return (
+        arr.findIndex(item => item.toLowerCase() === value.toLowerCase()) ===
+        index
+      );
+    },
+  );
+}
+
+function EmptyState({
+  query,
+  activeTab,
+  onSuggestionClick,
+  message,
+}: {
+  query: string;
+  activeTab: SearchTab;
+  onSuggestionClick: (nextQuery: string) => void;
+  message: string;
+}) {
+  const suggestions = buildSimilarSearches(query, activeTab).slice(0, 5);
+
+  return (
+    <div className="rounded-lg border px-4 py-10 text-center sm:px-6 sm:py-12">
+      <p className="text-brand-gray-700 text-base">{message}</p>
+      {suggestions.length > 0 ? (
+        <div className="mt-4">
+          <p className="text-brand-gray-500 text-xs font-medium tracking-wide uppercase">
+            Similar searches
+          </p>
+          <div className="mt-3 flex flex-wrap justify-center gap-2">
+            {suggestions.map(suggestion => (
+              <button
+                key={suggestion}
+                type="button"
+                onClick={() => onSuggestionClick(suggestion)}
+                className="border-brand-gray-300 text-brand-dark-blue hover:bg-brand-light-blue/20 rounded-full border px-4 py-2 text-xs font-medium transition-colors"
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function SearchSkeleton() {
   return (
     <div className="space-y-4">
@@ -157,6 +221,15 @@ export function GlobalSearchPage() {
     });
   };
 
+  const applySuggestion = (nextQuery: string) => {
+    setLocalQuery(nextQuery);
+    navigate({
+      to: '.',
+      search: { q: nextQuery, t: activeTab },
+      replace: true,
+    });
+  };
+
   const clearSearch = () => {
     setLocalQuery('');
     navigate({
@@ -166,7 +239,7 @@ export function GlobalSearchPage() {
     });
   };
 
-  const dismissSearch = () => {
+  const dismissSearch = useCallback(() => {
     if (window.history.length > 1) {
       window.history.back();
       return;
@@ -174,7 +247,18 @@ export function GlobalSearchPage() {
     navigate({
       to: ROUTES.home,
     });
-  };
+  }, [navigate]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      dismissSearch();
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [dismissSearch]);
 
   return (
     <main className="bg-brand-neutral min-h-[calc(100vh-56px)]">
@@ -186,13 +270,6 @@ export function GlobalSearchPage() {
               <Input
                 value={localQuery}
                 onChange={e => setLocalQuery(e.target.value)}
-                onKeyDown={event => {
-                  if (event.key === 'Escape') {
-                    event.preventDefault();
-                    event.currentTarget.blur();
-                    dismissSearch();
-                  }
-                }}
                 placeholder="Search ideas or problems..."
                 className="border-brand-gray-200 focus:border-brand-dark-blue focus:ring-brand-dark-blue h-12 w-full rounded-lg bg-white pr-4 pl-12 text-base shadow-sm ring-0 focus:ring-1 sm:h-14 sm:rounded-sm"
                 autoFocus={!isMobile}
@@ -222,11 +299,12 @@ export function GlobalSearchPage() {
         {showLoading && <SearchSkeleton />}
 
         {showEmpty && (
-          <div className="px-4 py-12 text-center sm:px-6 sm:py-16">
-            <p className="text-brand-gray-600 text-sm">
-              No matches found for &ldquo;{trimmedQuery}&rdquo;
-            </p>
-          </div>
+          <EmptyState
+            query={trimmedQuery}
+            activeTab={activeTab}
+            onSuggestionClick={applySuggestion}
+            message={`No matches found for "${trimmedQuery}"`}
+          />
         )}
 
         {data && hasAnyResults && (
@@ -247,11 +325,12 @@ export function GlobalSearchPage() {
             </div>
 
             {showTabEmpty && (
-              <div className="border-brand-gray-200 rounded-lg border bg-white px-4 py-12 text-center sm:px-6 sm:py-16">
-                <p className="text-brand-gray-600 text-sm">
-                  No {activeTab} found for &ldquo;{trimmedQuery}&rdquo;
-                </p>
-              </div>
+              <EmptyState
+                query={trimmedQuery}
+                activeTab={activeTab}
+                onSuggestionClick={applySuggestion}
+                message={`No ${activeTab} found for "${trimmedQuery}"`}
+              />
             )}
 
             {allItems.length > 0 && (
