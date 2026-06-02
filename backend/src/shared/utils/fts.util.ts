@@ -6,6 +6,8 @@ type FormatTsQueryOptions = {
   prefixMatch?: boolean;
 };
 
+export type SearchVectorColumn = 'i.search_vector' | 'p.search_vector';
+
 const DEFAULT_FORMAT_OPTIONS: Required<FormatTsQueryOptions> = {
   minWordLength: 1,
   joinOperator: '&',
@@ -39,14 +41,14 @@ export function formatTsQuery(
 }
 
 export function tsQueryMatchSql(
-  searchVectorColumn: string,
+  searchVectorColumn: SearchVectorColumn,
   formattedQuery: string,
 ): Prisma.Sql {
   return Prisma.sql`${Prisma.raw(searchVectorColumn)} @@ to_tsquery('english', ${formattedQuery})`;
 }
 
 export function tsRankSql(
-  searchVectorColumn: string,
+  searchVectorColumn: SearchVectorColumn,
   formattedQuery: string,
 ): Prisma.Sql {
   return Prisma.sql`COALESCE(ts_rank(${Prisma.raw(searchVectorColumn)}, to_tsquery('english', ${formattedQuery})), 0)`;

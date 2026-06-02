@@ -38,12 +38,17 @@ import { memoryStorage } from 'multer';
 import { JwtAuth } from '../shared/decorators/jwt-auth.decorator';
 import { MyIdeasQueryDto } from './dto';
 import { CreateIdeaDto } from './dto/create-idea.dto';
+import {
+  GenerateIdeaPrefillDto,
+  IdeaPrefillResponseDto,
+} from './dto/generate-idea-prefill.dto';
 import { GetIdeasQueryDto } from './dto/get-ideas-query.dto';
 import { UpdateIdeaDraftDto } from './dto/update-idea-draft.dto';
 import { UpdatePublishedIdeaDto } from './dto/update-published-idea.dto';
 import { Stage } from './enum/stage.enum';
 import { IdeaMediaService } from './idea-media.service';
 import { IdeaMemberService } from './idea-member.service';
+import { IdeaPrefillService } from './idea-prefill.service';
 import { IdeaQueryService } from './idea-query.service';
 import { IdeaService } from './idea.service';
 
@@ -57,6 +62,7 @@ export class IdeaController {
     private readonly ideaMediaService: IdeaMediaService,
     private readonly ideaQueryService: IdeaQueryService,
     private readonly ideaMemberService: IdeaMemberService,
+    private readonly ideaPrefillService: IdeaPrefillService,
   ) {}
 
   @Post()
@@ -72,6 +78,22 @@ export class IdeaController {
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   create(@Body() dto: CreateIdeaDto, @Req() req: AuthenticatedRequest) {
     return this.ideaService.create(req.user.id, dto);
+  }
+
+  @Post('prefill')
+  @JwtAuth()
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Generate AI idea draft fields' })
+  @ApiBody({ type: GenerateIdeaPrefillDto })
+  @ApiOkResponse({
+    description: 'Generated AI fields for idea creation form',
+    type: IdeaPrefillResponseDto,
+  })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  async generatePrefill(@Body() dto: GenerateIdeaPrefillDto) {
+    const data = await this.ideaPrefillService.generatePrefill(dto);
+    return { data };
   }
 
   @Get('my-dashboard')

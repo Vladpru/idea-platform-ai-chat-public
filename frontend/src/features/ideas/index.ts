@@ -31,6 +31,7 @@ export {
   updatePublishedIdea,
   publishIdea,
   deleteIdea,
+  generateIdeaPrefill,
   uploadIdeaMedia,
   deleteIdeaMedia,
 } from './api/ideas.api';
@@ -44,6 +45,9 @@ export type {
   SaveIdeaDraftPayload,
   UpdateIdeaPayload,
   UploadIdeaMediaPayload,
+  GenerateIdeaPrefillPayload,
+  IdeaAIPrefillMode,
+  IdeaAIPrefillResponse,
 } from './api/ideas-api.types';
 export {
   ideaMutationKeys,
