@@ -36,11 +36,24 @@ export function isValidCostBenefit(value: string): boolean {
 
 export const submitProblemCostBenefitSchema = z
   .string()
+  .max(13, 'Cost benefit cannot exceed 13 characters')
+  .optional()
   .superRefine((value, ctx) => {
+    if (!value) return;
+
     if (!isValidCostBenefit(value)) {
       ctx.addIssue({
         code: 'custom',
         message: 'Enter a valid amount (e.g. 1000.00)',
+      });
+      return;
+    }
+
+    const numericValue = parseFloat(normalizeCostBenefitInput(value));
+    if (!isNaN(numericValue) && numericValue > 9999999999.99) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Amount is too large',
       });
     }
   });

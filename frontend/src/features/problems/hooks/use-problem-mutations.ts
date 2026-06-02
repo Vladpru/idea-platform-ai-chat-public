@@ -16,9 +16,11 @@ import {
 } from '@/features/problems/lib/submit-problem';
 import { myProblemsDashboardKeys } from '@/features/profile/hooks/use-my-problems-dashboard';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
 import { toast } from 'sonner';
 
 import { getApiErrorMessage } from '@/shared/api/api-error';
+import { ROUTES } from '@/shared/config/paths';
 
 async function uploadProblemFiles(
   problemId: string,
@@ -123,6 +125,7 @@ export function usePublishProblemMutation() {
 }
 
 export function useCreateProblemDraftMutation() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -130,7 +133,17 @@ export function useCreateProblemDraftMutation() {
     mutationFn: createProblemDraft,
     onSuccess: problem => {
       invalidateProblemQueries(queryClient, problem.id);
-      toast.success('Problem draft created');
+      toast.success('Draft saved', {
+        action: {
+          label: 'View Drafts',
+          onClick: () => {
+            void navigate({
+              to: ROUTES.profileProblems,
+              search: { tab: 'drafts' },
+            });
+          },
+        },
+      });
     },
     onError: error => {
       toast.error(getApiErrorMessage(error));

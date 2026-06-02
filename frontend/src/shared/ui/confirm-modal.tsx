@@ -44,7 +44,7 @@ export function ConfirmModal({
       variant="outline"
       className={cn(
         outlineBtn,
-        'text-brand-orange border-brand-orange hover:bg-brand-orange/10 w-full px-4 py-1 sm:w-auto md:h-11 md:w-39',
+        'text-brand-orange border-brand-orange hover:bg-brand-orange/10 w-full min-w-[156px] px-6 py-1 sm:w-auto md:h-11',
         confirmClassName,
       )}
       disabled={isPending}
@@ -61,7 +61,7 @@ export function ConfirmModal({
       variant="outline"
       className={cn(
         outlineBtn,
-        'w-full px-4 py-1 sm:w-auto md:h-11 md:w-39',
+        'w-full min-w-[156px] px-6 py-1 sm:w-auto md:h-11',
         cancelClassName,
       )}
       disabled={isPending}

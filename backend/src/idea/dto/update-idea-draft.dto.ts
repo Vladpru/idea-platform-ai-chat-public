@@ -37,10 +37,12 @@ export class UpdateIdeaDraftDto {
     example:
       'A platform for managing subcontractors and suppliers across construction projects.',
     minLength: 8,
+    maxLength: 5000,
   })
   @IsOptional()
   @IsString()
   @MinLength(8)
+  @MaxLength(5000, { message: 'Description is too long' })
   description?: string;
 
   @ApiPropertyOptional({

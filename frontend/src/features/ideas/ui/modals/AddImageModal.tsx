@@ -40,6 +40,11 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'generate', label: 'Generate with AI' },
 ];
 
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+const FILE_TOO_LARGE_MESSAGE = 'File size must be less than 5MB';
+const INVALID_FILE_TYPE_MESSAGE =
+  'Unsupported file format. Please upload Images, PDF, or DOCX files only.';
+
 export function AddImageModal({
   open,
   onOpenChange,
@@ -48,6 +53,7 @@ export function AddImageModal({
 }: AddImageModalProps) {
   const [activeTab, setActiveTab] = useState<TabId>('upload');
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [fileError, setFileError] = useState<string | null>(null);
 
   const addIncomingFiles = (incoming: File[]) => {
     const { merged, errors } = mergeAttachmentFiles(
@@ -63,6 +69,7 @@ export function AddImageModal({
     if (!next) {
       setActiveTab('upload');
       setPendingFiles([]);
+      setFileError(null);
     }
     onOpenChange(next);
   };
@@ -81,7 +88,26 @@ export function AddImageModal({
         ['.docx'],
     },
     multiple: true,
-    onDrop: addIncomingFiles,
+    maxSize: MAX_FILE_SIZE_BYTES,
+    onDrop: acceptedFiles => {
+      setFileError(null);
+      addIncomingFiles(acceptedFiles);
+    },
+    onDropRejected: fileRejections => {
+      const invalidType = fileRejections.some(rejection =>
+        rejection.errors.some(error => error.code === 'file-invalid-type'),
+      );
+      if (invalidType) {
+        setFileError(INVALID_FILE_TYPE_MESSAGE);
+        return;
+      }
+      const tooLarge = fileRejections.some(rejection =>
+        rejection.errors.some(error => error.code === 'file-too-large'),
+      );
+      if (tooLarge) {
+        toast.error(FILE_TOO_LARGE_MESSAGE);
+      }
+    },
   });
 
   const canAdd = activeTab === 'upload' && pendingFiles.length > 0;
@@ -173,6 +199,11 @@ export function AddImageModal({
                       </ul>
                     )}
                   </div>
+                  {fileError ? (
+                    <p className="text-destructive mt-2 text-sm text-center">
+                      {fileError}
+                    </p>
+                  ) : null}
                 </AnimatedPanel>
               ) : (
                 <AnimatedPanel
