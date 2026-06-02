@@ -328,23 +328,12 @@ export function SubmitProblemForm() {
 
         <IdeaSelect formId={formId} control={control} errors={errors} />
 
-        <FieldGroup>
-          <FieldLabel htmlFor={`${formId}-tags`}>Tags</FieldLabel>
-          <Controller
-            name="tags"
-            control={control}
-            render={({ field }) => (
-              <TagsInput
-                id={`${formId}-tags`}
-                value={field.value ?? ''}
-                onChange={field.onChange}
-                disabled={isBusy}
-                aria-invalid={!!errors.tags}
-              />
-            )}
-          />
-          <FieldError message={errors.tags?.message} />
-        </FieldGroup>
+        <ProblemTagsField
+          formId={formId}
+          control={control}
+          errors={errors}
+          disabled={isBusy}
+        />
 
         <FieldGroup>
           <FieldLabel>Files</FieldLabel>
@@ -352,45 +341,10 @@ export function SubmitProblemForm() {
           <FieldError message={errors.files?.message} />
         </FieldGroup>
 
-      <ProblemTagsField
-        formId={formId}
-        control={control}
-        errors={errors}
-        disabled={isBusy}
-      />
-
-      <FieldGroup>
-        <FieldLabel>Files</FieldLabel>
-        <ProblemFilesField control={control} disabled={isBusy} />
-        <FieldError message={errors.files?.message} />
-      </FieldGroup>
-
-      <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
-        <button
-          type="button"
-          onClick={handleCancel}
-          disabled={isBusy}
-          className="text-brand-orange hover:text-brand-orange-hover px-2 text-sm font-bold tracking-wide uppercase transition-colors disabled:opacity-50"
-        >
-          Cancel
-        </button>
-        {!isEditing ? (
-          <SaveDraftButton
-            canSave={canSaveDraft}
-            isSaving={isSavingDraft}
-            disabled={isBusy}
-            onSave={() => void handleSaveDraft()}
-          />
-        ) : null}
-        <Button
-          type="submit"
-          className={publishBtnClass}
-          disabled={isBusy}
-          isLoading={isPublishing}
-        >
-          {isEditing ? 'Save changes' : 'Publish problem'}
-        </Button>
-      </div>
+        <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
+          <button
+            type="button"
+            onClick={handleCancel}
             disabled={isBusy}
             className="text-brand-orange hover:text-brand-orange-hover px-2 text-sm font-bold tracking-wide uppercase transition-colors disabled:opacity-50"
           >
