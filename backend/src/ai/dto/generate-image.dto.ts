@@ -8,11 +8,11 @@ import {
 } from 'class-validator';
 
 import {
-  GEMINI_IMAGE_ASPECT_RATIOS,
-  type GeminiImageAspectRatio,
+  IMAGE_ASPECT_RATIOS,
+  type ImageAspectRatio,
 } from '../types/generate-image.types';
 
-export { GEMINI_IMAGE_ASPECT_RATIOS, type GeminiImageAspectRatio };
+export { IMAGE_ASPECT_RATIOS, type ImageAspectRatio };
 
 export class GenerateImageDto {
   @ApiProperty({
@@ -38,12 +38,12 @@ export class GenerateImageDto {
   description?: string;
 
   @ApiPropertyOptional({
-    enum: GEMINI_IMAGE_ASPECT_RATIOS,
+    enum: IMAGE_ASPECT_RATIOS,
     example: '16:9',
   })
   @IsOptional()
-  @IsIn(GEMINI_IMAGE_ASPECT_RATIOS)
-  aspectRatio?: GeminiImageAspectRatio;
+  @IsIn(IMAGE_ASPECT_RATIOS)
+  aspectRatio?: ImageAspectRatio;
 }
 
 export class GeneratedImageDataDto {

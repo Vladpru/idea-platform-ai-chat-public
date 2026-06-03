@@ -1,11 +1,11 @@
 import type { IdeaPrefillMode } from '../../idea/dto/generate-idea-prefill.dto';
 
 export type {
-  GeminiImageAspectRatio,
   GenerateImageInput,
   GenerateImageOutput,
+  ImageAspectRatio,
 } from './generate-image.types';
-export { GEMINI_IMAGE_ASPECT_RATIOS } from './generate-image.types';
+export { IMAGE_ASPECT_RATIOS } from './generate-image.types';
 
 export type IdeaPrefillInput = {
   mode: IdeaPrefillMode;

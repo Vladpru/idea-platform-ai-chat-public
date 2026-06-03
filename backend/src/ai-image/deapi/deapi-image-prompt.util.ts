@@ -1,6 +1,6 @@
-import type { GenerateImageInput } from '../types/generate-image.types';
+import type { GenerateImageInput } from '../../ai/types/generate-image.types';
 
-export function buildGeminiImagePrompt(input: GenerateImageInput): string {
+export function buildDeapiImagePrompt(input: GenerateImageInput): string {
   const contextLines: string[] = [];
   if (input.title) {
     contextLines.push(`Idea title: ${input.title}`);
@@ -14,8 +14,8 @@ export function buildGeminiImagePrompt(input: GenerateImageInput): string {
     : '';
 
   const parts: string[] = [
-    'Generate a single polished cover image for a product idea platform.',
-    'No text overlays, watermarks, or logos in the image.',
+    'Polished cover image for a product idea platform.',
+    'No text overlays, watermarks, or logos.',
   ];
 
   if (contextBlock) {

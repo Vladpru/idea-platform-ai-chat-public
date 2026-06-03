@@ -1,4 +1,4 @@
-export const GEMINI_IMAGE_ASPECT_RATIOS = [
+export const IMAGE_ASPECT_RATIOS = [
   '1:1',
   '3:2',
   '2:3',
@@ -11,14 +11,13 @@ export const GEMINI_IMAGE_ASPECT_RATIOS = [
   '21:9',
 ] as const;
 
-export type GeminiImageAspectRatio =
-  (typeof GEMINI_IMAGE_ASPECT_RATIOS)[number];
+export type ImageAspectRatio = (typeof IMAGE_ASPECT_RATIOS)[number];
 
 export type GenerateImageInput = {
   prompt: string;
   title?: string;
   description?: string;
-  aspectRatio?: GeminiImageAspectRatio;
+  aspectRatio?: ImageAspectRatio;
 };
 
 export type GenerateImageOutput = {

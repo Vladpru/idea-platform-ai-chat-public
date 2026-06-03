@@ -1,15 +1,15 @@
 import { Injectable } from '@nestjs/common';
 
-import { type GenerateImageDto } from './dto/generate-image.dto';
-import { GeminiImageService } from './gemini-image.service';
+import { type GenerateImageDto } from '../ai/dto/generate-image.dto';
 import type {
   GenerateImageInput,
   GenerateImageOutput,
-} from './types/generate-image.types';
+} from '../ai/types/generate-image.types';
+import { DeapiImageService } from './deapi/deapi-image.service';
 
 @Injectable()
 export class AiImageService {
-  constructor(private readonly geminiImageService: GeminiImageService) {}
+  constructor(private readonly deapiImageService: DeapiImageService) {}
 
   async generateImage(dto: GenerateImageDto): Promise<GenerateImageOutput> {
     const input: GenerateImageInput = {
@@ -19,6 +19,6 @@ export class AiImageService {
       aspectRatio: dto.aspectRatio,
     };
 
-    return await this.geminiImageService.generateContentImage(input);
+    return await this.deapiImageService.generateImage(input);
   }
 }
