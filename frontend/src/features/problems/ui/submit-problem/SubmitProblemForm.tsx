@@ -4,8 +4,10 @@ import {
   FieldGroup,
   FieldLabel,
 } from '@/features/ideas/ui/create-idea/Fields';
-import { SparklesIcon } from '@/features/ideas/ui/icons/SparklesIcon';
+import { IdeaCreateAiAssistLink } from '@/features/ideas/ui/create-idea/IdeaCreateAiAssistLink';
+import { AiGenerationModal } from '@/features/ideas/ui/modals/AiGenerationModal';
 import { DEFAULT_PROBLEMS_DASHBOARD_SEARCH } from '@/features/problems-dashboard/lib/constants';
+import { useSubmitProblemAiAssist } from '@/features/problems/hooks/use-submit-problem-ai-assist';
 import { useSubmitProblemForm } from '@/features/problems/hooks/use-submit-problem-form';
 import {
   PROBLEM_STAGES,
@@ -42,27 +44,6 @@ import { IdeaSelect } from './IdeaSelect';
 import { ProblemFilesField } from './ProblemFilesField';
 import { ProblemTagsField } from './ProblemTagsField';
 
-function AiAssistLink({
-  children,
-  onClick,
-}: {
-  children: string;
-  onClick?: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="group text-brand-dark-blue dark:text-brand-light-blue inline-flex items-center gap-1 text-xs font-semibold tracking-wide transition-colors"
-    >
-      <SparklesIcon className="group-hover:text-brand-dark-blue/80 dark:group-hover:text-brand-light-blue/80 size-5 transition-colors" />
-      <span className="group-hover:text-brand-dark-blue/80 dark:group-hover:text-brand-light-blue/80 transition-colors">
-        {children}
-      </span>
-    </button>
-  );
-}
-
 const POST_PUBLISH_PROMPT =
   'Would you like to add more details to the Problem you created?';
 
@@ -98,6 +79,16 @@ export function SubmitProblemForm() {
   const titleValue = watch('title') || '';
   const descriptionValue = watch('description') || '';
   const valuePropositionValue = watch('valueProposition') || '';
+  const trimmedTitle = titleValue.trim();
+  const trimmedDescription = descriptionValue.trim();
+
+  const { canRegenerateTitle, openAssistModal, generationModalProps } =
+    useSubmitProblemAiAssist({
+      form,
+      trimmedTitle,
+      trimmedDescription,
+    });
+
   const watchedValues = watch();
   const hasUnsavedProgress = hasSubmitProblemUnsavedProgress(
     formIsDirty,
@@ -240,7 +231,18 @@ export function SubmitProblemForm() {
             <FieldLabel htmlFor={`${formId}-title`} required>
               Problem Title
             </FieldLabel>
-            <AiAssistLink>Generate title from description</AiAssistLink>
+            <IdeaCreateAiAssistLink
+              disabled={isBusy || !canRegenerateTitle}
+              onClick={
+                canRegenerateTitle && !isBusy
+                  ? () => openAssistModal('title')
+                  : undefined
+              }
+            >
+              {titleValue
+                ? 'Re-generate title from description'
+                : 'Generate title from description'}
+            </IdeaCreateAiAssistLink>
           </div>
           <Input
             id={`${formId}-title`}
@@ -264,7 +266,14 @@ export function SubmitProblemForm() {
             <FieldLabel htmlFor={`${formId}-description`} required>
               Description
             </FieldLabel>
-            <AiAssistLink>Write description with AI prompt</AiAssistLink>
+            <IdeaCreateAiAssistLink
+              disabled={isBusy}
+              onClick={isBusy ? undefined : () => openAssistModal('description')}
+            >
+              {descriptionValue
+                ? 'Edit description with AI prompt'
+                : 'Write description with AI prompt'}
+            </IdeaCreateAiAssistLink>
           </div>
           <textarea
             id={`${formId}-description`}
@@ -288,7 +297,16 @@ export function SubmitProblemForm() {
             <FieldLabel htmlFor={`${formId}-valueProposition`}>
               Value Proposition
             </FieldLabel>
-            <AiAssistLink>Write value proposition with AI prompt</AiAssistLink>
+            <IdeaCreateAiAssistLink
+              disabled={isBusy}
+              onClick={
+                isBusy ? undefined : () => openAssistModal('valueProposition')
+              }
+            >
+              {valuePropositionValue
+                ? 'Edit value proposition with AI prompt'
+                : 'Write value proposition with AI prompt'}
+            </IdeaCreateAiAssistLink>
           </div>
           <textarea
             id={`${formId}-valueProposition`}
@@ -417,6 +435,8 @@ export function SubmitProblemForm() {
         cancelLabel="Not Now"
         onConfirm={handleOpenPublishedProblemDetails}
       />
+
+      <AiGenerationModal {...generationModalProps} />
     </>
   );
 }
