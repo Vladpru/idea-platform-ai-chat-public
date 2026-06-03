@@ -1,15 +1,15 @@
-import { generateIdeaPrefill } from '@/features/ideas/api/ideas.api';
 import type { IdeaAIPrefillResponse } from '@/features/ideas/api/ideas-api.types';
+import { generateIdeaPrefill } from '@/features/ideas/api/ideas.api';
 import { useIdeaCreateForm } from '@/features/ideas/hooks/use-idea-create-form';
 import { hasCreateIdeaUnsavedProgress } from '@/features/ideas/lib/create-idea/unsaved-progress';
 import { IDEA_STAGES } from '@/features/ideas/lib/stages';
-import { useCreateIdeaStore } from '@/features/ideas/store/create-idea.store';
 import {
   outlineBtnClass,
   publishBtnClass,
   selectClass,
   textareaClass,
 } from '@/features/ideas/lib/styles';
+import { useCreateIdeaStore } from '@/features/ideas/store/create-idea.store';
 import { SparklesIcon } from '@/features/ideas/ui/icons/SparklesIcon';
 import { useNavigate } from '@tanstack/react-router';
 import { ChevronDown, Upload } from 'lucide-react';
@@ -23,16 +23,16 @@ import { ROUTES } from '@/shared/config/paths';
 import { useCreateFormLeaveGuard } from '@/shared/hooks/use-create-form-leave-guard';
 import { SAVE_IDEA_PROGRESS_DESCRIPTION } from '@/shared/lib/create-form-leave/copy';
 import { cn } from '@/shared/lib/utils';
-import { SaveProgressBeforeLeavingModal } from '@/shared/ui/save-progress-before-leaving-modal';
 import { TagsInput } from '@/shared/ui/TagsInput';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
+import { SaveProgressBeforeLeavingModal } from '@/shared/ui/save-progress-before-leaving-modal';
 
+import { AiGenerationModal } from '../modals/AiGenerationModal';
 import DeleteImageButton from './DeleteImageButton';
 import { FieldError, FieldGroup, FieldLabel } from './Fields';
 import { IdeaFilesField } from './IdeaFilesField';
 import ProblemSelect from './ProblemSelect';
-import { AiGenerationModal } from '../modals/AiGenerationModal';
 
 const ALLOWED_MAIN_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 const INVALID_MAIN_IMAGE_TYPE_MESSAGE = 'Main image must be PNG, JPEG, or WEBP';
@@ -210,24 +210,35 @@ export function IdeaCreateForm({
     });
   };
 
-  const applyGeneratedFields = useCallback((generated: IdeaAIPrefillResponse) => {
-    const nextTitle = generated.title.trim();
-    const nextDescription = (generated.description || generated.problemStatement).trim();
-    const nextTags = generated.tags.filter(Boolean).join(', ');
+  const applyGeneratedFields = useCallback(
+    (generated: IdeaAIPrefillResponse) => {
+      const nextTitle = generated.title.trim();
+      const nextDescription = (
+        generated.description || generated.problemStatement
+      ).trim();
+      const nextTags = generated.tags.filter(Boolean).join(', ');
 
-    if (nextTitle) {
-      form.setValue('title', nextTitle, { shouldDirty: true, shouldValidate: true });
-    }
-    if (nextDescription) {
-      form.setValue('description', nextDescription, {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
-    }
-    if (nextTags) {
-      form.setValue('tags', nextTags, { shouldDirty: true, shouldValidate: true });
-    }
-  }, [form]);
+      if (nextTitle) {
+        form.setValue('title', nextTitle, {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+      }
+      if (nextDescription) {
+        form.setValue('description', nextDescription, {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+      }
+      if (nextTags) {
+        form.setValue('tags', nextTags, {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+      }
+    },
+    [form],
+  );
 
   const handleAssistGenerate = async () => {
     if (assistMode === 'image') {
@@ -327,7 +338,9 @@ export function IdeaCreateForm({
             </FieldLabel>
             <AiAssistLink
               disabled={!canRegenerateTitle}
-              onClick={canRegenerateTitle ? () => openAssistModal('title') : undefined}
+              onClick={
+                canRegenerateTitle ? () => openAssistModal('title') : undefined
+              }
             >
               Re-Generate title from description
             </AiAssistLink>
@@ -389,10 +402,12 @@ export function IdeaCreateForm({
               </span>
             ) : null}
           </div>
-          <div className="mt-2">
+          <div className="mt-2 flex w-full justify-end">
             <AiAssistLink
               disabled={!canGenerateImage}
-              onClick={canGenerateImage ? () => openAssistModal('image') : undefined}
+              onClick={
+                canGenerateImage ? () => openAssistModal('image') : undefined
+              }
             >
               Generate image from title &amp; description
             </AiAssistLink>
