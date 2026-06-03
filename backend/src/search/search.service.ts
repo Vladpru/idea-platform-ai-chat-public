@@ -4,6 +4,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { LRUCache } from 'lru-cache';
 
 import { Prisma } from '../../generated/prisma/client';
 import { EmbeddingService } from '../embedding/embedding.service';
@@ -20,6 +21,10 @@ import {
 const EXCERPT_LENGTH = 120;
 const CANDIDATE_LIMIT = 50;
 const RRF_K = 60;
+const MAX_CACHE_SIZE = 100;
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+type EmbeddingCacheEntry = { vector: string; ts: number };
 
 const ALLOWED_ENTITY_TYPES = ['IDEA', 'PROBLEM'] as const;
 type AllowedEntityType = (typeof ALLOWED_ENTITY_TYPES)[number];
@@ -150,11 +155,10 @@ function safeBigIntToNumber(value: bigint): number {
 export class SearchService {
   private readonly logger = new Logger(SearchService.name);
   private readonly minSimilarity: number;
-  private readonly embeddingCache = new Map<
-    string,
-    { vector: string; ts: number }
-  >();
-  private readonly CACHE_TTL_MS = 5 * 60 * 1000;
+  private readonly embeddingCache = new LRUCache<string, EmbeddingCacheEntry>({
+    max: MAX_CACHE_SIZE,
+    ttl: CACHE_TTL_MS,
+  });
 
   constructor(
     private readonly prisma: PrismaService,
@@ -255,17 +259,18 @@ export class SearchService {
   private async resolveEmbedding(
     searchQuery: string,
   ): Promise<EmbeddingResult> {
-    const now = Date.now();
     const cached = this.embeddingCache.get(searchQuery);
-    if (cached && now - cached.ts < this.CACHE_TTL_MS) {
+    if (cached !== undefined) {
       return { available: true, vectorLiteral: cached.vector };
     }
 
     try {
       const queryVector = await this.embeddingService.embedText(searchQuery);
       const vectorLiteral = toPgVectorLiteral(queryVector);
-      this.embeddingCache.set(searchQuery, { vector: vectorLiteral, ts: now });
-      this.pruneEmbeddingCache();
+      this.embeddingCache.set(searchQuery, {
+        vector: vectorLiteral,
+        ts: Date.now(),
+      });
       return { available: true, vectorLiteral };
     } catch (error) {
       this.logger.error(
@@ -273,15 +278,6 @@ export class SearchService {
         error instanceof Error ? error.stack : String(error),
       );
       return { available: false };
-    }
-  }
-
-  private pruneEmbeddingCache(): void {
-    const now = Date.now();
-    for (const [key, entry] of this.embeddingCache.entries()) {
-      if (now - entry.ts > this.CACHE_TTL_MS) {
-        this.embeddingCache.delete(key);
-      }
     }
   }
 
