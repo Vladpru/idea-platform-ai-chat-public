@@ -1,12 +1,14 @@
 import {
+  Inject,
   Injectable,
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { ConfigType } from '@nestjs/config';
 import { LRUCache } from 'lru-cache';
 
 import { Prisma } from '../../generated/prisma/client';
+import searchConfig from '../config/search.config';
 import { EmbeddingService } from '../embedding/embedding.service';
 import { toPgVectorLiteral } from '../embedding/vector.util';
 import { PrismaService } from '../prisma/prisma.service';
@@ -21,9 +23,6 @@ import {
 const EXCERPT_LENGTH = 120;
 const CANDIDATE_LIMIT = 50;
 const RRF_K = 60;
-const MAX_CACHE_SIZE = 100;
-const CACHE_TTL_MS = 5 * 60 * 1000;
-
 type EmbeddingCacheEntry = { vector: string; ts: number };
 
 const ALLOWED_ENTITY_TYPES = ['IDEA', 'PROBLEM'] as const;
@@ -155,31 +154,19 @@ function safeBigIntToNumber(value: bigint): number {
 export class SearchService {
   private readonly logger = new Logger(SearchService.name);
   private readonly minSimilarity: number;
-  private readonly embeddingCache = new LRUCache<string, EmbeddingCacheEntry>({
-    max: MAX_CACHE_SIZE,
-    ttl: CACHE_TTL_MS,
-  });
+  private readonly embeddingCache: LRUCache<string, EmbeddingCacheEntry>;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly embeddingService: EmbeddingService,
-    private readonly config: ConfigService,
+    @Inject(searchConfig.KEY)
+    searchCfg: ConfigType<typeof searchConfig>,
   ) {
-    const raw = this.config.get<string>('SEARCH_MIN_SIMILARITY');
-    if (!raw?.trim()) {
-      this.logger.warn('SEARCH_MIN_SIMILARITY not set, using default 0.65');
-      this.minSimilarity = 0.65;
-    } else {
-      const parsed = Number(raw);
-      if (isNaN(parsed) || parsed < 0 || parsed > 1) {
-        this.logger.warn(
-          `Invalid SEARCH_MIN_SIMILARITY value "${raw}", using default 0.65`,
-        );
-        this.minSimilarity = 0.65;
-      } else {
-        this.minSimilarity = parsed;
-      }
-    }
+    this.minSimilarity = searchCfg.minSimilarity;
+    this.embeddingCache = new LRUCache<string, EmbeddingCacheEntry>({
+      max: searchCfg.embeddingCacheMaxSize,
+      ttl: searchCfg.embeddingCacheTtlMs,
+    });
   }
 
   async search(
