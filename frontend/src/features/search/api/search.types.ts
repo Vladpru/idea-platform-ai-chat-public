@@ -17,6 +17,7 @@ export interface GlobalSearchResultItem {
   imageUrl: string | null;
   stats: { views: number; likes: number; comments: number };
   tags: SearchResultTag[];
+  isAiSuggested: boolean;
 }
 
 export type SearchTab = 'ideas' | 'problems';

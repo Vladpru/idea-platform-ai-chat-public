@@ -15,6 +15,7 @@ import { SkeletonCard } from '@/shared/ui/skeleton';
 import type { GlobalSearchResultItem, SearchTab } from '../api/search.types';
 import { useGlobalSearch } from '../hooks/use-global-search';
 import { mapSearchItemToDashboardCard } from '../lib/map-search-item-to-card';
+import { SearchSchema } from '../model/search.schema';
 
 interface SearchShape {
   q?: string;
@@ -156,6 +157,18 @@ export function GlobalSearchPage() {
 
   const [localQuery, setLocalQuery] = useState(q);
   const [lastSyncedQ, setLastSyncedQ] = useState(q);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleInputChange = (value: string) => {
+    setLocalQuery(value);
+
+    const result = SearchSchema.safeParse({ q: value });
+    if (!result.success) {
+      setError(result.error.issues[0].message);
+    } else {
+      setError(null);
+    }
+  };
 
   if (q !== lastSyncedQ) {
     setLastSyncedQ(q);
@@ -166,7 +179,7 @@ export function GlobalSearchPage() {
 
   useEffect(() => {
     const handler = setTimeout(() => {
-      if (localQuery !== q) {
+      if (localQuery !== q && !error) {
         navigate({
           to: '.',
           search: { q: localQuery, t: activeTab },
@@ -176,7 +189,7 @@ export function GlobalSearchPage() {
     }, 300);
 
     return () => clearTimeout(handler);
-  }, [localQuery, q, activeTab, navigate]);
+  }, [localQuery, q, activeTab, navigate, error]);
 
   const {
     data,
@@ -269,11 +282,29 @@ export function GlobalSearchPage() {
               <SearchIcon className="text-brand-gray-400 absolute top-1/2 left-4 size-5 -translate-y-1/2" />
               <Input
                 value={localQuery}
-                onChange={e => setLocalQuery(e.target.value)}
+                onChange={e => handleInputChange(e.target.value)}
                 placeholder="Search ideas or problems..."
-                className="border-brand-gray-200 focus:border-brand-dark-blue focus:ring-brand-dark-blue h-12 w-full rounded-lg bg-white pr-4 pl-12 text-base shadow-sm ring-0 focus:ring-1 sm:h-14 sm:rounded-sm"
+                aria-invalid={!!error}
+                aria-describedby={error ? 'search-error' : undefined}
+                className={cn(
+                  'h-12 w-full rounded-lg bg-white pr-4 pl-12 text-base shadow-sm ring-0 transition-all sm:h-14 sm:rounded-sm',
+                  'border-brand-gray-200 focus:ring-1',
+
+                  error
+                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                    : 'border-brand-gray-200 focus:border-brand-dark-blue focus:ring-brand-dark-blue',
+                )}
                 autoFocus={!isMobile}
               />
+
+              {error && (
+                <p
+                  id="search-error"
+                  className="absolute -bottom-6 left-0 text-xs text-red-500"
+                >
+                  {error}
+                </p>
+              )}
               {isFetching && !isFetchingNextPage && (
                 <div className="absolute top-1/2 right-4 -translate-y-1/2">
                   <div className="border-brand-dark-blue size-5 animate-spin rounded-full border-2 border-t-transparent" />
