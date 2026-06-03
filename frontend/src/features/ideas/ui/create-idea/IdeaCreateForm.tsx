@@ -1,5 +1,7 @@
 import type { IdeaAIPrefillResponse } from '@/features/ideas/api/ideas-api.types';
 import { generateIdeaPrefill } from '@/features/ideas/api/ideas.api';
+import { generateAiImage } from '@/shared/api/ai/ai.api';
+import { createFileFromAiGeneratedImage } from '@/shared/api/ai/ai-generated-image';
 import { useIdeaCreateForm } from '@/features/ideas/hooks/use-idea-create-form';
 import { hasCreateIdeaUnsavedProgress } from '@/features/ideas/lib/create-idea/unsaved-progress';
 import { IDEA_STAGES } from '@/features/ideas/lib/stages';
@@ -241,18 +243,51 @@ export function IdeaCreateForm({
   );
 
   const handleAssistGenerate = async () => {
-    if (assistMode === 'image') {
-      toast.info('AI image generation will be added next.');
-      return;
-    }
-
-    const fallbackPrompt =
-      assistMode === 'title'
-        ? `Generate a concise title for this description: ${trimmedDescription}`
-        : `Generate an idea description based on this title: ${trimmedTitle}`;
-
     setIsAssistLoading(true);
     try {
+      if (assistMode === 'image') {
+        const fallbackPrompt = [
+          trimmedTitle ? `Title: ${trimmedTitle}` : '',
+          trimmedDescription ? `Description: ${trimmedDescription}` : '',
+        ]
+          .filter(Boolean)
+          .join('\n');
+
+        const generated = await generateAiImage({
+          prompt:
+            assistPrompt.trim() ||
+            fallbackPrompt ||
+            'Generate a polished cover image for this product idea.',
+          title: trimmedTitle || undefined,
+          description: trimmedDescription || undefined,
+          aspectRatio: '16:9',
+        });
+
+        const file = createFileFromAiGeneratedImage(
+          generated.base64,
+          generated.mimeType,
+        );
+        if (!file) {
+          toast.error(INVALID_MAIN_IMAGE_TYPE_MESSAGE);
+          return;
+        }
+        if (file.size > MAX_FILE_SIZE_BYTES) {
+          toast.error(FILE_TOO_LARGE_MESSAGE);
+          return;
+        }
+
+        form.clearErrors('mainImage');
+        setMainImage(file);
+        closeAssistModal();
+        toast.success('Main image generated');
+        return;
+      }
+
+      const fallbackPrompt =
+        assistMode === 'title'
+          ? `Generate a concise title for this description: ${trimmedDescription}`
+          : `Generate an idea description based on this title: ${trimmedTitle}`;
+
       const generated = await generateIdeaPrefill({
         mode: assistMode,
         userPrompt: assistPrompt.trim() || fallbackPrompt,
@@ -547,10 +582,14 @@ export function IdeaCreateForm({
             ? 'Provide extra context, and AI will suggest a title from your description.'
             : assistMode === 'description'
               ? 'Describe what to focus on, and AI will draft the description.'
-              : 'This modal is reusable for image generation once media AI is added.'
+              : 'Add creative direction, or leave blank to generate from your title and description.'
         }
         inputLabel="Prompt"
-        inputPlaceholder="Add guidance for AI generation..."
+        inputPlaceholder={
+          assistMode === 'image'
+            ? 'e.g. minimal flat illustration, warm community theme...'
+            : 'Add guidance for AI generation...'
+        }
         inputValue={assistPrompt}
         onInputChange={setAssistPrompt}
         submitLabel={assistMode === 'image' ? 'Generate image' : 'Generate'}
