@@ -14,7 +14,6 @@ import {
 } from '@/features/problems/lib/submit-problem';
 import { SaveDraftButton } from '@/features/problems/ui/tooltips';
 import { useNavigate } from '@tanstack/react-router';
-import { ChevronDown } from 'lucide-react';
 import { useId, useState } from 'react';
 import { Controller } from 'react-hook-form';
 
@@ -30,6 +29,13 @@ import { selectClass } from '@/shared/ui/TagsInput';
 import { Button } from '@/shared/ui/button';
 import { ConfirmModal } from '@/shared/ui/confirm-modal';
 import { Input } from '@/shared/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select';
 import { SaveProgressBeforeLeavingModal } from '@/shared/ui/save-progress-before-leaving-modal';
 
 import { IdeaSelect } from './IdeaSelect';
@@ -197,25 +203,35 @@ export function SubmitProblemForm() {
           <FieldLabel htmlFor={`${formId}-stage`} required>
             Stage
           </FieldLabel>
-          <div className="relative mt-2 max-w-md">
-            <select
-              id={`${formId}-stage`}
-              className={cn(selectClass, 'pr-9')}
-              aria-invalid={!!errors.stage}
-              disabled={isBusy}
-              {...register('stage')}
-            >
-              {PROBLEM_STAGES.map(stage => (
-                <option key={stage.value} value={stage.value}>
-                  {stage.label}
-                </option>
-              ))}
-            </select>
-            <ChevronDown
-              className="text-brand-gray-600 pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2"
-              aria-hidden
-            />
-          </div>
+          <Controller
+            name="stage"
+            control={control}
+            render={({ field }) => (
+              <Select
+                value={field.value}
+                onValueChange={field.onChange}
+                disabled={isBusy}
+              >
+                <SelectTrigger
+                  id={`${formId}-stage`}
+                  className={cn(
+                    selectClass,
+                    'mt-2 max-w-md w-full data-[size=default]:h-10',
+                  )}
+                  aria-invalid={!!errors.stage}
+                >
+                  <SelectValue placeholder="Select stage" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PROBLEM_STAGES.map(stage => (
+                    <SelectItem key={stage.value} value={stage.value}>
+                      {stage.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
           <FieldError message={errors.stage?.message} />
         </FieldGroup>
 

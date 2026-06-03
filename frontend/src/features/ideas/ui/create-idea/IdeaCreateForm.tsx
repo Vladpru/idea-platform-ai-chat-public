@@ -1,6 +1,7 @@
 import type { IdeaAIPrefillResponse } from '@/features/ideas/api/ideas-api.types';
 import { useIdeaCreateAiAssist } from '@/features/ideas/hooks/use-idea-create-ai-assist';
 import { useIdeaCreateForm } from '@/features/ideas/hooks/use-idea-create-form';
+import { focusPublishField } from '@/features/ideas/lib/create-idea';
 import { hasCreateIdeaUnsavedProgress } from '@/features/ideas/lib/create-idea/unsaved-progress';
 import { IDEA_STAGES } from '@/features/ideas/lib/stages';
 import {
@@ -11,8 +12,8 @@ import {
 } from '@/features/ideas/lib/styles';
 import { useCreateIdeaStore } from '@/features/ideas/store/create-idea.store';
 import { useNavigate } from '@tanstack/react-router';
-import { ChevronDown, Upload } from 'lucide-react';
-import { useId } from 'react';
+import { Upload } from 'lucide-react';
+import { useId, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Controller } from 'react-hook-form';
 
@@ -24,13 +25,20 @@ import { TagsInput } from '@/shared/ui/TagsInput';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { SaveProgressBeforeLeavingModal } from '@/shared/ui/save-progress-before-leaving-modal';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select';
 
 import { AiGenerationModal } from '../modals/AiGenerationModal';
 import DeleteImageButton from './DeleteImageButton';
 import { FieldError, FieldGroup, FieldLabel } from './Fields';
 import { IdeaCreateAiAssistLink } from './IdeaCreateAiAssistLink';
 import { IdeaFilesField } from './IdeaFilesField';
-import ProblemSelect from './ProblemSelect';
+import ProblemSelect, { type ProblemSelectHandle } from './ProblemSelect';
 
 const ALLOWED_MAIN_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 const INVALID_MAIN_IMAGE_TYPE_MESSAGE = 'Main image must be PNG, JPEG, or WEBP';
@@ -48,6 +56,7 @@ export function IdeaCreateForm({
 }: IdeaCreateFormProps) {
   const navigate = useNavigate();
   const formId = useId();
+  const problemSelectRef = useRef<ProblemSelectHandle>(null);
 
   const {
     form,
@@ -169,8 +178,15 @@ export function IdeaCreateForm({
   };
 
   const handlePublish = async () => {
-    const isPublished = await onPublish();
-    if (!isPublished) return;
+    const publishResult = await onPublish();
+    if (!publishResult.success) {
+      if (publishResult.firstInvalidField) {
+        focusPublishField(publishResult.firstInvalidField, {
+          problemId: problemSelectRef.current,
+        });
+      }
+      return;
+    }
     allowNextLeave(() => {
       void navigate({ to: ROUTES.ideas, search: { sort: 'newest' } });
     });
@@ -198,33 +214,48 @@ export function IdeaCreateForm({
         ) : null}
 
         <div className="grid gap-6 md:grid-cols-2">
-          <FieldGroup>
+          <FieldGroup data-publish-field="stage">
             <FieldLabel htmlFor={`${formId}-stage`} required>
               Stage
             </FieldLabel>
-            <div className="relative mt-2">
-              <select
-                id={`${formId}-stage`}
-                className={cn(selectClass, 'pr-9')}
-                aria-invalid={!!errors.stage}
-                disabled={isBusy}
-                {...register('stage')}
-              >
-                {IDEA_STAGES.map(stage => (
-                  <option key={stage.value} value={stage.value}>
-                    {stage.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown
-                className="text-brand-gray-600 pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2"
-                aria-hidden
-              />
-            </div>
+            <Controller
+              name="stage"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  disabled={isBusy}
+                >
+                  <SelectTrigger
+                    id={`${formId}-stage`}
+                    className={cn(
+                      selectClass,
+                      'mt-2 w-full data-[size=default]:h-10',
+                    )}
+                    aria-invalid={!!errors.stage}
+                  >
+                    <SelectValue placeholder="Select stage" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {IDEA_STAGES.map(stage => (
+                      <SelectItem
+                        key={stage.value}
+                        value={stage.value}
+                        className="px-3 py-1"
+                      >
+                        {stage.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
             <FieldError message={errors.stage?.message} />
           </FieldGroup>
 
           <ProblemSelect
+            ref={problemSelectRef}
             formId={formId}
             control={control}
             errors={errors}
@@ -233,7 +264,7 @@ export function IdeaCreateForm({
           />
         </div>
 
-        <FieldGroup>
+        <FieldGroup data-publish-field="title">
           <div className="flex flex-wrap items-end justify-between gap-2">
             <FieldLabel htmlFor={`${formId}-title`} required>
               Title
@@ -266,12 +297,14 @@ export function IdeaCreateForm({
           </div>
         </FieldGroup>
 
-        <FieldGroup>
+        <FieldGroup data-publish-field="description">
           <div className="flex flex-wrap items-end justify-between gap-2">
             <FieldLabel htmlFor={`${formId}-description`} required>
               Description
             </FieldLabel>
-            <IdeaCreateAiAssistLink onClick={() => openAssistModal('description')}>
+            <IdeaCreateAiAssistLink
+              onClick={() => openAssistModal('description')}
+            >
               {descriptionValue
                 ? 'Edit description with AI prompt'
                 : 'Write description with AI prompt'}
@@ -294,7 +327,7 @@ export function IdeaCreateForm({
           </div>
         </FieldGroup>
 
-        <FieldGroup>
+        <FieldGroup data-publish-field="mainImage">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <FieldLabel
               required
