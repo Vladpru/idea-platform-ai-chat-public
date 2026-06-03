@@ -1,8 +1,9 @@
 import { mergeAttachmentFiles } from '@/features/ideas/lib/create-idea/attachments';
 import {
-  GENERATE_DRAFT_SOON_TOOLTIP,
+  fieldLabelClass,
   primaryBtnClass,
   publishBtnClass,
+  textareaClass,
 } from '@/features/ideas/lib/styles';
 import { SparklesIcon } from '@/features/ideas/ui/icons/SparklesIcon';
 import { cancelOutlineBtn } from '@/features/profile/ui/profile-view-classes';
@@ -11,6 +12,9 @@ import { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'sonner';
 
+import { createFileFromAiGeneratedImage } from '@/shared/api/ai/ai-generated-image';
+import { generateAiImage } from '@/shared/api/ai/ai.api';
+import { getApiErrorMessage } from '@/shared/api/api-error';
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
 import {
@@ -19,6 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/shared/ui/dialog';
+import { Label } from '@/shared/ui/label';
 import {
   AnimatedPanel,
   AnimatedPanelSwitch,
@@ -33,6 +38,8 @@ type AddImageModalProps = {
   onOpenChange: (open: boolean) => void;
   onAdd: (files: File[]) => void;
   maxFiles: number;
+  ideaTitle?: string;
+  ideaDescription?: string;
 };
 
 const TABS: { id: TabId; label: string }[] = [
@@ -44,16 +51,37 @@ const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const FILE_TOO_LARGE_MESSAGE = 'File size must be less than 5MB';
 const INVALID_FILE_TYPE_MESSAGE =
   'Unsupported file format. Please upload Images, PDF, or DOCX files only.';
+const INVALID_GENERATED_IMAGE_MESSAGE =
+  'Generated image must be PNG, JPEG, or WEBP';
+
+function buildIdeaContextPrompt(title: string, description: string): string {
+  return [
+    title ? `Title: ${title}` : '',
+    description ? `Description: ${description}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
 
 export function AddImageModal({
   open,
   onOpenChange,
   onAdd,
   maxFiles,
+  ideaTitle = '',
+  ideaDescription = '',
 }: AddImageModalProps) {
   const [activeTab, setActiveTab] = useState<TabId>('upload');
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [generatePrompt, setGeneratePrompt] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const trimmedTitle = ideaTitle.trim();
+  const trimmedDescription = ideaDescription.trim();
+  const canGenerateImage = Boolean(
+    generatePrompt.trim() || trimmedTitle || trimmedDescription,
+  );
 
   const addIncomingFiles = (incoming: File[]) => {
     const { merged, errors } = mergeAttachmentFiles(
@@ -70,6 +98,8 @@ export function AddImageModal({
       setActiveTab('upload');
       setPendingFiles([]);
       setFileError(null);
+      setGeneratePrompt('');
+      setIsGenerating(false);
     }
     onOpenChange(next);
   };
@@ -78,6 +108,49 @@ export function AddImageModal({
     if (!pendingFiles.length) return;
     onAdd(pendingFiles);
     handleOpenChange(false);
+  };
+
+  const handleGenerateImage = async () => {
+    if (!canGenerateImage) return;
+
+    setIsGenerating(true);
+    try {
+      const contextPrompt = buildIdeaContextPrompt(
+        trimmedTitle,
+        trimmedDescription,
+      );
+      const prompt =
+        generatePrompt.trim() ||
+        contextPrompt ||
+        'Generate a supporting image for this product idea.';
+
+      const generated = await generateAiImage({
+        prompt,
+        title: trimmedTitle || undefined,
+        description: trimmedDescription || undefined,
+        aspectRatio: '1:1',
+      });
+
+      const file = createFileFromAiGeneratedImage(
+        generated.base64,
+        generated.mimeType,
+      );
+      if (!file) {
+        toast.error(INVALID_GENERATED_IMAGE_MESSAGE);
+        return;
+      }
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        toast.error(FILE_TOO_LARGE_MESSAGE);
+        return;
+      }
+
+      addIncomingFiles([file]);
+      toast.success('Image generated');
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -110,7 +183,11 @@ export function AddImageModal({
     },
   });
 
-  const canAdd = activeTab === 'upload' && pendingFiles.length > 0;
+  const canAdd = pendingFiles.length > 0;
+  const addFilesTooltip =
+    activeTab === 'generate'
+      ? 'Generate an image or switch to Upload to add files'
+      : 'Choose at least one file to add';
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -200,20 +277,60 @@ export function AddImageModal({
                     )}
                   </div>
                   {fileError ? (
-                    <p className="text-destructive mt-2 text-sm text-center">
+                    <p className="text-destructive mt-2 text-center text-sm">
                       {fileError}
                     </p>
                   ) : null}
                 </AnimatedPanel>
               ) : (
-                <AnimatedPanel
-                  panelKey="generate"
-                  className="border-brand-gray-200 flex min-h-[220px] flex-col items-center justify-center rounded-md border border-dashed bg-white px-4 py-10 text-center"
-                >
-                  <SparklesIcon className="text-brand-dark-blue mb-3 size-10" />
-                  <p className="text-brand-gray-700 max-w-xs text-sm font-medium">
-                    {GENERATE_DRAFT_SOON_TOOLTIP}
-                  </p>
+                <AnimatedPanel panelKey="generate" className="space-y-4">
+                  <div>
+                    <Label
+                      htmlFor="add-files-generate-prompt"
+                      className={fieldLabelClass}
+                    >
+                      Prompt
+                    </Label>
+                    <textarea
+                      id="add-files-generate-prompt"
+                      className={cn(
+                        textareaClass,
+                        'mt-2 max-h-[120px] min-h-[100px]',
+                      )}
+                      placeholder="e.g. minimal flat illustration, warm community theme..."
+                      value={generatePrompt}
+                      onChange={event => setGeneratePrompt(event.target.value)}
+                      disabled={isGenerating}
+                    />
+                    <p className="text-brand-gray-500 mt-2 text-xs">
+                      Leave blank to generate from your idea title and
+                      description.
+                    </p>
+                  </div>
+
+                  <Button
+                    type="button"
+                    className={publishBtnClass}
+                    disabled={!canGenerateImage || isGenerating}
+                    isLoading={isGenerating}
+                    onClick={() => void handleGenerateImage()}
+                  >
+                    <SparklesIcon className="size-5" />
+                    Generate image
+                  </Button>
+
+                  {pendingFiles.length > 0 ? (
+                    <ul className="text-brand-gray-600 border-brand-gray-200 max-h-24 space-y-1 overflow-y-auto rounded-md border bg-white p-3 text-left text-xs">
+                      {pendingFiles.map(file => (
+                        <li
+                          key={`${file.name}-${file.size}`}
+                          className="truncate"
+                        >
+                          {file.name}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
                 </AnimatedPanel>
               )}
             </AnimatedPanelSwitch>
@@ -251,11 +368,7 @@ export function AddImageModal({
                     </Button>
                   </span>
                 </TooltipTrigger>
-                <TooltipContent side="top">
-                  {activeTab === 'generate'
-                    ? GENERATE_DRAFT_SOON_TOOLTIP
-                    : 'Choose at least one file to add'}
-                </TooltipContent>
+                <TooltipContent side="top">{addFilesTooltip}</TooltipContent>
               </Tooltip>
             )}
           </div>

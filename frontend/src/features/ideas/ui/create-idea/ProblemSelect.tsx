@@ -7,7 +7,15 @@ import {
 import { type ProblemDraft, useProblemsListQuery } from '@/features/problems';
 import { Link } from '@tanstack/react-router';
 import { Check, ChevronDown, Plus, Search, X } from 'lucide-react';
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import {
+  forwardRef,
+  useEffect,
+  useId,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type { Control, FieldErrors } from 'react-hook-form';
 import { Controller } from 'react-hook-form';
 
@@ -24,24 +32,44 @@ import { ArrowLink } from '../icons/ArrowLink';
 import { AddProblemModal } from '../modals/AddProblemModal';
 import { FieldError, FieldGroup, FieldLabel } from './Fields';
 
-interface ProblemSelectProps {
+export type ProblemSelectHandle = {
+  focusAndOpen: () => void;
+};
+
+type ProblemSelectProps = {
   formId: string;
   control: Control<IdeaCreateFormValues>;
   errors: FieldErrors<IdeaCreateFormValues>;
   createdProblems: MockProblem[];
   onProblemDraftCreated: (problem: ProblemDraft) => void;
-}
+};
 
-function ProblemSelect({
-  formId,
-  control,
-  errors,
-  createdProblems,
-  onProblemDraftCreated,
-}: ProblemSelectProps) {
+const ProblemSelect = forwardRef<ProblemSelectHandle, ProblemSelectProps>(
+  function ProblemSelect(
+    { formId, control, errors, createdProblems, onProblemDraftCreated },
+    ref,
+  ) {
   const listboxId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
+  const comboboxRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      focusAndOpen: () => {
+        setOpen(true);
+        requestAnimationFrame(() => {
+          comboboxRef.current?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          });
+          comboboxRef.current?.focus();
+        });
+      },
+    }),
+    [],
+  );
   const [search, setSearch] = useState('');
   const [addProblemOpen, setAddProblemOpen] = useState(false);
   const closeDropdown = () => {
@@ -112,13 +140,14 @@ function ProblemSelect({
 
         return (
           <>
-            <FieldGroup>
+            <FieldGroup data-publish-field="problemId">
               <FieldLabel htmlFor={`${formId}-problem`} required>
                 Problem this idea solves
               </FieldLabel>
 
               <div ref={containerRef} className="relative mt-2">
                 <div
+                  ref={comboboxRef}
                   id={`${formId}-problem`}
                   role="combobox"
                   aria-haspopup="listbox"
@@ -317,6 +346,7 @@ function ProblemSelect({
       }}
     />
   );
-}
+  },
+);
 
 export default ProblemSelect;

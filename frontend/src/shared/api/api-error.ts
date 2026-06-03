@@ -52,6 +52,9 @@ export function getApiErrorMessage(
       return apiMessage;
     }
     const status = error.response?.status;
+    if (status === 429 && apiMessage && isUserFacingAuthMessage(apiMessage)) {
+      return apiMessage;
+    }
     if (status === 404) {
       return (
         apiMessage ??

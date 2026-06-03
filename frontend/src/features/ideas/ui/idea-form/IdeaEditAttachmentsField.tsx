@@ -103,6 +103,8 @@ export function IdeaEditAttachmentsField({
   const existingAttachments = useWatch({ control, name: 'existingAttachments' });
   const removedAttachmentIds = useWatch({ control, name: 'removedAttachmentIds' });
   const newFiles = useWatch({ control, name: 'newFiles' }) ?? [];
+  const title = useWatch({ control, name: 'title' }) ?? '';
+  const description = useWatch({ control, name: 'description' }) ?? '';
 
   const removedSet = new Set(removedAttachmentIds);
   const visibleExisting = existingAttachments.filter(
@@ -238,6 +240,8 @@ export function IdeaEditAttachmentsField({
               onOpenChange={setAddFilesOpen}
               maxFiles={remainingSlots}
               onAdd={handleAdd}
+              ideaTitle={title}
+              ideaDescription={description}
             />
 
             {lightboxIndex !== null && lightboxImages.length > 0 ? (
