@@ -5,6 +5,7 @@ import {
 } from '@/features/ideas/hooks/use-idea-mutations';
 import {
   type IdeaCreateFormValues,
+  getFirstPublishErrorField,
   ideaCreateDefaultValues,
   ideaCreateDraftSchema,
   validateForPublish,
@@ -30,6 +31,13 @@ import {
 import { type Resolver, useForm } from 'react-hook-form';
 
 import { getApiErrorMessage } from '@/shared/api/api-error';
+
+export type IdeaPublishResult =
+  | { success: true }
+  | {
+      success: false;
+      firstInvalidField?: keyof IdeaCreateFormValues;
+    };
 
 export function useIdeaCreateForm() {
   const { ideaId: urlIdeaId } = useSearch({ from: '/_auth/ideas/new' });
@@ -229,7 +237,9 @@ export function useIdeaCreateForm() {
     [form],
   );
 
-  const onPublish = async (event?: BaseSyntheticEvent): Promise<boolean> => {
+  const onPublish = async (
+    event?: BaseSyntheticEvent,
+  ): Promise<IdeaPublishResult> => {
     event?.preventDefault();
 
     const values = form.getValues();
@@ -248,15 +258,18 @@ export function useIdeaCreateForm() {
           });
         }
       }
-      return false;
+      return {
+        success: false,
+        firstInvalidField: getFirstPublishErrorField(result.error.issues),
+      };
     }
 
     try {
       await publishMutation.mutateAsync(values);
       clearCreateIdeaSession();
-      return true;
+      return { success: true };
     } catch {
-      return false;
+      return { success: false };
     }
   };
 

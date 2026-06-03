@@ -1,5 +1,12 @@
 import type { IdeaPrefillMode } from '../../idea/dto/generate-idea-prefill.dto';
 
+export type {
+  GenerateImageInput,
+  GenerateImageOutput,
+  ImageAspectRatio,
+} from './generate-image.types';
+export { IMAGE_ASPECT_RATIOS } from './generate-image.types';
+
 export type IdeaPrefillInput = {
   mode: IdeaPrefillMode;
   userPrompt: string;

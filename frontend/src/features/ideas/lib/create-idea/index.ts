@@ -27,6 +27,12 @@ export {
 } from './mappers';
 export { hasCreateIdeaUnsavedProgress } from './unsaved-progress';
 export {
+  focusPublishField,
+  getFirstPublishErrorField,
+  IDEA_CREATE_PUBLISH_FIELD_ORDER,
+  type PublishFieldFocusTarget,
+} from './focus-publish-field';
+export {
   EMPTY_PERSISTED_LOCAL_FILES,
   getLocalFilesKey,
   localFilesToPersisted,
