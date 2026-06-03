@@ -37,12 +37,12 @@ export class EmbeddingService {
   }
 
   async embedText(text: string): Promise<number[]> {
+    let timerId: ReturnType<typeof setTimeout> | undefined;
+
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(
-        () =>
-          reject(new GatewayTimeoutException('Embedding generation timed out')),
-        this.timeoutMs,
-      );
+      timerId = setTimeout(() => {
+        reject(new GatewayTimeoutException('Embedding generation timed out'));
+      }, this.timeoutMs);
     });
 
     const embedPromise = this.client.models.embedContent({
@@ -51,18 +51,24 @@ export class EmbeddingService {
       config: { outputDimensionality: EMBEDDING_DIMENSIONS },
     });
 
-    const response = await Promise.race([embedPromise, timeoutPromise]);
+    try {
+      const response = await Promise.race([embedPromise, timeoutPromise]);
 
-    const values = response.embeddings?.[0]?.values;
-    if (!values || values.length !== EMBEDDING_DIMENSIONS) {
-      this.logger.error(
-        `Unexpected embedding response: got ${values?.length ?? 0} dimensions`,
-      );
-      throw new InternalServerErrorException(
-        `Expected ${EMBEDDING_DIMENSIONS} embedding dimensions`,
-      );
+      const values = response.embeddings?.[0]?.values;
+      if (!values || values.length !== EMBEDDING_DIMENSIONS) {
+        this.logger.error(
+          `Unexpected embedding response: got ${values?.length ?? 0} dimensions`,
+        );
+        throw new InternalServerErrorException(
+          `Expected ${EMBEDDING_DIMENSIONS} embedding dimensions`,
+        );
+      }
+
+      return values;
+    } finally {
+      if (timerId !== undefined) {
+        clearTimeout(timerId);
+      }
     }
-
-    return values;
   }
 }
