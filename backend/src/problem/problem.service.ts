@@ -13,6 +13,8 @@ import {
   ProblemStatus,
 } from '../../generated/prisma/client';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { EmbeddingService } from '../embedding/embedding.service';
+import { toPgVectorLiteral } from '../embedding/vector.util';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   deleteAllProblemMedia,
@@ -69,7 +71,27 @@ export class ProblemService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cloudinary: CloudinaryService,
+    private readonly embeddingService: EmbeddingService,
   ) {}
+
+  private async updateProblemEmbedding(
+    tx: Prisma.TransactionClient,
+    id: string,
+    title: string,
+    description: string,
+  ): Promise<void> {
+    const text = `${title}\n${description}`.trim();
+    if (!text) {
+      return;
+    }
+
+    const vector = await this.embeddingService.embedText(text);
+    const vectorLiteral = toPgVectorLiteral(vector);
+
+    await tx.$executeRaw`
+      UPDATE problem SET ai_embedding = ${vectorLiteral}::vector WHERE id = ${id}
+    `;
+  }
 
   async toggleLike(problemId: string, userId: string): Promise<void> {
     await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -246,6 +268,11 @@ export class ProblemService {
     authorId: string,
     dto: UpdateProblemDraftDto,
   ): Promise<void> {
+    const existing = await tx.problem.findUnique({
+      where: { id },
+      select: { title: true, description: true },
+    });
+
     const scalarData: {
       stage?: UpdateProblemDraftDto['stage'];
       title?: string;
@@ -283,6 +310,31 @@ export class ProblemService {
         where: { id },
         data: scalarData,
       });
+    }
+
+    const titleChanged =
+      dto.title !== undefined &&
+      existing !== null &&
+      dto.title !== existing.title;
+    const descriptionChanged =
+      dto.description !== undefined &&
+      existing !== null &&
+      dto.description !== existing.description;
+
+    if (titleChanged || descriptionChanged) {
+      const current = await tx.problem.findUnique({
+        where: { id },
+        select: { title: true, description: true },
+      });
+
+      if (current) {
+        await this.updateProblemEmbedding(
+          tx,
+          id,
+          current.title,
+          current.description,
+        );
+      }
     }
 
     if (dto.ideaIds !== undefined) {
@@ -397,6 +449,13 @@ export class ProblemService {
         },
         include: PROBLEM_FORM_INCLUDE,
       });
+
+      await this.updateProblemEmbedding(
+        tx,
+        created.id,
+        created.title,
+        created.description,
+      );
 
       await this.applyProblemUpdates(tx, created.id, authorId, updateDto);
 
