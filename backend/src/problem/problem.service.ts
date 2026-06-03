@@ -75,7 +75,6 @@ export class ProblemService {
   ) {}
 
   private async updateProblemEmbedding(
-    tx: Prisma.TransactionClient,
     id: string,
     title: string,
     description: string,
@@ -88,9 +87,22 @@ export class ProblemService {
     const vector = await this.embeddingService.embedText(text);
     const vectorLiteral = toPgVectorLiteral(vector);
 
-    await tx.$executeRaw`
+    await this.prisma.$executeRaw`
       UPDATE problem SET ai_embedding = ${vectorLiteral}::vector WHERE id = ${id}
     `;
+  }
+
+  private enqueueProblemEmbeddingUpdate(
+    id: string,
+    title: string,
+    description: string,
+  ): void {
+    void this.updateProblemEmbedding(id, title, description).catch(error =>
+      this.logger.error(
+        `Failed to update embedding for problem ${id}`,
+        error as Error,
+      ),
+    );
   }
 
   async toggleLike(problemId: string, userId: string): Promise<void> {
@@ -267,7 +279,7 @@ export class ProblemService {
     id: string,
     authorId: string,
     dto: UpdateProblemDraftDto,
-  ): Promise<void> {
+  ): Promise<{ title: string; description: string } | null> {
     const existing = await tx.problem.findUnique({
       where: { id },
       select: { title: true, description: true },
@@ -321,6 +333,8 @@ export class ProblemService {
       existing !== null &&
       dto.description !== existing.description;
 
+    let embeddingUpdate: { title: string; description: string } | null = null;
+
     if (titleChanged || descriptionChanged) {
       const current = await tx.problem.findUnique({
         where: { id },
@@ -328,12 +342,10 @@ export class ProblemService {
       });
 
       if (current) {
-        await this.updateProblemEmbedding(
-          tx,
-          id,
-          current.title,
-          current.description,
-        );
+        embeddingUpdate = {
+          title: current.title,
+          description: current.description,
+        };
       }
     }
 
@@ -409,6 +421,8 @@ export class ProblemService {
         await createProblemTagLinks(tx, id, tagsToAdd);
       }
     }
+
+    return embeddingUpdate;
   }
 
   async create(
@@ -450,13 +464,6 @@ export class ProblemService {
         include: PROBLEM_FORM_INCLUDE,
       });
 
-      await this.updateProblemEmbedding(
-        tx,
-        created.id,
-        created.title,
-        created.description,
-      );
-
       await this.applyProblemUpdates(tx, created.id, authorId, updateDto);
 
       let results = await tx.problem.findUnique({
@@ -486,6 +493,12 @@ export class ProblemService {
       }
       return results;
     });
+
+    this.enqueueProblemEmbeddingUpdate(
+      problem.id,
+      problem.title,
+      problem.description,
+    );
 
     return toProblemFormResponse(problem, authorId);
   }
@@ -642,39 +655,57 @@ export class ProblemService {
     authorId: string,
     dto: UpdateProblemDraftDto,
   ): Promise<ProblemFormResponse> {
-    const problem = await this.prisma.$transaction(async tx => {
-      const existing = await tx.problem.findFirst({
-        where: { id, authorId },
-        select: {
-          id: true,
-          status: true,
-          title: true,
-          description: true,
-          stage: true,
-        },
-      });
+    const { problem, embeddingUpdate } = await this.prisma.$transaction(
+      async tx => {
+        const existing = await tx.problem.findFirst({
+          where: { id, authorId },
+          select: {
+            id: true,
+            status: true,
+            title: true,
+            description: true,
+            stage: true,
+          },
+        });
 
-      if (!existing) {
-        throw new NotFoundException(PROBLEM_NOT_FOUND);
-      }
+        if (!existing) {
+          throw new NotFoundException(PROBLEM_NOT_FOUND);
+        }
 
-      if (existing.status === ProblemStatus.ARCHIVED) {
-        throw new BadRequestException('Archived problems cannot be updated');
-      }
+        if (existing.status === ProblemStatus.ARCHIVED) {
+          throw new BadRequestException('Archived problems cannot be updated');
+        }
 
-      await this.applyProblemUpdates(tx, id, authorId, dto);
+        const pendingEmbeddingUpdate = await this.applyProblemUpdates(
+          tx,
+          id,
+          authorId,
+          dto,
+        );
 
-      const updated = await tx.problem.findFirst({
-        where: { id, authorId },
-        include: PROBLEM_FORM_INCLUDE,
-      });
+        const updated = await tx.problem.findFirst({
+          where: { id, authorId },
+          include: PROBLEM_FORM_INCLUDE,
+        });
 
-      if (!updated) {
-        throw new NotFoundException(PROBLEM_NOT_FOUND);
-      }
+        if (!updated) {
+          throw new NotFoundException(PROBLEM_NOT_FOUND);
+        }
 
-      return updated;
-    });
+        return {
+          problem: updated,
+          embeddingUpdate: pendingEmbeddingUpdate,
+        };
+      },
+    );
+
+    if (embeddingUpdate) {
+      this.enqueueProblemEmbeddingUpdate(
+        id,
+        embeddingUpdate.title,
+        embeddingUpdate.description,
+      );
+    }
 
     return toProblemFormResponse(problem, authorId);
   }
