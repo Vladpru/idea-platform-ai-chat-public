@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
@@ -10,6 +11,7 @@ import {
   Prisma,
   ProblemStatus,
 } from '../../generated/prisma/client';
+import { EmbeddingSyncService } from '../embedding/embedding-sync.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateIdeaDto } from './dto/create-idea.dto';
 import { UpdateIdeaDraftDto } from './dto/update-idea-draft.dto';
@@ -37,9 +39,12 @@ const IDEA_NOT_FOUND = 'Idea not found';
 
 @Injectable()
 export class IdeaService {
+  private readonly logger = new Logger(IdeaService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly ideaMediaService: IdeaMediaService,
+    private readonly embeddingSyncService: EmbeddingSyncService,
   ) {}
 
   async toggleLike(ideaId: string, userId: string): Promise<void> {
@@ -429,6 +434,10 @@ export class IdeaService {
       return result;
     });
 
+    void this.embeddingSyncService.syncIdeaEmbedding(idea.id).catch(err => {
+      this.logger.error(`Failed to sync embedding for idea ${idea.id}`, err);
+    });
+
     return toIdeaFormResponse(idea, authorId);
   }
 
@@ -459,6 +468,10 @@ export class IdeaService {
       }
 
       return updated;
+    });
+
+    void this.embeddingSyncService.syncIdeaEmbedding(idea.id).catch(err => {
+      this.logger.error(`Failed to sync embedding for idea ${idea.id}`, err);
     });
 
     return toIdeaFormResponse(idea, authorId);
@@ -519,6 +532,10 @@ export class IdeaService {
       return result;
     });
 
+    void this.embeddingSyncService.syncIdeaEmbedding(updated.id).catch(err => {
+      this.logger.error(`Failed to sync embedding for idea ${updated.id}`, err);
+    });
+
     return toIdeaFormResponse(updated, authorId);
   }
 
@@ -576,6 +593,15 @@ export class IdeaService {
         include: IDEA_FORM_INCLUDE,
       });
     });
+
+    void this.embeddingSyncService
+      .syncIdeaEmbedding(published.id)
+      .catch(err => {
+        this.logger.error(
+          `Failed to sync embedding for idea ${published.id}`,
+          err,
+        );
+      });
 
     return toIdeaFormResponse(published, authorId);
   }

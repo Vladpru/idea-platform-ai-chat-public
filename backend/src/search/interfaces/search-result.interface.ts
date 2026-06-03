@@ -16,7 +16,8 @@ export interface SearchResultRow {
   like_count: number;
   comment_count: number;
   tags: string | { id: string; name: string }[];
-  total_count: bigint;
+  total_count?: bigint;
+  is_ai_suggested: boolean;
 }
 
 export interface CountRow {
@@ -46,6 +47,7 @@ export interface GlobalSearchResultItem {
     comments: number;
   };
   tags: SearchResultTag[];
+  isAiSuggested: boolean;
 }
 
 export interface GlobalSearchResultResponse {
