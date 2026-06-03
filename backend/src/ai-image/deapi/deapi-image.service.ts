@@ -39,6 +39,15 @@ import type {
 
 const DEFAULT_IMAGE_TIMEOUT_MS = 120_000;
 const DEFAULT_POLL_INTERVAL_MS = 2_000;
+const DEFAULT_PROMPT_ENHANCEMENT_TIMEOUT_MS = 15_000;
+
+class DeapiImageTimeoutError extends Error {
+  override readonly name = 'DeapiImageTimeoutError';
+
+  constructor(message = 'AI image generation timed out') {
+    super(message);
+  }
+}
 
 function parsePositiveInt(value: string | undefined, fallback: number): number {
   const parsed = Number(value);
@@ -81,7 +90,10 @@ export class DeapiImageService {
 
   async generateImage(input: GenerateImageInput): Promise<GenerateImageOutput> {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
+    const timeoutId = setTimeout(
+      () => controller.abort(new DeapiImageTimeoutError()),
+      this.timeoutMs,
+    );
 
     try {
       const basePrompt = buildDeapiImagePrompt(input);
@@ -118,8 +130,17 @@ export class DeapiImageService {
       }
 
       this.logger.error('deAPI image generation failed', error);
+      if (this.isTimeoutAbort(error, controller.signal)) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'AI image generation timed out';
+        throw new GatewayTimeoutException(message);
+      }
       if (this.isAbortError(error)) {
-        throw new GatewayTimeoutException('AI image generation timed out');
+        throw new InternalServerErrorException(
+          'AI image generation was cancelled',
+        );
       }
       throw new InternalServerErrorException('Unable to generate AI image');
     } finally {
@@ -127,33 +148,75 @@ export class DeapiImageService {
     }
   }
 
+  private promptsFromBase(basePrompt: string): {
+    prompt: string;
+    negativePrompt: string;
+  } {
+    return {
+      prompt: basePrompt,
+      negativePrompt: DEAPI_DEFAULT_NEGATIVE_PROMPT,
+    };
+  }
+
   private async resolvePrompts(
     basePrompt: string,
     signal: AbortSignal,
   ): Promise<{ prompt: string; negativePrompt: string }> {
     if (!this.usePromptEnhancement) {
-      return {
-        prompt: basePrompt,
-        negativePrompt: DEAPI_DEFAULT_NEGATIVE_PROMPT,
-      };
+      return this.promptsFromBase(basePrompt);
     }
 
-    const response = await postDeapiPromptImage(this.apiKey, basePrompt, {
-      baseUrl: this.baseUrl,
-      negativePrompt: DEAPI_DEFAULT_NEGATIVE_PROMPT,
-      signal,
-    });
+    this.throwIfAborted(signal);
 
-    if (!response.ok) {
-      await this.throwForResponse(response);
-    }
-
-    const payload = (await response.json()) as DeapiPromptImageResponse;
-    return {
-      prompt: payload.prompt?.trim() || basePrompt,
-      negativePrompt:
-        payload.negative_prompt?.trim() || DEAPI_DEFAULT_NEGATIVE_PROMPT,
+    const enhancementController = new AbortController();
+    const onMainAbort = () => {
+      enhancementController.abort(signal.reason);
     };
+    signal.addEventListener('abort', onMainAbort, { once: true });
+
+    const enhancementTimeoutId = setTimeout(
+      () =>
+        enhancementController.abort(
+          new Error('deAPI prompt enhancement timed out'),
+        ),
+      DEFAULT_PROMPT_ENHANCEMENT_TIMEOUT_MS,
+    );
+
+    try {
+      const response = await postDeapiPromptImage(this.apiKey, basePrompt, {
+        baseUrl: this.baseUrl,
+        negativePrompt: DEAPI_DEFAULT_NEGATIVE_PROMPT,
+        signal: enhancementController.signal,
+      });
+
+      if (!response.ok) {
+        const message = parseDeapiErrorMessage(await response.text());
+        this.logger.warn(
+          `deAPI prompt enhancement failed (status=${response.status}): ${message}; using base prompt`,
+        );
+        return this.promptsFromBase(basePrompt);
+      }
+
+      const payload = (await response.json()) as DeapiPromptImageResponse;
+      return {
+        prompt: payload.prompt?.trim() || basePrompt,
+        negativePrompt:
+          payload.negative_prompt?.trim() || DEAPI_DEFAULT_NEGATIVE_PROMPT,
+      };
+    } catch (error) {
+      if (this.isTimeoutAbort(error, signal) || signal.aborted) {
+        throw this.toAbortError(signal.reason);
+      }
+
+      this.logger.warn(
+        'deAPI prompt enhancement failed; using base prompt',
+        error instanceof Error ? error.stack : error,
+      );
+      return this.promptsFromBase(basePrompt);
+    } finally {
+      clearTimeout(enhancementTimeoutId);
+      signal.removeEventListener('abort', onMainAbort);
+    }
   }
 
   private async submitTxt2Img(
@@ -182,7 +245,9 @@ export class DeapiImageService {
     requestId: string,
     signal: AbortSignal,
   ): Promise<string> {
-    while (!signal.aborted) {
+    while (true) {
+      this.throwIfAborted(signal);
+
       const response = await getDeapiRequestStatus(this.apiKey, requestId, {
         baseUrl: this.baseUrl,
         signal,
@@ -210,8 +275,14 @@ export class DeapiImageService {
 
       await this.sleep(this.pollIntervalMs, signal);
     }
+  }
 
-    throw new GatewayTimeoutException('AI image generation timed out');
+  private throwIfAborted(signal: AbortSignal): never | void {
+    if (!signal.aborted) {
+      return;
+    }
+
+    throw this.toAbortError(signal.reason);
   }
 
   private async downloadImageAsBase64(
@@ -283,9 +354,18 @@ export class DeapiImageService {
       return reason;
     }
 
-    const abortError = new Error('Aborted');
+    const abortError = new Error(
+      typeof reason === 'string' ? reason : 'Aborted',
+    );
     abortError.name = 'AbortError';
     return abortError;
+  }
+
+  private isTimeoutAbort(error: unknown, signal: AbortSignal): boolean {
+    return (
+      error instanceof DeapiImageTimeoutError ||
+      signal.reason instanceof DeapiImageTimeoutError
+    );
   }
 
   private isAbortError(error: unknown): boolean {
