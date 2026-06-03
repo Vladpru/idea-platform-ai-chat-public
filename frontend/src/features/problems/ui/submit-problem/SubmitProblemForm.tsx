@@ -4,8 +4,10 @@ import {
   FieldGroup,
   FieldLabel,
 } from '@/features/ideas/ui/create-idea/Fields';
-import { SparklesIcon } from '@/features/ideas/ui/icons/SparklesIcon';
+import { IdeaCreateAiAssistLink } from '@/features/ideas/ui/create-idea/IdeaCreateAiAssistLink';
+import { AiGenerationModal } from '@/features/ideas/ui/modals/AiGenerationModal';
 import { DEFAULT_PROBLEMS_DASHBOARD_SEARCH } from '@/features/problems-dashboard/lib/constants';
+import { useSubmitProblemAiAssist } from '@/features/problems/hooks/use-submit-problem-ai-assist';
 import { useSubmitProblemForm } from '@/features/problems/hooks/use-submit-problem-form';
 import {
   PROBLEM_STAGES,
@@ -14,7 +16,6 @@ import {
 } from '@/features/problems/lib/submit-problem';
 import { SaveDraftButton } from '@/features/problems/ui/tooltips';
 import { useNavigate } from '@tanstack/react-router';
-import { ChevronDown } from 'lucide-react';
 import { useId, useState } from 'react';
 import { Controller } from 'react-hook-form';
 
@@ -30,32 +31,18 @@ import { selectClass } from '@/shared/ui/TagsInput';
 import { Button } from '@/shared/ui/button';
 import { ConfirmModal } from '@/shared/ui/confirm-modal';
 import { Input } from '@/shared/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select';
 import { SaveProgressBeforeLeavingModal } from '@/shared/ui/save-progress-before-leaving-modal';
 
 import { IdeaSelect } from './IdeaSelect';
 import { ProblemFilesField } from './ProblemFilesField';
 import { ProblemTagsField } from './ProblemTagsField';
-
-function AiAssistLink({
-  children,
-  onClick,
-}: {
-  children: string;
-  onClick?: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="group text-brand-dark-blue dark:text-brand-light-blue inline-flex items-center gap-1 text-xs font-semibold tracking-wide transition-colors"
-    >
-      <SparklesIcon className="group-hover:text-brand-dark-blue/80 dark:group-hover:text-brand-light-blue/80 size-5 transition-colors" />
-      <span className="group-hover:text-brand-dark-blue/80 dark:group-hover:text-brand-light-blue/80 transition-colors">
-        {children}
-      </span>
-    </button>
-  );
-}
 
 const POST_PUBLISH_PROMPT =
   'Would you like to add more details to the Problem you created?';
@@ -92,6 +79,16 @@ export function SubmitProblemForm() {
   const titleValue = watch('title') || '';
   const descriptionValue = watch('description') || '';
   const valuePropositionValue = watch('valueProposition') || '';
+  const trimmedTitle = titleValue.trim();
+  const trimmedDescription = descriptionValue.trim();
+
+  const { canRegenerateTitle, openAssistModal, generationModalProps } =
+    useSubmitProblemAiAssist({
+      form,
+      trimmedTitle,
+      trimmedDescription,
+    });
+
   const watchedValues = watch();
   const hasUnsavedProgress = hasSubmitProblemUnsavedProgress(
     formIsDirty,
@@ -197,25 +194,35 @@ export function SubmitProblemForm() {
           <FieldLabel htmlFor={`${formId}-stage`} required>
             Stage
           </FieldLabel>
-          <div className="relative mt-2 max-w-md">
-            <select
-              id={`${formId}-stage`}
-              className={cn(selectClass, 'pr-9')}
-              aria-invalid={!!errors.stage}
-              disabled={isBusy}
-              {...register('stage')}
-            >
-              {PROBLEM_STAGES.map(stage => (
-                <option key={stage.value} value={stage.value}>
-                  {stage.label}
-                </option>
-              ))}
-            </select>
-            <ChevronDown
-              className="text-brand-gray-600 pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2"
-              aria-hidden
-            />
-          </div>
+          <Controller
+            name="stage"
+            control={control}
+            render={({ field }) => (
+              <Select
+                value={field.value}
+                onValueChange={field.onChange}
+                disabled={isBusy}
+              >
+                <SelectTrigger
+                  id={`${formId}-stage`}
+                  className={cn(
+                    selectClass,
+                    'mt-2 max-w-md w-full data-[size=default]:h-10',
+                  )}
+                  aria-invalid={!!errors.stage}
+                >
+                  <SelectValue placeholder="Select stage" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PROBLEM_STAGES.map(stage => (
+                    <SelectItem key={stage.value} value={stage.value}>
+                      {stage.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
           <FieldError message={errors.stage?.message} />
         </FieldGroup>
 
@@ -224,7 +231,18 @@ export function SubmitProblemForm() {
             <FieldLabel htmlFor={`${formId}-title`} required>
               Problem Title
             </FieldLabel>
-            <AiAssistLink>Generate title from description</AiAssistLink>
+            <IdeaCreateAiAssistLink
+              disabled={isBusy || !canRegenerateTitle}
+              onClick={
+                canRegenerateTitle && !isBusy
+                  ? () => openAssistModal('title')
+                  : undefined
+              }
+            >
+              {titleValue
+                ? 'Re-generate title from description'
+                : 'Generate title from description'}
+            </IdeaCreateAiAssistLink>
           </div>
           <Input
             id={`${formId}-title`}
@@ -248,7 +266,14 @@ export function SubmitProblemForm() {
             <FieldLabel htmlFor={`${formId}-description`} required>
               Description
             </FieldLabel>
-            <AiAssistLink>Write description with AI prompt</AiAssistLink>
+            <IdeaCreateAiAssistLink
+              disabled={isBusy}
+              onClick={isBusy ? undefined : () => openAssistModal('description')}
+            >
+              {descriptionValue
+                ? 'Edit description with AI prompt'
+                : 'Write description with AI prompt'}
+            </IdeaCreateAiAssistLink>
           </div>
           <textarea
             id={`${formId}-description`}
@@ -272,7 +297,16 @@ export function SubmitProblemForm() {
             <FieldLabel htmlFor={`${formId}-valueProposition`}>
               Value Proposition
             </FieldLabel>
-            <AiAssistLink>Write value proposition with AI prompt</AiAssistLink>
+            <IdeaCreateAiAssistLink
+              disabled={isBusy}
+              onClick={
+                isBusy ? undefined : () => openAssistModal('valueProposition')
+              }
+            >
+              {valuePropositionValue
+                ? 'Edit value proposition with AI prompt'
+                : 'Write value proposition with AI prompt'}
+            </IdeaCreateAiAssistLink>
           </div>
           <textarea
             id={`${formId}-valueProposition`}
@@ -401,6 +435,8 @@ export function SubmitProblemForm() {
         cancelLabel="Not Now"
         onConfirm={handleOpenPublishedProblemDetails}
       />
+
+      <AiGenerationModal {...generationModalProps} />
     </>
   );
 }

@@ -1,9 +1,15 @@
-export type GeminiTextPart = { text?: string };
+export type GeminiContentPart = {
+  text?: string;
+  inlineData?: {
+    mimeType?: string;
+    data?: string;
+  };
+};
 
 export type GeminiGenerateContentResponse = {
   candidates?: Array<{
     content?: {
-      parts?: GeminiTextPart[];
+      parts?: GeminiContentPart[];
     };
   }>;
 };

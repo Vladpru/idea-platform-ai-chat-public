@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 
 import { Label } from '@/shared/ui/label';
 
@@ -39,8 +39,15 @@ export function FieldLabel({
   );
 }
 
-export function FieldGroup({ children }: { children: ReactNode }) {
-  return <div className="space-y-1">{children}</div>;
+export function FieldGroup({
+  children,
+  ...props
+}: { children: ReactNode } & ComponentPropsWithoutRef<'div'>) {
+  return (
+    <div className="space-y-1" {...props}>
+      {children}
+    </div>
+  );
 }
 
 export function FieldError({ message }: { message?: string }) {

@@ -3,6 +3,8 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
+import { AiImageModule } from './ai-image/ai-image.module';
+import { AiModule } from './ai/ai.module';
 import { AuthModule } from './auth/auth.module';
 import { CommentModule } from './comment/comment.module';
 import { IdeaModule } from './idea/idea.module';
@@ -29,6 +31,8 @@ import { UserModule } from './user/user.module';
       },
     ]),
     UserModule,
+    AiModule,
+    AiImageModule,
     IdeaModule,
     ProblemModule,
     CommentModule,

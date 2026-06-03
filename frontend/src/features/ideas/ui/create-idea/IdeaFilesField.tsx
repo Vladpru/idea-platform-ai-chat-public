@@ -22,18 +22,24 @@ import { IdeaAttachmentCard } from './IdeaAttachmentCard';
 type IdeaFilesFieldProps = {
   control: Control<IdeaCreateFormValues>;
   disabled?: boolean;
+  ideaTitle?: string;
+  ideaDescription?: string;
 };
 
 type IdeaFilesFieldContentProps = {
   files: File[];
   onFilesChange: (files: File[]) => void;
   disabled: boolean;
+  ideaTitle?: string;
+  ideaDescription?: string;
 };
 
 function IdeaFilesFieldContent({
   files,
   onFilesChange,
   disabled,
+  ideaTitle,
+  ideaDescription,
 }: IdeaFilesFieldContentProps) {
   const [addFilesOpen, setAddFilesOpen] = useState(false);
 
@@ -108,6 +114,8 @@ function IdeaFilesFieldContent({
         onOpenChange={setAddFilesOpen}
         maxFiles={remainingSlots}
         onAdd={addFiles}
+        ideaTitle={ideaTitle}
+        ideaDescription={ideaDescription}
       />
     </>
   );
@@ -116,6 +124,8 @@ function IdeaFilesFieldContent({
 export function IdeaFilesField({
   control,
   disabled = false,
+  ideaTitle,
+  ideaDescription,
 }: IdeaFilesFieldProps) {
   return (
     <Controller
@@ -126,6 +136,8 @@ export function IdeaFilesField({
           files={field.value ?? []}
           onFilesChange={field.onChange}
           disabled={disabled}
+          ideaTitle={ideaTitle}
+          ideaDescription={ideaDescription}
         />
       )}
     />
