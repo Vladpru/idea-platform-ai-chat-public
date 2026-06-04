@@ -35,9 +35,9 @@ import type {
   SuggestTagsInput,
 } from './types/ai.types';
 
-@Injectable()
 const DEFAULT_TAG_SUGGESTIONS_TOTAL_TIMEOUT_MS = 15_000;
 
+@Injectable()
 export class GeminiService implements AiProvider {
   private readonly logger = new Logger(GeminiService.name);
   private readonly client: GoogleGenAI;
