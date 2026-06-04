@@ -15,7 +15,7 @@ import {
   sanitizeCostBenefitInput,
 } from '@/features/problems/lib/submit-problem';
 import { SaveDraftButton } from '@/features/problems/ui/tooltips';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useId, useState } from 'react';
 import { Controller } from 'react-hook-form';
 
@@ -43,12 +43,16 @@ import { SaveProgressBeforeLeavingModal } from '@/shared/ui/save-progress-before
 import { IdeaSelect } from './IdeaSelect';
 import { ProblemFilesField } from './ProblemFilesField';
 import { ProblemTagsField } from './ProblemTagsField';
+import { SimilarProblemsSection } from './SimilarProblemsSection';
 
 const POST_PUBLISH_PROMPT =
   'Would you like to add more details to the Problem you created?';
 
 export function SubmitProblemForm() {
   const navigate = useNavigate();
+  const { problemId: editingProblemId } = useSearch({
+    from: '/_auth/problems/new',
+  });
   const formId = useId();
   const [isPostPublishModalOpen, setIsPostPublishModalOpen] = useState(false);
   const [publishedProblemId, setPublishedProblemId] = useState<string | null>(
@@ -376,6 +380,12 @@ export function SubmitProblemForm() {
           <ProblemFilesField control={control} disabled={isBusy} />
           <FieldError message={errors.files?.message} />
         </FieldGroup>
+
+        <SimilarProblemsSection
+          title={titleValue}
+          description={descriptionValue}
+          excludeProblemId={editingProblemId}
+        />
 
         <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
           <button
