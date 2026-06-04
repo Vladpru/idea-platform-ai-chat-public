@@ -5,13 +5,13 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 import {
   IdeaStatus,
   Prisma,
   ProblemStatus,
 } from '../../generated/prisma/client';
-import { EmbeddingSyncService } from '../embedding/embedding-sync.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateIdeaDto } from './dto/create-idea.dto';
 import { UpdateIdeaDraftDto } from './dto/update-idea-draft.dto';
@@ -44,7 +44,7 @@ export class IdeaService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly ideaMediaService: IdeaMediaService,
-    private readonly embeddingSyncService: EmbeddingSyncService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async toggleLike(ideaId: string, userId: string): Promise<void> {
@@ -203,17 +203,32 @@ export class IdeaService {
       stage?: UpdateIdeaDraftDto['stage'];
       title?: string;
       description?: string;
+      aiEmbedding?: null;
+      embeddingHash?: null;
     } = {};
 
     if ('stage' in dto && dto.stage !== undefined) scalarData.stage = dto.stage;
     if (dto.title !== undefined) scalarData.title = dto.title;
     if (dto.description !== undefined) scalarData.description = dto.description;
 
+    if (dto.title !== undefined || dto.description !== undefined) {
+      scalarData.aiEmbedding = null;
+      scalarData.embeddingHash = null;
+    }
+
     if (Object.keys(scalarData).length > 0) {
+      const { aiEmbedding, ...prismaData } = scalarData;
+
       await tx.idea.update({
         where: { id },
-        data: scalarData,
+        data: prismaData,
       });
+
+      if (aiEmbedding === null) {
+        await tx.$executeRaw`
+          UPDATE idea SET ai_embedding = NULL WHERE id = ${id}
+        `;
+      }
     }
 
     if (dto.problemIds !== undefined) {
@@ -434,8 +449,9 @@ export class IdeaService {
       return result;
     });
 
-    void this.embeddingSyncService.syncIdeaEmbedding(idea.id).catch(err => {
-      this.logger.error(`Failed to sync embedding for idea ${idea.id}`, err);
+    this.eventEmitter.emit('entity.mutated', {
+      entityType: 'idea',
+      id: idea.id,
     });
 
     return toIdeaFormResponse(idea, authorId);
@@ -470,8 +486,9 @@ export class IdeaService {
       return updated;
     });
 
-    void this.embeddingSyncService.syncIdeaEmbedding(idea.id).catch(err => {
-      this.logger.error(`Failed to sync embedding for idea ${idea.id}`, err);
+    this.eventEmitter.emit('entity.mutated', {
+      entityType: 'idea',
+      id: idea.id,
     });
 
     return toIdeaFormResponse(idea, authorId);
@@ -532,8 +549,9 @@ export class IdeaService {
       return result;
     });
 
-    void this.embeddingSyncService.syncIdeaEmbedding(updated.id).catch(err => {
-      this.logger.error(`Failed to sync embedding for idea ${updated.id}`, err);
+    this.eventEmitter.emit('entity.mutated', {
+      entityType: 'idea',
+      id: updated.id,
     });
 
     return toIdeaFormResponse(updated, authorId);
@@ -594,14 +612,10 @@ export class IdeaService {
       });
     });
 
-    void this.embeddingSyncService
-      .syncIdeaEmbedding(published.id)
-      .catch(err => {
-        this.logger.error(
-          `Failed to sync embedding for idea ${published.id}`,
-          err,
-        );
-      });
+    this.eventEmitter.emit('entity.mutated', {
+      entityType: 'idea',
+      id: published.id,
+    });
 
     return toIdeaFormResponse(published, authorId);
   }
@@ -655,6 +669,8 @@ export class IdeaService {
         problemIdsToCleanup,
       );
     });
+
+    this.eventEmitter.emit('entity.mutated', { entityType: 'idea', id });
 
     this.ideaMediaService.enqueueCloudinaryDeletes(publicIdsToDelete);
   }

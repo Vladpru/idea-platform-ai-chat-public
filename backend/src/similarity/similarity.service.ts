@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
+import { OnEvent } from '@nestjs/event-emitter';
 import { createHash } from 'crypto';
 import { LRUCache } from 'lru-cache';
 
@@ -149,6 +150,19 @@ export class SimilarityService {
         params.userId,
       ),
     );
+  }
+
+  @OnEvent('entity.mutated')
+  handleEntityMutation(payload: {
+    entityType: 'idea' | 'problem';
+    id: string;
+  }): void {
+    this.resultsCache.delete(`result:${payload.entityType}:${payload.id}`);
+    this.resultsCache.forEach((ids, key) => {
+      if (ids.includes(payload.id)) {
+        this.resultsCache.delete(key);
+      }
+    });
   }
 
   private async resolveFromSource(
