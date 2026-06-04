@@ -22,6 +22,10 @@ function addSource(
   return sources.includes(source) ? sources : [...sources, source];
 }
 
+function multiSourceBonus(sourceCount: number): number {
+  return sourceCount > 1 ? SCORE.MULTI_SOURCE_BONUS * (sourceCount - 1) : 0;
+}
+
 function assignTier(
   sources: TagSuggestionSource[],
   score: number,
@@ -70,10 +74,6 @@ export function fuseTagSuggestions(params: {
     for (const source of candidate.sources) {
       existing.sources = addSource(existing.sources, source);
     }
-    if (existing.sources.length > 1) {
-      existing.score +=
-        SCORE.MULTI_SOURCE_BONUS * (existing.sources.length - 1);
-    }
   };
 
   for (const candidate of params.catalog) {
@@ -98,10 +98,6 @@ export function fuseTagSuggestions(params: {
       if (catalogLabel) {
         existing.label = catalogLabel;
       }
-      if (existing.sources.length > 1) {
-        existing.score +=
-          SCORE.MULTI_SOURCE_BONUS * (existing.sources.length - 1);
-      }
       continue;
     }
 
@@ -114,6 +110,10 @@ export function fuseTagSuggestions(params: {
   }
 
   return [...merged.values()]
+    .map(candidate => ({
+      ...candidate,
+      score: candidate.score + multiSourceBonus(candidate.sources.length),
+    }))
     .sort(
       (left, right) =>
         right.score - left.score || left.name.localeCompare(right.name),

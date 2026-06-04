@@ -33,3 +33,5 @@ export type SuggestTagsResponse = {
 export const MIN_TAG_SUGGESTION_CONTENT_LENGTH = 20;
 
 export const DEFAULT_TAG_SUGGESTION_LIMIT = 6;
+
+export const AI_KNOWN_TAGS_LIMIT = 100;

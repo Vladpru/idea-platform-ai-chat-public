@@ -1,7 +1,5 @@
-import {
-  fetchProblemById,
-  fetchProblems,
-} from '@/features/problems/api/problems.api';
+import { fetchProblemById } from '@/features/problems/api/problems.api';
+import { fetchSimilarItems } from '@/features/similarity/api/similarity.api';
 import { problemMutationKeys } from '@/features/problems/hooks/use-problem-mutations';
 import { shouldRetryDetailResourceQuery } from '@/shared/lib/detail-resource-query';
 import { useQuery } from '@tanstack/react-query';
@@ -37,10 +35,13 @@ export function useSimilarProblemsQuery(
   return useQuery({
     queryKey: [...problemMutationKeys.detail(problemId), 'similar'] as const,
     queryFn: async () => {
-      const feed = await fetchProblems({ limit: 12, sort: 'newest' });
-      return feed.data
-        .filter(item => item.id !== problemId && item.status === 'PUBLISHED')
-        .slice(0, 3)
+      const items = await fetchSimilarItems({
+        entityType: 'problem',
+        sourceId: problemId,
+        limit: 3,
+      });
+      return items
+        .filter(item => item.id !== problemId)
         .map(toSimilarProblemCard);
     },
     enabled: Boolean(problemId) && (options?.enabled ?? true),

@@ -36,12 +36,15 @@ import type {
 } from './types/ai.types';
 
 @Injectable()
+const DEFAULT_TAG_SUGGESTIONS_TOTAL_TIMEOUT_MS = 15_000;
+
 export class GeminiService implements AiProvider {
   private readonly logger = new Logger(GeminiService.name);
   private readonly client: GoogleGenAI;
   private readonly apiKey: string;
   private readonly configuredModel: string;
   private readonly timeoutMs: number;
+  private readonly tagSuggestionsTotalTimeoutMs: number;
   private readonly isDevelopment: boolean;
 
   constructor(private readonly config: ConfigService) {
@@ -52,6 +55,8 @@ export class GeminiService implements AiProvider {
     this.timeoutMs = Number(
       this.config.get<string>('GEMINI_TIMEOUT_MS') ?? '10000',
     );
+    this.tagSuggestionsTotalTimeoutMs =
+      this.resolveTagSuggestionsTotalTimeoutMs();
     this.isDevelopment =
       (this.config.get<string>('NODE_ENV') ?? 'development') === 'development';
 
@@ -77,36 +82,63 @@ export class GeminiService implements AiProvider {
       const prompt = buildGeminiTagPrompt(input);
       const models = buildModelsToTry(this.configuredModel);
 
-      for (const model of models) {
-        this.logger.log(`Trying Gemini model for tag-suggestions: ${model}`);
+      return await this.runWithAggregateTimeout(
+        aggregateSignal =>
+          this.runTagSuggestionsModelFallback(models, prompt, aggregateSignal),
+        this.tagSuggestionsTotalTimeoutMs,
+      );
+    } catch (error) {
+      if (this.isAbortError(error)) {
+        this.logger.warn(
+          `Gemini tag suggestions exceeded aggregate timeout (${this.tagSuggestionsTotalTimeoutMs}ms)`,
+        );
+        return [];
+      }
+      this.logger.warn('Gemini tag suggestion failed', error as Error);
+      return [];
+    }
+  }
 
-        try {
-          const tags = await this.runWithPerModelTimeout(signal =>
+  private async runTagSuggestionsModelFallback(
+    models: string[],
+    prompt: string,
+    aggregateSignal: AbortSignal,
+  ): Promise<string[]> {
+    for (const model of models) {
+      if (aggregateSignal.aborted) {
+        break;
+      }
+
+      this.logger.log(`Trying Gemini model for tag-suggestions: ${model}`);
+
+      try {
+        const tags = await this.runWithPerModelTimeout(
+          signal =>
             this.tryTagSuggestionsForModel({
               model,
               prompt,
               signal,
             }),
-          );
-          if (tags !== null) {
-            return tags;
-          }
-        } catch (error) {
-          if (this.isAbortError(error)) {
-            this.logger.warn(
-              `Model ${model} timed out for tag-suggestions, trying next fallback`,
-            );
-            continue;
-          }
-          throw error;
+          { parentSignal: aggregateSignal },
+        );
+        if (tags !== null) {
+          return tags;
         }
+      } catch (error) {
+        if (this.isAbortError(error)) {
+          if (aggregateSignal.aborted) {
+            throw error;
+          }
+          this.logger.warn(
+            `Model ${model} timed out for tag-suggestions, trying next fallback`,
+          );
+          continue;
+        }
+        throw error;
       }
-
-      return [];
-    } catch (error) {
-      this.logger.warn('Gemini tag suggestion failed', error as Error);
-      return [];
     }
+
+    return [];
   }
 
   async generateIdeaPrefill(
@@ -352,15 +384,63 @@ export class GeminiService implements AiProvider {
     return null;
   }
 
-  private async runWithPerModelTimeout<T>(
+  private resolveTagSuggestionsTotalTimeoutMs(): number {
+    const configured = this.config.get<string>(
+      'GEMINI_TAG_SUGGESTIONS_TIMEOUT_MS',
+    );
+    if (configured !== undefined && configured.trim() !== '') {
+      const parsed = Number(configured);
+      if (Number.isFinite(parsed) && parsed > 0) {
+        return parsed;
+      }
+    }
+    return DEFAULT_TAG_SUGGESTIONS_TOTAL_TIMEOUT_MS;
+  }
+
+  private async runWithAggregateTimeout<T>(
     operation: (signal: AbortSignal) => Promise<T>,
+    timeoutMs: number,
   ): Promise<T> {
     const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      return await Promise.race([
+        operation(controller.signal),
+        new Promise<never>((_, reject) => {
+          controller.signal.addEventListener(
+            'abort',
+            () => {
+              reject(
+                Object.assign(new Error('Operation timed out'), {
+                  name: 'AbortError',
+                }),
+              );
+            },
+            { once: true },
+          );
+        }),
+      ]);
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  private async runWithPerModelTimeout<T>(
+    operation: (signal: AbortSignal) => Promise<T>,
+    options?: { parentSignal?: AbortSignal },
+  ): Promise<T> {
+    const controller = new AbortController();
+    const onParentAbort = () => controller.abort();
+    options?.parentSignal?.addEventListener('abort', onParentAbort, {
+      once: true,
+    });
     const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
     try {
       return await operation(controller.signal);
     } finally {
       clearTimeout(timeoutId);
+      options?.parentSignal?.removeEventListener('abort', onParentAbort);
     }
   }
 

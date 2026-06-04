@@ -14,6 +14,7 @@ import { normalizeCosineScore, normalizeSqlScore } from './tag-name.util';
 import { fuseTagSuggestions } from './tag-suggestion-fusion.util';
 import { TagService } from './tag.service';
 import {
+  AI_KNOWN_TAGS_LIMIT,
   DEFAULT_TAG_SUGGESTION_LIMIT,
   MIN_TAG_SUGGESTION_CONTENT_LENGTH,
   type RankedTagCandidate,
@@ -70,35 +71,37 @@ export class TagSuggestionService {
     const fetchLimit = limit * 2;
     const context = input.context ?? 'problem';
 
-    const [catalogResult, embeddingResult, catalogTags] = await Promise.all([
-      this.rankByCatalogRelevance({
-        searchText,
-        excludeNames,
-        limit: fetchLimit,
-        context,
-      }),
-      this.rankByEmbeddingSimilarity({
-        title: input.title,
-        description: input.description,
-        excludeNames,
-        limit: fetchLimit,
-      }),
-      this.tagService.findAll(),
-    ]);
+    const [catalogResult, embeddingResult, knownCatalogTags] =
+      await Promise.all([
+        this.rankByCatalogRelevance({
+          searchText,
+          excludeNames,
+          limit: fetchLimit,
+          context,
+        }),
+        this.rankByEmbeddingSimilarity({
+          title: input.title,
+          description: input.description,
+          excludeNames,
+          limit: fetchLimit,
+        }),
+        this.tagService.findAll({ limit: AI_KNOWN_TAGS_LIMIT }),
+      ]);
 
-    const catalogLabels = new Map(
-      catalogTags.map(tag => [
-        tag.name.toLowerCase(),
-        tag.label?.trim() || tag.name,
-      ]),
-    );
+    const catalogLabels = new Map<string, string>();
+    for (const tag of knownCatalogTags) {
+      catalogLabels.set(tag.name.toLowerCase(), tag.label?.trim() || tag.name);
+    }
+    for (const candidate of [...catalogResult, ...embeddingResult]) {
+      catalogLabels.set(candidate.name.toLowerCase(), candidate.label);
+    }
 
     let aiTags: string[] = [];
     try {
       aiTags = await this.geminiService.generateSuggestedTags({
         title: input.title,
         description: input.description ?? searchText,
-        knownTags: catalogTags.slice(0, 100).map(tag => tag.name),
+        knownTags: knownCatalogTags.map(tag => tag.name),
       });
     } catch (error) {
       this.logger.warn('AI tag suggestions skipped', error as Error);
@@ -177,7 +180,8 @@ export class TagSuggestionService {
             FROM idea_tag it
             INNER JOIN idea i ON i.id = it.idea_id
             WHERE it.tag_id = t.id
-              AND (i.status::text = 'PUBLISHED' OR i.stage::text <> 'ARCHIVED')
+              AND i.status::text = 'PUBLISHED'
+              AND (i.stage IS NULL OR i.stage::text <> 'archived')
               ${ideaMatchSql}
           ), 0)
           + (
