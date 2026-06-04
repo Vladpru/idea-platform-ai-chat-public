@@ -9,7 +9,6 @@ export const IDEAS_ROUTES = {
   media: (ideaId: string) => `/ideas/${ideaId}/media`,
   mediaById: (ideaId: string, mediaId: string) =>
     `/ideas/${ideaId}/media/${mediaId}`,
-  similar: (ideaId: string) => `/ideas/${ideaId}/similar`,
   join: (ideaId: string) => `/ideas/${ideaId}/join`,
   leave: (ideaId: string) => `/ideas/${ideaId}/leave`,
 } as const;

@@ -1,7 +1,5 @@
-import {
-  fetchIdeaFormById,
-  fetchSimilarIdeas,
-} from '@/features/ideas/api/ideas.api';
+import { fetchIdeaFormById } from '@/features/ideas/api/ideas.api';
+import { fetchSimilarItems } from '@/features/similarity/api/similarity.api';
 import { ideaMutationKeys } from '@/features/ideas/hooks/use-idea-mutations';
 import {
   toIdeaDetails,
@@ -36,7 +34,11 @@ export function useSimilarIdeasQuery(
   return useQuery({
     queryKey: [...ideaMutationKeys.detail(ideaId), 'similar'] as const,
     queryFn: async () => {
-      const items = await fetchSimilarIdeas(ideaId);
+      const items = await fetchSimilarItems({
+        entityType: 'idea',
+        sourceId: ideaId,
+        limit: 3,
+      });
       return items.map(toSimilarIdeaCard);
     },
     enabled: Boolean(ideaId) && (options?.enabled ?? true),
