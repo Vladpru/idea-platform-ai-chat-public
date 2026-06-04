@@ -12,13 +12,14 @@ import {
 } from '@/features/ideas/ui/create-idea/Fields';
 import { IdeaEditAttachmentsField } from '@/features/ideas/ui/idea-form/IdeaEditAttachmentsField';
 import { IdeaEditMainImageField } from '@/features/ideas/ui/idea-form/IdeaEditMainImageField';
+import { SuggestedTagsField } from '@/features/tags/ui/SuggestedTagsField';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ChevronDown } from 'lucide-react';
 import { useEffect, useId } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 
 import { cn } from '@/shared/lib/utils';
-import { TagsInput, selectClass } from '@/shared/ui/TagsInput';
+import { selectClass } from '@/shared/ui/TagsInput';
 import { Input } from '@/shared/ui/input';
 
 export type IdeaFormInitialData = IdeaEditFormValues;
@@ -147,23 +148,13 @@ export function IdeaForm({
         />
       </FieldGroup>
 
-      <FieldGroup>
-        <FieldLabel htmlFor={`${formId}-tags`}>Tags</FieldLabel>
-        <Controller
-          name="tags"
-          control={control}
-          render={({ field }) => (
-            <TagsInput
-              id={`${formId}-tags`}
-              value={field.value ?? ''}
-              onChange={field.onChange}
-              disabled={isSubmitting}
-              aria-invalid={!!errors.tags}
-            />
-          )}
-        />
-        <FieldError message={errors.tags?.message} />
-      </FieldGroup>
+      <SuggestedTagsField
+        formId={formId}
+        control={control}
+        errors={errors}
+        disabled={isSubmitting}
+        context="idea"
+      />
 
       <FieldGroup>
         <FieldLabel>Files</FieldLabel>
