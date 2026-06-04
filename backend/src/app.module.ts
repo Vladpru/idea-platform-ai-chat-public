@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 import { AiImageModule } from './ai-image/ai-image.module';
@@ -13,6 +15,7 @@ import { PasswordResetModule } from './password-reset/password-reset.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProblemModule } from './problem/problem.module';
 import { SearchModule } from './search/search.module';
+import { SimilarityModule } from './similarity/similarity.module';
 import { StatisticsModule } from './statistics/statistics.module';
 import { TagModule } from './tag/tag.module';
 import { TokenModule } from './token/token.module';
@@ -30,6 +33,8 @@ import { UserModule } from './user/user.module';
         limit: 30,
       },
     ]),
+    EventEmitterModule.forRoot(),
+    ScheduleModule.forRoot(),
     UserModule,
     AiModule,
     AiImageModule,
@@ -42,6 +47,7 @@ import { UserModule } from './user/user.module';
     TokenModule,
     MailModule,
     SearchModule,
+    SimilarityModule,
     StatisticsModule,
     TagModule,
   ],

@@ -59,15 +59,6 @@ export async function fetchIdeaFormById(
   return data;
 }
 
-export async function fetchSimilarIdeas(
-  ideaId: string,
-): Promise<IdeaFormResponseDto[]> {
-  const { data } = await api.get<IdeaFormResponseDto[]>(
-    IDEAS_ROUTES.similar(ideaId),
-  );
-  return data;
-}
-
 export async function createIdea(payload: CreateIdeaPayload): Promise<IdeaApi> {
   const { data } = await api.post<IdeaApi>(IDEAS_ROUTES.root, payload);
   return data;

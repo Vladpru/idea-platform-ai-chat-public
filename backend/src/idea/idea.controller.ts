@@ -124,19 +124,6 @@ export class IdeaController {
     return this.ideaQueryService.findAllPublic(query, req.user.id);
   }
 
-  @Get(':id/similar')
-  @JwtAuth()
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get top 3 similar ideas based on text relevance' })
-  @ApiOkResponse({ description: 'Array of top 3 similar ideas' })
-  @ApiNotFoundResponse({ description: 'Idea not found' })
-  findSimilar(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Req() req: AuthenticatedRequest,
-  ) {
-    return this.ideaQueryService.findSimilar(id, req.user.id);
-  }
-
   @Get(':id')
   @JwtAuth()
   @ApiBearerAuth()
