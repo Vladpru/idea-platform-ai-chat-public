@@ -21,6 +21,12 @@ export type IdeaPrefillOutput = {
   tags: string[];
 };
 
+export type SuggestTagsInput = {
+  title?: string;
+  description: string;
+  knownTags?: string[];
+};
+
 export interface AiProvider {
   generateIdeaPrefill(input: IdeaPrefillInput): Promise<IdeaPrefillOutput>;
 }

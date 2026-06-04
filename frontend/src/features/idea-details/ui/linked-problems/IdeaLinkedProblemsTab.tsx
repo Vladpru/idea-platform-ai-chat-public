@@ -18,6 +18,7 @@ import { cn } from '@/shared/lib/utils';
 import { AppDropdown, type DropdownItem } from '@/shared/ui/AppDropdown';
 import { LikeButton } from '@/shared/ui/LikeButton';
 import { Button } from '@/shared/ui/button';
+import { ConfirmModal } from '@/shared/ui/confirm-modal';
 
 type IdeaLinkedProblemsTabProps = {
   ideaId: string;
@@ -172,13 +173,26 @@ export function IdeaLinkedProblemsTab({
 }: IdeaLinkedProblemsTabProps) {
   const [linkModalOpen, setLinkModalOpen] = useState(false);
   const [createProblemOpen, setCreateProblemOpen] = useState(false);
+  const [pendingUnlinkProblemId, setPendingUnlinkProblemId] = useState<
+    string | null
+  >(null);
   const linkMutation = useLinkProblemMutation();
   const unlinkMutation = useUnlinkProblemMutation();
   const linkedProblemIds = problems.map(problem => problem.id);
   const linkedSet = new Set(linkedProblemIds);
+  const pendingUnlinkProblem = problems.find(
+    problem => problem.id === pendingUnlinkProblemId,
+  );
 
-  const handleUnlink = (problemId: string) => {
-    unlinkMutation.mutate({ ideaId, problemId });
+  const handleConfirmUnlink = () => {
+    if (!pendingUnlinkProblemId) {
+      return;
+    }
+
+    unlinkMutation.mutate(
+      { ideaId, problemId: pendingUnlinkProblemId },
+      { onSuccess: () => setPendingUnlinkProblemId(null) },
+    );
   };
 
   const handleProblemCreated = (problem: ProblemDraft) => {
@@ -217,6 +231,28 @@ export function IdeaLinkedProblemsTab({
         onCreated={handleProblemCreated}
       />
 
+      <ConfirmModal
+        open={pendingUnlinkProblemId !== null}
+        onOpenChange={open => {
+          if (!open) {
+            setPendingUnlinkProblemId(null);
+          }
+        }}
+        title="Unlink problem?"
+        description={
+          pendingUnlinkProblem
+            ? `Are you sure you want to unlink "${pendingUnlinkProblem.title}" from this idea?`
+            : 'Are you sure you want to unlink this problem from this idea?'
+        }
+        confirmLabel="Confirm"
+        cancelLabel="Cancel"
+        onConfirm={handleConfirmUnlink}
+        isPending={
+          unlinkMutation.isPending &&
+          unlinkMutation.variables?.problemId === pendingUnlinkProblemId
+        }
+      />
+
       {problems.length === 0 ? (
         <p className="py-16 text-center text-sm font-medium text-gray-500">
           No problems linked to this idea yet.
@@ -232,7 +268,7 @@ export function IdeaLinkedProblemsTab({
                   unlinkMutation.isPending &&
                   unlinkMutation.variables?.problemId === problem.id
                 }
-                onUnlink={() => handleUnlink(problem.id)}
+                onUnlink={() => setPendingUnlinkProblemId(problem.id)}
               />
             </li>
           ))}

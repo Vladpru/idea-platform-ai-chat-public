@@ -15,6 +15,7 @@ import { useDiscussionUiStore } from '@/features/discussion/model/discussion-ui-
 import { useReplyContext } from '@/features/discussion/ui/reply-context';
 import { getAttachmentFileKey } from '@/features/ideas/lib/create-idea/attachments';
 import { IdeaAttachmentCard } from '@/features/ideas/ui/create-idea/IdeaAttachmentCard';
+import { useBlocker } from '@tanstack/react-router';
 import { Paperclip, Send } from 'lucide-react';
 import {
   useCallback,
@@ -96,6 +97,12 @@ export function CommentInputArea({
   const isOverLimit = contentLength > MAX_CHARS;
 
   const canSubmit = (contentLength > 0 || hasFiles) && !isOverLimit;
+  const hasUnsavedDraft = contentLength > 0 || hasFiles;
+
+  useBlocker({
+    shouldBlockFn: () => false,
+    enableBeforeUnload: () => hasUnsavedDraft,
+  });
 
   const adjustTextareaHeight = useCallback(() => {
     const element = textareaRef.current;

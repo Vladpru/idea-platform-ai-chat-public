@@ -1,20 +1,8 @@
 import { InternalServerErrorException, Logger } from '@nestjs/common';
 
 import type { IdeaPrefillInput, IdeaPrefillOutput } from '../types/ai.types';
-import type { GeminiGenerateContentResponse } from './gemini.types';
 
 const logger = new Logger('GeminiResponse');
-
-export function extractGeminiText(
-  payload: GeminiGenerateContentResponse,
-): string {
-  return (
-    payload.candidates?.[0]?.content?.parts
-      ?.map(part => part.text ?? '')
-      .join('')
-      .trim() ?? ''
-  );
-}
 
 export function parseGeminiJsonResponse(raw: string): unknown {
   const cleaned = raw
@@ -30,6 +18,18 @@ export function parseGeminiJsonResponse(raw: string): unknown {
       'AI returned invalid response format',
     );
   }
+}
+
+export function normalizeSuggestedTagsResponse(parsed: unknown): string[] {
+  const source = parsed as { tags?: unknown } | null;
+  if (!Array.isArray(source?.tags)) {
+    return [];
+  }
+
+  return source.tags
+    .map(tag => String(tag).trim())
+    .filter(Boolean)
+    .slice(0, 6);
 }
 
 export function normalizeIdeaPrefillResponse(

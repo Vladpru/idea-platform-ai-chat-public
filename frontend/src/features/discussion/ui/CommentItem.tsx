@@ -315,6 +315,7 @@ export function CommentItem({
 
   const { proceed, reset, status } = useBlocker({
     shouldBlockFn: () => isDirty,
+    enableBeforeUnload: () => isDirty,
     withResolver: true,
   });
 
@@ -336,16 +337,6 @@ export function CommentItem({
       setNavigationBlockConfirmed(true);
     });
   }, [status]);
-
-  useEffect(() => {
-    if (!isDirty) return;
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = '';
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isDirty]);
 
   useEffect(() => {
     if (!isEditing) return;

@@ -31,7 +31,7 @@ const TABS: TabConfig[] = [
 ];
 
 const tabsNavClass =
-  'scrollbar-none flex w-full min-w-0 touch-pan-x gap-3 overflow-x-auto overscroll-x-contain border-b border-gray-200 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-6';
+  'scrollbar-none overflow-y-hidden flex w-full min-w-0 touch-pan-x gap-3 overflow-x-auto overscroll-x-contain border-b border-gray-200 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-6';
 
 export function ProblemTabs({
   activeTab,
