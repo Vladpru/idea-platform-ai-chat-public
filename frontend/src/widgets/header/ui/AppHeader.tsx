@@ -7,6 +7,7 @@ import { Bell, ChevronDown, Search } from 'lucide-react';
 import { ROUTES } from '@/shared/config/paths';
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
+import { ThemeToggle } from '@/shared/ui/theme-toggle';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -134,6 +135,8 @@ export function AppHeader() {
         >
           <Bell size={22} strokeWidth={2} />
         </button>
+
+        <ThemeToggle className="border-0 text-white hover:bg-white/10" />
 
         <div className="w-min-[] hidden lg:block">
           <UserNav triggerClassName=" transition-opacity cursor-pointer" />
