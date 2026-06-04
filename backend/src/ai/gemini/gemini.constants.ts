@@ -6,9 +6,6 @@ export const GEMINI_MODEL_FALLBACKS = [
   'gemini-2.0-flash-lite',
 ] as const;
 
-export const GEMINI_API_BASE_URL =
-  'https://generativelanguage.googleapis.com/v1beta';
-
 export function buildModelsToTry(configuredModel: string): string[] {
   return [
     configuredModel,

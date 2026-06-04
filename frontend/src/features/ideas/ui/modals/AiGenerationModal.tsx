@@ -62,6 +62,15 @@ export function AiGenerationModal({
     handleOpenChange(false);
   };
 
+  const handleInputKeyDown = (
+    event: React.KeyboardEvent<HTMLTextAreaElement>,
+  ) => {
+    if (event.key !== 'Enter' || event.shiftKey) return;
+    event.preventDefault();
+    if (!canSubmit || isSubmitting) return;
+    onSubmit();
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
@@ -92,7 +101,10 @@ export function AiGenerationModal({
 
           <div className="mt-6 space-y-5">
             <div>
-              <Label htmlFor="ai-generation-modal-input" className={fieldLabelClass}>
+              <Label
+                htmlFor="ai-generation-modal-input"
+                className={fieldLabelClass}
+              >
                 {inputLabel}
               </Label>
               <textarea
@@ -101,6 +113,7 @@ export function AiGenerationModal({
                 placeholder={inputPlaceholder}
                 value={inputValue}
                 onChange={event => onInputChange(event.target.value)}
+                onKeyDown={handleInputKeyDown}
                 disabled={isSubmitting}
               />
             </div>

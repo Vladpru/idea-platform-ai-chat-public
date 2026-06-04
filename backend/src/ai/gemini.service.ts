@@ -1,3 +1,4 @@
+import { GoogleGenAI } from '@google/genai';
 import {
   GatewayTimeoutException,
   HttpException,
@@ -11,20 +12,17 @@ import {
   createGeminiProviderException,
   createGeminiQuotaException,
   isGeminiQuotaExceeded,
-  parseGeminiProviderErrorMessage,
   parseGeminiRetryAfterSeconds,
 } from './gemini/gemini-error.util';
-import { postGeminiGenerateContent } from './gemini/gemini-http.client';
 import {
-  extractGeminiText,
   normalizeIdeaPrefillResponse,
   parseGeminiJsonResponse,
 } from './gemini/gemini-response.util';
+import { generateGeminiPrefillContent } from './gemini/gemini.client';
 import {
   DEFAULT_GEMINI_MODEL,
   buildModelsToTry,
 } from './gemini/gemini.constants';
-import type { GeminiGenerateContentResponse } from './gemini/gemini.types';
 import type {
   AiProvider,
   IdeaPrefillInput,
@@ -34,6 +32,7 @@ import type {
 @Injectable()
 export class GeminiService implements AiProvider {
   private readonly logger = new Logger(GeminiService.name);
+  private readonly client: GoogleGenAI;
   private readonly apiKey: string;
   private readonly configuredModel: string;
   private readonly timeoutMs: number;
@@ -41,6 +40,7 @@ export class GeminiService implements AiProvider {
 
   constructor(private readonly config: ConfigService) {
     this.apiKey = this.config.getOrThrow<string>('GEMINI_API_KEY').trim();
+    this.client = new GoogleGenAI({ apiKey: this.apiKey });
     this.configuredModel =
       this.config.get<string>('GEMINI_MODEL')?.trim() || DEFAULT_GEMINI_MODEL;
     this.timeoutMs = Number(
@@ -168,8 +168,8 @@ export class GeminiService implements AiProvider {
     let retryAfterSeconds = state.retryAfterSeconds;
 
     for (const attempt of attempts) {
-      const response = await postGeminiGenerateContent({
-        apiKey: this.apiKey,
+      const response = await generateGeminiPrefillContent({
+        client: this.client,
         model,
         input,
         jsonMode: attempt.jsonMode,
@@ -177,24 +177,20 @@ export class GeminiService implements AiProvider {
       });
 
       if (response.ok) {
-        const payload =
-          (await response.json()) as GeminiGenerateContentResponse;
-        const text = extractGeminiText(payload);
-        if (!text) {
+        if (!response.text) {
           throw new InternalServerErrorException(
             'AI returned an empty response',
           );
         }
 
-        const parsed = parseGeminiJsonResponse(text);
+        const parsed = parseGeminiJsonResponse(response.text);
         return {
           kind: 'success',
           data: normalizeIdeaPrefillResponse(parsed, input),
         };
       }
 
-      const errorBody = await response.text();
-      lastProviderMessage = parseGeminiProviderErrorMessage(errorBody);
+      lastProviderMessage = response.message;
       lastStatus = response.status;
       this.logger.error(
         `Gemini request failed (model=${model}, jsonMode=${attempt.jsonMode}, status=${response.status}): ${lastProviderMessage}`,

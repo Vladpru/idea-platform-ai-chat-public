@@ -1,20 +1,8 @@
 import { InternalServerErrorException, Logger } from '@nestjs/common';
 
 import type { IdeaPrefillInput, IdeaPrefillOutput } from '../types/ai.types';
-import type { GeminiGenerateContentResponse } from './gemini.types';
 
 const logger = new Logger('GeminiResponse');
-
-export function extractGeminiText(
-  payload: GeminiGenerateContentResponse,
-): string {
-  return (
-    payload.candidates?.[0]?.content?.parts
-      ?.map(part => part.text ?? '')
-      .join('')
-      .trim() ?? ''
-  );
-}
 
 export function parseGeminiJsonResponse(raw: string): unknown {
   const cleaned = raw
