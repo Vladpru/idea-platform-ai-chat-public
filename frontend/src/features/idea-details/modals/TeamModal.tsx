@@ -57,7 +57,7 @@ export function TeamModal({
       <SheetContent
         side={isMobile ? 'bottom' : 'right'}
         className={cn(
-          'flex flex-col bg-white p-0',
+          'bg-card flex flex-col p-0',
 
           isMobile
             ? 'data-[side=bottom]:data-closed:slide-out-to-bottom-full w-full max-w-full border-none transition duration-300 ease-in-out data-[side=bottom]:h-full data-[side=bottom]:rounded-none'

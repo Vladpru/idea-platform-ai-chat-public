@@ -14,7 +14,7 @@ const EDIT_ICON = <Edit2 className="size-4" />;
 const DELETE_ICON = <Trash2 className="size-4" />;
 
 const TRIGGER_CLASS =
-  'group/btn border-brand-dark-blue hover:bg-brand-dark-blue focus-visible:ring-brand-orange h-8 w-8 shrink-0 rounded-md border bg-white focus-visible:ring-2';
+  'group/btn border-brand-dark-blue hover:bg-brand-dark-blue focus-visible:ring-brand-orange h-8 w-8 shrink-0 rounded-md border bg-card focus-visible:ring-2';
 
 export function CommentItemActions({
   isMutating,

@@ -364,7 +364,7 @@ export function CommentItem({
       <article
         id={`comment-${comment.id}`}
         className={cn(
-          'data-[highlighted=true]:!bg-brand-dark-blue/10 mb-4 rounded-lg border bg-white p-5 shadow-sm transition-colors duration-500',
+          'data-[highlighted=true]:!bg-brand-dark-blue/10 bg-card mb-4 rounded-lg border p-5 shadow-sm transition-colors duration-500',
           isClientError ? 'border-red-200 bg-red-50/40' : 'border-gray-200',
         )}
         aria-label={`Comment by ${authorName}`}
@@ -407,7 +407,7 @@ export function CommentItem({
                 onChange={e => setEditContent(e.target.value)}
                 rows={4}
                 disabled={updateMutation.isPending}
-                className="border-brand-gray-200 text-brand-gray-800 focus:border-brand-dark-blue focus:ring-brand-dark-blue/20 w-full resize-y rounded-md border bg-white px-3 py-2 text-sm leading-relaxed focus:ring-2 focus:outline-none disabled:opacity-50"
+                className="border-brand-gray-200 text-brand-gray-800 focus:border-brand-dark-blue focus:ring-brand-dark-blue/20 bg-card w-full resize-y rounded-md border px-3 py-2 text-sm leading-relaxed focus:ring-2 focus:outline-none disabled:opacity-50"
                 aria-label="Edit comment"
               />
 
@@ -475,7 +475,7 @@ export function CommentItem({
                 />
                 <button
                   type="button"
-                  className="text-brand-gray-500 hover:text-brand-dark-blue flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="text-brand-gray-500 hover:text-brand-dark-blue bg-card flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-md border border-gray-200 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                   aria-label="Attach file"
                   disabled={updateMutation.isPending || atLimit}
                   onClick={() => fileInputRef.current?.click()}

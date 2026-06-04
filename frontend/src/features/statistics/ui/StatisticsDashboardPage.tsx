@@ -38,13 +38,13 @@ export function StatisticsDashboardPage() {
   return (
     <main className="bg-brand-neutral min-h-[calc(100vh-56px)] px-4 md:px-8 lg:px-12">
       <div className="mx-auto max-w-5xl 2xl:max-w-6xl">
-        <Card className="text-card-foreground min-h-[calc(100vh-56px)] rounded-none bg-white p-6 md:p-10">
+        <Card className="text-card-foreground bg-card min-h-[calc(100vh-56px)] rounded-none p-6 md:p-10">
           <h1 className={statisticsPageTitleClass}>Statistics</h1>
 
           {isLoading ? (
             <StatisticsGridSkeleton />
           ) : isError || !data ? (
-            <div className="mt-8 rounded-lg border border-red-200 bg-white p-6 text-center">
+            <div className="bg-card mt-8 rounded-lg border border-red-200 p-6 text-center">
               <p className="text-brand-gray-700 text-sm">
                 {getApiErrorMessage(error) || 'Failed to load statistics.'}
               </p>

@@ -39,7 +39,7 @@ export function AppModal({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         className={cn(
-          'border-brand-gray-200 max-w-md gap-0 rounded-lg border bg-white p-8 shadow-xl sm:max-w-[480px]',
+          'border-brand-gray-200 bg-card max-w-md gap-0 rounded-lg border p-8 shadow-xl sm:max-w-[480px]',
           className,
         )}
         onPointerDownOutside={event => {

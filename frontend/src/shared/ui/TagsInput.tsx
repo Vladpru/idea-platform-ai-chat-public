@@ -13,7 +13,7 @@ import {
 import { cn } from '@/shared/lib/utils';
 
 export const selectClass =
-  'border-brand-gray-200 bg-white text-foreground focus-visible:ring-ring flex h-10 w-full appearance-none rounded-md border px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
+  'border-brand-gray-200 bg-card text-foreground focus-visible:ring-ring flex h-10 w-full appearance-none rounded-md border px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
 
 function parseTags(value: string | undefined): string[] {
   if (!value) return [];
@@ -62,7 +62,9 @@ export function TagsInput({
   const [inputValue, setInputValue] = useState('');
   const [open, setOpen] = useState(false);
   const tags = parseTags(value);
-  const { data: allTags = [], isLoading } = useTagsQuery({ enabled: !disabled });
+  const { data: allTags = [], isLoading } = useTagsQuery({
+    enabled: !disabled,
+  });
 
   const selectedNamesLower = useMemo(
     () => new Set(tags.map(tag => tag.toLowerCase())),
@@ -204,7 +206,7 @@ export function TagsInput({
         <div
           id={listboxId}
           role="listbox"
-          className="border-brand-gray-200 absolute z-20 mt-1 w-full overflow-hidden rounded-md border bg-white shadow-md"
+          className="border-brand-gray-200 bg-card absolute z-20 mt-1 w-full overflow-hidden rounded-md border shadow-md"
         >
           <ul className="max-h-52 overflow-y-auto py-1">
             {isLoading ? (

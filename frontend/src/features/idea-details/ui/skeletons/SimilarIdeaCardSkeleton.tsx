@@ -11,7 +11,7 @@ export function SimilarIdeaCardSkeleton({
   return (
     <article
       className={cn(
-        'overflow-hidden rounded-lg border border-brand-gray-200 bg-white',
+        'border-brand-gray-200 bg-card overflow-hidden rounded-lg border',
         className,
       )}
       aria-hidden

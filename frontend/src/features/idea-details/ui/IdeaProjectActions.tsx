@@ -17,7 +17,7 @@ import { Button } from '@/shared/ui/button';
 import { ConfirmModal } from '@/shared/ui/confirm-modal';
 
 const quitBtnClass =
-  'border-brand-orange text-brand-orange hover:bg-brand-orange/10 h-10 rounded-sm border bg-white px-5 text-xs font-bold uppercase tracking-wide sm:text-sm';
+  'border-brand-orange text-brand-orange hover:bg-brand-orange/10 h-10 rounded-sm border bg-card px-5 text-xs font-bold uppercase tracking-wide sm:text-sm';
 
 type IdeaProjectActionsProps = {
   ideaId: string;

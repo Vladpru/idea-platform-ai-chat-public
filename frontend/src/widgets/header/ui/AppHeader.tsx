@@ -84,7 +84,7 @@ export function AppHeader() {
       <div className="flex items-center gap-2 sm:gap-3">
         <Link
           to={ROUTES.problemsNew}
-          className="text-brand-dark-blue hover:bg-brand-dark-blue hidden h-9 items-center rounded-sm border border-white bg-white px-3 text-xs font-bold tracking-wide uppercase transition-colors hover:text-white sm:h-10 sm:px-4 sm:text-sm lg:inline-flex"
+          className="text-brand-dark-blue hover:bg-brand-dark-blue bg-card hidden h-9 items-center rounded-sm border border-white px-3 text-xs font-bold tracking-wide uppercase transition-colors hover:text-white sm:h-10 sm:px-4 sm:text-sm lg:inline-flex"
         >
           ADD NEW PROBLEM
         </Link>
@@ -136,7 +136,7 @@ export function AppHeader() {
           <Bell size={22} strokeWidth={2} />
         </button>
 
-        <ThemeToggle className="border-0 text-white hover:bg-white/10" />
+        <ThemeToggle className="hover:bg-card/10 border-0 text-white" />
 
         <div className="w-min-[] hidden lg:block">
           <UserNav triggerClassName=" transition-opacity cursor-pointer" />

@@ -6,7 +6,7 @@ export type SkeletonProps = React.HTMLAttributes<HTMLDivElement>;
 
 /** Matches bordered dashboard / search result cards (see DashboardCardStandard). */
 const skeletonCardChromeClass =
-  'border-brand-gray-200 rounded-lg border bg-white';
+  'border-brand-gray-200 rounded-lg border bg-card';
 
 export function Skeleton({ className, ...props }: SkeletonProps) {
   return (

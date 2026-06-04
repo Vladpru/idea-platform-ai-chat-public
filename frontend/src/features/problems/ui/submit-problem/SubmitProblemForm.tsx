@@ -207,7 +207,7 @@ export function SubmitProblemForm() {
                   id={`${formId}-stage`}
                   className={cn(
                     selectClass,
-                    'mt-2 max-w-md w-full data-[size=default]:h-10',
+                    'mt-2 w-full max-w-md data-[size=default]:h-10',
                   )}
                   aria-invalid={!!errors.stage}
                 >
@@ -246,7 +246,7 @@ export function SubmitProblemForm() {
           </div>
           <Input
             id={`${formId}-title`}
-            className="mt-2 bg-white"
+            className="bg-card mt-2"
             placeholder="Keep it short and specific, e.g., 'Low visibility into equipment usage'..."
             aria-invalid={!!errors.title}
             disabled={isBusy}
@@ -268,7 +268,9 @@ export function SubmitProblemForm() {
             </FieldLabel>
             <IdeaCreateAiAssistLink
               disabled={isBusy}
-              onClick={isBusy ? undefined : () => openAssistModal('description')}
+              onClick={
+                isBusy ? undefined : () => openAssistModal('description')
+              }
             >
               {descriptionValue
                 ? 'Edit description with AI prompt'
@@ -342,7 +344,7 @@ export function SubmitProblemForm() {
               render={({ field }) => (
                 <Input
                   id={`${formId}-costBenefit`}
-                  className="bg-white pl-7"
+                  className="bg-card pl-7"
                   placeholder="1000.00"
                   maxLength={13}
                   inputMode="decimal"

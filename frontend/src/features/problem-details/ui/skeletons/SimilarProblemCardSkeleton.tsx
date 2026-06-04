@@ -11,7 +11,7 @@ export function SimilarProblemCardSkeleton({
   return (
     <article
       className={cn(
-        'space-y-4 rounded-lg border border-brand-gray-200 bg-white p-4 sm:p-5',
+        'border-brand-gray-200 bg-card space-y-4 rounded-lg border p-4 sm:p-5',
         className,
       )}
       aria-hidden

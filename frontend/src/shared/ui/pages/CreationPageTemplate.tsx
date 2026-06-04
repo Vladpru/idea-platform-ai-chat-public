@@ -25,7 +25,7 @@ export function CreationPageTemplate({
   return (
     <main className="bg-brand-neutral min-h-[calc(100vh-56px)] px-4 md:px-8 lg:px-12">
       <div className="mx-auto max-w-5xl">
-        <Card className="text-card-foreground rounded-none bg-white p-6 md:p-10">
+        <Card className="text-card-foreground bg-card rounded-none p-6 md:p-10">
           {backTo ? (
             <Link
               to={backTo}

@@ -109,7 +109,7 @@ export function DashboardFilter<TFilter extends string>({
         <button
           type="button"
           onClick={() => setIsMobileMenuOpen(true)}
-          className="border-brand-gray-200 text-brand-dark-blue flex min-w-[120px] items-center justify-between gap-2 rounded-md border bg-white px-4 py-2 text-sm font-bold shadow-sm"
+          className="border-brand-gray-200 text-brand-dark-blue bg-card flex min-w-[120px] items-center justify-between gap-2 rounded-md border px-4 py-2 text-sm font-bold shadow-sm"
         >
           <span className="truncate">{activeTab?.label || 'All'}</span>
           <ChevronDown className="text-brand-gray-400 size-4 shrink-0" />
@@ -124,7 +124,7 @@ export function DashboardFilter<TFilter extends string>({
             aria-hidden="true"
           />
 
-          <div className="animate-in slide-in-from-bottom-full relative flex max-h-[85vh] w-full flex-col overflow-hidden rounded-t-lg bg-white shadow-xl duration-300">
+          <div className="animate-in slide-in-from-bottom-full bg-card relative flex max-h-[85vh] w-full flex-col overflow-hidden rounded-t-lg shadow-xl duration-300">
             <div className="border-brand-gray-200 flex items-center justify-between border-b px-5 py-4">
               <h2 className="text-brand-dark-blue text-xl font-bold">Stage</h2>
               <button
@@ -163,7 +163,7 @@ export function DashboardFilter<TFilter extends string>({
               </ul>
             </div>
 
-            <div className="bg-white pt-1 pb-2">
+            <div className="bg-card pt-1 pb-2">
               <div className="bg-brand-black mx-auto h-1.5 w-16 rounded-full" />
             </div>
           </div>

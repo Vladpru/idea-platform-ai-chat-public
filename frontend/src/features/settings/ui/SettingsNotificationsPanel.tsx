@@ -72,7 +72,7 @@ export function SettingsNotificationsPanel() {
 
   return (
     <main className="bg-brand-neutral min-h-[calc(100vh-72px)]">
-      <section className="mx-auto w-full max-w-5xl bg-white px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-9">
+      <section className="bg-card mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-9">
         <h1 className={cn(pageTitleClass, 'text-3xl sm:text-4xl')}>Settings</h1>
 
         <div className="mt-7 sm:mt-9 lg:mt-11">

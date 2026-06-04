@@ -60,7 +60,7 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
         side="right"
         className="brand-gray-200 flex w-[300px] flex-col p-0 sm:w-[400px]"
       >
-        <SheetHeader className="border-primary border-b bg-white p-4 text-left">
+        <SheetHeader className="border-primary bg-card border-b p-4 text-left">
           <SheetTitle className="text-lg font-bold">Menu</SheetTitle>
         </SheetHeader>
 
@@ -72,7 +72,7 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
           >
             <AccordionItem
               value="navigation"
-              className="rounded-sm border border-slate-200 bg-white px-3"
+              className="bg-card rounded-sm border border-slate-200 px-3"
             >
               <AccordionTrigger className="text-primary px-1 py-2 text-sm font-semibold hover:underline">
                 Navigation
@@ -111,7 +111,7 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
             </AccordionItem>
             <AccordionItem
               value="profile"
-              className="rounded-sm border border-slate-200 bg-white px-3"
+              className="bg-card rounded-sm border border-slate-200 px-3"
             >
               <AccordionTrigger className="text-primary px-1 py-2 text-sm font-semibold hover:underline">
                 Profile

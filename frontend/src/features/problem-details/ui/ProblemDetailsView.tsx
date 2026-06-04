@@ -38,8 +38,12 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const userId = useAuthSessionStore(s => s.user?.id);
 
-  const { data: problem, isPending, isError, isSuccess } =
-    useProblemDetailsQuery(problemId);
+  const {
+    data: problem,
+    isPending,
+    isError,
+    isSuccess,
+  } = useProblemDetailsQuery(problemId);
 
   const { data: similarProblems = [], isLoading: isSimilarLoading } =
     useSimilarProblemsQuery(problemId, {
@@ -89,7 +93,7 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
 
   return (
     <main className="bg-brand-neutral min-h-[calc(100vh-56px)] px-4 md:px-8 lg:px-12">
-      <div className="mx-auto max-w-5xl space-y-6 bg-white px-4 py-6 sm:space-y-8 sm:px-6 sm:py-8">
+      <div className="bg-card mx-auto max-w-5xl space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-8">
         <AnimatePresence>
           {!isScrolled ? (
             <motion.div
@@ -112,7 +116,7 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
           ) : null}
         </AnimatePresence>
 
-        <div className="sticky top-[56px] z-30 -mx-4 bg-white px-4 py-3 shadow-sm transition-all duration-300 sm:-mx-6 sm:px-6">
+        <div className="bg-card sticky top-[56px] z-30 -mx-4 px-4 py-3 shadow-sm transition-all duration-300 sm:-mx-6 sm:px-6">
           <ProblemHeader
             problem={problem}
             isAuthor={isAuthor}

@@ -50,11 +50,9 @@ export function IdeaAttachmentCard({
         <div className="relative size-20 shrink-0">
           <button
             type="button"
-            className="border-brand-gray-200 size-full cursor-pointer overflow-hidden rounded-md border bg-white transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+            className="border-brand-gray-200 bg-card size-full cursor-pointer overflow-hidden rounded-md border transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
             onClick={() => openFile(file)}
-            aria-label={
-              isImage ? `Preview ${file.name}` : `Open ${file.name}`
-            }
+            aria-label={isImage ? `Preview ${file.name}` : `Open ${file.name}`}
           >
             {isImage ? (
               <AttachmentImagePreview
@@ -86,9 +84,7 @@ export function IdeaAttachmentCard({
           type="button"
           className="text-foreground line-clamp-2 w-full cursor-pointer text-center text-xs leading-tight hover:underline focus-visible:underline focus-visible:outline-none"
           onClick={() => openFile(file)}
-          aria-label={
-            isImage ? `Preview ${file.name}` : `Open ${file.name}`
-          }
+          aria-label={isImage ? `Preview ${file.name}` : `Open ${file.name}`}
         >
           {file.name}
         </button>

@@ -279,7 +279,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
 
   return (
     <main className="bg-brand-neutral min-h-[calc(100vh-56px)] px-4 md:px-8 lg:px-12">
-      <div className="mx-auto max-w-5xl space-y-6 bg-white px-4 py-6 sm:space-y-8 sm:px-6 sm:py-8">
+      <div className="bg-card mx-auto max-w-5xl space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-8">
         {isEditing ? (
           <div className="pb-2">
             <button
@@ -315,7 +315,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
               ) : null}
             </AnimatePresence>
 
-            <div className="sticky top-[56px] z-30 -mx-4 bg-white px-4 py-2 shadow-sm transition-all duration-300 sm:-mx-6 sm:px-6">
+            <div className="bg-card sticky top-[56px] z-30 -mx-4 px-4 py-2 shadow-sm transition-all duration-300 sm:-mx-6 sm:px-6">
               <IdeaHeader
                 idea={idea}
                 isAuthor={isAuthor}
@@ -376,7 +376,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
                   aria-label="Description"
                 >
                   {idea.mainImageUrl ? (
-                    <div className="border-brand-gray-200 overflow-hidden rounded-lg border bg-white">
+                    <div className="border-brand-gray-200 bg-card overflow-hidden rounded-lg border">
                       <img
                         src={idea.mainImageUrl}
                         alt=""
@@ -385,7 +385,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
                     </div>
                   ) : null}
                   {idea.description ? (
-                    <p className="text-brand-gray-800 font-EB-Garamond min-w-0 max-w-3xl wrap-break-word text-sm leading-relaxed whitespace-pre-wrap sm:text-base">
+                    <p className="text-brand-gray-800 font-EB-Garamond max-w-3xl min-w-0 text-sm leading-relaxed wrap-break-word whitespace-pre-wrap sm:text-base">
                       {idea.description}
                     </p>
                   ) : (

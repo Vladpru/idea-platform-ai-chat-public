@@ -34,7 +34,7 @@ export function HomeActivityCard({
   isLoading = false,
 }: HomeActivityCardProps) {
   return (
-    <section className="border-brand-gray-200 h-full rounded-lg border bg-white p-5 sm:p-6">
+    <section className="border-brand-gray-200 bg-card h-full rounded-lg border p-5 sm:p-6">
       <div className="mb-5 flex items-center gap-3">
         <span className="bg-brand-light-blue text-brand-dark-blue flex size-9 shrink-0 items-center justify-center rounded-md">
           <Icon className="size-5" aria-hidden />

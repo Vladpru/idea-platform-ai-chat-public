@@ -132,7 +132,7 @@ function TabButton({
       <span
         className={cn(
           'inline-flex min-w-[24px] items-center justify-center rounded px-1.5 py-0.5 text-xs font-bold',
-          'text-brand-black bg-white',
+          'text-brand-black bg-card',
         )}
       >
         {count}
@@ -287,7 +287,7 @@ export function GlobalSearchPage() {
                 aria-invalid={!!error}
                 aria-describedby={error ? 'search-error' : undefined}
                 className={cn(
-                  'h-12 w-full rounded-lg bg-white pr-4 pl-12 text-base shadow-sm ring-0 transition-all sm:h-14 sm:rounded-sm',
+                  'bg-card h-12 w-full rounded-lg pr-4 pl-12 text-base shadow-sm ring-0 transition-all sm:h-14 sm:rounded-sm',
                   'border-brand-gray-200 focus:ring-1',
 
                   error

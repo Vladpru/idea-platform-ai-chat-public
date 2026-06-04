@@ -132,7 +132,7 @@ function LinkedProblemCard({
     <Button
       variant="ghost"
       size="icon"
-      className="group/btn border-brand-dark-blue hover:bg-brand-dark-blue focus-visible:ring-brand-orange h-8 w-8 shrink-0 rounded-md border bg-white focus-visible:ring-2"
+      className="group/btn border-brand-dark-blue hover:bg-brand-dark-blue focus-visible:ring-brand-orange bg-card h-8 w-8 shrink-0 rounded-md border focus-visible:ring-2"
     >
       <MoreVertical className="text-brand-dark-blue size-4 transition-colors group-hover/btn:text-white" />
       <span className="sr-only">Open menu</span>

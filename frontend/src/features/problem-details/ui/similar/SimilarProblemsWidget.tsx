@@ -34,7 +34,7 @@ export function SimilarProblemsWidget({
       {isLoading ? (
         <SimilarProblemsListSkeleton />
       ) : showEmpty ? (
-        <div className="border-brand-gray-200 text-brand-gray-600 rounded-lg border border-dashed bg-white px-6 py-12 text-center">
+        <div className="border-brand-gray-200 text-brand-gray-600 bg-card rounded-lg border border-dashed px-6 py-12 text-center">
           <p className="text-sm font-semibold tracking-wide uppercase">
             No similar problems yet
           </p>

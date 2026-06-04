@@ -47,17 +47,13 @@ export function IdeaSelect({ formId, control, errors }: IdeaSelectProps) {
   const ideaIdsValue = useWatch({ control, name: 'ideaIds' });
   const excludeIds = parseIdeaIds(ideaIdsValue);
 
-  const {
-    allIdeas,
-    suggestedIdeas,
-    isIdeasListLoading,
-    isSuggestionsLoading,
-  } = useIdeaSuggestions({
-    title: problemTitle,
-    description: problemDescription,
-    tags: problemTags,
-    excludeIds,
-  });
+  const { allIdeas, suggestedIdeas, isIdeasListLoading, isSuggestionsLoading } =
+    useIdeaSuggestions({
+      title: problemTitle,
+      description: problemDescription,
+      tags: problemTags,
+      excludeIds,
+    });
 
   const resolveIdeaLabel = (id: string) =>
     allIdeas.find(idea => idea.id === id)?.label;
@@ -171,7 +167,7 @@ export function IdeaSelect({ formId, control, errors }: IdeaSelectProps) {
                 </div>
                 <ChevronDown
                   className={cn(
-                    'text-brand-gray-600 pointer-events-none absolute top-1/2 right-3 z-10 size-4 -translate-y-1/2 bg-white pl-1 transition-transform',
+                    'text-brand-gray-600 bg-card pointer-events-none absolute top-1/2 right-3 z-10 size-4 -translate-y-1/2 pl-1 transition-transform',
                     open && 'rotate-180',
                   )}
                   aria-hidden
@@ -183,7 +179,7 @@ export function IdeaSelect({ formId, control, errors }: IdeaSelectProps) {
                   id={listboxId}
                   role="listbox"
                   aria-multiselectable
-                  className="border-brand-gray-200 absolute z-20 mt-1 w-full overflow-hidden rounded-md border bg-white shadow-md"
+                  className="border-brand-gray-200 bg-card absolute z-20 mt-1 w-full overflow-hidden rounded-md border shadow-md"
                 >
                   {allIdeas.length !== 0 && (
                     <div className="mx-2 p-2">
@@ -195,7 +191,7 @@ export function IdeaSelect({ formId, control, errors }: IdeaSelectProps) {
                             handleSearchInputEscape(event, closeDropdown);
                           }}
                           placeholder="Search"
-                          className="focus-visible:ring-brand-gray-200 text-brand-gray-500 h-8 rounded-xs bg-white pr-9 text-xs focus-visible:ring-1"
+                          className="focus-visible:ring-brand-gray-200 text-brand-gray-500 bg-card h-8 rounded-xs pr-9 text-xs focus-visible:ring-1"
                           aria-label="Search ideas"
                         />
                         <Search

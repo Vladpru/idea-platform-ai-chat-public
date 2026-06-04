@@ -37,7 +37,7 @@ export function LinkedItemMiniCard({
         draggable={false}
         {...suppressNavigationProps}
         className={cn(
-          'border-brand-gray-200 hover:border-brand-dark-blue group/linked-item flex shrink-0 flex-col overflow-hidden rounded-lg border bg-white transition-all hover:shadow-md',
+          'border-brand-gray-200 hover:border-brand-dark-blue group/linked-item bg-card flex shrink-0 flex-col overflow-hidden rounded-lg border transition-all hover:shadow-md',
           narrow ? 'w-[120px]' : 'w-[200px] sm:w-[210px]',
         )}
       >
@@ -88,7 +88,7 @@ export function LinkedItemMiniCard({
       draggable={false}
       {...suppressNavigationProps}
       className={cn(
-        'border-brand-gray-200 hover:border-brand-dark-blue focus-visible:ring-brand-dark-blue flex shrink-0 items-center rounded-lg border bg-white transition-colors hover:shadow-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+        'border-brand-gray-200 hover:border-brand-dark-blue focus-visible:ring-brand-dark-blue bg-card flex shrink-0 items-center rounded-lg border transition-colors hover:shadow-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
         narrow ? 'w-[140px] px-2.5 py-1.5' : 'w-[260px] px-4 py-2',
       )}
     >

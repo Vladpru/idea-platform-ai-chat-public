@@ -97,7 +97,7 @@ function LinkedIdeaCard({
   onUnlink,
 }: LinkedIdeaCardProps) {
   return (
-    <article className="flex flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm lg:flex-row">
+    <article className="bg-card flex flex-col overflow-hidden rounded-xl border border-gray-100 shadow-sm lg:flex-row">
       <div className="relative flex aspect-[16/10] w-full shrink-0 items-center justify-center bg-gradient-to-br from-slate-800 via-slate-900 to-indigo-950 lg:aspect-auto lg:min-h-[200px] lg:w-[240px]">
         {idea.imageUrl ? (
           <img
@@ -135,7 +135,7 @@ function LinkedIdeaCard({
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="text-brand-gray-500 hover:bg-brand-gray-100 inline-flex size-8 shrink-0 items-center justify-center rounded-md border border-gray-200 bg-white transition-colors"
+                    className="text-brand-gray-500 hover:bg-brand-gray-100 bg-card inline-flex size-8 shrink-0 items-center justify-center rounded-md border border-gray-200 transition-colors"
                     aria-label={`Actions for ${idea.title}`}
                   >
                     <MoreVertical className="size-4" aria-hidden />

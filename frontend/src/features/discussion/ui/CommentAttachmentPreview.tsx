@@ -18,9 +18,7 @@ export function CommentAttachmentPreview({
 }: CommentAttachmentPreviewProps) {
   const isImage =
     attachment.mimeType?.startsWith('image/') ||
-    /\.(jpe?g|png|gif|webp|svg|bmp|avif)$/i.test(
-      attachment.originalFilename,
-    );
+    /\.(jpe?g|png|gif|webp|svg|bmp|avif)$/i.test(attachment.originalFilename);
 
   return (
     <a
@@ -41,13 +39,9 @@ export function CommentAttachmentPreview({
           : undefined
       }
     >
-      <div className="border-brand-gray-200 size-20 shrink-0 overflow-hidden rounded-md border bg-white">
+      <div className="border-brand-gray-200 bg-card size-20 shrink-0 overflow-hidden rounded-md border">
         {isImage ? (
-          <img
-            src={attachment.url}
-            alt=""
-            className="size-full object-cover"
-          />
+          <img src={attachment.url} alt="" className="size-full object-cover" />
         ) : (
           <div className="flex size-full items-center justify-center">
             <img

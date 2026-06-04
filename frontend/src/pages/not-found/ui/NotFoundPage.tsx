@@ -25,7 +25,7 @@ function NotFoundContent() {
     <div className="bg-brand-gray-100 dark:bg-background flex flex-1 items-center justify-center py-8 md:min-w-4xl md:px-8">
       <Card
         className={cn(
-          'mx-auto w-full border-0 bg-white px-6 py-12 text-center shadow-none',
+          'bg-card mx-auto w-full border-0 px-6 py-12 text-center shadow-none',
           'flex flex-col justify-center md:h-[400px] md:max-w-[1680px]',
           'dark:bg-card bg-brand-white md:px-16 md:py-16',
         )}
