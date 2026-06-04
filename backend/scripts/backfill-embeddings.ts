@@ -5,16 +5,21 @@ import { AppModule } from '../src/app.module';
 import { EmbeddingSyncService } from '../src/embedding/embedding-sync.service';
 import { PrismaService } from '../src/prisma/prisma.service';
 
-type EntityType = 'idea' | 'problem' | 'all';
+type EntityType = 'idea' | 'problem' | 'tag' | 'all';
 
 const logger = new Logger('BackfillEmbeddings');
 
 function parseEntity(value: string | undefined): EntityType {
-  if (value === 'idea' || value === 'problem' || value === 'all') {
+  if (
+    value === 'idea' ||
+    value === 'problem' ||
+    value === 'tag' ||
+    value === 'all'
+  ) {
     return value;
   }
   throw new Error(
-    `Invalid --entity value "${value ?? ''}". Expected idea, problem, or all.`,
+    `Invalid --entity value "${value ?? ''}". Expected idea, problem, tag, or all.`,
   );
 }
 
@@ -116,6 +121,45 @@ async function backfillProblems(
   return { processed, failed };
 }
 
+async function backfillTags(
+  prisma: PrismaService,
+  embeddingSyncService: EmbeddingSyncService,
+  batch: number,
+): Promise<{ processed: number; failed: number }> {
+  let processed = 0;
+  let failed = 0;
+  let lastId = '';
+
+  while (true) {
+    const rows = await prisma.$queryRaw<{ id: string }[]>`
+      SELECT id FROM tag
+      WHERE ai_embedding IS NULL AND id > ${lastId}
+      ORDER BY id ASC LIMIT ${batch}
+    `;
+
+    if (rows.length === 0) {
+      break;
+    }
+
+    for (const row of rows) {
+      try {
+        await embeddingSyncService.syncTagEmbedding(row.id);
+        processed += 1;
+        logger.log(
+          `Synced tag ${row.id} (${processed} processed, ${failed} failed)`,
+        );
+      } catch (error) {
+        failed += 1;
+        logger.error(`Failed tag ${row.id}: ${String(error)}`);
+      }
+    }
+
+    lastId = rows.at(-1)!.id;
+  }
+
+  return { processed, failed };
+}
+
 async function main(): Promise<void> {
   const { entity, batch } = parseCliArgs();
 
@@ -148,6 +192,13 @@ async function main(): Promise<void> {
       );
       logger.log(
         `Problems complete: ${problemStats.processed} processed, ${problemStats.failed} failed`,
+      );
+    }
+
+    if (entity === 'tag' || entity === 'all') {
+      const tagStats = await backfillTags(prisma, embeddingSyncService, batch);
+      logger.log(
+        `Tags complete: ${tagStats.processed} processed, ${tagStats.failed} failed`,
       );
     }
 

@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import {
   buildIdeaEmbeddingContent,
   buildProblemEmbeddingContent,
+  buildTagEmbeddingContent,
   hashEmbeddingContent,
 } from './embedding-content.util';
 import { EmbeddingService } from './embedding.service';
@@ -65,6 +66,50 @@ export class EmbeddingSyncService {
       UPDATE idea
       SET ai_embedding = ${vectorLiteral}::vector, embedding_hash = ${hash}
       WHERE id = ${ideaId}
+    `;
+  }
+
+  async syncTagEmbedding(tagId: string): Promise<void> {
+    const tag = await this.prisma.tag.findUnique({
+      where: { id: tagId },
+      select: {
+        id: true,
+        name: true,
+        label: true,
+        embeddingHash: true,
+      },
+    });
+
+    if (!tag) {
+      return;
+    }
+
+    const content = buildTagEmbeddingContent({
+      name: tag.name,
+      label: tag.label,
+    });
+    const hash = hashEmbeddingContent(content);
+
+    if (hash !== null && hash === tag.embeddingHash) {
+      return;
+    }
+
+    if (hash === null) {
+      await this.prisma.$executeRaw`
+        UPDATE tag
+        SET ai_embedding = NULL, embedding_hash = NULL
+        WHERE id = ${tagId}
+      `;
+      return;
+    }
+
+    const vector = await this.embeddingService.embedText(content);
+    const vectorLiteral = toPgVectorLiteral(vector);
+
+    await this.prisma.$executeRaw`
+      UPDATE tag
+      SET ai_embedding = ${vectorLiteral}::vector, embedding_hash = ${hash}
+      WHERE id = ${tagId}
     `;
   }
 
