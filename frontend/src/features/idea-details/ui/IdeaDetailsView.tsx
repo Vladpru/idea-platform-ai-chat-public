@@ -385,7 +385,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
                     </div>
                   ) : null}
                   {idea.description ? (
-                    <p className="text-brand-gray-800 font-EB-Garamond max-w-3xl min-w-0 text-sm leading-relaxed wrap-break-word whitespace-pre-wrap sm:text-base">
+                    <p className="text-brand-gray-800 font-EB-Garamond max-w-full min-w-0 text-sm leading-relaxed wrap-break-word whitespace-pre-wrap sm:text-base">
                       {idea.description}
                     </p>
                   ) : (

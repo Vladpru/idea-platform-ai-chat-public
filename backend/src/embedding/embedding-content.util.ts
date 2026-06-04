@@ -27,6 +27,13 @@ export function buildIdeaEmbeddingContent(input: {
   return `title: ${input.title ?? ''}\ndescription: ${input.description ?? ''}\ntags: ${tags}`;
 }
 
+export function buildTagEmbeddingContent(input: {
+  name: string;
+  label?: string | null;
+}): string {
+  return `name: ${input.name}\nlabel: ${input.label?.trim() || input.name}`;
+}
+
 export function buildProblemEmbeddingContent(input: {
   title?: string | null;
   description?: string | null;

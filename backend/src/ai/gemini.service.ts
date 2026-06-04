@@ -1,3 +1,4 @@
+import { GoogleGenAI } from '@google/genai';
 import {
   GatewayTimeoutException,
   HttpException,
@@ -11,41 +12,51 @@ import {
   createGeminiProviderException,
   createGeminiQuotaException,
   isGeminiQuotaExceeded,
-  parseGeminiProviderErrorMessage,
   parseGeminiRetryAfterSeconds,
 } from './gemini/gemini-error.util';
-import { postGeminiGenerateContent } from './gemini/gemini-http.client';
 import {
-  extractGeminiText,
   normalizeIdeaPrefillResponse,
+  normalizeSuggestedTagsResponse,
   parseGeminiJsonResponse,
 } from './gemini/gemini-response.util';
+import { buildGeminiTagPrompt } from './gemini/gemini-tag-prompt.util';
+import {
+  generateGeminiJsonContent,
+  generateGeminiPrefillContent,
+} from './gemini/gemini.client';
 import {
   DEFAULT_GEMINI_MODEL,
   buildModelsToTry,
 } from './gemini/gemini.constants';
-import type { GeminiGenerateContentResponse } from './gemini/gemini.types';
 import type {
   AiProvider,
   IdeaPrefillInput,
   IdeaPrefillOutput,
+  SuggestTagsInput,
 } from './types/ai.types';
+
+const DEFAULT_TAG_SUGGESTIONS_TOTAL_TIMEOUT_MS = 15_000;
 
 @Injectable()
 export class GeminiService implements AiProvider {
   private readonly logger = new Logger(GeminiService.name);
+  private readonly client: GoogleGenAI;
   private readonly apiKey: string;
   private readonly configuredModel: string;
   private readonly timeoutMs: number;
+  private readonly tagSuggestionsTotalTimeoutMs: number;
   private readonly isDevelopment: boolean;
 
   constructor(private readonly config: ConfigService) {
     this.apiKey = this.config.getOrThrow<string>('GEMINI_API_KEY').trim();
+    this.client = new GoogleGenAI({ apiKey: this.apiKey });
     this.configuredModel =
       this.config.get<string>('GEMINI_MODEL')?.trim() || DEFAULT_GEMINI_MODEL;
     this.timeoutMs = Number(
       this.config.get<string>('GEMINI_TIMEOUT_MS') ?? '10000',
     );
+    this.tagSuggestionsTotalTimeoutMs =
+      this.resolveTagSuggestionsTotalTimeoutMs();
     this.isDevelopment =
       (this.config.get<string>('NODE_ENV') ?? 'development') === 'development';
 
@@ -57,14 +68,84 @@ export class GeminiService implements AiProvider {
     }
   }
 
+  async generateSuggestedTags(input: SuggestTagsInput): Promise<string[]> {
+    const enabled =
+      (this.config.get<string>('AI_TAG_SUGGESTIONS_ENABLED') ?? 'true')
+        .trim()
+        .toLowerCase() !== 'false';
+
+    if (!enabled) {
+      return [];
+    }
+
+    try {
+      const prompt = buildGeminiTagPrompt(input);
+      const models = buildModelsToTry(this.configuredModel);
+
+      return await this.runWithAggregateTimeout(
+        aggregateSignal =>
+          this.runTagSuggestionsModelFallback(models, prompt, aggregateSignal),
+        this.tagSuggestionsTotalTimeoutMs,
+      );
+    } catch (error) {
+      if (this.isAbortError(error)) {
+        this.logger.warn(
+          `Gemini tag suggestions exceeded aggregate timeout (${this.tagSuggestionsTotalTimeoutMs}ms)`,
+        );
+        return [];
+      }
+      this.logger.warn('Gemini tag suggestion failed', error as Error);
+      return [];
+    }
+  }
+
+  private async runTagSuggestionsModelFallback(
+    models: string[],
+    prompt: string,
+    aggregateSignal: AbortSignal,
+  ): Promise<string[]> {
+    for (const model of models) {
+      if (aggregateSignal.aborted) {
+        break;
+      }
+
+      this.logger.log(`Trying Gemini model for tag-suggestions: ${model}`);
+
+      try {
+        const tags = await this.runWithPerModelTimeout(
+          signal =>
+            this.tryTagSuggestionsForModel({
+              model,
+              prompt,
+              signal,
+            }),
+          { parentSignal: aggregateSignal },
+        );
+        if (tags !== null) {
+          return tags;
+        }
+      } catch (error) {
+        if (this.isAbortError(error)) {
+          if (aggregateSignal.aborted) {
+            throw error;
+          }
+          this.logger.warn(
+            `Model ${model} timed out for tag-suggestions, trying next fallback`,
+          );
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    return [];
+  }
+
   async generateIdeaPrefill(
     input: IdeaPrefillInput,
   ): Promise<IdeaPrefillOutput> {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
-
     try {
-      return await this.generateWithModelFallback(input, controller.signal);
+      return await this.generateWithModelFallback(input);
     } catch (error) {
       if (this.isKnownHttpError(error)) {
         throw error;
@@ -75,14 +156,11 @@ export class GeminiService implements AiProvider {
         throw new GatewayTimeoutException('AI generation timed out');
       }
       throw new InternalServerErrorException('Unable to generate AI draft');
-    } finally {
-      clearTimeout(timeoutId);
     }
   }
 
   private async generateWithModelFallback(
     input: IdeaPrefillInput,
-    signal: AbortSignal,
   ): Promise<IdeaPrefillOutput> {
     let lastProviderMessage = 'Unknown provider error';
     let lastStatus = 502;
@@ -90,17 +168,26 @@ export class GeminiService implements AiProvider {
     let retryAfterSeconds: number | undefined;
 
     for (const model of buildModelsToTry(this.configuredModel)) {
+      this.logger.log(`Trying Gemini model for idea-prefill: ${model}`);
+
       let result: Awaited<ReturnType<GeminiService['tryModel']>>;
       try {
-        result = await this.tryModel(model, input, signal, {
-          lastProviderMessage,
-          lastStatus,
-          lastQuotaMessage,
-          retryAfterSeconds,
-        });
+        result = await this.runWithPerModelTimeout(signal =>
+          this.tryModel(model, input, signal, {
+            lastProviderMessage,
+            lastStatus,
+            lastQuotaMessage,
+            retryAfterSeconds,
+          }),
+        );
       } catch (error) {
         if (this.isAbortError(error)) {
-          throw error;
+          this.logger.warn(
+            `Model ${model} timed out for idea-prefill, trying next fallback`,
+          );
+          lastProviderMessage = 'Request timed out';
+          lastStatus = 504;
+          continue;
         }
         throw error;
       }
@@ -113,6 +200,13 @@ export class GeminiService implements AiProvider {
       lastStatus = result.lastStatus;
       lastQuotaMessage = result.lastQuotaMessage;
       retryAfterSeconds = result.retryAfterSeconds;
+
+      if (result.kind === 'retry') {
+        this.logger.warn(
+          `Model ${model} failed (${lastStatus}), trying next fallback`,
+        );
+        continue;
+      }
 
       if (result.kind === 'fatal') {
         throw createGeminiProviderException(
@@ -168,8 +262,8 @@ export class GeminiService implements AiProvider {
     let retryAfterSeconds = state.retryAfterSeconds;
 
     for (const attempt of attempts) {
-      const response = await postGeminiGenerateContent({
-        apiKey: this.apiKey,
+      const response = await generateGeminiPrefillContent({
+        client: this.client,
         model,
         input,
         jsonMode: attempt.jsonMode,
@@ -177,24 +271,23 @@ export class GeminiService implements AiProvider {
       });
 
       if (response.ok) {
-        const payload =
-          (await response.json()) as GeminiGenerateContentResponse;
-        const text = extractGeminiText(payload);
-        if (!text) {
+        if (!response.text) {
           throw new InternalServerErrorException(
             'AI returned an empty response',
           );
         }
 
-        const parsed = parseGeminiJsonResponse(text);
+        const parsed = parseGeminiJsonResponse(response.text);
+        this.logSuccessfulGeneration('idea-prefill', model, {
+          jsonMode: attempt.jsonMode,
+        });
         return {
           kind: 'success',
           data: normalizeIdeaPrefillResponse(parsed, input),
         };
       }
 
-      const errorBody = await response.text();
-      lastProviderMessage = parseGeminiProviderErrorMessage(errorBody);
+      lastProviderMessage = response.message;
       lastStatus = response.status;
       this.logger.error(
         `Gemini request failed (model=${model}, jsonMode=${attempt.jsonMode}, status=${response.status}): ${lastProviderMessage}`,
@@ -241,6 +334,129 @@ export class GeminiService implements AiProvider {
       lastQuotaMessage,
       retryAfterSeconds,
     };
+  }
+
+  private async tryTagSuggestionsForModel({
+    model,
+    prompt,
+    signal,
+  }: {
+    model: string;
+    prompt: string;
+    signal: AbortSignal;
+  }): Promise<string[] | null> {
+    for (const jsonMode of [true, false]) {
+      const response = await generateGeminiJsonContent({
+        client: this.client,
+        model,
+        prompt,
+        jsonMode,
+        signal,
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          break;
+        }
+        if (isGeminiQuotaExceeded(response.status, response.message)) {
+          break;
+        }
+        continue;
+      }
+
+      if (!response.text) {
+        continue;
+      }
+
+      try {
+        const parsed = parseGeminiJsonResponse(response.text);
+        const tags = normalizeSuggestedTagsResponse(parsed);
+        this.logSuccessfulGeneration('tag-suggestions', model, {
+          jsonMode,
+          tagCount: tags.length,
+        });
+        return tags;
+      } catch {
+        continue;
+      }
+    }
+
+    return null;
+  }
+
+  private resolveTagSuggestionsTotalTimeoutMs(): number {
+    const configured = this.config.get<string>(
+      'GEMINI_TAG_SUGGESTIONS_TIMEOUT_MS',
+    );
+    if (configured !== undefined && configured.trim() !== '') {
+      const parsed = Number(configured);
+      if (Number.isFinite(parsed) && parsed > 0) {
+        return parsed;
+      }
+    }
+    return DEFAULT_TAG_SUGGESTIONS_TOTAL_TIMEOUT_MS;
+  }
+
+  private async runWithAggregateTimeout<T>(
+    operation: (signal: AbortSignal) => Promise<T>,
+    timeoutMs: number,
+  ): Promise<T> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      return await Promise.race([
+        operation(controller.signal),
+        new Promise<never>((_, reject) => {
+          controller.signal.addEventListener(
+            'abort',
+            () => {
+              reject(
+                Object.assign(new Error('Operation timed out'), {
+                  name: 'AbortError',
+                }),
+              );
+            },
+            { once: true },
+          );
+        }),
+      ]);
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  private async runWithPerModelTimeout<T>(
+    operation: (signal: AbortSignal) => Promise<T>,
+    options?: { parentSignal?: AbortSignal },
+  ): Promise<T> {
+    const controller = new AbortController();
+    const onParentAbort = () => controller.abort();
+    options?.parentSignal?.addEventListener('abort', onParentAbort, {
+      once: true,
+    });
+    const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      return await operation(controller.signal);
+    } finally {
+      clearTimeout(timeoutId);
+      options?.parentSignal?.removeEventListener('abort', onParentAbort);
+    }
+  }
+
+  private logSuccessfulGeneration(
+    operation: 'idea-prefill' | 'tag-suggestions',
+    model: string,
+    options?: { jsonMode?: boolean; tagCount?: number },
+  ): void {
+    const details: string[] = [`model=${model}`];
+    if (options?.jsonMode !== undefined) {
+      details.push(`jsonMode=${options.jsonMode}`);
+    }
+    if (options?.tagCount !== undefined) {
+      details.push(`tagCount=${options.tagCount}`);
+    }
+    this.logger.log(`Gemini ${operation} succeeded (${details.join(', ')})`);
   }
 
   private isAbortError(error: unknown): boolean {

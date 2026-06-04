@@ -59,17 +59,25 @@ model User {
   updatedAt          DateTime             @updatedAt @map("updated_at")
   avatarUrl          String?              @map("avatar_url")
   themePreference    ThemePreference      @default(SYSTEM) @map("theme_preference")
+  id                  String               @id @default(uuid())
+  email               String               @unique
+  firstName           String?              @map("first_name")
+  lastName            String?              @map("last_name")
+  password            String?
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
+  avatarUrl           String?              @map("avatar_url")
   passwordResetTokens PasswordResetToken[]
-  ideas              Idea[]               @relation("IdeaAuthor")
-  problems           Problem[]
-  joinedIdeas        IdeaMember[]
-  joinedProblems     ProblemMember[]
-  ideaLikes          IdeaLike[]
-  problemLikes       ProblemLike[]
-  ideaViews          IdeaView[]
-  problemViews       ProblemView[]
-  comments           Comment[]            @relation("CommentAuthor")
-  commentLikes       CommentLike[]
+  ideas               Idea[]               @relation("IdeaAuthor")
+  problems            Problem[]
+  joinedIdeas         IdeaMember[]
+  joinedProblems      ProblemMember[]
+  ideaLikes           IdeaLike[]
+  problemLikes        ProblemLike[]
+  ideaViews           IdeaView[]
+  problemViews        ProblemView[]
+  comments            Comment[]            @relation("CommentAuthor")
+  commentLikes        CommentLike[]
 
   @@map("user")
 }
@@ -89,21 +97,21 @@ model PasswordResetToken {
 }
 
 model Idea {
-  id           String                   @id @default(uuid())
-  authorId     String                   @map("author_id")
-  status       IdeaStatus               @default(DRAFT)
-  stage        Stage?
-  title        String?
-  description  String?                  @db.Text
-  viewCount    Int                      @default(0) @map("view_count")
-  likeCount    Int                      @default(0) @map("like_count")
-  commentCount Int                      @default(0) @map("comment_count")
-  publishedAt  DateTime?                @map("published_at")
-  createdAt    DateTime                 @default(now()) @map("created_at")
-  updatedAt    DateTime                 @updatedAt @map("updated_at")
-  searchVector    Unsupported("tsvector")? @map("search_vector")
-  aiEmbedding     Unsupported("vector(768)")? @map("ai_embedding")
-  embeddingHash   String?                     @map("embedding_hash")
+  id            String                      @id @default(uuid())
+  authorId      String                      @map("author_id")
+  status        IdeaStatus                  @default(DRAFT)
+  stage         Stage?
+  title         String?
+  description   String?                     @db.Text
+  viewCount     Int                         @default(0) @map("view_count")
+  likeCount     Int                         @default(0) @map("like_count")
+  commentCount  Int                         @default(0) @map("comment_count")
+  publishedAt   DateTime?                   @map("published_at")
+  createdAt     DateTime                    @default(now()) @map("created_at")
+  updatedAt     DateTime                    @updatedAt @map("updated_at")
+  searchVector  Unsupported("tsvector")?    @map("search_vector")
+  aiEmbedding   Unsupported("vector(768)")? @map("ai_embedding")
+  embeddingHash String?                     @map("embedding_hash")
 
   author   User          @relation("IdeaAuthor", fields: [authorId], references: [id], onDelete: Cascade)
   problems IdeaProblem[]
@@ -161,25 +169,25 @@ model IdeaLike {
 }
 
 model Problem {
-  id               String                   @id @default(uuid())
-  authorId         String                   @map("author_id")
+  id               String                      @id @default(uuid())
+  authorId         String                      @map("author_id")
   title            String
-  description      String                   @db.Text
-  status           ProblemStatus            @default(DRAFT)
+  description      String                      @db.Text
+  status           ProblemStatus               @default(DRAFT)
   stage            ProblemStage?
-  valueProposition String?                  @map("value_proposition")
-  costBenefit      Decimal?                 @map("cost_benefit") @db.Decimal(12, 2)
+  valueProposition String?                     @map("value_proposition")
+  costBenefit      Decimal?                    @map("cost_benefit") @db.Decimal(12, 2)
   category         String?
   impact           String?
-  viewCount        Int                      @default(0) @map("view_count")
-  likeCount        Int                      @default(0) @map("like_count")
-  commentCount     Int                      @default(0) @map("comment_count")
-  publishedAt      DateTime?                @map("published_at")
-  createdAt        DateTime                 @default(now()) @map("created_at")
-  updatedAt        DateTime                 @updatedAt @map("updated_at")
-  searchVector    Unsupported("tsvector")? @map("search_vector")
-  aiEmbedding     Unsupported("vector(768)")? @map("ai_embedding")
-  embeddingHash   String?                     @map("embedding_hash")
+  viewCount        Int                         @default(0) @map("view_count")
+  likeCount        Int                         @default(0) @map("like_count")
+  commentCount     Int                         @default(0) @map("comment_count")
+  publishedAt      DateTime?                   @map("published_at")
+  createdAt        DateTime                    @default(now()) @map("created_at")
+  updatedAt        DateTime                    @updatedAt @map("updated_at")
+  searchVector     Unsupported("tsvector")?    @map("search_vector")
+  aiEmbedding      Unsupported("vector(768)")? @map("ai_embedding")
+  embeddingHash    String?                     @map("embedding_hash")
 
   author   User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
   members  ProblemMember[]
@@ -224,10 +232,12 @@ model ProblemLike {
 }
 
 model Tag {
-  id        String   @id @default(uuid())
-  name      String   @unique
-  label     String?
-  createdAt DateTime @default(now()) @map("created_at")
+  id            String                      @id @default(uuid())
+  name          String                      @unique
+  label         String?
+  aiEmbedding   Unsupported("vector(768)")? @map("ai_embedding")
+  embeddingHash String?                     @map("embedding_hash")
+  createdAt     DateTime                    @default(now()) @map("created_at")
 
   ideas       IdeaTag[]
   problemTags ProblemTag[]

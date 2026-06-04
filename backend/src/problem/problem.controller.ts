@@ -35,6 +35,7 @@ import type { Request } from 'express';
 import { memoryStorage } from 'multer';
 
 import { JwtAuth } from '../shared/decorators/jwt-auth.decorator';
+import { TagSuggestionService } from '../tag/tag-suggestion.service';
 import { CreateProblemDto } from './dto/create-problem.dto';
 import { GetProblemsQueryDto } from './dto/get-problems-query.dto';
 import { MyProblemsQueryDto } from './dto/my-problems.dto';
@@ -44,7 +45,6 @@ import { UpdateProblemDraftDto } from './dto/update-problem-draft.dto';
 import { ProblemStage } from './enum/problem-stage.enum';
 import { ProblemQueryService } from './problem-query.service';
 import { ProblemSuggestedIdeasService } from './problem-suggested-ideas.service';
-import { ProblemSuggestedTagsService } from './problem-suggested-tags.service';
 import { ProblemService } from './problem.service';
 import type {
   ProblemFormResponse,
@@ -62,7 +62,7 @@ export class ProblemController {
     private readonly problemService: ProblemService,
     private readonly problemQueryService: ProblemQueryService,
     private readonly problemSuggestedIdeasService: ProblemSuggestedIdeasService,
-    private readonly problemSuggestedTagsService: ProblemSuggestedTagsService,
+    private readonly tagSuggestionService: TagSuggestionService,
   ) {}
 
   @Post()
@@ -143,7 +143,11 @@ export class ProblemController {
   getSuggestedTags(
     @Query() query: SuggestedTagsQueryDto,
   ): Promise<SuggestedTagsResponse> {
-    return this.problemSuggestedTagsService.getSuggestedTags(query);
+    return this.tagSuggestionService
+      .suggestTags({ ...query, context: 'problem' })
+      .then(result => ({
+        data: result.data.map(({ name, label }) => ({ name, label })),
+      }));
   }
 
   @Get(':id')

@@ -9,28 +9,38 @@ export type SuggestionChipProps = Omit<
 > & {
   label: string;
   selected?: boolean;
+  tier?: 'strong' | 'suggested' | 'speculative';
 };
 
 export function SuggestionChip({
   label,
   selected = false,
+  tier = 'suggested',
   className,
   type = 'button',
+  title,
   ...props
 }: SuggestionChipProps) {
   const Icon = selected ? Check : Plus;
+  const resolvedTitle =
+    title ?? (tier === 'speculative' ? 'New tag' : undefined);
 
   return (
     <button
       type={type}
       aria-pressed={selected}
+      title={resolvedTitle}
       className={cn(
-        'inline-flex max-w-full items-center gap-1.5 rounded-lg border-0 px-2 py-0.5 text-sm font-normal transition-colors',
+        'inline-flex max-w-full items-center gap-1.5 rounded-lg border px-2 py-0.5 text-sm font-normal transition-colors',
         'focus-visible:ring-brand-dark-blue focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
         'disabled:cursor-not-allowed disabled:opacity-50',
         selected
-          ? 'bg-brand-light-blue/40 text-brand-gray-600 hover:bg-brand-light-blue/55'
-          : 'bg-brand-gray-200 text-brand-gray-600 hover:bg-brand-gray-200/80',
+          ? 'bg-brand-light-blue/40 text-brand-gray-600 hover:bg-brand-light-blue/55 border-transparent'
+          : tier === 'strong'
+            ? 'border-brand-dark-blue/30 bg-brand-light-blue/35 text-brand-gray-800 hover:bg-brand-light-blue/50'
+            : tier === 'speculative'
+              ? 'border-brand-gray-300 bg-brand-gray-100 text-brand-gray-500 hover:bg-brand-gray-100/80'
+              : 'border-transparent bg-brand-gray-200 text-brand-gray-600 hover:bg-brand-gray-200/80',
         className,
       )}
       {...props}

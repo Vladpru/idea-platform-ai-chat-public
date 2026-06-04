@@ -10,6 +10,7 @@ import {
   selectClass,
   textareaClass,
 } from '@/features/ideas/lib/styles';
+import { SuggestedTagsField } from '@/features/tags/ui/SuggestedTagsField';
 import { useCreateIdeaStore } from '@/features/ideas/store/create-idea.store';
 import { useNavigate } from '@tanstack/react-router';
 import { Upload } from 'lucide-react';
@@ -21,7 +22,6 @@ import { ROUTES } from '@/shared/config/paths';
 import { useCreateFormLeaveGuard } from '@/shared/hooks/use-create-form-leave-guard';
 import { SAVE_IDEA_PROGRESS_DESCRIPTION } from '@/shared/lib/create-form-leave/copy';
 import { cn } from '@/shared/lib/utils';
-import { TagsInput } from '@/shared/ui/TagsInput';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { SaveProgressBeforeLeavingModal } from '@/shared/ui/save-progress-before-leaving-modal';
@@ -400,23 +400,13 @@ export function IdeaCreateForm({
           <FieldError message={errors.mainImage?.message} />
         </FieldGroup>
 
-        <FieldGroup>
-          <FieldLabel htmlFor={`${formId}-tags`}>Tags</FieldLabel>
-          <Controller
-            name="tags"
-            control={control}
-            render={({ field }) => (
-              <TagsInput
-                id={`${formId}-tags`}
-                value={field.value ?? ''}
-                onChange={field.onChange}
-                disabled={isBusy}
-                aria-invalid={!!errors.tags}
-              />
-            )}
-          />
-          <FieldError message={errors.tags?.message} />
-        </FieldGroup>
+        <SuggestedTagsField
+          formId={formId}
+          control={control}
+          errors={errors}
+          disabled={isBusy}
+          context="idea"
+        />
 
         <FieldGroup>
           <FieldLabel>Files</FieldLabel>

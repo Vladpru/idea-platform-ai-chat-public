@@ -13,10 +13,11 @@ const TAG_LIST_SELECT = {
 export class TagService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAll(): Promise<TagListItem[]> {
+  findAll(options?: { limit?: number }): Promise<TagListItem[]> {
     return this.prisma.tag.findMany({
       select: TAG_LIST_SELECT,
       orderBy: { name: 'asc' },
+      ...(options?.limit !== undefined ? { take: options.limit } : {}),
     });
   }
 }
