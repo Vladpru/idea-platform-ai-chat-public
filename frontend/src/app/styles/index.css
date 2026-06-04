@@ -241,8 +241,47 @@
   --primary: #5aa9e8;
   --primary-foreground: #0c1118;
   --brand-accent: hsl(30 100% 55%);
-
-  /* Slightly lifted surface vs page (auth card) */
+  --color-white: var(--card);
+  --grey-200: rgba(255, 255, 255, 0.12);
+  --grey-300: rgba(255, 255, 255, 0.08);
+  --brand-orange: #ff9833;
+  --brand-white: #1a1f28;
+  --brand-light-blue: #2a445d;
+  --brand-cool-gray-4: #4d565e;
+  --brand-cool-gray-3: #2e3338;
+  --brand-cool-gray-2: #4d565e;
+  --brand-cool-gray-1: #6a737c;
+  --brand-gray-900: #e8ecf1;
+  --brand-gray-800: #b0b3b8;
+  --brand-gray-700: #b4bcc8;
+  --brand-gray-600: #9aa6b4;
+  --brand-gray-500: #88919a;
+  --brand-gray-400: #7d8a99;
+  --brand-gray-200: #ffffff29;
+  --brand-gray-100: #222830;
+  --brand-extra-black: #ffffff;
+  --brand-black: #e8ecf1;
+  --brand-dark-blue: #5aa9e8;
+  --brand-blue-700: #5aa9e8;
+  --brand-neutral: #3f4144;
+  --brand-hover-red-700: #ff4d4d;
+  --brand-orange-hover: #ff9833aa;
+  --idea-ideation: #ffb732;
+  --idea-prototyping: #4eb0b5;
+  --idea-completed: #4eb0b5;
+  --idea-archived: #b85bc0;
+  --idea-paused: #7b94aa;
+  --statistics-chart-line: #5aa9e8;
+  --statistics-chart-grid: rgba(255, 255, 255, 0.1);
+  --statistics-chart-axis-label: #9aa6b4;
+  --statistics-chart-axis-value: #88919a;
+  --statistics-chart-cursor: rgba(255, 255, 255, 0.15);
+  --statistics-chart-dot-ring: #12161c;
+  --shadow-soft:
+    0px 3px 8px rgba(0, 0, 0, 0.45), 0px 10px 16px rgba(0, 0, 0, 0.32),
+    0px 22px 20px rgba(0, 0, 0, 0.22), 0px 40px 24px rgba(0, 0, 0, 0.12);
+  --active-background: #161b22;
+  --non-active-background: #0e1217;
   --card: #1a1f28;
   --card-foreground: #e8ecf1;
   --popover: #1a1f28;
@@ -270,25 +309,6 @@
   --sidebar-accent-foreground: #e8ecf1;
   --sidebar-border: rgba(255, 255, 255, 0.1);
   --sidebar-ring: oklch(0.556 0 0);
-
-  /* Brand ramp — light text & borders on dark UI (auth forms, labels) */
-  --brand-gray-900: #e8ecf1;
-  --brand-gray-800: #b0b3b8;
-  --brand-gray-700: #b4bcc8;
-  --brand-gray-600: #9aa6b4;
-  --brand-gray-400: #7d8a99;
-  --brand-gray-200: #ffffff29;
-  --brand-gray-100: #222830;
-
-  --Grey-200: rgba(255, 255, 255, 0.12);
-
-  --shadow-soft:
-    0px 3px 8px rgba(0, 0, 0, 0.45), 0px 10px 16px rgba(0, 0, 0, 0.32),
-    0px 22px 20px rgba(0, 0, 0, 0.22), 0px 40px 24px rgba(0, 0, 0, 0.12);
-
-  --active-background: #161b22;
-  --non-active-background: #0e1217;
-
   --skeleton-base: #252d38;
   --skeleton-shine-peak: rgba(255, 255, 255, 0.22);
 }
