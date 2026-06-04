@@ -1,5 +1,7 @@
 import { api } from '@/shared/api/http';
 
+export type ThemePreference = 'LIGHT' | 'DARK' | 'SYSTEM';
+
 /** Matches backend `UserPublic` (JSON dates). */
 export type UserPublic = {
   id: string;
@@ -7,8 +9,13 @@ export type UserPublic = {
   firstName: string | null;
   lastName: string | null;
   avatarUrl: string | null;
+  themePreference: ThemePreference;
   createdAt: string;
   updatedAt: string;
+};
+
+export type UpdateThemePayload = {
+  theme: ThemePreference;
 };
 
 export type PatchUserPayload = {
@@ -18,6 +25,13 @@ export type PatchUserPayload = {
 
 export async function fetchCurrentUser(): Promise<UserPublic> {
   const { data } = await api.get<UserPublic>('/users/me');
+  return data;
+}
+
+export async function patchTheme(
+  payload: UpdateThemePayload,
+): Promise<UserPublic> {
+  const { data } = await api.patch<UserPublic>('/users/me/theme', payload);
   return data;
 }
 

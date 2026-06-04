@@ -1,11 +1,15 @@
-import { type ReactNode, useEffect } from 'react';
+import { ThemeProvider as NextThemesProvider } from 'next-themes';
+import type { ReactNode } from 'react';
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  useEffect(() => {
-    const root = window.document.documentElement;
-    root.classList.remove('dark');
-    root.classList.add('light');
-  }, []);
-
-  return children;
+  return (
+    <NextThemesProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+    >
+      {children}
+    </NextThemesProvider>
+  );
 }
