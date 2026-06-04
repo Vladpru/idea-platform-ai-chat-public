@@ -62,9 +62,7 @@ export type HasPasswordResponse = {
 };
 
 export async function fetchHasPassword(): Promise<boolean> {
-  const { data } = await api.get<HasPasswordResponse>(
-    '/users/me/has-password',
-  );
+  const { data } = await api.get<HasPasswordResponse>('/users/me/has-password');
   return data.hasPassword;
 }
 
