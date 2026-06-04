@@ -16,7 +16,7 @@ import {
 } from '@/features/problems/lib/submit-problem';
 import { SaveDraftButton } from '@/features/problems/ui/tooltips';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { useId, useState } from 'react';
+import { useId } from 'react';
 import { Controller } from 'react-hook-form';
 
 import { ROUTES } from '@/shared/config/paths';
@@ -45,19 +45,12 @@ import { ProblemFilesField } from './ProblemFilesField';
 import { ProblemTagsField } from './ProblemTagsField';
 import { SimilarProblemsSection } from './SimilarProblemsSection';
 
-const POST_PUBLISH_PROMPT =
-  'Would you like to add more details to the Problem you created?';
-
 export function SubmitProblemForm() {
   const navigate = useNavigate();
   const { problemId: editingProblemId } = useSearch({
     from: '/_auth/problems/new',
   });
   const formId = useId();
-  const [isPostPublishModalOpen, setIsPostPublishModalOpen] = useState(false);
-  const [publishedProblemId, setPublishedProblemId] = useState<string | null>(
-    null,
-  );
 
   const {
     form,
@@ -146,28 +139,12 @@ export function SubmitProblemForm() {
   };
 
   const handlePublish = async () => {
-    const wasEditing = isEditing;
     const problemId = await onPublish();
     if (!problemId) return;
-    if (wasEditing) {
-      navigateAfterSave(wasEditing, problemId);
-      return;
-    }
-    setPublishedProblemId(problemId);
-    setIsPostPublishModalOpen(true);
-  };
-
-  const handlePostPublishModalOpenChange = (open: boolean) => {
-    setIsPostPublishModalOpen(open);
-    if (!open) {
-      setPublishedProblemId(null);
-    }
-  };
-
-  const handleOpenPublishedProblemDetails = () => {
-    if (!publishedProblemId) return;
-    setIsPostPublishModalOpen(false);
-    void navigate({ to: ROUTES.problemDetail(publishedProblemId) });
+    void navigate({
+      to: ROUTES.problemDetail(problemId),
+      replace: true,
+    });
   };
 
   return (
@@ -435,16 +412,6 @@ export function SubmitProblemForm() {
           description={SAVE_PROBLEM_PROGRESS_DESCRIPTION}
         />
       )}
-
-      <ConfirmModal
-        open={isPostPublishModalOpen}
-        onOpenChange={handlePostPublishModalOpenChange}
-        title={POST_PUBLISH_PROMPT}
-        description=""
-        confirmLabel="Open Problem Details"
-        cancelLabel="Not Now"
-        onConfirm={handleOpenPublishedProblemDetails}
-      />
 
       <AiGenerationModal {...generationModalProps} />
     </>

@@ -6,8 +6,9 @@ import {
   useProblemDetailsQuery,
   useSimilarProblemsQuery,
 } from '@/features/problem-details/lib/use-problem-details-queries';
-import { DEFAULT_PROBLEMS_DASHBOARD_SEARCH } from '@/features/problems-dashboard/lib/constants';
 import type { ProblemTabId } from '@/features/problem-details/model/problem-details.types';
+import { DEFAULT_PROBLEMS_DASHBOARD_SEARCH } from '@/features/problems-dashboard/lib/constants';
+import { NotFoundPage } from '@/pages/not-found';
 import { useNavigate, useRouter } from '@tanstack/react-router';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
@@ -17,14 +18,12 @@ import { ROUTES } from '@/shared/config/paths';
 import { cn } from '@/shared/lib/utils';
 import { AnimatedPanel, AnimatedPanelSwitch } from '@/shared/ui/motion';
 
-import { ProblemAttachmentsTab } from './attachments/ProblemAttachmentsTab';
 import { ProblemHeader } from './ProblemHeader';
 import { ProblemInfoCards } from './ProblemInfoCards';
-import { ProblemLinkedIdeasTab } from './linked-ideas/ProblemLinkedIdeasTab';
 import { ProblemTabs } from './ProblemTabs';
+import { ProblemAttachmentsTab } from './attachments/ProblemAttachmentsTab';
+import { ProblemLinkedIdeasTab } from './linked-ideas/ProblemLinkedIdeasTab';
 import { SimilarProblemsWidget } from './similar/SimilarProblemsWidget';
-import { NotFoundPage } from '@/pages/not-found';
-
 import { ProblemDetailsPageSkeleton } from './skeletons/ProblemDetailsPageSkeleton';
 
 type ProblemDetailsViewProps = {
@@ -38,8 +37,12 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const userId = useAuthSessionStore(s => s.user?.id);
 
-  const { data: problem, isPending, isError, isSuccess } =
-    useProblemDetailsQuery(problemId);
+  const {
+    data: problem,
+    isPending,
+    isError,
+    isSuccess,
+  } = useProblemDetailsQuery(problemId);
 
   const { data: similarProblems = [], isLoading: isSimilarLoading } =
     useSimilarProblemsQuery(problemId, {
@@ -148,7 +151,7 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
                 aria-label="Description"
               >
                 {problem.description ? (
-                  <p className="text-brand-gray-800 font-EB-Garamond max-w-3xl text-sm leading-relaxed whitespace-pre-wrap sm:text-base">
+                  <p className="text-brand-gray-800 font-EB-Garamond max-w-full min-w-0 text-sm leading-relaxed wrap-break-word whitespace-pre-wrap sm:text-base">
                     {problem.description}
                   </p>
                 ) : (
