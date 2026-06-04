@@ -81,7 +81,7 @@ function ProblemDashboardCardStandardInner({
 
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 <div className="flex min-w-0 items-center gap-2">
-                  <Avatar size="sm" className="ring-2 ring-white">
+                  <Avatar size="sm" className="ring-card dark:ring-none ring-2">
                     {card.authorAvatarUrl ? (
                       <AvatarImage
                         src={card.authorAvatarUrl}

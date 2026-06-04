@@ -252,7 +252,10 @@ export function IdeaSelect({ formId, control, errors }: IdeaSelectProps) {
                                 onClick={event => event.stopPropagation()}
                               >
                                 View
-                                <ArrowLink className="size-3.5" aria-hidden />
+                                <ArrowLink
+                                  className="text-primary size-3.5"
+                                  aria-hidden
+                                />
                               </Link>
 
                               {isSelected ? (

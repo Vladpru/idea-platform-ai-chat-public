@@ -21,13 +21,13 @@ function SimilarProblemCardContent({ card }: SimilarProblemCardProps) {
   return (
     <>
       <div className="space-y-3">
-        <h3 className="text-brand-black group-hover:text-brand-dark-blue line-clamp-2 text-base font-bold transition-colors">
+        <h3 className="group-hover:text-primary text-brand-black line-clamp-2 text-base font-bold transition-colors">
           {card.title}
         </h3>
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <div className="flex items-center gap-2">
-            <Avatar size="sm" className="ring-2 ring-white">
+            <Avatar size="sm" className="ring-card ring-2">
               {card.authorAvatarUrl ? (
                 <AvatarImage src={card.authorAvatarUrl} alt={card.authorName} />
               ) : null}

@@ -7,7 +7,6 @@ import { Bell, ChevronDown, Search } from 'lucide-react';
 import { ROUTES } from '@/shared/config/paths';
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
-import { ThemeToggle } from '@/shared/ui/theme-toggle';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,7 +53,7 @@ function NavLink({
 
 export function AppHeader() {
   return (
-    <header className="bg-brand-dark-blue sticky top-0 z-50 flex items-center justify-between px-4 py-3 text-white shadow-sm sm:px-10">
+    <header className="bg-brand-dark-blue dark:bg-header-background sticky top-0 z-50 flex items-center justify-between px-4 py-3 text-white shadow-sm sm:px-10">
       <div className="flex items-center gap-20 xl:gap-35 2xl:gap-45">
         <Link to="/" aria-label="Home">
           <img
@@ -135,8 +134,6 @@ export function AppHeader() {
         >
           <Bell size={22} strokeWidth={2} />
         </button>
-
-        <ThemeToggle className="hover:bg-card/10 border-0 text-white" />
 
         <div className="w-min-[] hidden lg:block">
           <UserNav triggerClassName=" transition-opacity cursor-pointer" />

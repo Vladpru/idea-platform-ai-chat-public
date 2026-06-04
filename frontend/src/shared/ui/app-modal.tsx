@@ -39,7 +39,7 @@ export function AppModal({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         className={cn(
-          'border-brand-gray-200 bg-card max-w-md gap-0 rounded-lg border p-8 shadow-xl sm:max-w-[480px]',
+          'border-border bg-card text-card-foreground max-w-md gap-0 rounded-lg border p-8 shadow-xl sm:max-w-[480px]',
           className,
         )}
         onPointerDownOutside={event => {
@@ -54,11 +54,11 @@ export function AppModal({
         }}
       >
         <DialogHeader className="space-y-3 text-center">
-          <DialogTitle className="text-brand-gray-900 text-xl font-bold">
+          <DialogTitle className="text-foreground text-xl font-bold">
             {title}
           </DialogTitle>
           {description ? (
-            <DialogDescription className="text-brand-gray-600 text-sm leading-relaxed">
+            <DialogDescription className="text-muted-foreground text-sm leading-relaxed">
               {description}
             </DialogDescription>
           ) : null}

@@ -44,7 +44,7 @@ function SimilarIdeaCardContent({ card }: SimilarIdeaCardProps) {
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-4">
             <div className="flex items-center gap-2">
-              <Avatar size="sm" className="ring-2 ring-white">
+              <Avatar size="sm" className="ring-card dark:ring-none ring-2">
                 {card.authorAvatarUrl ? (
                   <AvatarImage
                     src={card.authorAvatarUrl}

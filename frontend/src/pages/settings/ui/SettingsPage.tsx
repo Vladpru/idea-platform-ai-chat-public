@@ -1,5 +1,5 @@
-import { SettingsNotificationsPanel } from '@/features/settings';
+import { SettingsPanel } from '@/features/settings';
 
 export function SettingsPage() {
-  return <SettingsNotificationsPanel />;
+  return <SettingsPanel />;
 }

@@ -143,7 +143,7 @@ export function DashboardControls<TSort extends string>({
                           'w-full cursor-pointer rounded-xl px-4 py-3.5 text-left text-base font-medium transition-colors',
                           isActive
                             ? 'text-brand-dark-blue bg-brand-gray-100 font-bold'
-                            : 'text-brand-black hover:bg-slate-50',
+                            : 'text-brand-black hover:bg-brand-cool-gray-3',
                         )}
                       >
                         {option.label}
@@ -204,7 +204,7 @@ export function DashboardControls<TSort extends string>({
                           'w-full cursor-pointer px-4 py-2.5 text-left text-sm transition-colors',
                           isActive
                             ? 'text-brand-dark-blue font-bold'
-                            : 'text-brand-black hover:text-brand-dark-blue hover:bg-slate-50',
+                            : 'text-brand-black hover:text-brand-dark-blue hover:bg-brand-cool-gray-3',
                         )}
                       >
                         {option.label}
@@ -257,7 +257,7 @@ export function DashboardControls<TSort extends string>({
                           setIsColumnsOpen(false);
                         }}
                         className={cn(
-                          'hover:text-brand-dark-blue w-full cursor-pointer px-4 py-2 text-left text-sm transition-colors hover:bg-slate-50',
+                          'hover:text-brand-dark-blue hover:bg-brand-cool-gray-3 w-full cursor-pointer px-4 py-2 text-left text-sm transition-colors',
                           count === columnCount
                             ? 'text-brand-dark-blue font-medium'
                             : 'text-brand-black',

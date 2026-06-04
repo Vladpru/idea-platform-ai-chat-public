@@ -208,7 +208,7 @@ export function IdeaHeader({
                       <Avatar
                         key={member.id}
                         size="sm"
-                        className="ring-2 ring-white"
+                        className="ring-card dark:ring-none ring-2"
                         title={member.name}
                       >
                         {member.avatarUrl ? (

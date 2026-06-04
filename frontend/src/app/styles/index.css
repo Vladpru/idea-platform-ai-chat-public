@@ -81,6 +81,7 @@
   --color-statistics-chart-axis-value: var(--statistics-chart-axis-value);
   --color-statistics-chart-cursor: var(--statistics-chart-cursor);
   --color-statistics-chart-dot-ring: var(--statistics-chart-dot-ring);
+  --color-header-background: var(--header-background);
 
   --shadow-shadow-soft: var(--shadow-soft);
 
@@ -239,9 +240,9 @@
   --background: #12161c;
   --foreground: #e8ecf1;
   --primary: #5aa9e8;
+  --header-background: #003057;
   --primary-foreground: #0c1118;
   --brand-accent: hsl(30 100% 55%);
-  --color-white: var(--card);
   --grey-200: rgba(255, 255, 255, 0.12);
   --grey-300: rgba(255, 255, 255, 0.08);
   --brand-orange: #ff9833;
@@ -263,7 +264,7 @@
   --brand-black: #e8ecf1;
   --brand-dark-blue: #5aa9e8;
   --brand-blue-700: #5aa9e8;
-  --brand-neutral: #3f4144;
+  --brand-neutral: #151515;
   --brand-hover-red-700: #ff4d4d;
   --brand-orange-hover: #ff9833aa;
   --idea-ideation: #ffb732;
