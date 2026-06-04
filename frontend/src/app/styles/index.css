@@ -63,6 +63,7 @@
   --color-brand-gray-600: var(--brand-gray-600);
   --color-brand-gray-500: var(--brand-gray-500);
   --color-brand-gray-400: var(--brand-gray-400);
+  --color-brand-gray-mobile: var(--brand-gray-mobile);
   --color-brand-gray-200: var(--brand-gray-200);
   --color-brand-gray-100: var(--brand-gray-100);
   --color-brand-hover-red-700: var(--brand-hover-red-700);
@@ -164,6 +165,7 @@
   --brand-cool-gray-1: #a8a8a8;
   --brand-gray-900: #1a1e22;
   --brand-gray-800: #2e3338;
+  --brand-gray-mobile: #2f373d;
   --brand-gray-700: #4d565e;
   --brand-gray-600: #6a737c;
   --brand-gray-500: #88919a;
@@ -260,6 +262,7 @@
   --brand-gray-400: #7d8a99;
   --brand-gray-200: #ffffff29;
   --brand-gray-100: #222830;
+  --brand-gray-mobile: #a2d5ff;
   --brand-extra-black: #ffffff;
   --brand-black: #e8ecf1;
   --brand-dark-blue: #5aa9e8;
@@ -272,7 +275,7 @@
   --idea-completed: #4eb0b5;
   --idea-archived: #b85bc0;
   --idea-paused: #7b94aa;
-  --statistics-chart-line: #5aa9e8;
+  --statistics-chart-line: hsl(207, 76%, 63%);
   --statistics-chart-grid: rgba(255, 255, 255, 0.1);
   --statistics-chart-axis-label: #9aa6b4;
   --statistics-chart-axis-value: #88919a;
