@@ -17,6 +17,7 @@ import {
 } from '../shared/utils/validate-password.util';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { CreateUserDto } from './dto/create-user.dto';
+import { ThemePreference } from '../../generated/prisma/client';
 import { UpdateUserDto } from './dto/update-user.dto';
 import type {
   UpsertOAuthUserInput,
@@ -29,6 +30,7 @@ const USER_PUBLIC_SELECT = {
   firstName: true,
   lastName: true,
   avatarUrl: true,
+  themePreference: true,
   createdAt: true,
   updatedAt: true,
 } as const;
@@ -207,6 +209,14 @@ export class UserService {
     });
 
     return { message: 'Password updated successfully' };
+  }
+
+  async updateTheme(userId: string, theme: ThemePreference) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { themePreference: theme },
+      select: USER_PUBLIC_SELECT,
+    });
   }
 
   async update(id: string, dto: UpdateUserDto) {
