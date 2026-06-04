@@ -2,12 +2,6 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { IdeaStatus, Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import {
-  buildSearchText,
-  formatTsQuery,
-  tsQueryMatchSql,
-  tsRankSql,
-} from '../shared/utils/fts.util';
 import { MyIdeasQueryDto } from './dto';
 import {
   GetIdeasQueryDto,
@@ -194,68 +188,5 @@ export class IdeaQueryService {
     }
 
     return toIdeaFormResponse(idea as unknown as IdeaFormRecord, userId);
-  }
-
-  async findSimilar(
-    id: string,
-    currentUserId?: string,
-  ): Promise<IdeaFormResponse[]> {
-    const currentIdea = await this.prisma.idea.findUnique({
-      where: { id },
-      select: { id: true, title: true, description: true },
-    });
-
-    if (!currentIdea) {
-      throw new NotFoundException(IDEA_NOT_FOUND);
-    }
-
-    const searchText = buildSearchText(
-      currentIdea.title,
-      currentIdea.description,
-    );
-    const searchQuery = formatTsQuery(searchText, {
-      minWordLength: 3,
-      joinOperator: '|',
-      prefixMatch: true,
-    });
-
-    if (!searchQuery) {
-      return [];
-    }
-
-    const matchSql = tsQueryMatchSql('i.search_vector', searchQuery);
-    const rankSql = tsRankSql('i.search_vector', searchQuery);
-
-    const scoredRecords = await this.prisma.$queryRaw<{ id: string }[]>`
-      SELECT i.id
-      FROM "idea" i
-      WHERE 
-        i.status = 'PUBLISHED' 
-        AND i.id != ${id}
-        AND ${matchSql}
-        AND ${rankSql} > 0.05
-      ORDER BY ${rankSql} DESC, i."published_at" DESC
-      LIMIT 3;
-    `;
-
-    if (scoredRecords.length === 0) {
-      return [];
-    }
-
-    const similarIds = scoredRecords.map(record => record.id);
-
-    const fullIdeas = await this.prisma.idea.findMany({
-      where: {
-        id: { in: similarIds },
-      },
-      include: resolveIdeaFormInclude(currentUserId),
-    });
-
-    return similarIds
-      .map(sampleId => fullIdeas.find(idea => idea.id === sampleId))
-      .filter((idea): idea is NonNullable<typeof idea> => !!idea)
-      .map(idea =>
-        toIdeaFormResponse(idea as unknown as IdeaFormRecord, currentUserId),
-      );
   }
 }
