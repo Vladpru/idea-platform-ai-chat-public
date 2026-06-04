@@ -20,6 +20,18 @@ export function parseGeminiJsonResponse(raw: string): unknown {
   }
 }
 
+export function normalizeSuggestedTagsResponse(parsed: unknown): string[] {
+  const source = parsed as { tags?: unknown } | null;
+  if (!Array.isArray(source?.tags)) {
+    return [];
+  }
+
+  return source.tags
+    .map(tag => String(tag).trim())
+    .filter(Boolean)
+    .slice(0, 6);
+}
+
 export function normalizeIdeaPrefillResponse(
   parsed: unknown,
   input: IdeaPrefillInput,

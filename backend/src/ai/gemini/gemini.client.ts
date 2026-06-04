@@ -15,6 +15,38 @@ export type GeminiGenerateContentResult =
   | { ok: true; text: string }
   | { ok: false; status: number; message: string };
 
+export async function generateGeminiJsonContent({
+  client,
+  model,
+  prompt,
+  jsonMode,
+  signal,
+}: {
+  client: GoogleGenAI;
+  model: string;
+  prompt: string;
+  jsonMode: boolean;
+  signal: AbortSignal;
+}): Promise<GeminiGenerateContentResult> {
+  try {
+    const response = await client.models.generateContent({
+      model,
+      contents: prompt,
+      config: {
+        ...(jsonMode ? { responseMimeType: 'application/json' } : {}),
+        abortSignal: signal,
+      },
+    });
+
+    return { ok: true, text: response.text?.trim() ?? '' };
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return { ok: false, status: error.status, message: error.message };
+    }
+    throw error;
+  }
+}
+
 export async function generateGeminiPrefillContent({
   client,
   model,
