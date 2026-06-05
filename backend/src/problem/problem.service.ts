@@ -19,6 +19,7 @@ import {
   hasSubstantialContentChanges,
   hasSummarizableContent,
 } from '../ai-summary/summary-content.util';
+import { buildSummaryResetData } from '../ai-summary/summary-reset.util';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -264,6 +265,7 @@ export class ProblemService {
       embeddingHash?: null;
       aiSummary?: null;
       summaryStatus?: SummaryStatus;
+      summaryRequestedAt?: Date | null;
     } = {};
 
     if ('stage' in dto && dto.stage !== undefined) {
@@ -294,10 +296,7 @@ export class ProblemService {
     }
 
     if (resetSummary) {
-      scalarData.aiSummary = null;
-      scalarData.summaryStatus = isPublished
-        ? SummaryStatus.PENDING
-        : SummaryStatus.SKIPPED;
+      Object.assign(scalarData, buildSummaryResetData(isPublished));
     }
 
     if (Object.keys(scalarData).length > 0) {
@@ -478,10 +477,7 @@ export class ProblemService {
             data: {
               status: ProblemStatus.PUBLISHED,
               publishedAt: new Date(),
-              aiSummary: null,
-              summaryStatus: requestSummary
-                ? SummaryStatus.PENDING
-                : SummaryStatus.SKIPPED,
+              ...buildSummaryResetData(requestSummary),
             },
             include: PROBLEM_FORM_INCLUDE,
           });

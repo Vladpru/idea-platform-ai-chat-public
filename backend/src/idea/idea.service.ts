@@ -19,6 +19,7 @@ import {
   hasSubstantialContentChanges,
   hasSummarizableContent,
 } from '../ai-summary/summary-content.util';
+import { buildSummaryResetData } from '../ai-summary/summary-reset.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateIdeaDto } from './dto/create-idea.dto';
 import { UpdateIdeaDraftDto } from './dto/update-idea-draft.dto';
@@ -180,6 +181,7 @@ export class IdeaService {
       embeddingHash?: null;
       aiSummary?: null;
       summaryStatus?: SummaryStatus;
+      summaryRequestedAt?: Date | null;
     } = {};
 
     if ('stage' in dto && dto.stage !== undefined) scalarData.stage = dto.stage;
@@ -192,10 +194,7 @@ export class IdeaService {
     }
 
     if (resetSummary) {
-      scalarData.aiSummary = null;
-      scalarData.summaryStatus = isPublished
-        ? SummaryStatus.PENDING
-        : SummaryStatus.SKIPPED;
+      Object.assign(scalarData, buildSummaryResetData(isPublished));
     }
 
     if (Object.keys(scalarData).length > 0) {
@@ -470,10 +469,7 @@ export class IdeaService {
                 data: {
                   status: ProblemStatus.PUBLISHED,
                   publishedAt,
-                  aiSummary: null,
-                  summaryStatus: summarizable
-                    ? SummaryStatus.PENDING
-                    : SummaryStatus.SKIPPED,
+                  ...buildSummaryResetData(summarizable),
                 },
               });
             }
@@ -501,10 +497,7 @@ export class IdeaService {
             data: {
               status: IdeaStatus.PUBLISHED,
               publishedAt,
-              aiSummary: null,
-              summaryStatus: requestSummary
-                ? SummaryStatus.PENDING
-                : SummaryStatus.SKIPPED,
+              ...buildSummaryResetData(requestSummary),
             },
             include: IDEA_FORM_INCLUDE,
           });
@@ -759,10 +752,7 @@ export class IdeaService {
               data: {
                 status: ProblemStatus.PUBLISHED,
                 publishedAt,
-                aiSummary: null,
-                summaryStatus: summarizable
-                  ? SummaryStatus.PENDING
-                  : SummaryStatus.SKIPPED,
+                ...buildSummaryResetData(summarizable),
               },
             });
           }
@@ -790,10 +780,7 @@ export class IdeaService {
           data: {
             status: IdeaStatus.PUBLISHED,
             publishedAt,
-            aiSummary: null,
-            summaryStatus: requestSummary
-              ? SummaryStatus.PENDING
-              : SummaryStatus.SKIPPED,
+            ...buildSummaryResetData(requestSummary),
           },
           include: IDEA_FORM_INCLUDE,
         });

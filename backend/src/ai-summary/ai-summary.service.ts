@@ -26,7 +26,7 @@ interface EntityStrategy {
   load(id: string): Promise<EntitySummaryContent | null>;
   update(id: string, data: UpdateData): Promise<void>;
   getStatus(id: string): Promise<SummaryStatus | null>;
-  getUpdatedAt(id: string): Promise<Date | null>;
+  getSummaryRequestedAt(id: string): Promise<Date | null>;
   completeIfPending(id: string, anchor: Date, summary: string): Promise<number>;
   failIfPending(id: string, anchor: Date): Promise<number>;
   skipIfPending(id: string, anchor: Date): Promise<number>;
@@ -69,23 +69,24 @@ export class AiSummaryService {
         });
         return data?.summaryStatus ?? null;
       },
-      getUpdatedAt: async id => {
+      getSummaryRequestedAt: async id => {
         const data = await this.prisma.idea.findUnique({
           where: { id },
-          select: { updatedAt: true },
+          select: { summaryRequestedAt: true },
         });
-        return data?.updatedAt ?? null;
+        return data?.summaryRequestedAt ?? null;
       },
       completeIfPending: async (id, anchor, summary) => {
         const result = await this.prisma.idea.updateMany({
           where: {
             id,
             summaryStatus: SummaryStatus.PENDING,
-            updatedAt: anchor,
+            summaryRequestedAt: anchor,
           },
           data: {
             aiSummary: summary,
             summaryStatus: SummaryStatus.COMPLETED,
+            summaryRequestedAt: null,
           },
         });
         return result.count;
@@ -95,9 +96,12 @@ export class AiSummaryService {
           where: {
             id,
             summaryStatus: SummaryStatus.PENDING,
-            updatedAt: anchor,
+            summaryRequestedAt: anchor,
           },
-          data: { summaryStatus: SummaryStatus.FAILED },
+          data: {
+            summaryStatus: SummaryStatus.FAILED,
+            summaryRequestedAt: null,
+          },
         });
         return result.count;
       },
@@ -106,11 +110,12 @@ export class AiSummaryService {
           where: {
             id,
             summaryStatus: SummaryStatus.PENDING,
-            updatedAt: anchor,
+            summaryRequestedAt: anchor,
           },
           data: {
             aiSummary: null,
             summaryStatus: SKIPPED_SUMMARY_STATUS,
+            summaryRequestedAt: null,
           },
         });
         return result.count;
@@ -145,23 +150,24 @@ export class AiSummaryService {
         });
         return data?.summaryStatus ?? null;
       },
-      getUpdatedAt: async id => {
+      getSummaryRequestedAt: async id => {
         const data = await this.prisma.problem.findUnique({
           where: { id },
-          select: { updatedAt: true },
+          select: { summaryRequestedAt: true },
         });
-        return data?.updatedAt ?? null;
+        return data?.summaryRequestedAt ?? null;
       },
       completeIfPending: async (id, anchor, summary) => {
         const result = await this.prisma.problem.updateMany({
           where: {
             id,
             summaryStatus: SummaryStatus.PENDING,
-            updatedAt: anchor,
+            summaryRequestedAt: anchor,
           },
           data: {
             aiSummary: summary,
             summaryStatus: SummaryStatus.COMPLETED,
+            summaryRequestedAt: null,
           },
         });
         return result.count;
@@ -171,9 +177,12 @@ export class AiSummaryService {
           where: {
             id,
             summaryStatus: SummaryStatus.PENDING,
-            updatedAt: anchor,
+            summaryRequestedAt: anchor,
           },
-          data: { summaryStatus: SummaryStatus.FAILED },
+          data: {
+            summaryStatus: SummaryStatus.FAILED,
+            summaryRequestedAt: null,
+          },
         });
         return result.count;
       },
@@ -182,11 +191,12 @@ export class AiSummaryService {
           where: {
             id,
             summaryStatus: SummaryStatus.PENDING,
-            updatedAt: anchor,
+            summaryRequestedAt: anchor,
           },
           data: {
             aiSummary: null,
             summaryStatus: SKIPPED_SUMMARY_STATUS,
+            summaryRequestedAt: null,
           },
         });
         return result.count;
@@ -262,12 +272,13 @@ export class AiSummaryService {
       return;
     }
 
-    const anchor = await strategy.getUpdatedAt(payload.id);
+    const anchor = await strategy.getSummaryRequestedAt(payload.id);
 
     if (!anchor) {
       this.logger.warn(
-        `Skipping ${payload.entityType} ${payload.id}: entity not found`,
+        `Missing summaryRequestedAt for ${payload.entityType} ${payload.id}; re-queueing`,
       );
+      this.enqueueGeneration(payload);
       return;
     }
 
@@ -303,9 +314,7 @@ export class AiSummaryService {
     if (anchor) {
       const count = await strategy.failIfPending(payload.id, anchor);
       if (count === 0) {
-        this.logger.warn(
-          `Stale fail write for ${payload.entityType} ${payload.id}`,
-        );
+        await this.handleStaleSummaryWrite(payload);
       }
       return;
     }
@@ -327,9 +336,7 @@ export class AiSummaryService {
     if (anchor) {
       const count = await strategy.skipIfPending(payload.id, anchor);
       if (count === 0) {
-        this.logger.warn(
-          `Stale skip write for ${payload.entityType} ${payload.id}`,
-        );
+        await this.handleStaleSummaryWrite(payload);
       }
       return;
     }
@@ -353,9 +360,26 @@ export class AiSummaryService {
     const count = await strategy.completeIfPending(payload.id, anchor, summary);
 
     if (count === 0) {
-      this.logger.warn(
-        `Stale complete write for ${payload.entityType} ${payload.id}`,
-      );
+      await this.handleStaleSummaryWrite(payload);
     }
+  }
+
+  private async handleStaleSummaryWrite(
+    payload: SummaryRequestedEvent,
+  ): Promise<void> {
+    const strategy = this.strategies[payload.entityType];
+    if (!strategy) {
+      return;
+    }
+
+    const status = await strategy.getStatus(payload.id);
+    if (status !== SummaryStatus.PENDING) {
+      return;
+    }
+
+    this.logger.warn(
+      `Stale summary write for ${payload.entityType} ${payload.id}; re-queueing`,
+    );
+    this.enqueueGeneration(payload);
   }
 }

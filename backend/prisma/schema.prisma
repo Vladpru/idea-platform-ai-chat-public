@@ -114,6 +114,7 @@ model Idea {
   embeddingHash String?                   @map("embedding_hash")
   aiSummary     String?                   @map("ai_summary") @db.Text
   summaryStatus SummaryStatus             @default(SKIPPED) @map("summary_status")
+  summaryRequestedAt DateTime?            @map("summary_requested_at")
 
   author   User         @relation("IdeaAuthor", fields: [authorId], references: [id], onDelete: Cascade)
   problems IdeaProblem[]
@@ -193,6 +194,7 @@ model Problem {
   embeddingHash    String?                   @map("embedding_hash")
   aiSummary        String?                   @map("ai_summary") @db.Text
   summaryStatus    SummaryStatus             @default(SKIPPED) @map("summary_status")
+  summaryRequestedAt DateTime?               @map("summary_requested_at")
 
   author   User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
   members  ProblemMember[]
