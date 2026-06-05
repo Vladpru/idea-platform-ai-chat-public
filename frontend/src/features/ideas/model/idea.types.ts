@@ -71,3 +71,7 @@ export type CreateIdeaLocalFiles = {
   mainImage: File | null;
   attachments: File[];
 };
+
+export function isCreateIdeaDraft(idea: Pick<IdeaApi, 'status'>): boolean {
+  return idea.status === IDEA_STATUS.DRAFT;
+}

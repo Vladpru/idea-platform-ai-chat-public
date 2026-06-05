@@ -2,7 +2,6 @@ import type { IdeaAIPrefillResponse } from '@/features/ideas/api/ideas-api.types
 import { useIdeaCreateAiAssist } from '@/features/ideas/hooks/use-idea-create-ai-assist';
 import { useIdeaCreateForm } from '@/features/ideas/hooks/use-idea-create-form';
 import { focusPublishField } from '@/features/ideas/lib/create-idea';
-import { hasCreateIdeaUnsavedProgress } from '@/features/ideas/lib/create-idea/unsaved-progress';
 import { IDEA_STAGES } from '@/features/ideas/lib/stages';
 import {
   outlineBtnClass,
@@ -11,18 +10,23 @@ import {
   textareaClass,
 } from '@/features/ideas/lib/styles';
 import { SuggestedTagsField } from '@/features/tags/ui/SuggestedTagsField';
-import { useCreateIdeaStore } from '@/features/ideas/store/create-idea.store';
 import { useNavigate } from '@tanstack/react-router';
 import { Upload } from 'lucide-react';
-import { useId, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Controller } from 'react-hook-form';
 
 import { ROUTES } from '@/shared/config/paths';
 import { useCreateFormLeaveGuard } from '@/shared/hooks/use-create-form-leave-guard';
-import { SAVE_IDEA_PROGRESS_DESCRIPTION } from '@/shared/lib/create-form-leave/copy';
+import { useDocumentAutoFill } from '@/shared/hooks/use-document-auto-fill';
+import {
+  SAVE_IDEA_PROGRESS_DESCRIPTION,
+  UNDO_CHANGES_DESCRIPTION,
+  UNDO_CHANGES_TITLE,
+} from '@/shared/lib/create-form-leave/copy';
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
+import { ConfirmModal } from '@/shared/ui/confirm-modal';
 import { Input } from '@/shared/ui/input';
 import { SaveProgressBeforeLeavingModal } from '@/shared/ui/save-progress-before-leaving-modal';
 import {
@@ -45,14 +49,24 @@ const INVALID_MAIN_IMAGE_TYPE_MESSAGE = 'Main image must be PNG, JPEG, or WEBP';
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const FILE_TOO_LARGE_MESSAGE = 'File size must be less than 5MB';
 
+export type IdeaDocumentAutoFillControls = {
+  isScanning: boolean;
+  handleFileSelected: (file: File) => void;
+  disabled: boolean;
+};
+
 type IdeaCreateFormProps = {
   aiDraftPrefill?: IdeaAIPrefillResponse | null;
   onAiDraftPrefillApplied?: () => void;
+  onDocumentAutoFillControlsChange?: (
+    controls: IdeaDocumentAutoFillControls,
+  ) => void;
 };
 
 export function IdeaCreateForm({
   aiDraftPrefill,
   onAiDraftPrefillApplied,
+  onDocumentAutoFillControlsChange,
 }: IdeaCreateFormProps) {
   const navigate = useNavigate();
   const formId = useId();
@@ -74,6 +88,8 @@ export function IdeaCreateForm({
     isPublishing,
     isHydrating,
     error,
+    clearError,
+    hasUnsavedProgress,
     clearCreateIdeaSession,
   } = useIdeaCreateForm();
 
@@ -82,7 +98,7 @@ export function IdeaCreateForm({
     control,
     handleSubmit,
     watch,
-    formState: { errors, isDirty: formIsDirty },
+    formState: { errors },
   } = form;
 
   const titleValue = watch('title') || '';
@@ -104,15 +120,28 @@ export function IdeaCreateForm({
     onAiDraftPrefillApplied,
   });
 
-  const draft = useCreateIdeaStore(state => state.draft);
-  const localFiles = useCreateIdeaStore(state => state.localFiles);
-  const remoteMedia = useCreateIdeaStore(state => state.remoteMedia);
+  const { isScanning, handleFileSelected, confirmModalProps } =
+    useDocumentAutoFill({
+      entityType: 'idea',
+      form,
+    });
 
-  const hasUnsavedProgress = hasCreateIdeaUnsavedProgress(
-    formIsDirty,
-    { draft, localFiles, remoteMedia },
-    isEditing,
-  );
+  const formBusy = isBusy || isScanning;
+  const allowNextLeaveRef = useRef<(continueLeave: () => void) => void>(() => {});
+  const handleSaveDraftRef = useRef<(() => Promise<boolean>) | null>(null);
+
+  useEffect(() => {
+    onDocumentAutoFillControlsChange?.({
+      isScanning,
+      handleFileSelected,
+      disabled: formBusy,
+    });
+  }, [
+    formBusy,
+    handleFileSelected,
+    isScanning,
+    onDocumentAutoFillControlsChange,
+  ]);
 
   const {
     leaveModalOpen,
@@ -123,10 +152,12 @@ export function IdeaCreateForm({
     handleSaveAsDraft: handleLeaveSaveAsDraft,
   } = useCreateFormLeaveGuard({
     hasUnsavedProgress,
-    isBusy,
-    onSaveDraft,
+    isBusy: formBusy,
+    onSaveDraft: async () => (await handleSaveDraftRef.current?.()) ?? false,
     onDiscard: clearCreateIdeaSession,
   });
+
+  allowNextLeaveRef.current = allowNextLeave;
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
@@ -136,7 +167,7 @@ export function IdeaCreateForm({
     },
     maxFiles: 1,
     maxSize: MAX_FILE_SIZE_BYTES,
-    disabled: isBusy,
+    disabled: formBusy,
     onDrop: acceptedFiles => {
       const file = acceptedFiles[0];
       if (!file) return;
@@ -169,15 +200,38 @@ export function IdeaCreateForm({
     });
   };
 
-  const handleSaveDraft = async () => {
-    const isSaved = await onSaveDraft();
-    if (!isSaved) return;
-    allowNextLeave(() => {
-      void navigate({ to: ROUTES.ideas, search: { sort: 'newest' } });
+  const navigateToIdeaDetail = (
+    ideaId: string,
+    search?: { updated?: boolean },
+  ) => {
+    void navigate({
+      to: '/ideas/$ideaId',
+      params: { ideaId },
+      search,
+      replace: true,
     });
   };
 
+  const handleSaveDraft = async (): Promise<boolean> => {
+    const wasEditing = isEditing;
+    const result = await onSaveDraft();
+    if (!result.success) return false;
+
+    if (wasEditing) {
+      navigateToIdeaDetail(result.ideaId);
+      return true;
+    }
+
+    allowNextLeaveRef.current(() => {
+      void navigate({ to: ROUTES.ideas, search: { sort: 'newest' } });
+    });
+    return true;
+  };
+
+  handleSaveDraftRef.current = handleSaveDraft;
+
   const handlePublish = async () => {
+    const wasEditing = isEditing;
     const publishResult = await onPublish();
     if (!publishResult.success) {
       if (publishResult.firstInvalidField) {
@@ -187,7 +241,15 @@ export function IdeaCreateForm({
       }
       return;
     }
-    allowNextLeave(() => {
+
+    if (wasEditing) {
+      navigateToIdeaDetail(publishResult.ideaId, {
+        updated: publishResult.action === 'update',
+      });
+      return;
+    }
+
+    allowNextLeaveRef.current(() => {
       void navigate({ to: ROUTES.ideas, search: { sort: 'newest' } });
     });
   };
@@ -225,7 +287,7 @@ export function IdeaCreateForm({
                 <Select
                   value={field.value}
                   onValueChange={field.onChange}
-                  disabled={isBusy}
+                  disabled={formBusy}
                 >
                   <SelectTrigger
                     id={`${formId}-stage`}
@@ -285,7 +347,7 @@ export function IdeaCreateForm({
             className="bg-card mt-2"
             placeholder="Type in the name of the idea..."
             aria-invalid={!!errors.title}
-            disabled={isBusy}
+            disabled={formBusy}
             maxLength={200}
             {...register('title')}
           />
@@ -315,7 +377,7 @@ export function IdeaCreateForm({
             className={cn(textareaClass, 'mt-2')}
             placeholder="Enter a description of the idea..."
             aria-invalid={!!errors.description}
-            disabled={isBusy}
+            disabled={formBusy}
             maxLength={5000}
             {...register('description')}
           />
@@ -356,7 +418,7 @@ export function IdeaCreateForm({
                     'border-brand-gray-200 hover:border-brand-dark-blue/40 focus-visible:ring-ring bg-card mt-2 flex min-h-[180px] cursor-pointer flex-col items-center justify-center rounded-md border border-dashed px-4 py-4 text-center transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
                     isDragActive && 'border-brand-dark-blue bg-brand-gray-100',
                     errors.mainImage && 'border-destructive',
-                    isBusy && 'cursor-not-allowed opacity-50',
+                    formBusy && 'cursor-not-allowed opacity-50',
                     displayImageUrl && 'relative overflow-hidden p-0',
                   )}
                 >
@@ -378,7 +440,7 @@ export function IdeaCreateForm({
                           event.stopPropagation();
                           clearMainImage();
                         }}
-                        isBusy={isBusy}
+                        isBusy={false}
                       />
                     </>
                   ) : (
@@ -404,7 +466,7 @@ export function IdeaCreateForm({
           formId={formId}
           control={control}
           errors={errors}
-          disabled={isBusy}
+          disabled={formBusy}
           context="idea"
         />
 
@@ -412,7 +474,8 @@ export function IdeaCreateForm({
           <FieldLabel>Files</FieldLabel>
           <IdeaFilesField
             control={control}
-            disabled={isBusy}
+            disabled={formBusy}
+            onFilesModified={clearError}
             ideaTitle={trimmedTitle}
             ideaDescription={trimmedDescription}
           />
@@ -423,7 +486,7 @@ export function IdeaCreateForm({
           <button
             type="button"
             onClick={handleCancel}
-            disabled={isBusy}
+            disabled={formBusy}
             className="text-brand-orange hover:text-brand-orange-hover px-2 text-sm font-bold tracking-wide uppercase transition-colors disabled:opacity-50"
           >
             Cancel
@@ -434,7 +497,7 @@ export function IdeaCreateForm({
               variant="outline"
               className={outlineBtnClass}
               onClick={() => void handleSaveDraft()}
-              disabled={isBusy}
+              disabled={formBusy}
               isLoading={isSavingDraft}
             >
               Save as draft
@@ -443,7 +506,7 @@ export function IdeaCreateForm({
           <Button
             type="submit"
             className={publishBtnClass}
-            disabled={isBusy}
+            disabled={formBusy}
             isLoading={isPublishing}
           >
             {isPublishedIdea ? 'Save changes' : 'Publish idea'}
@@ -452,7 +515,7 @@ export function IdeaCreateForm({
       </form>
 
       <SaveProgressBeforeLeavingModal
-        open={leaveModalOpen}
+        open={!isEditing && leaveModalOpen}
         onOpenChange={handleLeaveModalOpenChange}
         onDiscard={handleDiscard}
         onSaveAsDraft={() => void handleLeaveSaveAsDraft()}
@@ -460,7 +523,21 @@ export function IdeaCreateForm({
         description={SAVE_IDEA_PROGRESS_DESCRIPTION}
       />
 
+      {isEditing ? (
+        <ConfirmModal
+          open={leaveModalOpen}
+          onOpenChange={handleLeaveModalOpenChange}
+          title={UNDO_CHANGES_TITLE}
+          description={UNDO_CHANGES_DESCRIPTION}
+          confirmLabel="YES"
+          cancelLabel="NO"
+          onConfirm={handleDiscard}
+        />
+      ) : null}
+
       <AiGenerationModal {...generationModalProps} />
+
+      <ConfirmModal {...confirmModalProps} />
     </>
   );
 }

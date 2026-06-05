@@ -1,10 +1,9 @@
 import { IdeaCreateForm } from '@/features/ideas';
-import { generateIdeaPrefill } from '@/features/ideas/api/ideas.api';
 import type { IdeaAIPrefillResponse } from '@/features/ideas/api/ideas-api.types';
+import { generateIdeaPrefill } from '@/features/ideas/api/ideas.api';
 import { IDEA_EDITOR_QUOTE } from '@/features/ideas/lib/modals/copy';
-import {
-  primaryBtnClass,
-} from '@/features/ideas/lib/styles';
+import { primaryBtnClass } from '@/features/ideas/lib/styles';
+import type { IdeaDocumentAutoFillControls } from '@/features/ideas/ui/create-idea/IdeaCreateForm';
 import { SparklesIcon } from '@/features/ideas/ui/icons/SparklesIcon';
 import { GenerateDraftModal } from '@/features/ideas/ui/modals/GenerateDraftModal';
 import { useState } from 'react';
@@ -12,15 +11,17 @@ import { toast } from 'sonner';
 
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import { cn } from '@/shared/lib/utils';
-import { CreationPageTemplate } from '@/shared/ui/pages/CreationPageTemplate';
 import { Button } from '@/shared/ui/button';
+import { DocumentAutoFillControl } from '@/shared/ui/document-auto-fill-control';
+import { CreationPageTemplate } from '@/shared/ui/pages/CreationPageTemplate';
 
 export function IdeaCreationPage() {
   const [generateDraftOpen, setGenerateDraftOpen] = useState(false);
   const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
-  const [aiDraftPrefill, setAiDraftPrefill] = useState<IdeaAIPrefillResponse | null>(
-    null,
-  );
+  const [aiDraftPrefill, setAiDraftPrefill] =
+    useState<IdeaAIPrefillResponse | null>(null);
+  const [documentAutoFillControls, setDocumentAutoFillControls] =
+    useState<IdeaDocumentAutoFillControls | null>(null);
 
   const handleGenerateDraft = async (
     prompt: string,
@@ -43,15 +44,26 @@ export function IdeaCreationPage() {
     <CreationPageTemplate
       title="Idea creation"
       quote={IDEA_EDITOR_QUOTE}
+      loadingOverlay={documentAutoFillControls?.isScanning}
+      loadingMessage="Scanning document and populating fields…"
       headerAction={
-        <Button
-          type="button"
-          className={cn(primaryBtnClass, 'w-full')}
-          onClick={() => setGenerateDraftOpen(true)}
-        >
-          <SparklesIcon className="size-5" />
-          Generate draft
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            className={cn(primaryBtnClass, 'w-full')}
+            onClick={() => setGenerateDraftOpen(true)}
+          >
+            <SparklesIcon className="size-5" />
+            Generate draft
+          </Button>
+          {documentAutoFillControls && (
+            <DocumentAutoFillControl
+              disabled={documentAutoFillControls.disabled}
+              isScanning={documentAutoFillControls.isScanning}
+              onFileSelected={documentAutoFillControls.handleFileSelected}
+            />
+          )}
+        </div>
       }
       footer={
         <GenerateDraftModal
@@ -66,6 +78,7 @@ export function IdeaCreationPage() {
       <IdeaCreateForm
         aiDraftPrefill={aiDraftPrefill}
         onAiDraftPrefillApplied={() => setAiDraftPrefill(null)}
+        onDocumentAutoFillControlsChange={setDocumentAutoFillControls}
       />
     </CreationPageTemplate>
   );

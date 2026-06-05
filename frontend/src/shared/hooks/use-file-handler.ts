@@ -5,7 +5,7 @@ import {
   mergeFiles,
   validateFile,
 } from '@/shared/lib/file-validation';
-import { useCallback, useState, type ChangeEvent } from 'react';
+import { useCallback, useRef, useState, type ChangeEvent } from 'react';
 import { toast } from 'sonner';
 
 export type UseFileHandlerOptions = {
@@ -35,6 +35,8 @@ export function useFileHandler({
 
   const files = externalFiles ?? internalFiles;
   const setFiles = onFilesChange ?? setInternalFiles;
+  const filesRef = useRef(files);
+  filesRef.current = files;
 
   const validate = useCallback(
     (file: File) =>
@@ -93,9 +95,11 @@ export function useFileHandler({
 
   const removeFile = useCallback(
     (key: string) => {
-      setFiles(files.filter(file => getFileKey(file) !== key));
+      setFiles(
+        filesRef.current.filter(file => getFileKey(file) !== key),
+      );
     },
-    [files, setFiles],
+    [setFiles],
   );
 
   const clearFiles = useCallback(() => {

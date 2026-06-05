@@ -5,7 +5,11 @@ import {
 } from '@/features/ideas/hooks/use-idea-mutations';
 import {
   type IdeaCreateFormValues,
+  draftToFormValues,
   getFirstPublishErrorField,
+  hasCreateIdeaUnsavedProgress,
+  ideaApiToDraft,
+  ideaApiToRemoteMedia,
   ideaCreateDefaultValues,
   ideaCreateDraftSchema,
   validateForPublish,
@@ -15,12 +19,14 @@ import {
   formatProblemIds,
   parseProblemIds,
 } from '@/features/ideas/lib/problems';
-import { IDEA_STATUS } from '@/features/ideas/model/idea.types';
-import { useCreateIdeaStore } from '@/features/ideas/store/create-idea.store';
+import {
+  IDEA_STATUS,
+  type IdeaMediaItem,
+  type IdeaStatus,
+} from '@/features/ideas/model/idea.types';
 import type { ProblemDraft } from '@/features/problems';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useSearch } from '@tanstack/react-router';
-
 import {
   type BaseSyntheticEvent,
   useCallback,
@@ -33,34 +39,33 @@ import { type Resolver, useForm } from 'react-hook-form';
 import { getApiErrorMessage } from '@/shared/api/api-error';
 
 export type IdeaPublishResult =
-  | { success: true }
+  | {
+      success: true;
+      ideaId: string;
+      action: 'update' | 'publish';
+    }
   | {
       success: false;
       firstInvalidField?: keyof IdeaCreateFormValues;
     };
+
+export type IdeaSaveDraftResult =
+  | { success: true; ideaId: string }
+  | { success: false };
 
 export function useIdeaCreateForm() {
   const { ideaId: urlIdeaId } = useSearch({ from: '/_auth/ideas/new' });
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [isDraggingImage, setIsDraggingImage] = useState(false);
-  const [hasStoreHydrated, setHasStoreHydrated] = useState(() =>
-    useCreateIdeaStore.persist.hasHydrated(),
-  );
-
-  const isHydrating = useCreateIdeaStore(state => state.isHydrating);
-  const isSaving = useCreateIdeaStore(state => state.isSaving);
-  const error = useCreateIdeaStore(state => state.error);
-  const ideaStatus = useCreateIdeaStore(state => state.draft.status);
-  const remoteMedia = useCreateIdeaStore(state => state.remoteMedia);
-  const syncFromForm = useCreateIdeaStore(state => state.syncFromForm);
-  const setLocalFiles = useCreateIdeaStore(state => state.setLocalFiles);
-  const getFormValues = useCreateIdeaStore(state => state.getFormValues);
+  const [remoteMedia, setRemoteMedia] = useState<IdeaMediaItem[]>([]);
+  const [isHydrating, setIsHydrating] = useState(Boolean(urlIdeaId));
+  const [error, setError] = useState<string | null>(null);
+  const [ideaStatus, setIdeaStatus] = useState<IdeaStatus>(IDEA_STATUS.DRAFT);
 
   const saveDraftMutation = useSaveIdeaDraftMutation();
   const publishMutation = usePublishIdeaMutation();
   const initializedRef = useRef(false);
-  const formSyncEnabledRef = useRef(false);
   const [createdProblems, setCreatedProblems] = useState<MockProblem[]>([]);
   const [editingIdeaId, setEditingIdeaId] = useState<string | null>(
     urlIdeaId ?? null,
@@ -70,7 +75,7 @@ export function useIdeaCreateForm() {
     resolver: zodResolver(
       ideaCreateDraftSchema,
     ) as Resolver<IdeaCreateFormValues>,
-    defaultValues: getFormValues(),
+    defaultValues: ideaCreateDefaultValues,
     mode: 'onChange',
   });
 
@@ -80,72 +85,40 @@ export function useIdeaCreateForm() {
   const displayImageUrl = imagePreviewUrl ?? remoteMainImageUrl;
 
   useEffect(() => {
-    const unsubFinish = useCreateIdeaStore.persist.onFinishHydration(() => {
-      setHasStoreHydrated(true);
-    });
-
-    if (useCreateIdeaStore.persist.hasHydrated()) {
-      setHasStoreHydrated(true);
-    }
-
-    return unsubFinish;
-  }, []);
-
-  useEffect(() => {
-    if (!hasStoreHydrated || initializedRef.current) return;
+    if (initializedRef.current) return;
 
     initializedRef.current = true;
 
     const init = async () => {
-      const store = useCreateIdeaStore.getState();
-      const ideaIdToLoad = urlIdeaId ?? store.draft.id;
+      if (!urlIdeaId) return;
 
-      if (urlIdeaId && urlIdeaId !== store.draft.id) {
-        store.reset();
+      setIsHydrating(true);
+      setError(null);
+
+      try {
+        const idea = await fetchIdeaById(urlIdeaId);
+        const draft = ideaApiToDraft(idea);
+        const media = ideaApiToRemoteMedia(idea);
+
+        setEditingIdeaId(draft.id);
+        setIdeaStatus(draft.status);
+        setRemoteMedia(media);
+        form.reset(
+          draftToFormValues(draft, { mainImage: null, attachments: [] }),
+          {
+            keepDirty: false,
+          },
+        );
+      } catch (err) {
+        setError(getApiErrorMessage(err));
+        setEditingIdeaId(null);
+      } finally {
+        setIsHydrating(false);
       }
-
-      if (ideaIdToLoad) {
-        store.setHydrating(true);
-        store.setError(null);
-        try {
-          const idea = await fetchIdeaById(ideaIdToLoad);
-          store.hydrateFromIdea(idea);
-        } catch (err) {
-          const message = getApiErrorMessage(err);
-          store.setError(message);
-          setEditingIdeaId(null);
-        } finally {
-          store.setHydrating(false);
-        }
-      }
-
-      form.reset(useCreateIdeaStore.getState().getFormValues(), {
-        keepDirty: false,
-      });
-
-      const loadedDraftId = useCreateIdeaStore.getState().draft.id;
-      setEditingIdeaId(loadedDraftId || null);
-
-      const restoredMainImage =
-        useCreateIdeaStore.getState().localFiles.mainImage;
-      if (restoredMainImage) {
-        setImagePreviewUrl(URL.createObjectURL(restoredMainImage));
-      }
-
-      formSyncEnabledRef.current = true;
     };
 
     void init();
-  }, [hasStoreHydrated, form, urlIdeaId]);
-
-  useEffect(() => {
-    const subscription = form.watch(values => {
-      if (!formSyncEnabledRef.current) return;
-      syncFromForm(values as IdeaCreateFormValues);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [form, syncFromForm]);
+  }, [form, urlIdeaId]);
 
   const setMainImage = useCallback(
     (file: File | null) => {
@@ -163,9 +136,9 @@ export function useIdeaCreateForm() {
         form.clearErrors('mainImage');
       }
 
-      setLocalFiles({ mainImage: file });
+      setError(null);
     },
-    [form, setLocalFiles],
+    [form],
   );
 
   const clearMainImage = useCallback(() => {
@@ -173,9 +146,7 @@ export function useIdeaCreateForm() {
     if (imageInputRef.current) {
       imageInputRef.current.value = '';
     }
-    useCreateIdeaStore.setState(state => ({
-      remoteMedia: state.remoteMedia.filter(media => media.kind !== 'main'),
-    }));
+    setRemoteMedia(prev => prev.filter(media => media.kind !== 'main'));
   }, [setMainImage]);
 
   useEffect(() => {
@@ -184,10 +155,15 @@ export function useIdeaCreateForm() {
     };
   }, [imagePreviewUrl]);
 
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
   const clearCreateIdeaSession = useCallback(() => {
-    formSyncEnabledRef.current = false;
-    useCreateIdeaStore.getState().reset();
     setEditingIdeaId(null);
+    setIdeaStatus(IDEA_STATUS.DRAFT);
+    setRemoteMedia([]);
+    setError(null);
     form.reset(ideaCreateDefaultValues);
     setImagePreviewUrl(prev => {
       if (prev) {
@@ -198,23 +174,25 @@ export function useIdeaCreateForm() {
     if (imageInputRef.current) {
       imageInputRef.current.value = '';
     }
-
-    queueMicrotask(() => {
-      formSyncEnabledRef.current = true;
-    });
   }, [form]);
 
-  const onSaveDraft = async (): Promise<boolean> => {
+  const onSaveDraft = async (): Promise<IdeaSaveDraftResult> => {
     const values = form.getValues();
     const result = ideaCreateDraftSchema.safeParse(values);
-    if (!result.success) return false;
+    if (!result.success) return { success: false };
+
+    setError(null);
 
     try {
-      await saveDraftMutation.mutateAsync(values);
+      const idea = await saveDraftMutation.mutateAsync({
+        values,
+        ideaId: editingIdeaId,
+      });
       clearCreateIdeaSession();
-      return true;
-    } catch {
-      return false;
+      return { success: true, ideaId: idea.id };
+    } catch (err) {
+      setError(getApiErrorMessage(err));
+      return { success: false };
     }
   };
 
@@ -243,9 +221,7 @@ export function useIdeaCreateForm() {
     event?.preventDefault();
 
     const values = form.getValues();
-    const hasRemoteMainImage = useCreateIdeaStore
-      .getState()
-      .remoteMedia.some(media => media.kind === 'main');
+    const hasRemoteMainImage = remoteMedia.some(media => media.kind === 'main');
     const result = validateForPublish(values, { hasRemoteMainImage });
 
     if (!result.success) {
@@ -264,25 +240,42 @@ export function useIdeaCreateForm() {
       };
     }
 
+    setError(null);
+
     try {
-      await publishMutation.mutateAsync(values);
+      const response = await publishMutation.mutateAsync({
+        values,
+        ideaId: editingIdeaId,
+        ideaStatus,
+      });
       clearCreateIdeaSession();
-      return { success: true };
-    } catch {
+      return {
+        success: true,
+        ideaId: response.idea.id,
+        action: response.action,
+      };
+    } catch (err) {
+      setError(getApiErrorMessage(err));
       return { success: false };
     }
   };
 
-  const isSavingDraft =
-    saveDraftMutation.isPending || (isSaving && !publishMutation.isPending);
+  const isSavingDraft = saveDraftMutation.isPending;
   const isPublishing = publishMutation.isPending;
   const isBusy = isHydrating || isSavingDraft || isPublishing;
   const watchedValues = form.watch();
+  const formIsDirty = form.formState.isDirty;
   const canPublish = validateForPublish(watchedValues, {
     hasRemoteMainImage: remoteMedia.some(media => media.kind === 'main'),
   }).success;
   const isPublishedIdea = ideaStatus === IDEA_STATUS.PUBLISHED;
   const isEditing = Boolean(editingIdeaId);
+  const hasUnsavedProgress = hasCreateIdeaUnsavedProgress(
+    formIsDirty,
+    watchedValues,
+    remoteMedia,
+    isEditing,
+  );
 
   return {
     form,
@@ -304,6 +297,8 @@ export function useIdeaCreateForm() {
     isPublishing,
     isHydrating,
     error,
+    clearError,
+    hasUnsavedProgress,
     clearCreateIdeaSession,
   };
 }

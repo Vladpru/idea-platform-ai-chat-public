@@ -1,4 +1,4 @@
-import { discussionSearchSchema } from '@/features/discussion/lib/discussion-search';
+import { ideaDetailsSearchSchema } from '@/features/idea-details/lib/idea-details-search';
 import { IdeaDetailsPage } from '@/pages/ideas';
 import { createFileRoute, useParams } from '@tanstack/react-router';
 import { z } from 'zod';
@@ -11,7 +11,7 @@ const ideaDetailsParamsSchema = z.object({
 
 export const Route = createFileRoute('/_auth/ideas/$ideaId')({
   parseParams: raw => ideaDetailsParamsSchema.parse(raw),
-  validateSearch: search => discussionSearchSchema.parse(search),
+  validateSearch: search => ideaDetailsSearchSchema.parse(search),
   head: () => pageDocumentHead('Idea Details'),
   component: IdeaDetailsRoute,
 });
