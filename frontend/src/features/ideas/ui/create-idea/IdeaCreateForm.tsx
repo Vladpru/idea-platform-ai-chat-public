@@ -88,6 +88,7 @@ export function IdeaCreateForm({
     isPublishing,
     isHydrating,
     error,
+    clearError,
     hasUnsavedProgress,
     clearCreateIdeaSession,
   } = useIdeaCreateForm();
@@ -439,7 +440,7 @@ export function IdeaCreateForm({
                           event.stopPropagation();
                           clearMainImage();
                         }}
-                        isBusy={formBusy}
+                        isBusy={false}
                       />
                     </>
                   ) : (
@@ -474,6 +475,7 @@ export function IdeaCreateForm({
           <IdeaFilesField
             control={control}
             disabled={formBusy}
+            onFilesModified={clearError}
             ideaTitle={trimmedTitle}
             ideaDescription={trimmedDescription}
           />

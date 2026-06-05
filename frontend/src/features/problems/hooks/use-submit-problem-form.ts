@@ -114,6 +114,10 @@ export function useSubmitProblemForm() {
     setValidationModeBoth('draft');
   }, [form, setValidationModeBoth]);
 
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
   const onSaveDraft = useCallback(async () => {
     setError(null);
     setValidationModeBoth('draft');
@@ -199,6 +203,7 @@ export function useSubmitProblemForm() {
   return {
     form,
     error,
+    clearError,
     isBusy,
     isHydrating,
     isSavingDraft,

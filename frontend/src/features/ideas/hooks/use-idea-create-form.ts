@@ -135,6 +135,8 @@ export function useIdeaCreateForm() {
       if (!file) {
         form.clearErrors('mainImage');
       }
+
+      setError(null);
     },
     [form],
   );
@@ -152,6 +154,10 @@ export function useIdeaCreateForm() {
       if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
     };
   }, [imagePreviewUrl]);
+
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
 
   const clearCreateIdeaSession = useCallback(() => {
     setEditingIdeaId(null);
@@ -291,6 +297,7 @@ export function useIdeaCreateForm() {
     isPublishing,
     isHydrating,
     error,
+    clearError,
     hasUnsavedProgress,
     clearCreateIdeaSession,
   };

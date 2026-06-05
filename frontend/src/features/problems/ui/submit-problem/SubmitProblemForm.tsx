@@ -16,7 +16,7 @@ import {
 } from '@/features/problems/lib/submit-problem';
 import { SaveDraftButton } from '@/features/problems/ui/tooltips';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { useId } from 'react';
+import { useEffect, useId } from 'react';
 import { Controller } from 'react-hook-form';
 
 import { ROUTES } from '@/shared/config/paths';
@@ -32,6 +32,7 @@ import { selectClass } from '@/shared/ui/TagsInput';
 import { Button } from '@/shared/ui/button';
 import { ConfirmModal } from '@/shared/ui/confirm-modal';
 import { Input } from '@/shared/ui/input';
+import { SaveProgressBeforeLeavingModal } from '@/shared/ui/save-progress-before-leaving-modal';
 import {
   Select,
   SelectContent,
@@ -39,14 +40,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/ui/select';
-import { SaveProgressBeforeLeavingModal } from '@/shared/ui/save-progress-before-leaving-modal';
 
 import { IdeaSelect } from './IdeaSelect';
 import { ProblemFilesField } from './ProblemFilesField';
 import { ProblemTagsField } from './ProblemTagsField';
 import { SimilarProblemsSection } from './SimilarProblemsSection';
 
-export function SubmitProblemForm() {
+export type ProblemDocumentAutoFillControls = {
+  isScanning: boolean;
+  handleFileSelected: (file: File) => void;
+  disabled: boolean;
+};
+
+type SubmitProblemFormProps = {
+  onDocumentAutoFillControlsChange?: (
+    controls: ProblemDocumentAutoFillControls,
+  ) => void;
+};
+
+export function SubmitProblemForm({
+  onDocumentAutoFillControlsChange,
+}: SubmitProblemFormProps) {
   const navigate = useNavigate();
   const { problemId: editingProblemId } = useSearch({
     from: '/_auth/problems/new',
@@ -56,6 +70,7 @@ export function SubmitProblemForm() {
   const {
     form,
     error,
+    clearError,
     isBusy,
     isHydrating,
     isSavingDraft,
@@ -94,6 +109,19 @@ export function SubmitProblemForm() {
     });
 
   const formBusy = isBusy || isScanning;
+
+  useEffect(() => {
+    onDocumentAutoFillControlsChange?.({
+      isScanning,
+      handleFileSelected,
+      disabled: formBusy,
+    });
+  }, [
+    formBusy,
+    handleFileSelected,
+    isScanning,
+    onDocumentAutoFillControlsChange,
+  ]);
 
   const watchedValues = watch();
   const hasUnsavedProgress = hasSubmitProblemUnsavedProgress(
@@ -182,15 +210,6 @@ export function SubmitProblemForm() {
           </p>
         ) : null}
 
-        {isScanning ? (
-          <p
-            role="status"
-            className="text-brand-gray-700 border-brand-dark-blue/20 bg-brand-gray-100 rounded-md border px-3 py-2 text-sm"
-          >
-            Scanning document and populating fields…
-          </p>
-        ) : null}
-
         <FieldGroup>
           <FieldLabel htmlFor={`${formId}-stage`} required>
             Stage
@@ -227,9 +246,7 @@ export function SubmitProblemForm() {
           <FieldError message={errors.stage?.message} />
         </FieldGroup>
 
-        <FieldGroup
-          className={cn(isScanning && 'animate-pulse opacity-70')}
-        >
+        <FieldGroup>
           <div className="flex flex-wrap items-end justify-between gap-2">
             <FieldLabel htmlFor={`${formId}-title`} required>
               Problem Title
@@ -264,9 +281,7 @@ export function SubmitProblemForm() {
           </div>
         </FieldGroup>
 
-        <FieldGroup
-          className={cn(isScanning && 'animate-pulse opacity-70')}
-        >
+        <FieldGroup>
           <div className="flex flex-wrap items-end justify-between gap-2">
             <FieldLabel htmlFor={`${formId}-description`} required>
               Description
@@ -299,9 +314,7 @@ export function SubmitProblemForm() {
           </div>
         </FieldGroup>
 
-        <FieldGroup
-          className={cn(isScanning && 'animate-pulse opacity-70')}
-        >
+        <FieldGroup>
           <div className="flex flex-wrap items-end justify-between gap-2">
             <FieldLabel htmlFor={`${formId}-valueProposition`}>
               Value Proposition
@@ -334,9 +347,7 @@ export function SubmitProblemForm() {
           </div>
         </FieldGroup>
 
-        <FieldGroup
-          className={cn(isScanning && 'animate-pulse opacity-70')}
-        >
+        <FieldGroup>
           <FieldLabel htmlFor={`${formId}-costBenefit`}>
             Potential Cost Benefit
           </FieldLabel>
@@ -375,22 +386,19 @@ export function SubmitProblemForm() {
 
         <IdeaSelect formId={formId} control={control} errors={errors} />
 
-        <div className={cn(isScanning && 'animate-pulse opacity-70')}>
-          <ProblemTagsField
-            formId={formId}
-            control={control}
-            errors={errors}
-            disabled={formBusy}
-          />
-        </div>
+        <ProblemTagsField
+          formId={formId}
+          control={control}
+          errors={errors}
+          disabled={formBusy}
+        />
 
         <FieldGroup>
           <FieldLabel>Files</FieldLabel>
           <ProblemFilesField
             control={control}
             disabled={formBusy}
-            isScanning={isScanning}
-            onAutoFillFileSelected={handleFileSelected}
+            onFilesModified={clearError}
           />
           <FieldError message={errors.files?.message} />
         </FieldGroup>

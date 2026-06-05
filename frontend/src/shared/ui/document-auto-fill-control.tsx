@@ -58,11 +58,7 @@ export function DocumentAutoFillControl({
             aria-label={tooltipLabel}
             onClick={() => inputRef.current?.click()}
           >
-            {isScanning ? (
-              <Loader2 className="size-5 shrink-0 animate-spin" aria-hidden />
-            ) : (
-              <FileUpIcon className="size-5 shrink-0" aria-hidden />
-            )}
+            <FileUpIcon className="size-5 shrink-0" aria-hidden />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">{tooltipLabel}</TooltipContent>
