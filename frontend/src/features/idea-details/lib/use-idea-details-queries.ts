@@ -20,6 +20,8 @@ export function useIdeaDetailsQuery(ideaId: string) {
     },
     enabled: Boolean(ideaId),
     retry: shouldRetryDetailResourceQuery,
+    refetchInterval: query =>
+      query.state.data?.summaryStatus === 'PENDING' ? 3000 : false,
   });
 }
 

@@ -56,6 +56,8 @@ export function toProblemDetails(dto: ProblemForm): ProblemDetails {
     status: dto.status,
     title: dto.title?.trim() ?? '',
     description: dto.description?.trim() ?? '',
+    aiSummary: dto.aiSummary,
+    summaryStatus: dto.summaryStatus,
     valueProposition: dto.valueProposition?.trim() || null,
     costBenefit: dto.costBenefit,
     stage: toStageLabel(dto.stage),

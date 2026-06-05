@@ -2,6 +2,8 @@ export type ProblemStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
 
 export type ProblemStage = 'active' | 'completed' | 'archived';
 
+export type SummaryStatus = 'PENDING' | 'COMPLETED' | 'FAILED';
+
 export type ProblemAuthor = {
   id: string;
   email: string;
@@ -20,6 +22,8 @@ export type ProblemForm = {
   costBenefit: string | null;
   category: string | null;
   impact: string | null;
+  aiSummary: string | null;
+  summaryStatus: SummaryStatus;
   publishedAt: string | null;
   viewCount?: number;
   likeCount?: number;

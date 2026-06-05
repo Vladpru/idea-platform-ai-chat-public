@@ -1,4 +1,5 @@
 import type { ApiStage, IdeaStatus } from '@/features/ideas/model/idea.types';
+import type { SummaryStatus } from '@/features/ideas/api/idea-form-api.types';
 
 export type IdeaTabId =
   | 'description'
@@ -78,6 +79,8 @@ export type IdeaDetails = {
   status: IdeaStatus;
   title: string;
   description: string;
+  aiSummary: string | null;
+  summaryStatus: SummaryStatus;
   stage: string;
   stageValue: ApiStage | null;
   mainImage: IdeaDetailsMainImage | null;

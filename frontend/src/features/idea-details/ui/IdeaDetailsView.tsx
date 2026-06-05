@@ -2,6 +2,7 @@ import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import { scheduleHighlightDirtyComment } from '@/features/discussion/lib/highlight-dirty-comment';
 import { useDiscussionUiStore } from '@/features/discussion/model/discussion-ui-store';
 import { DiscussionTab } from '@/features/discussion/ui/DiscussionTab';
+import { EntityAiSummaryBlock } from '@/features/entity-ai-summary/EntityAiSummaryBlock';
 import {
   useIdeaDetailsQuery,
   useSimilarIdeasQuery,
@@ -384,6 +385,10 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
                       />
                     </div>
                   ) : null}
+                  <EntityAiSummaryBlock
+                    aiSummary={idea.aiSummary}
+                    summaryStatus={idea.summaryStatus}
+                  />
                   {idea.description ? (
                     <p className="text-brand-gray-800 font-EB-Garamond max-w-full min-w-0 text-sm leading-relaxed wrap-break-word whitespace-pre-wrap sm:text-base">
                       {idea.description}
