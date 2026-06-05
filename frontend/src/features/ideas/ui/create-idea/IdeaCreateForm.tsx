@@ -14,15 +14,17 @@ import { SuggestedTagsField } from '@/features/tags/ui/SuggestedTagsField';
 import { useCreateIdeaStore } from '@/features/ideas/store/create-idea.store';
 import { useNavigate } from '@tanstack/react-router';
 import { Upload } from 'lucide-react';
-import { useId, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Controller } from 'react-hook-form';
 
 import { ROUTES } from '@/shared/config/paths';
 import { useCreateFormLeaveGuard } from '@/shared/hooks/use-create-form-leave-guard';
+import { useDocumentAutoFill } from '@/shared/hooks/use-document-auto-fill';
 import { SAVE_IDEA_PROGRESS_DESCRIPTION } from '@/shared/lib/create-form-leave/copy';
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
+import { ConfirmModal } from '@/shared/ui/confirm-modal';
 import { Input } from '@/shared/ui/input';
 import { SaveProgressBeforeLeavingModal } from '@/shared/ui/save-progress-before-leaving-modal';
 import {
@@ -45,14 +47,24 @@ const INVALID_MAIN_IMAGE_TYPE_MESSAGE = 'Main image must be PNG, JPEG, or WEBP';
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const FILE_TOO_LARGE_MESSAGE = 'File size must be less than 5MB';
 
+export type IdeaDocumentAutoFillControls = {
+  isScanning: boolean;
+  handleFileSelected: (file: File) => void;
+  disabled: boolean;
+};
+
 type IdeaCreateFormProps = {
   aiDraftPrefill?: IdeaAIPrefillResponse | null;
   onAiDraftPrefillApplied?: () => void;
+  onDocumentAutoFillControlsChange?: (
+    controls: IdeaDocumentAutoFillControls,
+  ) => void;
 };
 
 export function IdeaCreateForm({
   aiDraftPrefill,
   onAiDraftPrefillApplied,
+  onDocumentAutoFillControlsChange,
 }: IdeaCreateFormProps) {
   const navigate = useNavigate();
   const formId = useId();
@@ -104,6 +116,27 @@ export function IdeaCreateForm({
     onAiDraftPrefillApplied,
   });
 
+  const { isScanning, handleFileSelected, confirmModalProps } =
+    useDocumentAutoFill({
+      entityType: 'idea',
+      form,
+    });
+
+  const formBusy = isBusy || isScanning;
+
+  useEffect(() => {
+    onDocumentAutoFillControlsChange?.({
+      isScanning,
+      handleFileSelected,
+      disabled: formBusy,
+    });
+  }, [
+    formBusy,
+    handleFileSelected,
+    isScanning,
+    onDocumentAutoFillControlsChange,
+  ]);
+
   const draft = useCreateIdeaStore(state => state.draft);
   const localFiles = useCreateIdeaStore(state => state.localFiles);
   const remoteMedia = useCreateIdeaStore(state => state.remoteMedia);
@@ -123,7 +156,7 @@ export function IdeaCreateForm({
     handleSaveAsDraft: handleLeaveSaveAsDraft,
   } = useCreateFormLeaveGuard({
     hasUnsavedProgress,
-    isBusy,
+    isBusy: formBusy,
     onSaveDraft,
     onDiscard: clearCreateIdeaSession,
   });
@@ -136,7 +169,7 @@ export function IdeaCreateForm({
     },
     maxFiles: 1,
     maxSize: MAX_FILE_SIZE_BYTES,
-    disabled: isBusy,
+    disabled: formBusy,
     onDrop: acceptedFiles => {
       const file = acceptedFiles[0];
       if (!file) return;
@@ -225,7 +258,7 @@ export function IdeaCreateForm({
                 <Select
                   value={field.value}
                   onValueChange={field.onChange}
-                  disabled={isBusy}
+                  disabled={formBusy}
                 >
                   <SelectTrigger
                     id={`${formId}-stage`}
@@ -264,7 +297,9 @@ export function IdeaCreateForm({
           />
         </div>
 
-        <FieldGroup data-publish-field="title">
+        <FieldGroup
+          data-publish-field="title"
+        >
           <div className="flex flex-wrap items-end justify-between gap-2">
             <FieldLabel htmlFor={`${formId}-title`} required>
               Title
@@ -285,7 +320,7 @@ export function IdeaCreateForm({
             className="bg-card mt-2"
             placeholder="Type in the name of the idea..."
             aria-invalid={!!errors.title}
-            disabled={isBusy}
+            disabled={formBusy}
             maxLength={200}
             {...register('title')}
           />
@@ -315,7 +350,7 @@ export function IdeaCreateForm({
             className={cn(textareaClass, 'mt-2')}
             placeholder="Enter a description of the idea..."
             aria-invalid={!!errors.description}
-            disabled={isBusy}
+            disabled={formBusy}
             maxLength={5000}
             {...register('description')}
           />
@@ -356,7 +391,7 @@ export function IdeaCreateForm({
                     'border-brand-gray-200 hover:border-brand-dark-blue/40 focus-visible:ring-ring bg-card mt-2 flex min-h-[180px] cursor-pointer flex-col items-center justify-center rounded-md border border-dashed px-4 py-4 text-center transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
                     isDragActive && 'border-brand-dark-blue bg-brand-gray-100',
                     errors.mainImage && 'border-destructive',
-                    isBusy && 'cursor-not-allowed opacity-50',
+                    formBusy && 'cursor-not-allowed opacity-50',
                     displayImageUrl && 'relative overflow-hidden p-0',
                   )}
                 >
@@ -378,7 +413,7 @@ export function IdeaCreateForm({
                           event.stopPropagation();
                           clearMainImage();
                         }}
-                        isBusy={isBusy}
+                        isBusy={formBusy}
                       />
                     </>
                   ) : (
@@ -404,7 +439,7 @@ export function IdeaCreateForm({
           formId={formId}
           control={control}
           errors={errors}
-          disabled={isBusy}
+          disabled={formBusy}
           context="idea"
         />
 
@@ -412,7 +447,7 @@ export function IdeaCreateForm({
           <FieldLabel>Files</FieldLabel>
           <IdeaFilesField
             control={control}
-            disabled={isBusy}
+            disabled={formBusy}
             ideaTitle={trimmedTitle}
             ideaDescription={trimmedDescription}
           />
@@ -423,7 +458,7 @@ export function IdeaCreateForm({
           <button
             type="button"
             onClick={handleCancel}
-            disabled={isBusy}
+            disabled={formBusy}
             className="text-brand-orange hover:text-brand-orange-hover px-2 text-sm font-bold tracking-wide uppercase transition-colors disabled:opacity-50"
           >
             Cancel
@@ -434,7 +469,7 @@ export function IdeaCreateForm({
               variant="outline"
               className={outlineBtnClass}
               onClick={() => void handleSaveDraft()}
-              disabled={isBusy}
+              disabled={formBusy}
               isLoading={isSavingDraft}
             >
               Save as draft
@@ -443,7 +478,7 @@ export function IdeaCreateForm({
           <Button
             type="submit"
             className={publishBtnClass}
-            disabled={isBusy}
+            disabled={formBusy}
             isLoading={isPublishing}
           >
             {isPublishedIdea ? 'Save changes' : 'Publish idea'}
@@ -461,6 +496,8 @@ export function IdeaCreateForm({
       />
 
       <AiGenerationModal {...generationModalProps} />
+
+      <ConfirmModal {...confirmModalProps} />
     </>
   );
 }

@@ -1,8 +1,9 @@
 import { pageTitleClass } from '@/features/ideas/lib/styles';
 import { Link } from '@tanstack/react-router';
-import { ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft } from 'lucide-react';
 import type { ReactNode } from 'react';
 
+import { cn } from '@/shared/lib/utils';
 import { Card } from '@/shared/ui/card';
 
 export type CreationPageTemplateProps = {
@@ -12,6 +13,8 @@ export type CreationPageTemplateProps = {
   headerAction?: ReactNode;
   footer?: ReactNode;
   backTo?: string;
+  loadingOverlay?: boolean;
+  loadingMessage?: string;
 };
 
 export function CreationPageTemplate({
@@ -21,11 +24,34 @@ export function CreationPageTemplate({
   headerAction,
   footer,
   backTo,
+  loadingOverlay = false,
+  loadingMessage = 'Loading…',
 }: CreationPageTemplateProps) {
   return (
     <main className="bg-brand-neutral min-h-[calc(100vh-56px)] px-4 md:px-8 lg:px-12">
       <div className="mx-auto max-w-5xl">
-        <Card className="text-card-foreground bg-card rounded-none p-6 md:p-10">
+        <Card
+          className={cn(
+            'text-card-foreground bg-card relative rounded-none p-6 md:p-10',
+            loadingOverlay && 'pointer-events-none',
+          )}
+        >
+          {loadingOverlay ? (
+            <div
+              role="status"
+              aria-live="polite"
+              aria-busy="true"
+              className="bg-background/70 absolute inset-0 z-20 flex flex-col items-center justify-center backdrop-blur-[1px]"
+            >
+              <Loader2
+                className="text-brand-dark-blue size-10 animate-spin"
+                aria-hidden
+              />
+              <p className="text-brand-gray-700 mt-4 max-w-xs text-center text-sm">
+                {loadingMessage}
+              </p>
+            </div>
+          ) : null}
           {backTo ? (
             <Link
               to={backTo}

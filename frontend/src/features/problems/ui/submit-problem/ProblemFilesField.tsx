@@ -13,16 +13,21 @@ import { Controller } from 'react-hook-form';
 import { toast } from 'sonner';
 
 import { Button } from '@/shared/ui/button';
+import { DocumentAutoFillControl } from '@/shared/ui/document-auto-fill-control';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip';
 
 type ProblemFilesFieldProps = {
   control: Control<SubmitProblemFormValues>;
   disabled?: boolean;
+  isScanning?: boolean;
+  onAutoFillFileSelected?: (file: File) => void;
 };
 
 export function ProblemFilesField({
   control,
   disabled = false,
+  isScanning = false,
+  onAutoFillFileSelected,
 }: ProblemFilesFieldProps) {
   const [addFilesOpen, setAddFilesOpen] = useState(false);
 
@@ -53,6 +58,15 @@ export function ProblemFilesField({
 
         return (
           <>
+            {onAutoFillFileSelected ? (
+              <DocumentAutoFillControl
+                className="mt-2"
+                disabled={disabled}
+                isScanning={isScanning}
+                onFileSelected={onAutoFillFileSelected}
+              />
+            ) : null}
+
             <div className="mt-2 flex flex-wrap items-start gap-3 pt-2 pr-2">
               {files.map(file => {
                 const key = getAttachmentFileKey(file);

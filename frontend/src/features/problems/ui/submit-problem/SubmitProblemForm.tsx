@@ -21,6 +21,7 @@ import { Controller } from 'react-hook-form';
 
 import { ROUTES } from '@/shared/config/paths';
 import { useCreateFormLeaveGuard } from '@/shared/hooks/use-create-form-leave-guard';
+import { useDocumentAutoFill } from '@/shared/hooks/use-document-auto-fill';
 import {
   SAVE_PROBLEM_PROGRESS_DESCRIPTION,
   UNDO_CHANGES_DESCRIPTION,
@@ -86,6 +87,14 @@ export function SubmitProblemForm() {
       trimmedDescription,
     });
 
+  const { isScanning, handleFileSelected, confirmModalProps } =
+    useDocumentAutoFill({
+      entityType: 'problem',
+      form,
+    });
+
+  const formBusy = isBusy || isScanning;
+
   const watchedValues = watch();
   const hasUnsavedProgress = hasSubmitProblemUnsavedProgress(
     formIsDirty,
@@ -116,7 +125,7 @@ export function SubmitProblemForm() {
     handleSaveAsDraft: handleLeaveSaveAsDraft,
   } = useCreateFormLeaveGuard({
     hasUnsavedProgress,
-    isBusy,
+    isBusy: formBusy,
     onSaveDraft: async () => {
       const wasEditing = isEditing;
       const problemId = await onSaveDraft();
@@ -171,6 +180,15 @@ export function SubmitProblemForm() {
           </p>
         ) : null}
 
+        {isScanning ? (
+          <p
+            role="status"
+            className="text-brand-gray-700 border-brand-dark-blue/20 bg-brand-gray-100 rounded-md border px-3 py-2 text-sm"
+          >
+            Scanning document and populating fields…
+          </p>
+        ) : null}
+
         <FieldGroup>
           <FieldLabel htmlFor={`${formId}-stage`} required>
             Stage
@@ -182,7 +200,7 @@ export function SubmitProblemForm() {
               <Select
                 value={field.value}
                 onValueChange={field.onChange}
-                disabled={isBusy}
+                disabled={formBusy}
               >
                 <SelectTrigger
                   id={`${formId}-stage`}
@@ -207,15 +225,17 @@ export function SubmitProblemForm() {
           <FieldError message={errors.stage?.message} />
         </FieldGroup>
 
-        <FieldGroup>
+        <FieldGroup
+          className={cn(isScanning && 'animate-pulse opacity-70')}
+        >
           <div className="flex flex-wrap items-end justify-between gap-2">
             <FieldLabel htmlFor={`${formId}-title`} required>
               Problem Title
             </FieldLabel>
             <IdeaCreateAiAssistLink
-              disabled={isBusy || !canRegenerateTitle}
+              disabled={formBusy || !canRegenerateTitle}
               onClick={
-                canRegenerateTitle && !isBusy
+                canRegenerateTitle && !formBusy
                   ? () => openAssistModal('title')
                   : undefined
               }
@@ -230,7 +250,7 @@ export function SubmitProblemForm() {
             className="bg-card mt-2"
             placeholder="Keep it short and specific, e.g., 'Low visibility into equipment usage'..."
             aria-invalid={!!errors.title}
-            disabled={isBusy}
+            disabled={formBusy}
             maxLength={200}
             {...register('title')}
           />
@@ -242,15 +262,17 @@ export function SubmitProblemForm() {
           </div>
         </FieldGroup>
 
-        <FieldGroup>
+        <FieldGroup
+          className={cn(isScanning && 'animate-pulse opacity-70')}
+        >
           <div className="flex flex-wrap items-end justify-between gap-2">
             <FieldLabel htmlFor={`${formId}-description`} required>
               Description
             </FieldLabel>
             <IdeaCreateAiAssistLink
-              disabled={isBusy}
+              disabled={formBusy}
               onClick={
-                isBusy ? undefined : () => openAssistModal('description')
+                formBusy ? undefined : () => openAssistModal('description')
               }
             >
               {descriptionValue
@@ -263,7 +285,7 @@ export function SubmitProblemForm() {
             className={cn(textareaClass, 'mt-2')}
             placeholder="Add context, why this is a problem, and who it affects..."
             aria-invalid={!!errors.description}
-            disabled={isBusy}
+            disabled={formBusy}
             maxLength={5000}
             {...register('description')}
           />
@@ -275,15 +297,17 @@ export function SubmitProblemForm() {
           </div>
         </FieldGroup>
 
-        <FieldGroup>
+        <FieldGroup
+          className={cn(isScanning && 'animate-pulse opacity-70')}
+        >
           <div className="flex flex-wrap items-end justify-between gap-2">
             <FieldLabel htmlFor={`${formId}-valueProposition`}>
               Value Proposition
             </FieldLabel>
             <IdeaCreateAiAssistLink
-              disabled={isBusy}
+              disabled={formBusy}
               onClick={
-                isBusy ? undefined : () => openAssistModal('valueProposition')
+                formBusy ? undefined : () => openAssistModal('valueProposition')
               }
             >
               {valuePropositionValue
@@ -296,7 +320,7 @@ export function SubmitProblemForm() {
             className={cn(textareaClass, 'mt-2')}
             placeholder="What are the potential benefits of solving this problem?"
             aria-invalid={!!errors.valueProposition}
-            disabled={isBusy}
+            disabled={formBusy}
             maxLength={5000}
             {...register('valueProposition')}
           />
@@ -308,7 +332,9 @@ export function SubmitProblemForm() {
           </div>
         </FieldGroup>
 
-        <FieldGroup>
+        <FieldGroup
+          className={cn(isScanning && 'animate-pulse opacity-70')}
+        >
           <FieldLabel htmlFor={`${formId}-costBenefit`}>
             Potential Cost Benefit
           </FieldLabel>
@@ -330,7 +356,7 @@ export function SubmitProblemForm() {
                   maxLength={13}
                   inputMode="decimal"
                   aria-invalid={!!errors.costBenefit}
-                  disabled={isBusy}
+                  disabled={formBusy}
                   value={field.value ?? ''}
                   onChange={event =>
                     field.onChange(sanitizeCostBenefitInput(event.target.value))
@@ -347,16 +373,23 @@ export function SubmitProblemForm() {
 
         <IdeaSelect formId={formId} control={control} errors={errors} />
 
-        <ProblemTagsField
-          formId={formId}
-          control={control}
-          errors={errors}
-          disabled={isBusy}
-        />
+        <div className={cn(isScanning && 'animate-pulse opacity-70')}>
+          <ProblemTagsField
+            formId={formId}
+            control={control}
+            errors={errors}
+            disabled={formBusy}
+          />
+        </div>
 
         <FieldGroup>
           <FieldLabel>Files</FieldLabel>
-          <ProblemFilesField control={control} disabled={isBusy} />
+          <ProblemFilesField
+            control={control}
+            disabled={formBusy}
+            isScanning={isScanning}
+            onAutoFillFileSelected={handleFileSelected}
+          />
           <FieldError message={errors.files?.message} />
         </FieldGroup>
 
@@ -370,7 +403,7 @@ export function SubmitProblemForm() {
           <button
             type="button"
             onClick={handleCancel}
-            disabled={isBusy}
+            disabled={formBusy}
             className="text-brand-orange hover:text-brand-orange-hover px-2 text-sm font-bold tracking-wide uppercase transition-colors disabled:opacity-50"
           >
             Cancel
@@ -379,14 +412,14 @@ export function SubmitProblemForm() {
             <SaveDraftButton
               canSave={canSaveDraft}
               isSaving={isSavingDraft}
-              disabled={isBusy}
+              disabled={formBusy}
               onSave={() => void handleSaveDraft()}
             />
           ) : null}
           <Button
             type="submit"
             className={publishBtnClass}
-            disabled={isBusy}
+            disabled={formBusy}
             isLoading={isPublishing}
           >
             {isEditing ? 'Save changes' : 'Publish problem'}
@@ -416,6 +449,8 @@ export function SubmitProblemForm() {
       )}
 
       <AiGenerationModal {...generationModalProps} />
+
+      <ConfirmModal {...confirmModalProps} />
     </>
   );
 }
