@@ -5,15 +5,7 @@ import {
 } from '@/features/profile/api/profile.api';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef } from 'react';
-
-function preferenceToClientTheme(pref: ThemePreference): 'light' | 'dark' {
-  if (pref === 'SYSTEM') {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? 'dark'
-      : 'light';
-  }
-  return pref === 'DARK' ? 'dark' : 'light';
-}
+import { useTheme } from '@/app/providers/theme-context';
 
 function clientThemeToPreference(theme: string): ThemePreference {
   if (theme === 'light') return 'LIGHT';
@@ -21,28 +13,35 @@ function clientThemeToPreference(theme: string): ThemePreference {
   return 'SYSTEM';
 }
 
+function preferenceToClientTheme(
+  pref: ThemePreference,
+): 'light' | 'dark' | 'system' {
+  if (pref === 'LIGHT') return 'light';
+  if (pref === 'DARK') return 'dark';
+  return 'system';
+}
+
 export function useThemeSync(themePreference: ThemePreference | undefined) {
   const queryClient = useQueryClient();
   const accessToken = useAuthSessionStore(s => s.accessToken);
+
+  const { theme: localTheme, setTheme: setLocalTheme } = useTheme();
+
   const lastSyncedPref = useRef<ThemePreference | undefined>(undefined);
   const pendingLocalChange = useRef(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const applyTheme = useCallback((themeMode: 'light' | 'dark') => {
-    const root = window.document.documentElement;
-    if (themeMode === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-  }, []);
-
   useEffect(() => {
     if (!themePreference || pendingLocalChange.current) return;
     if (lastSyncedPref.current === themePreference) return;
+
     lastSyncedPref.current = themePreference;
-    applyTheme(preferenceToClientTheme(themePreference));
-  }, [themePreference, applyTheme]);
+    const normalizedPref = preferenceToClientTheme(themePreference);
+
+    if (localTheme !== normalizedPref) {
+      setLocalTheme(normalizedPref);
+    }
+  }, [themePreference, localTheme, setLocalTheme]);
 
   const persistTheme = useCallback(
     (pref: ThemePreference) => {
@@ -84,21 +83,10 @@ export function useThemeSync(themePreference: ThemePreference | undefined) {
   }, []);
 
   const handleThemeChange = useCallback(
-    (next: string) => {
+    (next: 'light' | 'dark' | 'system') => {
       pendingLocalChange.current = true;
 
-      const root = window.document.documentElement;
-      if (next === 'dark') {
-        root.classList.add('dark');
-      } else if (next === 'light') {
-        root.classList.remove('dark');
-      } else {
-        const systemDark = window.matchMedia(
-          '(prefers-color-scheme: dark)',
-        ).matches;
-        if (systemDark) root.classList.add('dark');
-        else root.classList.remove('dark');
-      }
+      setLocalTheme(next);
 
       if (accessToken) {
         debouncedPersist(clientThemeToPreference(next));
@@ -106,10 +94,8 @@ export function useThemeSync(themePreference: ThemePreference | undefined) {
         pendingLocalChange.current = false;
       }
     },
-    [accessToken, debouncedPersist],
+    [accessToken, debouncedPersist, setLocalTheme],
   );
 
-  const currentTheme = themePreference ?? 'SYSTEM';
-
-  return { theme: currentTheme, setTheme: handleThemeChange };
+  return { theme: localTheme, setTheme: handleThemeChange };
 }
