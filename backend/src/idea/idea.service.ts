@@ -221,35 +221,6 @@ export class IdeaService {
     }
   }
 
-  private queuePublishedProblemSummaries(
-    problems: Array<{
-      id: string;
-      title: string;
-      description: string;
-      valueProposition: string | null;
-      category: string | null;
-      impact: string | null;
-    }>,
-  ): void {
-    for (const problem of problems) {
-      const summarizable = hasSummarizableContent({
-        entityType: 'problem',
-        title: problem.title,
-        description: problem.description,
-        valueProposition: problem.valueProposition,
-        category: problem.category,
-        impact: problem.impact,
-      });
-
-      if (summarizable) {
-        this.aiSummaryService.requestGeneration({
-          entityType: 'problem',
-          id: problem.id,
-        });
-      }
-    }
-  }
-
   private async syncProblems(
     tx: Prisma.TransactionClient,
     id: string,
@@ -565,13 +536,12 @@ export class IdeaService {
     });
 
     if (shouldRequestSummary) {
-      this.aiSummaryService.requestGeneration({
-        entityType: 'idea',
-        id: idea.id,
-      });
+      this.aiSummaryService.enqueueIdeaSummary(idea.id);
     }
 
-    this.queuePublishedProblemSummaries(publishedProblems);
+    this.aiSummaryService.enqueueSummariesForPublishedProblems(
+      publishedProblems,
+    );
 
     return toIdeaFormResponse(idea, authorId);
   }
@@ -627,10 +597,7 @@ export class IdeaService {
     });
 
     if (shouldResetSummary && updated.status === IdeaStatus.PUBLISHED) {
-      this.aiSummaryService.requestGeneration({
-        entityType: 'idea',
-        id: updated.id,
-      });
+      this.aiSummaryService.enqueueIdeaSummary(updated.id);
     }
 
     return toIdeaFormResponse(updated, authorId);
@@ -709,10 +676,7 @@ export class IdeaService {
     });
 
     if (shouldResetSummary) {
-      this.aiSummaryService.requestGeneration({
-        entityType: 'idea',
-        id: updated.id,
-      });
+      this.aiSummaryService.enqueueIdeaSummary(updated.id);
     }
 
     return toIdeaFormResponse(updated, authorId);
@@ -847,13 +811,12 @@ export class IdeaService {
     });
 
     if (shouldRequestSummary) {
-      this.aiSummaryService.requestGeneration({
-        entityType: 'idea',
-        id: published.id,
-      });
+      this.aiSummaryService.enqueueIdeaSummary(published.id);
     }
 
-    this.queuePublishedProblemSummaries(publishedProblems);
+    this.aiSummaryService.enqueueSummariesForPublishedProblems(
+      publishedProblems,
+    );
 
     return toIdeaFormResponse(published, authorId);
   }

@@ -7,6 +7,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { hasSummarizableContent } from './summary-content.util';
 import type {
   EntitySummaryContent,
+  ProblemSubstantialExisting,
   SummaryRequestedEvent,
 } from './summary.types';
 
@@ -16,6 +17,10 @@ type UpdateData = {
 };
 
 const SKIPPED_SUMMARY_STATUS: SummaryStatus = 'SKIPPED';
+
+export type PublishedProblemSummaryInput = ProblemSubstantialExisting & {
+  id: string;
+};
 
 interface EntityStrategy {
   load(id: string): Promise<EntitySummaryContent | null>;
@@ -201,16 +206,43 @@ export class AiSummaryService {
     throw error;
   };
 
-  requestGeneration(payload: SummaryRequestedEvent): boolean {
+  /** Fire-and-forget: dispatches background summary generation without blocking callers. */
+  enqueueIdeaSummary(id: string): void {
+    this.enqueueGeneration({ entityType: 'idea', id });
+  }
+
+  /** Fire-and-forget: dispatches background summary generation without blocking callers. */
+  enqueueProblemSummary(id: string): void {
+    this.enqueueGeneration({ entityType: 'problem', id });
+  }
+
+  enqueueSummariesForPublishedProblems(
+    problems: PublishedProblemSummaryInput[],
+  ): void {
+    for (const problem of problems) {
+      if (
+        hasSummarizableContent({
+          entityType: 'problem',
+          title: problem.title,
+          description: problem.description,
+          valueProposition: problem.valueProposition,
+          category: problem.category,
+          impact: problem.impact,
+        })
+      ) {
+        this.enqueueProblemSummary(problem.id);
+      }
+    }
+  }
+
+  private enqueueGeneration(payload: SummaryRequestedEvent): void {
     try {
       this.eventEmitter.emit('summary.requested', payload);
-      return true;
     } catch (error) {
       this.logger.error(
         `Failed to emit summary.requested for ${payload.entityType} ${payload.id}`,
         error,
       );
-      return false;
     }
   }
 

@@ -497,10 +497,7 @@ export class ProblemService {
     });
 
     if (shouldRequestSummary) {
-      this.aiSummaryService.requestGeneration({
-        entityType: 'problem',
-        id: problem.id,
-      });
+      this.aiSummaryService.enqueueProblemSummary(problem.id);
     }
 
     return toProblemFormResponse(problem, authorId);
@@ -715,10 +712,7 @@ export class ProblemService {
     });
 
     if (shouldResetSummary && updated.status === ProblemStatus.PUBLISHED) {
-      this.aiSummaryService.requestGeneration({
-        entityType: 'problem',
-        id: updated.id,
-      });
+      this.aiSummaryService.enqueueProblemSummary(updated.id);
     }
 
     return toProblemFormResponse(updated, authorId);
