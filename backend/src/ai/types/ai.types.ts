@@ -21,6 +21,31 @@ export type IdeaPrefillOutput = {
   tags: string[];
 };
 
+export type DocumentEntityType = 'idea' | 'problem';
+
+export type DocumentExtractInput = {
+  documentText: string;
+  entityType: DocumentEntityType;
+};
+
+export type IdeaDocumentExtractOutput = {
+  title: string;
+  description: string;
+  tags: string[];
+};
+
+export type ProblemDocumentExtractOutput = {
+  title: string;
+  description: string;
+  valueProposition: string;
+  costBenefit: string;
+  tags: string[];
+};
+
+export type DocumentExtractOutput =
+  | IdeaDocumentExtractOutput
+  | ProblemDocumentExtractOutput;
+
 export type SuggestTagsInput = {
   title?: string;
   description: string;
