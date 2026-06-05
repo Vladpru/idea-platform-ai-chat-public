@@ -73,7 +73,7 @@ function ProblemDashboardCardCompactInner({
   ) : null;
 
   return (
-    <article className="group border-brand-gray-200 relative flex h-full min-h-[200px] flex-col overflow-hidden rounded-lg border bg-white transition-shadow hover:shadow-md">
+    <article className="group border-brand-gray-200 bg-card relative flex h-full min-h-[200px] flex-col overflow-hidden rounded-lg border transition-shadow hover:shadow-md">
       <Link
         to={detailHref}
         aria-label={card.title}
@@ -87,7 +87,7 @@ function ProblemDashboardCardCompactInner({
 
       <div
         className={cn(
-          'relative z-[2] flex h-full min-h-0 flex-col p-3 pointer-events-none',
+          'pointer-events-none relative z-[2] flex h-full min-h-0 flex-col p-3',
           showHover && 'transition-opacity duration-300 group-hover:opacity-0',
         )}
       >
@@ -110,7 +110,7 @@ function ProblemDashboardCardCompactInner({
       {showHover ? (
         <div
           className={cn(
-            'absolute inset-0 z-[3] flex flex-col justify-between overflow-hidden bg-white p-3',
+            'bg-card absolute inset-0 z-[3] flex flex-col justify-between overflow-hidden p-3',
             'pointer-events-none opacity-0 transition-opacity duration-300',
             'group-hover:pointer-events-auto group-hover:opacity-100',
           )}

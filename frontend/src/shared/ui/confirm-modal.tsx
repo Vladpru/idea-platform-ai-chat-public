@@ -41,10 +41,9 @@ export function ConfirmModal({
   const confirmButton = (
     <Button
       type="button"
-      variant="outline"
+      variant="ghost"
       className={cn(
-        outlineBtn,
-        'text-brand-orange border-brand-orange hover:bg-brand-orange/10 w-full min-w-[156px] px-6 py-1 sm:w-auto md:h-11',
+        'border-brand-orange text-brand-orange hover:bg-brand-orange/10 h-10 w-full min-w-[156px] rounded-sm border bg-transparent px-6 py-1 text-sm font-bold tracking-wide uppercase sm:w-auto md:h-11',
         confirmClassName,
       )}
       disabled={isPending}
@@ -58,7 +57,7 @@ export function ConfirmModal({
   const cancelButton = (
     <Button
       type="button"
-      variant="outline"
+      variant="ghost"
       className={cn(
         outlineBtn,
         'w-full min-w-[156px] px-6 py-1 sm:w-auto md:h-11',

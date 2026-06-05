@@ -33,7 +33,7 @@ export function ProfileView() {
 
   return (
     <div className="bg-brand-neutral dark:bg-background min-h-[64px] px-4 py-8 md:px-8">
-      <Card className="text-card-foreground dark:bg-card mx-auto max-w-4xl rounded-sm bg-white p-6 md:p-10">
+      <Card className="text-card-foreground dark:bg-card bg-card mx-auto max-w-4xl rounded-sm p-6 md:p-10">
         <h1 className={sectionTitleClass}>My account</h1>
 
         {!isEditing ? (

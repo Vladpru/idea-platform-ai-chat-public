@@ -282,7 +282,7 @@ export function IdeaCreateForm({
           </div>
           <Input
             id={`${formId}-title`}
-            className="mt-2 bg-white"
+            className="bg-card mt-2"
             placeholder="Type in the name of the idea..."
             aria-invalid={!!errors.title}
             disabled={isBusy}
@@ -353,7 +353,7 @@ export function IdeaCreateForm({
                 <div
                   {...getRootProps()}
                   className={cn(
-                    'border-brand-gray-200 hover:border-brand-dark-blue/40 focus-visible:ring-ring mt-2 flex min-h-[180px] cursor-pointer flex-col items-center justify-center rounded-md border border-dashed bg-white px-4 py-4 text-center transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+                    'border-brand-gray-200 hover:border-brand-dark-blue/40 focus-visible:ring-ring bg-card mt-2 flex min-h-[180px] cursor-pointer flex-col items-center justify-center rounded-md border border-dashed px-4 py-4 text-center transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
                     isDragActive && 'border-brand-dark-blue bg-brand-gray-100',
                     errors.mainImage && 'border-destructive',
                     isBusy && 'cursor-not-allowed opacity-50',

@@ -18,11 +18,7 @@ import { useAttachmentUrlLightbox } from '@/shared/hooks/use-attachment-url-ligh
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
 import { ImageLightbox } from '@/shared/ui/image-lightbox';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/shared/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip';
 
 type IdeaEditAttachmentsFieldProps = {
   control: Control<IdeaEditFormValues>;
@@ -53,11 +49,9 @@ function ExistingAttachmentCard({
       <div className="relative size-20 shrink-0">
         <button
           type="button"
-          className="border-brand-gray-200 size-full cursor-pointer overflow-hidden rounded-md border bg-white transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+          className="border-brand-gray-200 bg-card size-full cursor-pointer overflow-hidden rounded-md border transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
           onClick={onPreview}
-          aria-label={
-            isImage ? `Preview ${filename}` : `Open ${filename}`
-          }
+          aria-label={isImage ? `Preview ${filename}` : `Open ${filename}`}
         >
           {isImage ? (
             <img src={url} alt="" className="size-full object-cover" />
@@ -100,8 +94,14 @@ export function IdeaEditAttachmentsField({
 }: IdeaEditAttachmentsFieldProps) {
   const [addFilesOpen, setAddFilesOpen] = useState(false);
 
-  const existingAttachments = useWatch({ control, name: 'existingAttachments' });
-  const removedAttachmentIds = useWatch({ control, name: 'removedAttachmentIds' });
+  const existingAttachments = useWatch({
+    control,
+    name: 'existingAttachments',
+  });
+  const removedAttachmentIds = useWatch({
+    control,
+    name: 'removedAttachmentIds',
+  });
   const newFiles = useWatch({ control, name: 'newFiles' }) ?? [];
   const title = useWatch({ control, name: 'title' }) ?? '';
   const description = useWatch({ control, name: 'description' }) ?? '';
@@ -124,12 +124,8 @@ export function IdeaEditAttachmentsField({
     [visibleExisting],
   );
 
-  const {
-    openAttachment,
-    closeLightbox,
-    lightboxIndex,
-    lightboxImages,
-  } = useAttachmentUrlLightbox(existingPreviewItems);
+  const { openAttachment, closeLightbox, lightboxIndex, lightboxImages } =
+    useAttachmentUrlLightbox(existingPreviewItems);
 
   return (
     <Controller

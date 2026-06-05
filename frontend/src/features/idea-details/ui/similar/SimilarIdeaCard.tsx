@@ -17,7 +17,7 @@ type SimilarIdeaCardProps = {
 };
 
 const cardSurfaceClass =
-  'group flex w-full flex-col overflow-hidden rounded-lg border border-brand-gray-200 bg-white text-left shadow-sm transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-brand-dark-blue focus-visible:ring-offset-2 focus-visible:outline-none lg:flex-row';
+  'group flex w-full flex-col overflow-hidden rounded-lg border border-brand-gray-200 bg-card text-left shadow-sm transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-brand-dark-blue focus-visible:ring-offset-2 focus-visible:outline-none lg:flex-row';
 
 function SimilarIdeaCardContent({ card }: SimilarIdeaCardProps) {
   return (
@@ -44,7 +44,7 @@ function SimilarIdeaCardContent({ card }: SimilarIdeaCardProps) {
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-4">
             <div className="flex items-center gap-2">
-              <Avatar size="sm" className="ring-2 ring-white">
+              <Avatar size="sm" className="ring-card dark:ring-none ring-2">
                 {card.authorAvatarUrl ? (
                   <AvatarImage
                     src={card.authorAvatarUrl}

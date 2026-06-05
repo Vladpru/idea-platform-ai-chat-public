@@ -1,8 +1,14 @@
 import { pageTitleClass } from '@/features/ideas/lib/styles';
+import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
+import { fetchCurrentUser } from '@/features/profile/api/profile.api';
+import { useThemeSync } from '@/hooks/useThemeSync';
+import { useQuery } from '@tanstack/react-query';
+import { Monitor, Moon, Sun } from 'lucide-react';
 import { useMemo } from 'react';
 
 import { cn } from '@/shared/lib/utils';
 import { Switch } from '@/shared/ui';
+import { Tabs, TabsList, TabsTrigger } from '@/shared/ui/tabs';
 import {
   useNotificationStore,
   type NotificationKey,
@@ -44,14 +50,74 @@ type ChannelToggleProps = {
 
 function ChannelToggle({ checked, onChange, label }: ChannelToggleProps) {
   return (
-    <label className="inline-flex items-center gap-2 text-sm text-slate-900 sm:gap-3">
+    <label className="text-foreground inline-flex cursor-pointer items-center gap-2 text-sm sm:gap-3">
       <Switch checked={checked} onCheckedChange={onChange} />
-      <span className="leading-tight">{label}</span>
+      <span className="leading-tight select-none">{label}</span>
     </label>
   );
 }
 
-export function SettingsNotificationsPanel() {
+function SettingsAppearanceSection() {
+  const accessToken = useAuthSessionStore(s => s.accessToken);
+
+  const { data: user } = useQuery({
+    queryKey: ['users', 'me'],
+    queryFn: fetchCurrentUser,
+    enabled: Boolean(accessToken),
+    staleTime: 60_000,
+  });
+
+  const { theme, setTheme } = useThemeSync(user?.themePreference);
+
+  const handleThemeClick = (newTheme: string) => {
+    setTheme(newTheme as 'light' | 'dark' | 'system');
+  };
+
+  return (
+    <section>
+      <h2 className="text-foreground text-2xl font-semibold sm:text-3xl">
+        Appearance
+      </h2>
+      <p className="text-muted-foreground mt-2 max-w-2xl text-sm">
+        Choose how the app looks on this device. Synced to your account.
+      </p>
+
+      <div className="mt-6">
+        <Tabs
+          value={String(theme || 'system').toLowerCase()}
+          onValueChange={handleThemeClick}
+          className="w-full max-w-sm"
+        >
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger
+              value="light"
+              className="flex items-center justify-center gap-2"
+            >
+              <Sun className="size-4 shrink-0" />
+              <span>Light</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="dark"
+              className="flex items-center justify-center gap-2"
+            >
+              <Moon className="size-4 shrink-0" />
+              <span>Dark</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="system"
+              className="flex items-center justify-center gap-2"
+            >
+              <Monitor className="size-4 shrink-0" />
+              <span>System</span>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+    </section>
+  );
+}
+
+export function SettingsPanel() {
   const channels = useNotificationStore(s => s.channels);
   const setAll = useNotificationStore(s => s.setAll);
   const setOneChannel = useNotificationStore(s => s.setOneChannel);
@@ -71,13 +137,21 @@ export function SettingsNotificationsPanel() {
   );
 
   return (
-    <main className="bg-brand-neutral min-h-[calc(100vh-72px)]">
-      <section className="mx-auto w-full max-w-5xl bg-white px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-9">
-        <h1 className={cn(pageTitleClass, 'text-3xl sm:text-4xl')}>Settings</h1>
+    <main className="bg-brand-neutral dark:bg-background min-h-[calc(100vh-72px)]">
+      <section className="bg-card text-card-foreground mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-9">
+        <h1
+          className={cn(pageTitleClass, 'text-foreground text-3xl sm:text-4xl')}
+        >
+          Settings
+        </h1>
 
         <div className="mt-7 sm:mt-9 lg:mt-11">
+          <SettingsAppearanceSection />
+        </div>
+
+        <div className="border-border mt-10 border-t pt-10 sm:mt-12 sm:pt-12">
           <div className="flex flex-col gap-4 sm:gap-5 lg:flex-row lg:items-center lg:gap-12">
-            <h2 className="text-2xl font-semibold text-slate-900 sm:text-3xl">
+            <h2 className="text-foreground text-2xl font-semibold sm:text-3xl">
               Notifications
             </h2>
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
@@ -85,8 +159,8 @@ export function SettingsNotificationsPanel() {
                 className={cn(
                   actionButtonClassName,
                   isAllEnabled
-                    ? 'cursor-not-allowed text-slate-300'
-                    : 'text-brand-dark-blue hover:text-brand-dark-blue/80 cursor-pointer',
+                    ? 'text-muted-foreground/50 cursor-not-allowed'
+                    : 'text-primary hover:text-primary/80 cursor-pointer',
                 )}
                 onClick={() => setAll(true)}
                 disabled={isAllEnabled}
@@ -98,8 +172,8 @@ export function SettingsNotificationsPanel() {
                 className={cn(
                   actionButtonClassName,
                   isAllDisabled
-                    ? 'cursor-not-allowed text-slate-300'
-                    : 'text-brand-dark-blue hover:text-brand-dark-blue/80 cursor-pointer',
+                    ? 'text-muted-foreground/50 cursor-not-allowed'
+                    : 'text-primary hover:text-primary/80 cursor-pointer',
                 )}
                 onClick={() => setAll(false)}
                 disabled={isAllDisabled}
@@ -114,11 +188,11 @@ export function SettingsNotificationsPanel() {
             {NOTIFICATION_ITEMS.map(item => (
               <div className="space-y-2" key={item.key}>
                 <div>
-                  <h3 className="text-brand-black text-lg leading-tight font-semibold">
+                  <h3 className="text-foreground text-lg leading-tight font-semibold">
                     {item.title}
                   </h3>
                   {item.description ? (
-                    <p className="mt-1 max-w-[760px] text-xs leading-5 text-slate-500 sm:text-sm">
+                    <p className="text-muted-foreground mt-1 max-w-[760px] text-xs leading-5 sm:text-sm">
                       {item.description}
                     </p>
                   ) : null}

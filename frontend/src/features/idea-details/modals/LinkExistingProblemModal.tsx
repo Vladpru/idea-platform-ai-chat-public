@@ -164,7 +164,7 @@ export function LinkExistingProblemModal({
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent
           className={cn(
-            'border-brand-gray-200 max-w-lg gap-0 overflow-visible rounded-lg border bg-white p-0 shadow-xl',
+            'border-brand-gray-200 bg-card max-w-lg gap-0 overflow-visible rounded-lg border p-0 shadow-xl',
             'sm:max-w-[520px]',
           )}
           onOpenAutoFocus={event => event.preventDefault()}
@@ -280,7 +280,7 @@ export function LinkExistingProblemModal({
                       id={listboxId}
                       role="listbox"
                       aria-multiselectable={true}
-                      className="border-brand-gray-200 absolute top-full left-0 z-50 mt-1 w-full overflow-hidden rounded-md border bg-white shadow-lg"
+                      className="border-brand-gray-200 bg-card absolute top-full left-0 z-50 mt-1 w-full overflow-hidden rounded-md border shadow-lg"
                     >
                       <div className="mx-2 p-2">
                         <div className="relative">
@@ -291,7 +291,7 @@ export function LinkExistingProblemModal({
                               handleSearchInputEscape(event, closeDropdown);
                             }}
                             placeholder="Search problems..."
-                            className="focus-visible:ring-brand-gray-200 text-brand-gray-500 h-8 rounded-xs bg-white pr-9 text-xs focus-visible:ring-1"
+                            className="focus-visible:ring-brand-gray-200 text-brand-gray-500 bg-card h-8 rounded-xs pr-9 text-xs focus-visible:ring-1"
                             aria-label="Search problems"
                           />
                           <Search

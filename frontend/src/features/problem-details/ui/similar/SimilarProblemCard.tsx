@@ -15,19 +15,19 @@ type SimilarProblemCardProps = {
 };
 
 const cardSurfaceClass =
-  'group flex w-full flex-col overflow-hidden rounded-lg border border-brand-gray-200 bg-white p-4 text-left shadow-sm transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-brand-dark-blue focus-visible:ring-offset-2 focus-visible:outline-none sm:p-5';
+  'group flex w-full flex-col overflow-hidden rounded-lg border border-brand-gray-200 bg-card p-4 text-left shadow-sm transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-brand-dark-blue focus-visible:ring-offset-2 focus-visible:outline-none sm:p-5';
 
 function SimilarProblemCardContent({ card }: SimilarProblemCardProps) {
   return (
     <>
       <div className="space-y-3">
-        <h3 className="text-brand-black group-hover:text-brand-dark-blue line-clamp-2 text-base font-bold transition-colors">
+        <h3 className="group-hover:text-primary text-brand-black line-clamp-2 text-base font-bold transition-colors">
           {card.title}
         </h3>
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <div className="flex items-center gap-2">
-            <Avatar size="sm" className="ring-2 ring-white">
+            <Avatar size="sm" className="ring-card ring-2">
               {card.authorAvatarUrl ? (
                 <AvatarImage src={card.authorAvatarUrl} alt={card.authorName} />
               ) : null}
@@ -54,7 +54,9 @@ function SimilarProblemCardContent({ card }: SimilarProblemCardProps) {
         <div className="text-brand-gray-600 flex shrink-0 items-center gap-4 text-xs">
           <span className="inline-flex items-center gap-1">
             <Eye className="text-brand-gray-400 size-3.5" aria-hidden />
-            <span className="font-semibold tabular-nums">{card.stats.views}</span>
+            <span className="font-semibold tabular-nums">
+              {card.stats.views}
+            </span>
           </span>
           <span className="inline-flex items-center gap-1">
             <MessageCircle
@@ -67,7 +69,9 @@ function SimilarProblemCardContent({ card }: SimilarProblemCardProps) {
           </span>
           <span className="inline-flex items-center gap-1">
             <Heart className="text-brand-gray-400 size-3.5" aria-hidden />
-            <span className="font-semibold tabular-nums">{card.stats.likes}</span>
+            <span className="font-semibold tabular-nums">
+              {card.stats.likes}
+            </span>
           </span>
         </div>
       </div>
@@ -75,7 +79,10 @@ function SimilarProblemCardContent({ card }: SimilarProblemCardProps) {
   );
 }
 
-export function SimilarProblemCard({ card, className }: SimilarProblemCardProps) {
+export function SimilarProblemCard({
+  card,
+  className,
+}: SimilarProblemCardProps) {
   return (
     <Link
       to={ROUTES.problemDetail(card.id)}

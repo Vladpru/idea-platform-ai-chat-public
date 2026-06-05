@@ -29,7 +29,7 @@ export function ChangePasswordModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className={cn(
-          'border-0 bg-white p-0 shadow-xl',
+          'bg-card border-0 p-0 shadow-xl',
           'max-md:fixed max-md:inset-x-0 max-md:top-auto max-md:bottom-0 max-md:max-h-[calc(100dvh-1rem)] max-md:w-full max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-t-lg max-md:rounded-b-none',
           'md:h-[464px] md:max-w-2xl md:p-6',
         )}

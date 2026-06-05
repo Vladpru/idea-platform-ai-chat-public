@@ -31,6 +31,7 @@ import type { Request } from 'express';
 import { JwtAuth } from '../shared/decorators/jwt-auth.decorator';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateThemeDto } from './dto/update-theme.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AvatarUploadInterceptor } from './interceptors/avatar-upload.interceptor';
 import { UserService } from './user.service';
@@ -90,6 +91,19 @@ export class UserController {
   @ApiNoContentResponse({ description: 'Avatar removed' })
   removeMyAvatar(@Req() req: Request & { user: { id: string } }) {
     return this.userService.removeAvatar(req.user.id);
+  }
+
+  @Patch('me/theme')
+  @JwtAuth()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update current user theme preference' })
+  @ApiBody({ type: UpdateThemeDto })
+  @ApiOkResponse({ description: 'Theme preference updated' })
+  updateMyTheme(
+    @Body() dto: UpdateThemeDto,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    return this.userService.updateTheme(req.user.id, dto.theme);
   }
 
   @Patch('me/password')

@@ -61,8 +61,7 @@ export function DashboardControls<TSort extends string>({
     : sortOptions;
 
   const showLinkedItemsToggle =
-    columnCount !== undefined &&
-    columnCount < COMPACT_CARD_COLUMN_THRESHOLD;
+    columnCount !== undefined && columnCount < COMPACT_CARD_COLUMN_THRESHOLD;
 
   return (
     <div className={cn('flex flex-wrap items-center gap-4', className)}>
@@ -99,7 +98,7 @@ export function DashboardControls<TSort extends string>({
         <button
           type="button"
           onClick={() => setIsMobileSortModalOpen(true)}
-          className="border-brand-gray-200 text-brand-dark-blue flex min-w-[140px] cursor-pointer items-center justify-between gap-2 rounded-md border bg-white px-3 py-2 text-sm font-semibold shadow-sm transition-opacity hover:opacity-80"
+          className="border-brand-gray-200 text-brand-dark-blue bg-card flex min-w-[140px] cursor-pointer items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm font-semibold shadow-sm transition-opacity hover:opacity-80"
         >
           <span className="truncate">{activeSort?.label}</span>
           <ChevronDown className="text-brand-gray-400 size-4 shrink-0" />
@@ -114,7 +113,7 @@ export function DashboardControls<TSort extends string>({
             aria-hidden="true"
           />
 
-          <div className="animate-in slide-in-from-bottom-full relative flex max-h-[85vh] w-full flex-col overflow-hidden rounded-t-lg bg-white shadow-xl duration-300">
+          <div className="animate-in slide-in-from-bottom-full bg-card relative flex max-h-[85vh] w-full flex-col overflow-hidden rounded-t-lg shadow-xl duration-300">
             <div className="border-brand-gray-200 flex items-center justify-between border-b px-5 py-4">
               <h2 className="text-brand-dark-blue text-xl font-bold">
                 Sorting
@@ -144,7 +143,7 @@ export function DashboardControls<TSort extends string>({
                           'w-full cursor-pointer rounded-xl px-4 py-3.5 text-left text-base font-medium transition-colors',
                           isActive
                             ? 'text-brand-dark-blue bg-brand-gray-100 font-bold'
-                            : 'text-brand-black hover:bg-slate-50',
+                            : 'text-brand-black hover:bg-brand-cool-gray-3',
                         )}
                       >
                         {option.label}
@@ -160,7 +159,7 @@ export function DashboardControls<TSort extends string>({
               </ul>
             </div>
 
-            <div className="bg-white pt-1 pb-2">
+            <div className="bg-card pt-1 pb-2">
               <div className="bg-brand-black mx-auto h-1.5 w-16 rounded-full" />
             </div>
           </div>
@@ -171,7 +170,7 @@ export function DashboardControls<TSort extends string>({
         <button
           type="button"
           onClick={() => setIsDesktopSortOpen(!isDesktopSortOpen)}
-          className="border-brand-gray-200 text-brand-dark-blue flex min-w-[150px] cursor-pointer items-center justify-between gap-2 rounded-md border bg-white px-3 py-2 text-sm font-semibold transition-opacity hover:opacity-80"
+          className="border-brand-gray-200 text-brand-dark-blue bg-card flex min-w-[150px] cursor-pointer items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm font-semibold transition-opacity hover:opacity-80"
         >
           <span className="truncate">{activeSort?.label}</span>
           <ChevronDown
@@ -189,7 +188,7 @@ export function DashboardControls<TSort extends string>({
               onClick={() => setIsDesktopSortOpen(false)}
               aria-hidden="true"
             />
-            <div className="absolute top-full right-0 z-50 mt-1 min-w-[180px] rounded-md bg-white py-2 shadow-lg ring-1 ring-black/5">
+            <div className="bg-card absolute top-full right-0 z-50 mt-1 min-w-[180px] rounded-md py-2 shadow-lg ring-1 ring-black/5">
               <ul className="flex flex-col">
                 {orderedSortOptions.map((option, index) => {
                   const isActive = option.value === sort;
@@ -205,7 +204,7 @@ export function DashboardControls<TSort extends string>({
                           'w-full cursor-pointer px-4 py-2.5 text-left text-sm transition-colors',
                           isActive
                             ? 'text-brand-dark-blue font-bold'
-                            : 'text-brand-black hover:text-brand-dark-blue hover:bg-slate-50',
+                            : 'text-brand-black hover:text-brand-dark-blue hover:bg-brand-cool-gray-3',
                         )}
                       >
                         {option.label}
@@ -229,7 +228,7 @@ export function DashboardControls<TSort extends string>({
           <button
             type="button"
             onClick={() => setIsColumnsOpen(!isColumnsOpen)}
-            className="border-brand-gray-200 text-brand-dark-blue flex min-w-[120px] cursor-pointer items-center justify-between gap-2 rounded-md border bg-white px-3 py-2 text-sm font-semibold transition-opacity hover:opacity-80"
+            className="border-brand-gray-200 text-brand-dark-blue bg-card flex min-w-[120px] cursor-pointer items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm font-semibold transition-opacity hover:opacity-80"
           >
             <span>Columns {columnCount}</span>
             <ChevronDown
@@ -247,7 +246,7 @@ export function DashboardControls<TSort extends string>({
                 onClick={() => setIsColumnsOpen(false)}
                 aria-hidden="true"
               />
-              <div className="absolute top-full right-0 z-50 mt-1 min-w-[120px] rounded-md bg-white py-2 shadow-lg ring-1 ring-black/5">
+              <div className="bg-card absolute top-full right-0 z-50 mt-1 min-w-[120px] rounded-md py-2 shadow-lg ring-1 ring-black/5">
                 <ul className="flex flex-col">
                   {columnOptions.map(count => (
                     <li key={count}>
@@ -258,7 +257,7 @@ export function DashboardControls<TSort extends string>({
                           setIsColumnsOpen(false);
                         }}
                         className={cn(
-                          'hover:text-brand-dark-blue w-full cursor-pointer px-4 py-2 text-left text-sm transition-colors hover:bg-slate-50',
+                          'hover:text-brand-dark-blue hover:bg-brand-cool-gray-3 w-full cursor-pointer px-4 py-2 text-left text-sm transition-colors',
                           count === columnCount
                             ? 'text-brand-dark-blue font-medium'
                             : 'text-brand-black',

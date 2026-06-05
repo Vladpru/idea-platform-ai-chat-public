@@ -58,7 +58,7 @@ function ProblemDashboardCardStandardInner({
   }, [card.id, onToggleLinkedItems]);
 
   return (
-    <article className="group border-brand-gray-200 flex h-full w-full flex-col overflow-hidden rounded-lg border bg-white transition-shadow hover:shadow-md">
+    <article className="group border-brand-gray-200 bg-card flex h-full w-full flex-col overflow-hidden rounded-lg border transition-shadow hover:shadow-md">
       <div className="relative flex h-full min-w-0 flex-col justify-between">
         {actionMenu ? (
           <div className="absolute top-4 right-4 z-20 sm:top-5 sm:right-5">
@@ -81,7 +81,7 @@ function ProblemDashboardCardStandardInner({
 
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 <div className="flex min-w-0 items-center gap-2">
-                  <Avatar size="sm" className="ring-2 ring-white">
+                  <Avatar size="sm" className="ring-card dark:ring-none ring-2">
                     {card.authorAvatarUrl ? (
                       <AvatarImage
                         src={card.authorAvatarUrl}
@@ -130,7 +130,7 @@ function ProblemDashboardCardStandardInner({
 
             <div
               className={cn(
-                'relative z-10 shrink-0 bg-white',
+                'bg-card relative z-10 shrink-0',
                 stackStatsBelowTags && 'w-full',
               )}
             >
@@ -146,7 +146,7 @@ function ProblemDashboardCardStandardInner({
         </div>
 
         {hasLinkedItems ? (
-          <div className="shrink-0 bg-white">
+          <div className="bg-card shrink-0">
             <LinkedItemsSection
               items={card.linkedItems}
               sectionLabel={linkedSectionLabel}

@@ -75,7 +75,7 @@ export function AiGenerationModal({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         className={cn(
-          'border-brand-gray-200 max-w-lg gap-0 rounded-lg border bg-white p-0 shadow-xl',
+          'border-brand-gray-200 bg-card max-w-lg gap-0 rounded-lg border p-0 shadow-xl',
           'sm:max-w-[520px]',
         )}
         onOpenAutoFocus={event => event.preventDefault()}

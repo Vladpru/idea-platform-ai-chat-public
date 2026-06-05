@@ -94,7 +94,7 @@ export function HomeDashboardPage() {
   return (
     <main className="bg-brand-neutral min-h-[calc(100vh-56px)] px-4 md:px-8 lg:px-12">
       <div className="mx-auto max-w-5xl 2xl:max-w-6xl">
-        <Card className="text-card-foreground min-h-[calc(100vh-56px)] rounded-none bg-white p-6 md:p-10">
+        <Card className="text-card-foreground bg-card min-h-[calc(100vh-56px)] rounded-none p-6 md:p-10">
           <h1 className={statisticsPageTitleClass}>{HOME_LABELS.pageTitle}</h1>
           <p className="text-brand-dark-blue mt-3 text-xl font-semibold">
             {HOME_LABELS.welcome(displayName)}

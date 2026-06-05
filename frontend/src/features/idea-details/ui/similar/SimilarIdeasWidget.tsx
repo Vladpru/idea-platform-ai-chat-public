@@ -141,7 +141,7 @@ export function SimilarIdeasWidget({
       {isLoading ? (
         <SimilarIdeasRowSkeleton />
       ) : activeSubTab === 'FOUND_ON_WEB' ? (
-        <div className="border-brand-gray-200 text-brand-gray-600 rounded-lg border border-dashed bg-white px-6 py-12 text-center">
+        <div className="border-brand-gray-200 text-brand-gray-600 bg-card rounded-lg border border-dashed px-6 py-12 text-center">
           <Globe className="text-brand-gray-400 mx-auto size-8" />
 
           <p className="mt-3 text-sm font-semibold tracking-wide uppercase">
@@ -154,7 +154,7 @@ export function SimilarIdeasWidget({
           </p>
         </div>
       ) : showEmpty ? (
-        <div className="border-brand-gray-200 text-brand-gray-600 rounded-lg border border-dashed bg-white px-6 py-12 text-center">
+        <div className="border-brand-gray-200 text-brand-gray-600 bg-card rounded-lg border border-dashed px-6 py-12 text-center">
           <p className="text-sm font-semibold tracking-wide uppercase">
             No similar ideas yet
           </p>

@@ -94,7 +94,7 @@ function DashboardCardCompactInner<
   ) : null;
 
   return (
-    <article className="group border-brand-gray-200 relative flex h-full flex-col overflow-hidden rounded-xl border bg-white transition-shadow hover:shadow-md">
+    <article className="group border-brand-gray-200 bg-card relative flex h-full flex-col overflow-hidden rounded-xl border transition-shadow hover:shadow-md">
       <Link
         to={detailHref}
         aria-label={card.title}
@@ -108,7 +108,7 @@ function DashboardCardCompactInner<
 
       <div
         className={cn(
-          'relative z-[2] flex h-full flex-col pointer-events-none',
+          'pointer-events-none relative z-[2] flex h-full flex-col',
           showHover && 'transition-opacity duration-300 group-hover:opacity-0',
         )}
       >
@@ -134,7 +134,10 @@ function DashboardCardCompactInner<
 
           <DashboardCardStats
             {...statsProps}
-            className={cn('relative z-[3] mt-auto pt-3 pointer-events-auto', statsClassName)}
+            className={cn(
+              'pointer-events-auto relative z-[3] mt-auto pt-3',
+              statsClassName,
+            )}
             iconClassName={statsIconClassName}
           />
         </div>
@@ -143,7 +146,7 @@ function DashboardCardCompactInner<
       {showHover ? (
         <div
           className={cn(
-            'absolute inset-0 z-[3] flex flex-col overflow-hidden bg-white',
+            'bg-card absolute inset-0 z-[3] flex flex-col overflow-hidden',
             'pointer-events-none opacity-0 transition-opacity duration-300',
             'group-hover:pointer-events-auto group-hover:opacity-100',
             cardPadding,

@@ -25,21 +25,24 @@ export function StatisticsPeriodSelect({
   onChange,
 }: StatisticsPeriodSelectProps) {
   const activeLabel =
-    PERIOD_OPTIONS.find((option) => option.value === value)?.label ?? 'Week';
+    PERIOD_OPTIONS.find(option => option.value === value)?.label ?? 'Week';
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="border-brand-gray-200 text-brand-dark-blue flex min-w-[100px] cursor-pointer items-center justify-between gap-2 rounded-md border bg-white px-3 py-2 text-sm font-semibold transition-opacity hover:opacity-80"
+          className="border-brand-gray-200 text-brand-dark-blue bg-card flex min-w-[100px] cursor-pointer items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm font-semibold transition-opacity hover:opacity-80"
         >
           <span>{activeLabel}</span>
-          <ChevronDown className="text-brand-gray-400 size-4 shrink-0" aria-hidden />
+          <ChevronDown
+            className="text-brand-gray-400 size-4 shrink-0"
+            aria-hidden
+          />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-36 rounded-md p-1">
-        {PERIOD_OPTIONS.map((option) => (
+        {PERIOD_OPTIONS.map(option => (
           <DropdownMenuItem
             key={option.value}
             className={cn(

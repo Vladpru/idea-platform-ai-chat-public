@@ -1,1 +1,1 @@
-export { SettingsNotificationsPanel } from './ui/SettingsNotificationsPanel';
+export { SettingsPanel } from './ui/SettingsPanel';

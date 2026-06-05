@@ -53,7 +53,7 @@ function NavLink({
 
 export function AppHeader() {
   return (
-    <header className="bg-brand-dark-blue sticky top-0 z-50 flex items-center justify-between px-4 py-3 text-white shadow-sm sm:px-10">
+    <header className="bg-brand-dark-blue dark:bg-header-background sticky top-0 z-50 flex items-center justify-between px-4 py-3 text-white shadow-sm sm:px-10">
       <div className="flex items-center gap-20 xl:gap-35 2xl:gap-45">
         <Link to="/" aria-label="Home">
           <img
@@ -83,7 +83,7 @@ export function AppHeader() {
       <div className="flex items-center gap-2 sm:gap-3">
         <Link
           to={ROUTES.problemsNew}
-          className="text-brand-dark-blue hover:bg-brand-dark-blue hidden h-9 items-center rounded-sm border border-white bg-white px-3 text-xs font-bold tracking-wide uppercase transition-colors hover:text-white sm:h-10 sm:px-4 sm:text-sm lg:inline-flex"
+          className="text-brand-dark-blue hover:bg-brand-dark-blue bg-card hidden h-9 items-center rounded-sm border border-white px-3 text-xs font-bold tracking-wide uppercase transition-colors hover:text-white sm:h-10 sm:px-4 sm:text-sm lg:inline-flex"
         >
           ADD NEW PROBLEM
         </Link>

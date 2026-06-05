@@ -278,7 +278,7 @@ export function CommentInputArea({
 
           <div
             className={cn(
-              'absolute inset-0 rounded-lg border bg-white shadow-sm transition-all duration-500',
+              'bg-card absolute inset-0 rounded-lg border shadow-sm transition-all duration-500',
               isFloating
                 ? 'pointer-events-none border-transparent opacity-0'
                 : 'opacity-100',
@@ -305,7 +305,7 @@ export function CommentInputArea({
             className={cn(
               'relative z-10 flex shrink-0 cursor-pointer items-center justify-center border transition-all duration-300',
               isFloating
-                ? 'size-[52px] rounded-full border-gray-200 bg-white shadow-sm hover:bg-gray-50'
+                ? 'bg-card size-[52px] rounded-full border-gray-200 shadow-sm hover:bg-gray-50'
                 : 'size-10 rounded-md border-transparent bg-transparent shadow-none hover:bg-gray-100',
               'text-gray-400 hover:text-gray-600 disabled:opacity-50',
             )}
@@ -320,7 +320,7 @@ export function CommentInputArea({
             className={cn(
               'relative z-10 flex flex-1 items-end border transition-colors duration-200',
               isFloating
-                ? 'rounded-[28px] bg-white px-5 shadow-sm'
+                ? 'bg-card rounded-[28px] px-5 shadow-sm'
                 : 'rounded-md border-transparent bg-transparent px-2 shadow-none',
               isFloating
                 ? isOverLimit
@@ -369,7 +369,7 @@ export function CommentInputArea({
             className={cn(
               'relative z-10 flex shrink-0 cursor-pointer items-center justify-center border transition-all duration-300',
               isFloating
-                ? 'size-[52px] rounded-full border-gray-200 bg-white shadow-sm hover:bg-gray-50'
+                ? 'bg-card size-[52px] rounded-full border-gray-200 shadow-sm hover:bg-gray-50'
                 : 'size-10 rounded-md border-transparent bg-transparent shadow-none hover:bg-gray-100',
               canSubmit
                 ? 'text-brand-dark-blue'

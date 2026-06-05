@@ -192,7 +192,7 @@ export function AddImageModal({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
-        className="border-brand-gray-200 max-w-lg gap-0 rounded-lg border bg-white p-0 shadow-xl sm:max-w-[520px]"
+        className="border-brand-gray-200 bg-card max-w-lg gap-0 rounded-lg border p-0 shadow-xl sm:max-w-[520px]"
         onOpenAutoFocus={e => e.preventDefault()}
       >
         <div className="relative p-6 md:p-8">
@@ -249,7 +249,7 @@ export function AddImageModal({
                   <div
                     {...getRootProps()}
                     className={cn(
-                      'border-brand-gray-200 flex min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-md border border-dashed bg-white px-4 py-8 text-center transition-colors outline-none',
+                      'border-brand-gray-200 bg-card flex min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-md border border-dashed px-4 py-8 text-center transition-colors outline-none',
                       isDragActive &&
                         'border-brand-dark-blue bg-brand-gray-100',
                     )}
@@ -320,7 +320,7 @@ export function AddImageModal({
                   </Button>
 
                   {pendingFiles.length > 0 ? (
-                    <ul className="text-brand-gray-600 border-brand-gray-200 max-h-24 space-y-1 overflow-y-auto rounded-md border bg-white p-3 text-left text-xs">
+                    <ul className="text-brand-gray-600 border-brand-gray-200 bg-card max-h-24 space-y-1 overflow-y-auto rounded-md border p-3 text-left text-xs">
                       {pendingFiles.map(file => (
                         <li
                           key={`${file.name}-${file.size}`}

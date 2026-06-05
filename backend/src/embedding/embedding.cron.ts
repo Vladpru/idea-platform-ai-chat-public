@@ -48,7 +48,7 @@ export class EmbeddingCron {
             const vectorLiteral = toPgVectorLiteral(vector);
 
             await this.prisma.$executeRawUnsafe(
-              `UPDATE "${table}" SET ai_embedding = $1::vector WHERE id = $2::uuid`,
+              `UPDATE "${table}" SET ai_embedding = $1::vector WHERE id = $2`,
               vectorLiteral,
               record.id,
             );

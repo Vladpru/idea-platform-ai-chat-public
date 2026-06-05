@@ -111,7 +111,7 @@ const IdeasDashboardBody = memo(function IdeasDashboardBody({
 
   if (isError) {
     return (
-      <div className="border-brand-gray-200 rounded-lg border bg-white px-6 py-10 text-center">
+      <div className="border-brand-gray-200 bg-card rounded-lg border px-6 py-10 text-center">
         <p className="text-brand-gray-700 mb-4 text-sm">
           {getApiErrorMessage(error, {
             invalidCredentialsMessage: IDEAS_DASHBOARD_LABELS.loadErrorFallback,

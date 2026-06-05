@@ -63,9 +63,7 @@ export function IdeaForm({
     }
 
     const syncDirty = () => {
-      onDirtyChange(
-        !areIdeaEditFormValuesEqual(getValues(), initialData),
-      );
+      onDirtyChange(!areIdeaEditFormValuesEqual(getValues(), initialData));
     };
 
     syncDirty();
@@ -112,7 +110,7 @@ export function IdeaForm({
         </FieldLabel>
         <Input
           id={`${formId}-title`}
-          className="mt-2 bg-white"
+          className="bg-card mt-2"
           placeholder="Type in the name of the idea..."
           aria-invalid={!!errors.title}
           disabled={isSubmitting}

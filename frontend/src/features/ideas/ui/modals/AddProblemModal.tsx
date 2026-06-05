@@ -93,7 +93,7 @@ export function AddProblemModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className={cn(
-          'border-brand-gray-200 max-w-lg gap-0 rounded-lg border bg-white p-0 shadow-xl',
+          'border-brand-gray-200 bg-card max-w-lg gap-0 rounded-lg border p-0 shadow-xl',
           'sm:max-w-[520px]',
         )}
         onOpenAutoFocus={event => event.preventDefault()}
@@ -124,7 +124,7 @@ export function AddProblemModal({
               </Label>
               <Input
                 id="add-problem-title"
-                className="mt-2 bg-white"
+                className="bg-card mt-2"
                 placeholder="Keep it short and specific, e.g., 'Low visibility into equipment usage'..."
                 aria-invalid={!!errors.title}
                 maxLength={200}

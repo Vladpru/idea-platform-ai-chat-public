@@ -25,7 +25,7 @@ export function HomeQuickLinkCard({
     <Link
       to={to}
       search={search}
-      className="border-brand-gray-200 group focus-visible:ring-brand-dark-blue flex h-full flex-col rounded-lg border bg-white p-5 transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:outline-none"
+      className="border-brand-gray-200 group focus-visible:ring-brand-dark-blue bg-card flex h-full flex-col rounded-lg border p-5 transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:outline-none"
     >
       <span
         className={cn(

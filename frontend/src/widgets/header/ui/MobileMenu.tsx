@@ -29,7 +29,7 @@ interface MobileMenuProps {
 }
 
 const navLinkClass =
-  'block px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:text-primary rounded-md';
+  'text-muted-foreground hover:text-primary block rounded-md px-3 py-2 text-sm font-medium transition-colors';
 
 export function MobileMenu({ triggerClassName }: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -58,10 +58,10 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
       </SheetTrigger>
       <SheetContent
         side="right"
-        className="brand-gray-200 flex w-[300px] flex-col p-0 sm:w-[400px]"
+        className="bg-background text-foreground flex w-[300px] flex-col p-0 sm:w-[400px]"
       >
-        <SheetHeader className="border-primary border-b bg-white p-4 text-left">
-          <SheetTitle className="text-lg font-bold">Menu</SheetTitle>
+        <SheetHeader className="border-border bg-card border-b p-4 text-left">
+          <SheetTitle className="text-foreground text-lg font-bold">Menu</SheetTitle>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto p-4">
@@ -72,7 +72,7 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
           >
             <AccordionItem
               value="navigation"
-              className="rounded-sm border border-slate-200 bg-white px-3"
+              className="bg-card border-border rounded-sm border px-3"
             >
               <AccordionTrigger className="text-primary px-1 py-2 text-sm font-semibold hover:underline">
                 Navigation
@@ -83,7 +83,7 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
                   search={{ sort: 'newest' }}
                   className={navLinkClass}
                   activeProps={{
-                    className: 'bg-active-background text-primary',
+                    className: 'bg-accent text-primary font-semibold',
                   }}
                 >
                   Problems
@@ -93,7 +93,7 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
                   search={{ sort: 'newest' }}
                   className={navLinkClass}
                   activeProps={{
-                    className: 'bg-active-background text-primary',
+                    className: 'bg-accent text-primary font-semibold',
                   }}
                 >
                   Ideas
@@ -102,7 +102,7 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
                   to="/statistics"
                   className={navLinkClass}
                   activeProps={{
-                    className: 'bg-active-background text-primary',
+                    className: 'bg-accent text-primary font-semibold',
                   }}
                 >
                   Statistics
@@ -111,7 +111,7 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
             </AccordionItem>
             <AccordionItem
               value="profile"
-              className="rounded-sm border border-slate-200 bg-white px-3"
+              className="bg-card border-border rounded-sm border px-3"
             >
               <AccordionTrigger className="text-primary px-1 py-2 text-sm font-semibold hover:underline">
                 Profile
@@ -123,11 +123,11 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
                       src={user?.picture ?? undefined}
                       alt={user?.name || 'User avatar'}
                     />
-                    <AvatarFallback className="text-brand-gray-80 bg-slate-200 text-xs font-medium">
+                    <AvatarFallback className="bg-muted text-foreground text-xs font-medium">
                       {nameInitial(user?.name ?? '')}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="text-sm font-medium text-slate-900">
+                  <span className="text-foreground text-sm font-medium">
                     {user?.name || 'Unknown User'}
                   </span>
                 </div>
@@ -137,7 +137,7 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
                   search={{ tab: 'published' }}
                   className={navLinkClass}
                   activeProps={{
-                    className: 'bg-active-background text-primary',
+                    className: 'bg-accent text-primary font-semibold',
                   }}
                 >
                   My Problems, Joins & Drafts
@@ -147,7 +147,7 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
                   search={{ tab: 'published' }}
                   className={navLinkClass}
                   activeProps={{
-                    className: 'bg-active-background text-primary',
+                    className: 'bg-accent text-primary font-semibold',
                   }}
                 >
                   My Ideas, Joins & Drafts
@@ -157,7 +157,7 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
                   className={navLinkClass}
                   activeOptions={{ exact: true }}
                   activeProps={{
-                    className: 'bg-active-background text-primary',
+                    className: 'bg-accent text-primary font-semibold',
                   }}
                 >
                   Settings

@@ -33,7 +33,7 @@ function CommentListSkeleton() {
       {Array.from({ length: 3 }, (_, index) => (
         <div
           key={index}
-          className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
+          className="bg-card rounded-lg border border-gray-200 p-5 shadow-sm"
         >
           <div className="flex gap-3">
             <Skeleton className="size-10 shrink-0 rounded-full" />

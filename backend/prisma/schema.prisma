@@ -43,7 +43,22 @@ enum MediaProvider {
   CLOUDINARY
 }
 
+enum ThemePreference {
+  LIGHT
+  DARK
+  SYSTEM
+}
+
 model User {
+  id                 String               @id @default(uuid())
+  email              String               @unique
+  firstName          String?              @map("first_name")
+  lastName           String?              @map("last_name")
+  password           String?
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @updatedAt @map("updated_at")
+  avatarUrl          String?              @map("avatar_url")
+  themePreference    ThemePreference      @default(SYSTEM) @map("theme_preference")
   id                  String               @id @default(uuid())
   email               String               @unique
   firstName           String?              @map("first_name")

@@ -122,7 +122,7 @@ export function IdeaEditMainImageField({
           <div
             {...getRootProps()}
             className={cn(
-              'border-brand-gray-200 hover:border-brand-dark-blue/40 focus-visible:ring-ring mt-2 flex min-h-[180px] cursor-pointer flex-col items-center justify-center rounded-md border border-dashed bg-white px-4 py-4 text-center transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+              'border-brand-gray-200 hover:border-brand-dark-blue/40 focus-visible:ring-ring bg-card mt-2 flex min-h-[180px] cursor-pointer flex-col items-center justify-center rounded-md border border-dashed px-4 py-4 text-center transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
               isDragActive && 'border-brand-dark-blue bg-brand-gray-100',
               errorMessage && 'border-destructive',
               disabled && 'cursor-not-allowed opacity-50',

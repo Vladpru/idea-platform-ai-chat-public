@@ -10,7 +10,7 @@ export function AuthSessionSync() {
   const accessToken = useAuthSessionStore(s => s.accessToken);
 
   useQuery({
-    queryKey: ['users', 'me', 'session-sync'],
+    queryKey: ['users', 'me'],
     queryFn: async () => {
       const user = await fetchCurrentUser();
       const token = useAuthSessionStore.getState().accessToken;

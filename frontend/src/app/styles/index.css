@@ -63,6 +63,7 @@
   --color-brand-gray-600: var(--brand-gray-600);
   --color-brand-gray-500: var(--brand-gray-500);
   --color-brand-gray-400: var(--brand-gray-400);
+  --color-brand-gray-mobile: var(--brand-gray-mobile);
   --color-brand-gray-200: var(--brand-gray-200);
   --color-brand-gray-100: var(--brand-gray-100);
   --color-brand-hover-red-700: var(--brand-hover-red-700);
@@ -81,6 +82,7 @@
   --color-statistics-chart-axis-value: var(--statistics-chart-axis-value);
   --color-statistics-chart-cursor: var(--statistics-chart-cursor);
   --color-statistics-chart-dot-ring: var(--statistics-chart-dot-ring);
+  --color-header-background: var(--header-background);
 
   --shadow-shadow-soft: var(--shadow-soft);
 
@@ -163,6 +165,7 @@
   --brand-cool-gray-1: #a8a8a8;
   --brand-gray-900: #1a1e22;
   --brand-gray-800: #2e3338;
+  --brand-gray-mobile: #2f373d;
   --brand-gray-700: #4d565e;
   --brand-gray-600: #6a737c;
   --brand-gray-500: #88919a;
@@ -239,10 +242,50 @@
   --background: #12161c;
   --foreground: #e8ecf1;
   --primary: #5aa9e8;
+  --header-background: #003057;
   --primary-foreground: #0c1118;
   --brand-accent: hsl(30 100% 55%);
-
-  /* Slightly lifted surface vs page (auth card) */
+  --grey-200: rgba(255, 255, 255, 0.12);
+  --grey-300: rgba(255, 255, 255, 0.08);
+  --brand-orange: #ff9833;
+  --brand-white: #1a1f28;
+  --brand-light-blue: #2a445d;
+  --brand-cool-gray-4: #4d565e;
+  --brand-cool-gray-3: #2e3338;
+  --brand-cool-gray-2: #4d565e;
+  --brand-cool-gray-1: #6a737c;
+  --brand-gray-900: #e8ecf1;
+  --brand-gray-800: #b0b3b8;
+  --brand-gray-700: #b4bcc8;
+  --brand-gray-600: #9aa6b4;
+  --brand-gray-500: #88919a;
+  --brand-gray-400: #7d8a99;
+  --brand-gray-200: #ffffff29;
+  --brand-gray-100: #222830;
+  --brand-gray-mobile: #a2d5ff;
+  --brand-extra-black: #ffffff;
+  --brand-black: #e8ecf1;
+  --brand-dark-blue: #5aa9e8;
+  --brand-blue-700: #5aa9e8;
+  --brand-neutral: #151515;
+  --brand-hover-red-700: #ff4d4d;
+  --brand-orange-hover: #ff9833aa;
+  --idea-ideation: #ffb732;
+  --idea-prototyping: #4eb0b5;
+  --idea-completed: #4eb0b5;
+  --idea-archived: #b85bc0;
+  --idea-paused: #7b94aa;
+  --statistics-chart-line: hsl(207, 76%, 63%);
+  --statistics-chart-grid: rgba(255, 255, 255, 0.1);
+  --statistics-chart-axis-label: #9aa6b4;
+  --statistics-chart-axis-value: #88919a;
+  --statistics-chart-cursor: rgba(255, 255, 255, 0.15);
+  --statistics-chart-dot-ring: #12161c;
+  --shadow-soft:
+    0px 3px 8px rgba(0, 0, 0, 0.45), 0px 10px 16px rgba(0, 0, 0, 0.32),
+    0px 22px 20px rgba(0, 0, 0, 0.22), 0px 40px 24px rgba(0, 0, 0, 0.12);
+  --active-background: #161b22;
+  --non-active-background: #0e1217;
   --card: #1a1f28;
   --card-foreground: #e8ecf1;
   --popover: #1a1f28;
@@ -270,25 +313,6 @@
   --sidebar-accent-foreground: #e8ecf1;
   --sidebar-border: rgba(255, 255, 255, 0.1);
   --sidebar-ring: oklch(0.556 0 0);
-
-  /* Brand ramp — light text & borders on dark UI (auth forms, labels) */
-  --brand-gray-900: #e8ecf1;
-  --brand-gray-800: #b0b3b8;
-  --brand-gray-700: #b4bcc8;
-  --brand-gray-600: #9aa6b4;
-  --brand-gray-400: #7d8a99;
-  --brand-gray-200: #ffffff29;
-  --brand-gray-100: #222830;
-
-  --Grey-200: rgba(255, 255, 255, 0.12);
-
-  --shadow-soft:
-    0px 3px 8px rgba(0, 0, 0, 0.45), 0px 10px 16px rgba(0, 0, 0, 0.32),
-    0px 22px 20px rgba(0, 0, 0, 0.22), 0px 40px 24px rgba(0, 0, 0, 0.12);
-
-  --active-background: #161b22;
-  --non-active-background: #0e1217;
-
   --skeleton-base: #252d38;
   --skeleton-shine-peak: rgba(255, 255, 255, 0.22);
 }

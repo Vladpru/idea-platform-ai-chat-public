@@ -143,7 +143,7 @@ export function ProfileDashboardView<
           )}
 
           {isError && (
-            <div className="border-brand-gray-200 rounded-lg border bg-white px-6 py-10 text-center">
+            <div className="border-brand-gray-200 bg-card rounded-lg border px-6 py-10 text-center">
               <p className="text-brand-gray-700 mb-4 text-sm">
                 {renderErrorMessage(error)}
               </p>
@@ -154,7 +154,7 @@ export function ProfileDashboardView<
           )}
 
           {!isLoading && !isError && items.length === 0 && (
-            <div className="border-brand-gray-200 rounded-lg border bg-white px-6 py-16 text-center">
+            <div className="border-brand-gray-200 bg-card rounded-lg border px-6 py-16 text-center">
               {emptyState}
             </div>
           )}
