@@ -54,6 +54,7 @@ enum SummaryStatus {
   PENDING
   COMPLETED
   FAILED
+  SKIPPED
 }
 
 model User {
@@ -112,7 +113,7 @@ model Idea {
   aiEmbedding   Unsupported("vector(768)")? @map("ai_embedding")
   embeddingHash String?                   @map("embedding_hash")
   aiSummary     String?                   @map("ai_summary") @db.Text
-  summaryStatus SummaryStatus             @default(PENDING) @map("summary_status")
+  summaryStatus SummaryStatus             @default(SKIPPED) @map("summary_status")
 
   author   User         @relation("IdeaAuthor", fields: [authorId], references: [id], onDelete: Cascade)
   problems IdeaProblem[]
@@ -191,7 +192,7 @@ model Problem {
   aiEmbedding      Unsupported("vector(768)")? @map("ai_embedding")
   embeddingHash    String?                   @map("embedding_hash")
   aiSummary        String?                   @map("ai_summary") @db.Text
-  summaryStatus    SummaryStatus             @default(PENDING) @map("summary_status")
+  summaryStatus    SummaryStatus             @default(SKIPPED) @map("summary_status")
 
   author   User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
   members  ProblemMember[]
