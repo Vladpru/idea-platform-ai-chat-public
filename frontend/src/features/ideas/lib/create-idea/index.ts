@@ -32,11 +32,3 @@ export {
   IDEA_CREATE_PUBLISH_FIELD_ORDER,
   type PublishFieldFocusTarget,
 } from './focus-publish-field';
-export {
-  EMPTY_PERSISTED_LOCAL_FILES,
-  getLocalFilesKey,
-  localFilesToPersisted,
-  persistedToLocalFiles,
-  type PersistedFile,
-  type PersistedLocalFiles,
-} from './file-persistence';

@@ -2,7 +2,6 @@ import type { IdeaAIPrefillResponse } from '@/features/ideas/api/ideas-api.types
 import { useIdeaCreateAiAssist } from '@/features/ideas/hooks/use-idea-create-ai-assist';
 import { useIdeaCreateForm } from '@/features/ideas/hooks/use-idea-create-form';
 import { focusPublishField } from '@/features/ideas/lib/create-idea';
-import { hasCreateIdeaUnsavedProgress } from '@/features/ideas/lib/create-idea/unsaved-progress';
 import { IDEA_STAGES } from '@/features/ideas/lib/stages';
 import {
   outlineBtnClass,
@@ -11,7 +10,6 @@ import {
   textareaClass,
 } from '@/features/ideas/lib/styles';
 import { SuggestedTagsField } from '@/features/tags/ui/SuggestedTagsField';
-import { useCreateIdeaStore } from '@/features/ideas/store/create-idea.store';
 import { useNavigate } from '@tanstack/react-router';
 import { Upload } from 'lucide-react';
 import { useEffect, useId, useRef } from 'react';
@@ -86,6 +84,7 @@ export function IdeaCreateForm({
     isPublishing,
     isHydrating,
     error,
+    hasUnsavedProgress,
     clearCreateIdeaSession,
   } = useIdeaCreateForm();
 
@@ -94,7 +93,7 @@ export function IdeaCreateForm({
     control,
     handleSubmit,
     watch,
-    formState: { errors, isDirty: formIsDirty },
+    formState: { errors },
   } = form;
 
   const titleValue = watch('title') || '';
@@ -136,16 +135,6 @@ export function IdeaCreateForm({
     isScanning,
     onDocumentAutoFillControlsChange,
   ]);
-
-  const draft = useCreateIdeaStore(state => state.draft);
-  const localFiles = useCreateIdeaStore(state => state.localFiles);
-  const remoteMedia = useCreateIdeaStore(state => state.remoteMedia);
-
-  const hasUnsavedProgress = hasCreateIdeaUnsavedProgress(
-    formIsDirty,
-    { draft, localFiles, remoteMedia },
-    isEditing,
-  );
 
   const {
     leaveModalOpen,

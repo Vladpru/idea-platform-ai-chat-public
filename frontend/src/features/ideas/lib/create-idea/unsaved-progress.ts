@@ -1,20 +1,14 @@
-import type {
-  CreateIdeaDraft,
-  CreateIdeaLocalFiles,
-  IdeaMediaItem,
-} from '@/features/ideas/model/idea.types';
+import type { IdeaMediaItem } from '@/features/ideas/model/idea.types';
 
 import { EMPTY_CREATE_IDEA_DRAFT } from './defaults';
-
-type UnsavedProgressDraftState = {
-  draft: CreateIdeaDraft;
-  localFiles: CreateIdeaLocalFiles;
-  remoteMedia: IdeaMediaItem[];
-};
+import { parseProblemIds } from '../problems';
+import type { IdeaCreateFormValues } from './schema';
+import { parseTags } from './tags';
 
 export function hasCreateIdeaUnsavedProgress(
   formIsDirty: boolean,
-  { draft, localFiles, remoteMedia }: UnsavedProgressDraftState,
+  values: IdeaCreateFormValues,
+  remoteMedia: IdeaMediaItem[],
   isEditing = false,
 ): boolean {
   if (formIsDirty) {
@@ -25,15 +19,18 @@ export function hasCreateIdeaUnsavedProgress(
     return false;
   }
 
-  if (draft.title.trim() || draft.description.trim()) {
+  if (values.title.trim() || values.description.trim()) {
     return true;
   }
 
-  if (draft.problemIds.length > 0 || draft.tags.length > 0) {
+  if (
+    parseProblemIds(values.problemId).length > 0 ||
+    parseTags(values.tags).length > 0
+  ) {
     return true;
   }
 
-  if (localFiles.mainImage || localFiles.attachments.length > 0) {
+  if (values.mainImage || (values.files?.length ?? 0) > 0) {
     return true;
   }
 
@@ -41,7 +38,7 @@ export function hasCreateIdeaUnsavedProgress(
     return true;
   }
 
-  if (draft.stage !== EMPTY_CREATE_IDEA_DRAFT.stage) {
+  if (values.stage !== EMPTY_CREATE_IDEA_DRAFT.stage) {
     return true;
   }
 
