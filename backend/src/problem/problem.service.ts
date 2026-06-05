@@ -12,7 +12,13 @@ import {
   MediaProvider,
   Prisma,
   ProblemStatus,
+  SummaryStatus,
 } from '../../generated/prisma/client';
+import { AiSummaryService } from '../ai-summary/ai-summary.service';
+import {
+  hasSubstantialContentChanges,
+  hasSummarizableContent,
+} from '../ai-summary/summary-content.util';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -71,6 +77,7 @@ export class ProblemService {
     private readonly prisma: PrismaService,
     private readonly cloudinary: CloudinaryService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly aiSummaryService: AiSummaryService,
   ) {}
 
   async toggleLike(problemId: string, userId: string): Promise<void> {
@@ -85,8 +92,8 @@ export class ProblemService {
       }
 
       if (
-        existing.authorId !== userId &&
-        existing.status !== ProblemStatus.PUBLISHED
+        existing.status !== ProblemStatus.PUBLISHED &&
+        existing.authorId !== userId
       ) {
         throw new NotFoundException(PROBLEM_NOT_FOUND);
       }
@@ -221,18 +228,13 @@ export class ProblemService {
     );
 
     if (missingNames.length > 0) {
-      const inserted = await Promise.all(
-        missingNames.map(name =>
-          tx.tag.upsert({
-            where: { name },
-            update: {},
-            create: { name, label: name },
-            select: { id: true, name: true },
-          }),
-        ),
-      );
-
-      for (const tag of inserted) {
+      for (const name of missingNames) {
+        const tag = await tx.tag.upsert({
+          where: { name },
+          update: {},
+          create: { name, label: name },
+          select: { id: true, name: true },
+        });
         existingByName.set(tag.name, tag.id);
       }
     }
@@ -247,6 +249,7 @@ export class ProblemService {
     id: string,
     authorId: string,
     dto: UpdateProblemDraftDto,
+    resetSummary = false,
   ): Promise<void> {
     const scalarData: {
       stage?: UpdateProblemDraftDto['stage'];
@@ -258,6 +261,8 @@ export class ProblemService {
       impact?: string | null;
       aiEmbedding?: null;
       embeddingHash?: null;
+      aiSummary?: null;
+      summaryStatus?: SummaryStatus;
     } = {};
 
     if ('stage' in dto && dto.stage !== undefined) {
@@ -287,6 +292,11 @@ export class ProblemService {
       scalarData.embeddingHash = null;
     }
 
+    if (resetSummary) {
+      scalarData.aiSummary = null;
+      scalarData.summaryStatus = SummaryStatus.PENDING;
+    }
+
     if (Object.keys(scalarData).length > 0) {
       const { aiEmbedding, ...prismaData } = scalarData;
 
@@ -296,9 +306,16 @@ export class ProblemService {
       });
 
       if (aiEmbedding === null) {
-        await tx.$executeRaw`
-          UPDATE problem SET ai_embedding = NULL WHERE id = ${id}
-        `;
+        try {
+          await tx.$executeRaw`
+            UPDATE problem SET ai_embedding = NULL WHERE id = ${id}
+          `;
+        } catch (error) {
+          this.logger.error(
+            `Failed to reset ai_embedding for problem ${id}`,
+            error,
+          );
+        }
       }
     }
 
@@ -382,68 +399,93 @@ export class ProblemService {
   ): Promise<ProblemFormResponse> {
     const { isPublished, ...updateDto } = dto;
 
-    if (!isPublished) {
-      const currentDraftsCount = await this.prisma.problem.count({
-        where: { authorId, status: ProblemStatus.DRAFT },
-      });
+    const { problem, shouldRequestSummary } = await this.prisma.$transaction(
+      async tx => {
+        if (!isPublished) {
+          const currentDraftsCount = await tx.problem.count({
+            where: { authorId, status: ProblemStatus.DRAFT },
+          });
 
-      if (currentDraftsCount >= MAX_PROBLEM_DRAFTS_PER_USER) {
-        throw new BadRequestException(
-          `Maximum limit of ${MAX_PROBLEM_DRAFTS_PER_USER} drafts reached. Publish or delete existing drafts.`,
-        );
-      }
-    }
-    const problem = await this.prisma.$transaction(async tx => {
-      const created = await tx.problem.create({
-        data: {
-          authorId,
-          status: ProblemStatus.DRAFT,
-          title: dto.title ?? '',
-          description: dto.description ?? '',
-          ...(dto.stage !== undefined ? { stage: dto.stage } : {}),
-          ...(dto.valueProposition !== undefined
-            ? { valueProposition: dto.valueProposition || null }
-            : {}),
-          ...(dto.category !== undefined
-            ? { category: dto.category || null }
-            : {}),
-          ...(dto.impact !== undefined ? { impact: dto.impact || null } : {}),
-          ...('costBenefit' in dto
-            ? { costBenefit: this.parseCostBenefit(dto.costBenefit) }
-            : {}),
-        },
-        include: PROBLEM_FORM_INCLUDE,
-      });
-
-      await this.applyProblemUpdates(tx, created.id, authorId, updateDto);
-
-      let results = await tx.problem.findUnique({
-        where: { id: created.id },
-        include: PROBLEM_FORM_INCLUDE,
-      });
-
-      if (!results) {
-        throw new NotFoundException(PROBLEM_NOT_FOUND);
-      }
-
-      if (isPublished) {
-        const errors = this.collectPublishValidationErrors(results);
-
-        if (errors.length > 0) {
-          throw new UnprocessableEntityException(results);
+          if (currentDraftsCount >= MAX_PROBLEM_DRAFTS_PER_USER) {
+            throw new BadRequestException(
+              `Maximum limit of ${MAX_PROBLEM_DRAFTS_PER_USER} drafts reached. Publish or delete existing drafts.`,
+            );
+          }
         }
 
-        results = await tx.problem.update({
-          where: { id: created.id },
+        const created = await tx.problem.create({
           data: {
-            status: ProblemStatus.PUBLISHED,
-            publishedAt: new Date(),
+            authorId,
+            status: ProblemStatus.DRAFT,
+            title: dto.title ?? '',
+            description: dto.description ?? '',
+            ...(dto.stage !== undefined ? { stage: dto.stage } : {}),
+            ...(dto.valueProposition !== undefined
+              ? { valueProposition: dto.valueProposition || null }
+              : {}),
+            ...(dto.category !== undefined
+              ? { category: dto.category || null }
+              : {}),
+            ...(dto.impact !== undefined ? { impact: dto.impact || null } : {}),
+            ...('costBenefit' in dto
+              ? { costBenefit: this.parseCostBenefit(dto.costBenefit) }
+              : {}),
           },
           include: PROBLEM_FORM_INCLUDE,
         });
-      }
-      return results;
+
+        await this.applyProblemUpdates(tx, created.id, authorId, updateDto);
+
+        let results = await tx.problem.findUnique({
+          where: { id: created.id },
+          include: PROBLEM_FORM_INCLUDE,
+        });
+
+        if (!results) {
+          throw new NotFoundException(PROBLEM_NOT_FOUND);
+        }
+
+        if (isPublished) {
+          const errors = this.collectPublishValidationErrors(results);
+
+          if (errors.length > 0) {
+            throw new UnprocessableEntityException(results);
+          }
+
+          results = await tx.problem.update({
+            where: { id: created.id },
+            data: {
+              status: ProblemStatus.PUBLISHED,
+              publishedAt: new Date(),
+            },
+            include: PROBLEM_FORM_INCLUDE,
+          });
+        }
+
+        const requestSummary = hasSummarizableContent({
+          entityType: 'problem',
+          title: results.title,
+          description: results.description,
+          valueProposition: results.valueProposition,
+          category: results.category,
+          impact: results.impact,
+        });
+
+        return { problem: results, shouldRequestSummary: requestSummary };
+      },
+    );
+
+    this.eventEmitter.emit('entity.mutated', {
+      entityType: 'problem',
+      id: problem.id,
     });
+
+    if (shouldRequestSummary) {
+      await this.aiSummaryService.requestGeneration({
+        entityType: 'problem',
+        id: problem.id,
+      });
+    }
 
     return toProblemFormResponse(problem, authorId);
   }
@@ -600,46 +642,63 @@ export class ProblemService {
     authorId: string,
     dto: UpdateProblemDraftDto,
   ): Promise<ProblemFormResponse> {
-    const problem = await this.prisma.$transaction(async tx => {
-      const existing = await tx.problem.findFirst({
-        where: { id, authorId },
-        select: {
-          id: true,
-          status: true,
-          title: true,
-          description: true,
-          stage: true,
-        },
-      });
+    const { updated, shouldResetSummary } = await this.prisma.$transaction(
+      async tx => {
+        const existing = await tx.problem.findFirst({
+          where: { id, authorId },
+          select: {
+            id: true,
+            status: true,
+            title: true,
+            description: true,
+            valueProposition: true,
+            category: true,
+            impact: true,
+          },
+        });
 
-      if (!existing) {
-        throw new NotFoundException(PROBLEM_NOT_FOUND);
-      }
+        if (!existing) {
+          throw new NotFoundException(PROBLEM_NOT_FOUND);
+        }
 
-      if (existing.status === ProblemStatus.ARCHIVED) {
-        throw new BadRequestException('Archived problems cannot be updated');
-      }
+        if (existing.status === ProblemStatus.ARCHIVED) {
+          throw new BadRequestException('Archived problems cannot be updated');
+        }
 
-      await this.applyProblemUpdates(tx, id, authorId, dto);
+        const resetSummary = hasSubstantialContentChanges(
+          'problem',
+          existing,
+          dto,
+        );
 
-      const updated = await tx.problem.findFirst({
-        where: { id, authorId },
-        include: PROBLEM_FORM_INCLUDE,
-      });
+        await this.applyProblemUpdates(tx, id, authorId, dto, resetSummary);
 
-      if (!updated) {
-        throw new NotFoundException(PROBLEM_NOT_FOUND);
-      }
+        const record = await tx.problem.findFirst({
+          where: { id, authorId },
+          include: PROBLEM_FORM_INCLUDE,
+        });
 
-      return updated;
-    });
+        if (!record) {
+          throw new NotFoundException(PROBLEM_NOT_FOUND);
+        }
+
+        return { updated: record, shouldResetSummary: resetSummary };
+      },
+    );
 
     this.eventEmitter.emit('entity.mutated', {
       entityType: 'problem',
-      id: problem.id,
+      id: updated.id,
     });
 
-    return toProblemFormResponse(problem, authorId);
+    if (shouldResetSummary) {
+      await this.aiSummaryService.requestGeneration({
+        entityType: 'problem',
+        id: updated.id,
+      });
+    }
+
+    return toProblemFormResponse(updated, authorId);
   }
 
   async uploadAttachment(
@@ -714,13 +773,11 @@ export class ProblemService {
     }
 
     await this.prisma.problemMedia.delete({ where: { id: mediaId } });
-    void this.cloudinary.deleteByPublicId(media.publicId);
+    await this.cloudinary.deleteByPublicId(media.publicId).catch(() => {});
   }
 
   async delete(id: string, authorId: string): Promise<void> {
-    let publicIdsToDelete: string[] = [];
-
-    await this.prisma.$transaction(async tx => {
+    const { publicIdsToDelete } = await this.prisma.$transaction(async tx => {
       const existing = await tx.problem.findFirst({
         where: { id, authorId },
         select: { id: true, status: true },
@@ -731,18 +788,29 @@ export class ProblemService {
       }
 
       if (existing.status === ProblemStatus.ARCHIVED) {
-        throw new BadRequestException('Problem is already deleted');
+        throw new BadRequestException('Problem is already archived');
       }
 
-      publicIdsToDelete = await findProblemMediaPublicIds(tx, id);
+      if (
+        existing.status !== ProblemStatus.DRAFT &&
+        existing.status !== ProblemStatus.PUBLISHED
+      ) {
+        throw new BadRequestException(
+          `Cannot delete problem with status: ${existing.status as string}`,
+        );
+      }
+
+      const idsToDelete = await findProblemMediaPublicIds(tx, id);
 
       await deleteAllProblemMedia(tx, id);
       await deleteAllProblemTags(tx, id);
       await tx.ideaProblem.deleteMany({ where: { problemId: id } });
       await tx.problem.delete({ where: { id } });
+
+      return { publicIdsToDelete: idsToDelete };
     });
 
-    this.eventEmitter.emit('entity.mutated', { entityType: 'problem', id });
+    this.eventEmitter.emit('entity.deleted', { entityType: 'problem', id });
 
     this.enqueueCloudinaryDeletes(publicIdsToDelete);
   }

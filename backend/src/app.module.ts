@@ -6,6 +6,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 import { AiImageModule } from './ai-image/ai-image.module';
+import { AiSummaryModule } from './ai-summary/ai-summary.module';
 import { AiModule } from './ai/ai.module';
 import { AuthModule } from './auth/auth.module';
 import { CommentModule } from './comment/comment.module';
@@ -37,6 +38,7 @@ import { UserModule } from './user/user.module';
     ScheduleModule.forRoot(),
     UserModule,
     AiModule,
+    AiSummaryModule,
     AiImageModule,
     IdeaModule,
     ProblemModule,

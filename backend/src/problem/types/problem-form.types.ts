@@ -2,6 +2,7 @@ import type {
   MediaProvider,
   Prisma,
   ProblemStatus,
+  SummaryStatus,
 } from '../../../generated/prisma/client';
 import type { MediaKind } from '../../../generated/prisma/client';
 import { PROBLEM_FORM_INCLUDE } from '../problem.constants';
@@ -75,6 +76,8 @@ export type ProblemFormResponse = {
   costBenefit: string | null;
   category: string | null;
   impact: string | null;
+  aiSummary: string | null;
+  summaryStatus: SummaryStatus;
   publishedAt: string | null;
   viewCount: number;
   likeCount: number;

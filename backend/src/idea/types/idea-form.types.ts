@@ -3,6 +3,7 @@ import type {
   MediaKind,
   MediaProvider,
   Stage,
+  SummaryStatus,
 } from '../../../generated/prisma/client';
 
 export type IdeaFormAuthor = {
@@ -62,6 +63,8 @@ export type IdeaFormResponse = {
   stage: Stage | null;
   title: string | null;
   description: string | null;
+  aiSummary: string | null;
+  summaryStatus: SummaryStatus;
   publishedAt: string | null;
   viewCount: number;
   likeCount: number;
