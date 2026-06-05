@@ -8,10 +8,10 @@ import {
   draftToFormValues,
   getFirstPublishErrorField,
   hasCreateIdeaUnsavedProgress,
-  ideaCreateDefaultValues,
-  ideaCreateDraftSchema,
   ideaApiToDraft,
   ideaApiToRemoteMedia,
+  ideaCreateDefaultValues,
+  ideaCreateDraftSchema,
   validateForPublish,
 } from '@/features/ideas/lib/create-idea';
 import {
@@ -27,7 +27,6 @@ import {
 import type { ProblemDraft } from '@/features/problems';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useSearch } from '@tanstack/react-router';
-
 import {
   type BaseSyntheticEvent,
   useCallback,
@@ -40,11 +39,19 @@ import { type Resolver, useForm } from 'react-hook-form';
 import { getApiErrorMessage } from '@/shared/api/api-error';
 
 export type IdeaPublishResult =
-  | { success: true }
+  | {
+      success: true;
+      ideaId: string;
+      action: 'update' | 'publish';
+    }
   | {
       success: false;
       firstInvalidField?: keyof IdeaCreateFormValues;
     };
+
+export type IdeaSaveDraftResult =
+  | { success: true; ideaId: string }
+  | { success: false };
 
 export function useIdeaCreateForm() {
   const { ideaId: urlIdeaId } = useSearch({ from: '/_auth/ideas/new' });
@@ -52,7 +59,7 @@ export function useIdeaCreateForm() {
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [isDraggingImage, setIsDraggingImage] = useState(false);
   const [remoteMedia, setRemoteMedia] = useState<IdeaMediaItem[]>([]);
-  const [isHydrating, setIsHydrating] = useState(false);
+  const [isHydrating, setIsHydrating] = useState(Boolean(urlIdeaId));
   const [error, setError] = useState<string | null>(null);
   const [ideaStatus, setIdeaStatus] = useState<IdeaStatus>(IDEA_STATUS.DRAFT);
 
@@ -96,9 +103,12 @@ export function useIdeaCreateForm() {
         setEditingIdeaId(draft.id);
         setIdeaStatus(draft.status);
         setRemoteMedia(media);
-        form.reset(draftToFormValues(draft, { mainImage: null, attachments: [] }), {
-          keepDirty: false,
-        });
+        form.reset(
+          draftToFormValues(draft, { mainImage: null, attachments: [] }),
+          {
+            keepDirty: false,
+          },
+        );
       } catch (err) {
         setError(getApiErrorMessage(err));
         setEditingIdeaId(null);
@@ -160,23 +170,23 @@ export function useIdeaCreateForm() {
     }
   }, [form]);
 
-  const onSaveDraft = async (): Promise<boolean> => {
+  const onSaveDraft = async (): Promise<IdeaSaveDraftResult> => {
     const values = form.getValues();
     const result = ideaCreateDraftSchema.safeParse(values);
-    if (!result.success) return false;
+    if (!result.success) return { success: false };
 
     setError(null);
 
     try {
-      await saveDraftMutation.mutateAsync({
+      const idea = await saveDraftMutation.mutateAsync({
         values,
         ideaId: editingIdeaId,
       });
       clearCreateIdeaSession();
-      return true;
+      return { success: true, ideaId: idea.id };
     } catch (err) {
       setError(getApiErrorMessage(err));
-      return false;
+      return { success: false };
     }
   };
 
@@ -227,13 +237,17 @@ export function useIdeaCreateForm() {
     setError(null);
 
     try {
-      await publishMutation.mutateAsync({
+      const response = await publishMutation.mutateAsync({
         values,
         ideaId: editingIdeaId,
         ideaStatus,
       });
       clearCreateIdeaSession();
-      return { success: true };
+      return {
+        success: true,
+        ideaId: response.idea.id,
+        action: response.action,
+      };
     } catch (err) {
       setError(getApiErrorMessage(err));
       return { success: false };

@@ -227,7 +227,9 @@ export function usePublishIdeaMutation() {
       invalidateIdeaQueries(queryClient, idea.id, {
         invalidateDashboard: true,
       });
-      toast.success(action === 'update' ? 'Idea updated' : 'Idea published');
+      if (action === 'publish') {
+        toast.success('Idea published');
+      }
     },
     onError: error => {
       const message = getApiErrorMessage(error);

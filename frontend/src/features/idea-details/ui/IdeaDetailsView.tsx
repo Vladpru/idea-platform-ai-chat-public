@@ -26,7 +26,7 @@ import { outlineBtnClass, primaryBtnClass } from '@/features/ideas/lib/styles';
 import { IdeaEditorPageHeading } from '@/features/ideas/ui/IdeaEditorPageHeading';
 import { IdeaForm } from '@/features/ideas/ui/idea-form/IdeaForm';
 import { NotFoundPage } from '@/pages/not-found';
-import { useBlocker, useNavigate, useRouter } from '@tanstack/react-router';
+import { useBlocker, useNavigate, useRouter, useSearch } from '@tanstack/react-router';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import {
@@ -34,6 +34,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useRef,
   useState,
 } from 'react';
 
@@ -62,6 +63,9 @@ type PendingDiscardAction = 'cancel-edit' | 'navigate-back' | 'tab-switch';
 export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
   const navigate = useNavigate();
   const router = useRouter();
+  const { edit: isEditSearch, updated: showUpdatedSuccess } = useSearch({
+    from: '/_auth/ideas/$ideaId',
+  });
   const formId = useId();
   const [activeTab, setActiveTab] = useState<IdeaTabId>('description');
   const [isEditing, setIsEditing] = useState(false);
@@ -77,6 +81,8 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
   const [showDiscussionDiscardModal, setShowDiscussionDiscardModal] =
     useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const skipEditNavigationBlockRef = useRef(false);
+  const hasRestoredEditFromUrlRef = useRef(false);
 
   const isEditingDirty = useDiscussionUiStore(s => s.isEditingDirty);
   const discardAllUnsaved = useDiscussionUiStore(s => s.discardAllUnsaved);
@@ -98,8 +104,15 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
   const hasUnsavedIdeaEdits = isEditing && hasUnsavedEdits;
 
   const { proceed, reset, status } = useBlocker({
-    shouldBlockFn: () => hasUnsavedIdeaEdits,
-    enableBeforeUnload: () => hasUnsavedIdeaEdits,
+    shouldBlockFn: () => {
+      if (skipEditNavigationBlockRef.current) {
+        return false;
+      }
+
+      return hasUnsavedIdeaEdits;
+    },
+    enableBeforeUnload: () =>
+      hasUnsavedIdeaEdits && !skipEditNavigationBlockRef.current,
     withResolver: true,
   });
 
@@ -115,29 +128,68 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
     [],
   );
 
-  const exitEditMode = useCallback(() => {
-    setIsEditing(false);
-    setEditFormSnapshot(null);
-    setHasUnsavedEdits(false);
-  }, []);
+  const exitEditMode = useCallback(
+    (options?: { bypassBlocker?: boolean }) => {
+      if (options?.bypassBlocker) {
+        skipEditNavigationBlockRef.current = true;
+      }
+
+      setIsEditing(false);
+      setEditFormSnapshot(null);
+      setHasUnsavedEdits(false);
+      setIdeaDiscardModalOpen(false);
+      setPendingDiscardAction(null);
+
+      if (isEditSearch) {
+        void navigate({
+          to: ROUTES.ideaDetail(ideaId),
+          search: previous => {
+            const { edit: _edit, ...rest } = previous;
+            return rest;
+          },
+          replace: true,
+        });
+      }
+
+      if (options?.bypassBlocker) {
+        queueMicrotask(() => {
+          skipEditNavigationBlockRef.current = false;
+        });
+      }
+    },
+    [ideaId, isEditSearch, navigate],
+  );
 
   const handleFormSubmit = (values: IdeaEditFormValues) => {
     updateMutation.mutate(values, {
       onSuccess: () => {
-        exitEditMode();
+        exitEditMode({ bypassBlocker: true });
         setUpdatedSuccessOpen(true);
       },
     });
   };
 
-  const handleStartEdit = (currentIdea: IdeaDetails) => {
+  const enterEditMode = useCallback((currentIdea: IdeaDetails) => {
     setActiveTab('description');
     setEditFormSnapshot(ideaDetailsToEditFormValues(currentIdea));
     setHasUnsavedEdits(false);
     setIdeaDiscardModalOpen(false);
     setPendingDiscardAction(null);
     setIsEditing(true);
-  };
+    hasRestoredEditFromUrlRef.current = true;
+  }, []);
+
+  const handleStartEdit = useCallback(
+    (currentIdea: IdeaDetails) => {
+      enterEditMode(currentIdea);
+      void navigate({
+        to: ROUTES.ideaDetail(currentIdea.id),
+        search: previous => ({ ...previous, edit: true }),
+        replace: true,
+      });
+    },
+    [enterEditMode, navigate],
+  );
 
   const handleCancelEdit = () => {
     if (hasUnsavedEdits) {
@@ -238,6 +290,40 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
       setShowDiscussionDiscardModal(false);
     }
   };
+
+  useEffect(() => {
+    if (!showUpdatedSuccess) {
+      return;
+    }
+
+    setUpdatedSuccessOpen(true);
+    skipEditNavigationBlockRef.current = true;
+    void navigate({
+      to: ROUTES.ideaDetail(ideaId),
+      search: previous => {
+        const { updated: _updated, ...rest } = previous;
+        return rest;
+      },
+      replace: true,
+    });
+    queueMicrotask(() => {
+      skipEditNavigationBlockRef.current = false;
+    });
+  }, [ideaId, navigate, showUpdatedSuccess]);
+
+  useEffect(() => {
+    if (
+      !idea ||
+      !isEditSearch ||
+      isEditing ||
+      hasRestoredEditFromUrlRef.current
+    ) {
+      return;
+    }
+
+    hasRestoredEditFromUrlRef.current = true;
+    enterEditMode(idea);
+  }, [enterEditMode, idea, isEditSearch, isEditing]);
 
   useEffect(() => {
     let ticking = false;

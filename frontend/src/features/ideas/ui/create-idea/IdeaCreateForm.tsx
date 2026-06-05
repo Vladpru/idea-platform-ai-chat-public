@@ -19,7 +19,11 @@ import { Controller } from 'react-hook-form';
 import { ROUTES } from '@/shared/config/paths';
 import { useCreateFormLeaveGuard } from '@/shared/hooks/use-create-form-leave-guard';
 import { useDocumentAutoFill } from '@/shared/hooks/use-document-auto-fill';
-import { SAVE_IDEA_PROGRESS_DESCRIPTION } from '@/shared/lib/create-form-leave/copy';
+import {
+  SAVE_IDEA_PROGRESS_DESCRIPTION,
+  UNDO_CHANGES_DESCRIPTION,
+  UNDO_CHANGES_TITLE,
+} from '@/shared/lib/create-form-leave/copy';
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
 import { ConfirmModal } from '@/shared/ui/confirm-modal';
@@ -122,6 +126,8 @@ export function IdeaCreateForm({
     });
 
   const formBusy = isBusy || isScanning;
+  const allowNextLeaveRef = useRef<(continueLeave: () => void) => void>(() => {});
+  const handleSaveDraftRef = useRef<(() => Promise<boolean>) | null>(null);
 
   useEffect(() => {
     onDocumentAutoFillControlsChange?.({
@@ -146,9 +152,11 @@ export function IdeaCreateForm({
   } = useCreateFormLeaveGuard({
     hasUnsavedProgress,
     isBusy: formBusy,
-    onSaveDraft,
+    onSaveDraft: async () => (await handleSaveDraftRef.current?.()) ?? false,
     onDiscard: clearCreateIdeaSession,
   });
+
+  allowNextLeaveRef.current = allowNextLeave;
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
@@ -191,15 +199,38 @@ export function IdeaCreateForm({
     });
   };
 
-  const handleSaveDraft = async () => {
-    const isSaved = await onSaveDraft();
-    if (!isSaved) return;
-    allowNextLeave(() => {
-      void navigate({ to: ROUTES.ideas, search: { sort: 'newest' } });
+  const navigateToIdeaDetail = (
+    ideaId: string,
+    search?: { updated?: boolean },
+  ) => {
+    void navigate({
+      to: '/ideas/$ideaId',
+      params: { ideaId },
+      search,
+      replace: true,
     });
   };
 
+  const handleSaveDraft = async (): Promise<boolean> => {
+    const wasEditing = isEditing;
+    const result = await onSaveDraft();
+    if (!result.success) return false;
+
+    if (wasEditing) {
+      navigateToIdeaDetail(result.ideaId);
+      return true;
+    }
+
+    allowNextLeaveRef.current(() => {
+      void navigate({ to: ROUTES.ideas, search: { sort: 'newest' } });
+    });
+    return true;
+  };
+
+  handleSaveDraftRef.current = handleSaveDraft;
+
   const handlePublish = async () => {
+    const wasEditing = isEditing;
     const publishResult = await onPublish();
     if (!publishResult.success) {
       if (publishResult.firstInvalidField) {
@@ -209,7 +240,15 @@ export function IdeaCreateForm({
       }
       return;
     }
-    allowNextLeave(() => {
+
+    if (wasEditing) {
+      navigateToIdeaDetail(publishResult.ideaId, {
+        updated: publishResult.action === 'update',
+      });
+      return;
+    }
+
+    allowNextLeaveRef.current(() => {
       void navigate({ to: ROUTES.ideas, search: { sort: 'newest' } });
     });
   };
@@ -286,9 +325,7 @@ export function IdeaCreateForm({
           />
         </div>
 
-        <FieldGroup
-          data-publish-field="title"
-        >
+        <FieldGroup data-publish-field="title">
           <div className="flex flex-wrap items-end justify-between gap-2">
             <FieldLabel htmlFor={`${formId}-title`} required>
               Title
@@ -476,13 +513,25 @@ export function IdeaCreateForm({
       </form>
 
       <SaveProgressBeforeLeavingModal
-        open={leaveModalOpen}
+        open={!isEditing && leaveModalOpen}
         onOpenChange={handleLeaveModalOpenChange}
         onDiscard={handleDiscard}
         onSaveAsDraft={() => void handleLeaveSaveAsDraft()}
         isSaving={isSavingDraft}
         description={SAVE_IDEA_PROGRESS_DESCRIPTION}
       />
+
+      {isEditing ? (
+        <ConfirmModal
+          open={leaveModalOpen}
+          onOpenChange={handleLeaveModalOpenChange}
+          title={UNDO_CHANGES_TITLE}
+          description={UNDO_CHANGES_DESCRIPTION}
+          confirmLabel="YES"
+          cancelLabel="NO"
+          onConfirm={handleDiscard}
+        />
+      ) : null}
 
       <AiGenerationModal {...generationModalProps} />
 

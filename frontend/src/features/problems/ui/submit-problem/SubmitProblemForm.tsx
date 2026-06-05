@@ -148,10 +148,12 @@ export function SubmitProblemForm() {
   };
 
   const handlePublish = async () => {
+    const wasEditing = isEditing;
     const problemId = await onPublish();
     if (!problemId) return;
     void navigate({
       to: ROUTES.problemDetail(problemId),
+      search: wasEditing ? { updated: true } : undefined,
       replace: true,
     });
   };

@@ -26,7 +26,21 @@ export function IdeaCardActions({
     {
       label: isDraft ? 'Continue editing' : 'Edit idea',
       icon: <Edit2 className="size-4" />,
-      onSelect: () => void navigate({ to: ROUTES.ideaCreation(card.id) }),
+      onSelect: () => {
+        if (isDraft) {
+          void navigate({
+            to: ROUTES.ideasNew,
+            search: { ideaId: card.id },
+          });
+          return;
+        }
+
+        void navigate({
+          to: '/ideas/$ideaId',
+          params: { ideaId: card.id },
+          search: { edit: true },
+        });
+      },
     },
     {
       label: isDeleting ? 'Deleting...' : 'Delete idea',
