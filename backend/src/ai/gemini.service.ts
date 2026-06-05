@@ -18,7 +18,6 @@ import {
   normalizeIdeaDocumentExtractResponse,
   normalizeProblemDocumentExtractResponse,
 } from './document/document-extract-response.util';
-import { DocumentEntityType } from './document/dto/extract-document.dto';
 import {
   createGeminiProviderException,
   createGeminiQuotaException,
@@ -40,13 +39,14 @@ import {
   buildModelsToTry,
 } from './gemini/gemini.constants';
 import { buildEntitySummaryPrompt } from './gemini/summary-prompt.util';
-import type {
-  AiProvider,
-  DocumentExtractInput,
-  DocumentExtractOutput,
-  IdeaPrefillInput,
-  IdeaPrefillOutput,
-  SuggestTagsInput,
+import {
+  type AiProvider,
+  DocumentEntityType,
+  type DocumentExtractInput,
+  type DocumentExtractOutput,
+  type IdeaPrefillInput,
+  type IdeaPrefillOutput,
+  type SuggestTagsInput,
 } from './types/ai.types';
 
 const DEFAULT_TAG_SUGGESTIONS_TOTAL_TIMEOUT_MS = 15_000;
@@ -361,7 +361,7 @@ export class GeminiService implements AiProvider {
 
     const prompt = buildDocumentExtractPrompt(
       input.documentText,
-      input.entityType as DocumentEntityType,
+      input.entityType,
     );
 
     for (const model of buildModelsToTry(this.configuredModel)) {
@@ -469,7 +469,7 @@ export class GeminiService implements AiProvider {
           jsonMode: attempt.jsonMode,
         });
 
-        if (input.entityType === 'idea') {
+        if (input.entityType === DocumentEntityType.IDEA) {
           return {
             kind: 'success',
             data: normalizeIdeaDocumentExtractResponse(parsed),
