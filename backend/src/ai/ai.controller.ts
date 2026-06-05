@@ -2,7 +2,6 @@ import {
   BadRequestException,
   Body,
   Controller,
-  FileTypeValidator,
   HttpCode,
   HttpStatus,
   MaxFileSizeValidator,
@@ -26,13 +25,16 @@ import { memoryStorage } from 'multer';
 
 import { JwtAuth } from '../shared/decorators/jwt-auth.decorator';
 import {
-  DOCUMENT_EXTRACT_ALLOWED_MIME_REGEX,
   DOCUMENT_EXTRACT_FILE_TOO_LARGE_MESSAGE,
   DOCUMENT_EXTRACT_MAX_FILE_BYTES,
   DOCUMENT_EXTRACT_UNSUPPORTED_MESSAGE,
 } from './document/document-extract.constants';
+import { DocumentExtractFileValidator } from './document/document-extract-file.validator';
 import { DocumentExtractService } from './document/document-extract.service';
-import { DocumentEntityType } from './document/dto/extract-document.dto';
+import {
+  ExtractDocumentDto,
+  ExtractDocumentMultipartDto,
+} from './document/dto/extract-document.dto';
 
 @ApiTags('ai')
 @Controller('ai')
@@ -47,21 +49,23 @@ export class AiController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Extract form fields from an uploaded document' })
   @ApiConsumes('multipart/form-data')
-  @ApiBody({
+  @ApiBody({ type: ExtractDocumentMultipartDto })
+  @ApiOkResponse({
+    description: 'Extracted form fields from the uploaded document',
     schema: {
       type: 'object',
-      required: ['file', 'entityType'],
+      required: ['data', 'meta'],
       properties: {
-        file: { type: 'string', format: 'binary' },
-        entityType: {
-          type: 'string',
-          enum: Object.values(DocumentEntityType),
+        data: { type: 'object' },
+        meta: {
+          type: 'object',
+          required: ['documentTextTruncated'],
+          properties: {
+            documentTextTruncated: { type: 'boolean' },
+          },
         },
       },
     },
-  })
-  @ApiOkResponse({
-    description: 'Extracted form fields from the uploaded document',
   })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiUnsupportedMediaTypeResponse({
@@ -81,13 +85,14 @@ export class AiController {
             maxSize: DOCUMENT_EXTRACT_MAX_FILE_BYTES,
             message: DOCUMENT_EXTRACT_FILE_TOO_LARGE_MESSAGE,
           }),
-          new FileTypeValidator({
-            fileType: DOCUMENT_EXTRACT_ALLOWED_MIME_REGEX,
-          }),
+          new DocumentExtractFileValidator({}),
         ],
         fileIsRequired: true,
         exceptionFactory: error => {
-          if (error.includes('expected type')) {
+          if (
+            error.includes('expected type') ||
+            error === DOCUMENT_EXTRACT_UNSUPPORTED_MESSAGE
+          ) {
             return new BadRequestException(
               DOCUMENT_EXTRACT_UNSUPPORTED_MESSAGE,
             );
@@ -102,17 +107,13 @@ export class AiController {
       }),
     )
     file: Express.Multer.File,
-    @Body('entityType') entityType: string,
+    @Body() body: ExtractDocumentDto,
   ) {
-    if (entityType !== 'idea' && entityType !== 'problem') {
-      throw new BadRequestException('entityType must be "idea" or "problem"');
-    }
-
-    const data = await this.documentExtractService.extractFromFile(
+    const result = await this.documentExtractService.extractFromFile(
       file,
-      entityType as DocumentEntityType,
+      body.entityType,
     );
 
-    return { data };
+    return result;
   }
 }

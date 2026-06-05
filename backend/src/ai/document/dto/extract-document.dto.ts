@@ -6,10 +6,15 @@ export enum DocumentEntityType {
   PROBLEM = 'problem',
 }
 
-export class ExtractDocumentQueryDto {
+export class ExtractDocumentDto {
   @ApiProperty({ enum: DocumentEntityType, example: DocumentEntityType.IDEA })
   @IsEnum(DocumentEntityType)
   entityType!: DocumentEntityType;
+}
+
+export class ExtractDocumentMultipartDto extends ExtractDocumentDto {
+  @ApiProperty({ type: 'string', format: 'binary' })
+  file!: Express.Multer.File;
 }
 
 export class IdeaDocumentExtractDataDto {
@@ -61,4 +66,13 @@ export class IdeaDocumentExtractResponseDto {
 export class ProblemDocumentExtractResponseDto {
   @ApiProperty({ type: () => ProblemDocumentExtractDataDto })
   data!: ProblemDocumentExtractDataDto;
+}
+
+export class DocumentExtractMetaDto {
+  @ApiProperty({
+    description:
+      'True when document text exceeded the analysis limit and was truncated before extraction',
+    example: false,
+  })
+  documentTextTruncated!: boolean;
 }

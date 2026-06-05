@@ -9,12 +9,13 @@ import {
   DOCUMENT_EXTRACT_UNREADABLE_MESSAGE,
   DOCUMENT_EXTRACT_UNSUPPORTED_MESSAGE,
 } from './document-extract.constants';
+import {
+  DOCUMENT_EXTRACT_DOCX_MIME,
+  DOCUMENT_EXTRACT_PDF_MIME,
+  resolveDocumentExtractMimeType,
+} from './document-extract-mime.util';
 import { DocxTextExtractorService } from './docx-text-extractor.service';
 import { PdfTextExtractorService } from './pdf-text-extractor.service';
-
-const DOCX_MIME =
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-const PDF_MIME = 'application/pdf';
 
 @Injectable()
 export class DocumentTextExtractorService {
@@ -28,7 +29,10 @@ export class DocumentTextExtractorService {
     mimeType: string,
     originalFilename?: string,
   ): Promise<string> {
-    const normalizedMime = this.resolveMimeType(mimeType, originalFilename);
+    const normalizedMime = resolveDocumentExtractMimeType(
+      mimeType,
+      originalFilename,
+    );
 
     if (!normalizedMime) {
       throw new UnsupportedMediaTypeException(
@@ -38,14 +42,14 @@ export class DocumentTextExtractorService {
 
     try {
       const extractedText =
-        normalizedMime === DOCX_MIME
+        normalizedMime === DOCUMENT_EXTRACT_DOCX_MIME
           ? await this.docxExtractor.extractText(buffer)
           : await this.pdfExtractor.extractText(buffer);
       const text = extractedText.trim();
 
       if (!text) {
         throw new BadRequestException(
-          normalizedMime === PDF_MIME
+          normalizedMime === DOCUMENT_EXTRACT_PDF_MIME
             ? DOCUMENT_EXTRACT_PDF_NO_TEXT_MESSAGE
             : DOCUMENT_EXTRACT_UNREADABLE_MESSAGE,
         );
@@ -68,21 +72,5 @@ export class DocumentTextExtractorService {
 
       throw new BadRequestException(message);
     }
-  }
-
-  private resolveMimeType(
-    mimeType: string,
-    originalFilename?: string,
-  ): string | null {
-    const normalizedMime = mimeType.trim().toLowerCase();
-    if (normalizedMime === DOCX_MIME || normalizedMime === PDF_MIME) {
-      return normalizedMime;
-    }
-
-    const extension = originalFilename?.split('.').pop()?.toLowerCase();
-    if (extension === 'docx') return DOCX_MIME;
-    if (extension === 'pdf') return PDF_MIME;
-
-    return null;
   }
 }

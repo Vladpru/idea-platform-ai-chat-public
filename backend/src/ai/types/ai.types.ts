@@ -46,6 +46,15 @@ export type DocumentExtractOutput =
   | IdeaDocumentExtractOutput
   | ProblemDocumentExtractOutput;
 
+export type DocumentExtractMeta = {
+  documentTextTruncated: boolean;
+};
+
+export type DocumentExtractResult = {
+  data: DocumentExtractOutput;
+  meta: DocumentExtractMeta;
+};
+
 export type SuggestTagsInput = {
   title?: string;
   description: string;

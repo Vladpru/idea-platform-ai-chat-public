@@ -5,18 +5,14 @@ import type { UseFormReturn } from 'react-hook-form';
 import { toast } from 'sonner';
 
 import { extractDocumentFields } from '@/shared/api/ai/document-extract.api';
-import type {
-  IdeaDocumentExtractResponse,
-  ProblemDocumentExtractResponse,
-} from '@/shared/api/ai/document-extract-api.types';
+import type { DocumentExtractMeta } from '@/shared/api/ai/document-extract-api.types';
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import {
-  appendDocumentToFiles,
-  applyIdeaExtractedFields,
-  applyProblemExtractedFields,
+  applyDocumentExtractAndAttach,
   type DocumentAutoFillEntityType,
-  hasIdeaAutoFillContent,
-  hasProblemAutoFillContent,
+  type DocumentAutoFillFormByEntity,
+  hasDocumentAutoFillContent,
+  hasDocumentExtractedContent,
   validateAutoFillDocument,
 } from '@/shared/lib/document-auto-fill';
 
@@ -30,8 +26,75 @@ type UseDocumentAutoFillParams =
       form: UseFormReturn<SubmitProblemFormValues>;
     };
 
+function notifyExtractResult(
+  hasExtractedContent: boolean,
+  meta: DocumentExtractMeta,
+): void {
+  if (hasExtractedContent) {
+    toast.success('Form fields populated from document');
+  } else {
+    toast.warning('Document attached, but no fields could be extracted');
+  }
+
+  if (meta.documentTextTruncated) {
+    toast.warning(
+      'Only the first part of this document was analyzed. Content near the end may have been skipped.',
+    );
+  }
+}
+
+async function finishExtractScan(
+  entityType: 'idea',
+  form: UseFormReturn<IdeaCreateFormValues>,
+  file: File,
+): Promise<void>;
+async function finishExtractScan(
+  entityType: 'problem',
+  form: UseFormReturn<SubmitProblemFormValues>,
+  file: File,
+): Promise<void>;
+async function finishExtractScan(
+  entityType: DocumentAutoFillEntityType,
+  form: DocumentAutoFillFormByEntity[DocumentAutoFillEntityType],
+  file: File,
+): Promise<void> {
+  const { data: extracted, meta } = await extractDocumentFields(
+    file,
+    entityType,
+  );
+
+  applyDocumentExtractAndAttach(entityType, form, extracted, file);
+
+  notifyExtractResult(
+    hasDocumentExtractedContent(entityType, extracted),
+    meta,
+  );
+}
+
+function hasExistingAutoFillContent(params: UseDocumentAutoFillParams): boolean {
+  if (params.entityType === 'idea') {
+    return hasDocumentAutoFillContent(
+      params.entityType,
+      params.form.getValues(),
+    );
+  }
+
+  return hasDocumentAutoFillContent(params.entityType, params.form.getValues());
+}
+
+async function runExtractScan(
+  params: UseDocumentAutoFillParams,
+  file: File,
+): Promise<void> {
+  if (params.entityType === 'idea') {
+    await finishExtractScan(params.entityType, params.form, file);
+    return;
+  }
+
+  await finishExtractScan(params.entityType, params.form, file);
+}
+
 export function useDocumentAutoFill(params: UseDocumentAutoFillParams) {
-  const { entityType, form } = params;
   const [isScanning, setIsScanning] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const pendingFileRef = useRef<File | null>(null);
@@ -40,41 +103,7 @@ export function useDocumentAutoFill(params: UseDocumentAutoFillParams) {
     async (file: File) => {
       setIsScanning(true);
       try {
-        const extracted = await extractDocumentFields(file, entityType);
-
-        if (entityType === 'idea') {
-          const ideaForm = form as UseFormReturn<IdeaCreateFormValues>;
-          applyIdeaExtractedFields(
-            ideaForm,
-            extracted as IdeaDocumentExtractResponse,
-          );
-          const currentFiles = ideaForm.getValues('files');
-          ideaForm.setValue(
-            'files',
-            appendDocumentToFiles(currentFiles, file),
-            {
-              shouldDirty: true,
-              shouldValidate: true,
-            },
-          );
-        } else {
-          const problemForm = form as UseFormReturn<SubmitProblemFormValues>;
-          applyProblemExtractedFields(
-            problemForm,
-            extracted as ProblemDocumentExtractResponse,
-          );
-          const currentFiles = problemForm.getValues('files');
-          problemForm.setValue(
-            'files',
-            appendDocumentToFiles(currentFiles, file),
-            {
-              shouldDirty: true,
-              shouldValidate: true,
-            },
-          );
-        }
-
-        toast.success('Form fields populated from document');
+        await runExtractScan(params, file);
       } catch (error) {
         toast.error(getApiErrorMessage(error));
       } finally {
@@ -82,7 +111,7 @@ export function useDocumentAutoFill(params: UseDocumentAutoFillParams) {
         pendingFileRef.current = null;
       }
     },
-    [entityType, form],
+    [params],
   );
 
   const handleFileSelected = useCallback(
@@ -93,13 +122,7 @@ export function useDocumentAutoFill(params: UseDocumentAutoFillParams) {
         return;
       }
 
-      const values = form.getValues();
-      const hasExistingContent =
-        entityType === 'idea'
-          ? hasIdeaAutoFillContent(values as IdeaCreateFormValues)
-          : hasProblemAutoFillContent(values as SubmitProblemFormValues);
-
-      if (hasExistingContent) {
+      if (hasExistingAutoFillContent(params)) {
         pendingFileRef.current = file;
         setConfirmOpen(true);
         return;
@@ -107,7 +130,7 @@ export function useDocumentAutoFill(params: UseDocumentAutoFillParams) {
 
       void runScan(file);
     },
-    [entityType, form, runScan],
+    [params, runScan],
   );
 
   const handleConfirmOverwrite = useCallback(() => {

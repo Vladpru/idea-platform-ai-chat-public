@@ -3,6 +3,7 @@ import { mergeAttachmentFiles } from '@/features/ideas/lib/create-idea/attachmen
 import { sanitizeCostBenefitInput } from '@/features/problems/lib/submit-problem/cost-benefit';
 import type { SubmitProblemFormValues } from '@/features/problems/lib/submit-problem';
 import type {
+  DocumentExtractDataByEntity,
   DocumentExtractEntityType,
   IdeaDocumentExtractResponse,
   ProblemDocumentExtractResponse,
@@ -57,6 +58,28 @@ export function hasProblemAutoFillContent(
       values.valueProposition?.trim() ||
       values.costBenefit?.trim() ||
       values.tags?.trim(),
+  );
+}
+
+export function hasIdeaExtractedContent(
+  extracted: IdeaDocumentExtractResponse,
+): boolean {
+  return Boolean(
+    extracted.title.trim() ||
+      extracted.description.trim() ||
+      extracted.tags.some(Boolean),
+  );
+}
+
+export function hasProblemExtractedContent(
+  extracted: ProblemDocumentExtractResponse,
+): boolean {
+  return Boolean(
+    extracted.title.trim() ||
+      extracted.description.trim() ||
+      extracted.valueProposition.trim() ||
+      extracted.costBenefit.trim() ||
+      extracted.tags.some(Boolean),
   );
 }
 
@@ -117,6 +140,89 @@ export function appendDocumentToFiles(
 ): File[] {
   const { merged } = mergeAttachmentFiles(existingFiles ?? [], [file]);
   return merged;
+}
+
+export const documentAutoFillHandlers = {
+  idea: {
+    applyExtractedFields: applyIdeaExtractedFields,
+    hasExtractedContent: hasIdeaExtractedContent,
+    hasAutoFillContent: hasIdeaAutoFillContent,
+  },
+  problem: {
+    applyExtractedFields: applyProblemExtractedFields,
+    hasExtractedContent: hasProblemExtractedContent,
+    hasAutoFillContent: hasProblemAutoFillContent,
+  },
+} as const;
+
+export type DocumentAutoFillFormByEntity = {
+  idea: UseFormReturn<IdeaCreateFormValues>;
+  problem: UseFormReturn<SubmitProblemFormValues>;
+};
+
+export function applyDocumentExtractAndAttach<T extends DocumentAutoFillEntityType>(
+  entityType: T,
+  form: DocumentAutoFillFormByEntity[T],
+  extracted: DocumentExtractDataByEntity[T],
+  file: File,
+): void {
+  if (entityType === 'idea') {
+    documentAutoFillHandlers.idea.applyExtractedFields(
+      form as DocumentAutoFillFormByEntity['idea'],
+      extracted as IdeaDocumentExtractResponse,
+    );
+  } else {
+    documentAutoFillHandlers.problem.applyExtractedFields(
+      form as DocumentAutoFillFormByEntity['problem'],
+      extracted as ProblemDocumentExtractResponse,
+    );
+  }
+
+  attachDocumentToForm(
+    form as unknown as UseFormReturn<{ files?: File[] }>,
+    file,
+  );
+}
+
+function attachDocumentToForm(
+  form: UseFormReturn<{ files?: File[] }>,
+  file: File,
+): void {
+  form.setValue(
+    'files',
+    appendDocumentToFiles(form.getValues('files'), file),
+    setFieldOptions,
+  );
+}
+
+export function hasDocumentExtractedContent<T extends DocumentAutoFillEntityType>(
+  entityType: T,
+  extracted: DocumentExtractDataByEntity[T],
+): boolean {
+  if (entityType === 'idea') {
+    return documentAutoFillHandlers.idea.hasExtractedContent(
+      extracted as IdeaDocumentExtractResponse,
+    );
+  }
+
+  return documentAutoFillHandlers.problem.hasExtractedContent(
+    extracted as ProblemDocumentExtractResponse,
+  );
+}
+
+export function hasDocumentAutoFillContent<T extends DocumentAutoFillEntityType>(
+  entityType: T,
+  values: T extends 'idea' ? IdeaCreateFormValues : SubmitProblemFormValues,
+): boolean {
+  if (entityType === 'idea') {
+    return documentAutoFillHandlers.idea.hasAutoFillContent(
+      values as IdeaCreateFormValues,
+    );
+  }
+
+  return documentAutoFillHandlers.problem.hasAutoFillContent(
+    values as SubmitProblemFormValues,
+  );
 }
 
 export type DocumentAutoFillEntityType = DocumentExtractEntityType;

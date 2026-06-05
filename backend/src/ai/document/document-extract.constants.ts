@@ -1,8 +1,5 @@
 export const DOCUMENT_EXTRACT_MAX_FILE_BYTES = 5 * 1024 * 1024;
 
-export const DOCUMENT_EXTRACT_ALLOWED_MIME_REGEX =
-  /application\/pdf|application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document/;
-
 export const DOCUMENT_EXTRACT_UNSUPPORTED_MESSAGE =
   'Only .docx and .pdf files are supported for AI auto-fill';
 
