@@ -221,7 +221,7 @@ export class IdeaService {
     }
   }
 
-  private async queuePublishedProblemSummaries(
+  private queuePublishedProblemSummaries(
     problems: Array<{
       id: string;
       title: string;
@@ -230,7 +230,7 @@ export class IdeaService {
       category: string | null;
       impact: string | null;
     }>,
-  ): Promise<void> {
+  ): void {
     for (const problem of problems) {
       const summarizable = hasSummarizableContent({
         entityType: 'problem',
@@ -242,7 +242,7 @@ export class IdeaService {
       });
 
       if (summarizable) {
-        await this.aiSummaryService.requestGeneration({
+        this.aiSummaryService.requestGeneration({
           entityType: 'problem',
           id: problem.id,
         });
@@ -565,13 +565,13 @@ export class IdeaService {
     });
 
     if (shouldRequestSummary) {
-      await this.aiSummaryService.requestGeneration({
+      this.aiSummaryService.requestGeneration({
         entityType: 'idea',
         id: idea.id,
       });
     }
 
-    await this.queuePublishedProblemSummaries(publishedProblems);
+    this.queuePublishedProblemSummaries(publishedProblems);
 
     return toIdeaFormResponse(idea, authorId);
   }
@@ -627,7 +627,7 @@ export class IdeaService {
     });
 
     if (shouldResetSummary && updated.status === IdeaStatus.PUBLISHED) {
-      await this.aiSummaryService.requestGeneration({
+      this.aiSummaryService.requestGeneration({
         entityType: 'idea',
         id: updated.id,
       });
@@ -709,7 +709,7 @@ export class IdeaService {
     });
 
     if (shouldResetSummary) {
-      await this.aiSummaryService.requestGeneration({
+      this.aiSummaryService.requestGeneration({
         entityType: 'idea',
         id: updated.id,
       });
@@ -847,13 +847,13 @@ export class IdeaService {
     });
 
     if (shouldRequestSummary) {
-      await this.aiSummaryService.requestGeneration({
+      this.aiSummaryService.requestGeneration({
         entityType: 'idea',
         id: published.id,
       });
     }
 
-    await this.queuePublishedProblemSummaries(publishedProblems);
+    this.queuePublishedProblemSummaries(publishedProblems);
 
     return toIdeaFormResponse(published, authorId);
   }

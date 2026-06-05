@@ -497,7 +497,7 @@ export class ProblemService {
     });
 
     if (shouldRequestSummary) {
-      await this.aiSummaryService.requestGeneration({
+      this.aiSummaryService.requestGeneration({
         entityType: 'problem',
         id: problem.id,
       });
@@ -715,7 +715,7 @@ export class ProblemService {
     });
 
     if (shouldResetSummary && updated.status === ProblemStatus.PUBLISHED) {
-      await this.aiSummaryService.requestGeneration({
+      this.aiSummaryService.requestGeneration({
         entityType: 'problem',
         id: updated.id,
       });

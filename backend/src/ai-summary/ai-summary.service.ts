@@ -201,9 +201,9 @@ export class AiSummaryService {
     throw error;
   };
 
-  async requestGeneration(payload: SummaryRequestedEvent): Promise<boolean> {
+  requestGeneration(payload: SummaryRequestedEvent): boolean {
     try {
-      await this.eventEmitter.emitAsync('summary.requested', payload);
+      this.eventEmitter.emit('summary.requested', payload);
       return true;
     } catch (error) {
       this.logger.error(
