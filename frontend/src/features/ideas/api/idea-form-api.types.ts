@@ -50,7 +50,7 @@ export type IdeaMediaResponseDto = {
   createdAt: string;
 };
 
-export type SummaryStatus = 'PENDING' | 'COMPLETED' | 'FAILED';
+export type SummaryStatus = 'PENDING' | 'COMPLETED' | 'FAILED' | 'SKIPPED';
 
 export type IdeaFormResponseDto = {
   id: string;

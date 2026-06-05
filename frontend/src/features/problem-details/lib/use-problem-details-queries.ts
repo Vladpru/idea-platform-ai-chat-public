@@ -23,6 +23,7 @@ export function useProblemDetailsQuery(problemId: string) {
     retry: shouldRetryDetailResourceQuery,
     refetchInterval: query =>
       query.state.data?.summaryStatus === 'PENDING' ? 3000 : false,
+    refetchIntervalInBackground: false,
   });
 }
 

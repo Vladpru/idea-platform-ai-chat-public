@@ -2,7 +2,7 @@ export type ProblemStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
 
 export type ProblemStage = 'active' | 'completed' | 'archived';
 
-export type SummaryStatus = 'PENDING' | 'COMPLETED' | 'FAILED';
+export type SummaryStatus = 'PENDING' | 'COMPLETED' | 'FAILED' | 'SKIPPED';
 
 export type ProblemAuthor = {
   id: string;

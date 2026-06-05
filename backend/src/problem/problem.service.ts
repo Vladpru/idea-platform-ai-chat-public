@@ -250,6 +250,7 @@ export class ProblemService {
     authorId: string,
     dto: UpdateProblemDraftDto,
     resetSummary = false,
+    isPublished = false,
   ): Promise<void> {
     const scalarData: {
       stage?: UpdateProblemDraftDto['stage'];
@@ -294,7 +295,9 @@ export class ProblemService {
 
     if (resetSummary) {
       scalarData.aiSummary = null;
-      scalarData.summaryStatus = SummaryStatus.PENDING;
+      scalarData.summaryStatus = isPublished
+        ? SummaryStatus.PENDING
+        : SummaryStatus.SKIPPED;
     }
 
     if (Object.keys(scalarData).length > 0) {
@@ -434,7 +437,14 @@ export class ProblemService {
           include: PROBLEM_FORM_INCLUDE,
         });
 
-        await this.applyProblemUpdates(tx, created.id, authorId, updateDto);
+        await this.applyProblemUpdates(
+          tx,
+          created.id,
+          authorId,
+          updateDto,
+          false,
+          false,
+        );
 
         let results = await tx.problem.findUnique({
           where: { id: created.id },
@@ -444,6 +454,17 @@ export class ProblemService {
         if (!results) {
           throw new NotFoundException(PROBLEM_NOT_FOUND);
         }
+
+        const requestSummary =
+          isPublished &&
+          hasSummarizableContent({
+            entityType: 'problem',
+            title: results.title,
+            description: results.description,
+            valueProposition: results.valueProposition,
+            category: results.category,
+            impact: results.impact,
+          });
 
         if (isPublished) {
           const errors = this.collectPublishValidationErrors(results);
@@ -457,19 +478,14 @@ export class ProblemService {
             data: {
               status: ProblemStatus.PUBLISHED,
               publishedAt: new Date(),
+              aiSummary: null,
+              summaryStatus: requestSummary
+                ? SummaryStatus.PENDING
+                : SummaryStatus.SKIPPED,
             },
             include: PROBLEM_FORM_INCLUDE,
           });
         }
-
-        const requestSummary = hasSummarizableContent({
-          entityType: 'problem',
-          title: results.title,
-          description: results.description,
-          valueProposition: results.valueProposition,
-          category: results.category,
-          impact: results.impact,
-        });
 
         return { problem: results, shouldRequestSummary: requestSummary };
       },
@@ -671,7 +687,14 @@ export class ProblemService {
           dto,
         );
 
-        await this.applyProblemUpdates(tx, id, authorId, dto, resetSummary);
+        await this.applyProblemUpdates(
+          tx,
+          id,
+          authorId,
+          dto,
+          resetSummary,
+          existing.status === ProblemStatus.PUBLISHED,
+        );
 
         const record = await tx.problem.findFirst({
           where: { id, authorId },
@@ -691,7 +714,7 @@ export class ProblemService {
       id: updated.id,
     });
 
-    if (shouldResetSummary) {
+    if (shouldResetSummary && updated.status === ProblemStatus.PUBLISHED) {
       await this.aiSummaryService.requestGeneration({
         entityType: 'problem',
         id: updated.id,

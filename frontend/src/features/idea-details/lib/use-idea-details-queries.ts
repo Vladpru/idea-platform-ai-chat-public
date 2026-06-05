@@ -22,6 +22,7 @@ export function useIdeaDetailsQuery(ideaId: string) {
     retry: shouldRetryDetailResourceQuery,
     refetchInterval: query =>
       query.state.data?.summaryStatus === 'PENDING' ? 3000 : false,
+    refetchIntervalInBackground: false,
   });
 }
 

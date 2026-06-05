@@ -170,6 +170,7 @@ export class IdeaService {
     id: string,
     dto: UpdateIdeaDraftDto,
     resetSummary: boolean,
+    isPublished: boolean,
   ): Promise<void> {
     const scalarData: {
       stage?: UpdateIdeaDraftDto['stage'];
@@ -192,7 +193,9 @@ export class IdeaService {
 
     if (resetSummary) {
       scalarData.aiSummary = null;
-      scalarData.summaryStatus = SummaryStatus.PENDING;
+      scalarData.summaryStatus = isPublished
+        ? SummaryStatus.PENDING
+        : SummaryStatus.SKIPPED;
     }
 
     if (Object.keys(scalarData).length > 0) {
@@ -214,6 +217,35 @@ export class IdeaService {
             error,
           );
         }
+      }
+    }
+  }
+
+  private async queuePublishedProblemSummaries(
+    problems: Array<{
+      id: string;
+      title: string;
+      description: string;
+      valueProposition: string | null;
+      category: string | null;
+      impact: string | null;
+    }>,
+  ): Promise<void> {
+    for (const problem of problems) {
+      const summarizable = hasSummarizableContent({
+        entityType: 'problem',
+        title: problem.title,
+        description: problem.description,
+        valueProposition: problem.valueProposition,
+        category: problem.category,
+        impact: problem.impact,
+      });
+
+      if (summarizable) {
+        await this.aiSummaryService.requestGeneration({
+          entityType: 'problem',
+          id: problem.id,
+        });
       }
     }
   }
@@ -370,8 +402,8 @@ export class IdeaService {
   ): Promise<IdeaFormResponse> {
     const { isPublished, ...updateDto } = dto;
 
-    const { idea, shouldRequestSummary } = await this.prisma.$transaction(
-      async tx => {
+    const { idea, shouldRequestSummary, publishedProblems } =
+      await this.prisma.$transaction(async tx => {
         if (!isPublished) {
           const currentDraftsCount = await tx.idea.count({
             where: { authorId, status: IdeaStatus.DRAFT },
@@ -397,7 +429,7 @@ export class IdeaService {
           include: IDEA_FORM_INCLUDE,
         });
 
-        await this.updateScalarFields(tx, created.id, updateDto, false);
+        await this.updateScalarFields(tx, created.id, updateDto, false, false);
         await this.syncProblems(tx, created.id, authorId, updateDto.problemIds);
         await this.syncTags(tx, created.id, updateDto);
 
@@ -427,28 +459,90 @@ export class IdeaService {
           }
 
           const publishedAt = new Date();
+          let publishedProblems: Array<{
+            id: string;
+            title: string;
+            description: string;
+            valueProposition: string | null;
+            category: string | null;
+            impact: string | null;
+          }> = [];
 
           if (updateDto.problemIds && updateDto.problemIds.length > 0) {
-            await tx.problem.updateMany({
+            const draftProblems = await tx.problem.findMany({
               where: {
                 id: { in: updateDto.problemIds },
                 status: ProblemStatus.DRAFT,
               },
-              data: {
-                status: ProblemStatus.PUBLISHED,
-                publishedAt,
+              select: {
+                id: true,
+                title: true,
+                description: true,
+                valueProposition: true,
+                category: true,
+                impact: true,
               },
             });
+
+            for (const problem of draftProblems) {
+              const summarizable = hasSummarizableContent({
+                entityType: 'problem',
+                title: problem.title,
+                description: problem.description,
+                valueProposition: problem.valueProposition,
+                category: problem.category,
+                impact: problem.impact,
+              });
+
+              await tx.problem.update({
+                where: { id: problem.id },
+                data: {
+                  status: ProblemStatus.PUBLISHED,
+                  publishedAt,
+                  aiSummary: null,
+                  summaryStatus: summarizable
+                    ? SummaryStatus.PENDING
+                    : SummaryStatus.SKIPPED,
+                },
+              });
+            }
+
+            publishedProblems = draftProblems.filter(problem =>
+              hasSummarizableContent({
+                entityType: 'problem',
+                title: problem.title,
+                description: problem.description,
+                valueProposition: problem.valueProposition,
+                category: problem.category,
+                impact: problem.impact,
+              }),
+            );
           }
+
+          const requestSummary = hasSummarizableContent({
+            entityType: 'idea',
+            title: created.title,
+            description: created.description,
+          });
 
           created = await tx.idea.update({
             where: { id: created.id },
             data: {
               status: IdeaStatus.PUBLISHED,
               publishedAt,
+              aiSummary: null,
+              summaryStatus: requestSummary
+                ? SummaryStatus.PENDING
+                : SummaryStatus.SKIPPED,
             },
             include: IDEA_FORM_INCLUDE,
           });
+
+          return {
+            idea: created,
+            shouldRequestSummary: requestSummary,
+            publishedProblems,
+          };
         } else {
           const reloaded = await tx.idea.findUnique({
             where: { id: created.id },
@@ -458,15 +552,12 @@ export class IdeaService {
           created = reloaded;
         }
 
-        const requestSummary = hasSummarizableContent({
-          entityType: 'idea',
-          title: created.title,
-          description: created.description,
-        });
-
-        return { idea: created, shouldRequestSummary: requestSummary };
-      },
-    );
+        return {
+          idea: created,
+          shouldRequestSummary: false,
+          publishedProblems: [],
+        };
+      });
 
     this.eventEmitter.emit('entity.mutated', {
       entityType: 'idea',
@@ -479,6 +570,8 @@ export class IdeaService {
         id: idea.id,
       });
     }
+
+    await this.queuePublishedProblemSummaries(publishedProblems);
 
     return toIdeaFormResponse(idea, authorId);
   }
@@ -505,7 +598,13 @@ export class IdeaService {
           dto,
         );
 
-        await this.updateScalarFields(tx, id, dto, resetSummary);
+        await this.updateScalarFields(
+          tx,
+          id,
+          dto,
+          resetSummary,
+          existing.status === IdeaStatus.PUBLISHED,
+        );
         await this.syncProblems(tx, id, authorId, dto.problemIds);
         await this.syncTags(tx, id, dto);
 
@@ -527,7 +626,7 @@ export class IdeaService {
       id: updated.id,
     });
 
-    if (shouldResetSummary) {
+    if (shouldResetSummary && updated.status === IdeaStatus.PUBLISHED) {
       await this.aiSummaryService.requestGeneration({
         entityType: 'idea',
         id: updated.id,
@@ -587,7 +686,7 @@ export class IdeaService {
           throw new UnprocessableEntityException({ errors });
         }
 
-        await this.updateScalarFields(tx, id, dto, resetSummary);
+        await this.updateScalarFields(tx, id, dto, resetSummary, true);
         await this.syncProblems(tx, id, authorId, dto.problemIds);
         await this.syncTags(tx, id, dto);
 
@@ -620,69 +719,141 @@ export class IdeaService {
   }
 
   async publish(id: string, authorId: string): Promise<IdeaFormResponse> {
-    const published = await this.prisma.$transaction(async tx => {
-      const idea = await tx.idea.findFirst({
-        where: { id, authorId },
-        include: IDEA_FORM_INCLUDE,
-      });
-
-      if (!idea) {
-        throw new NotFoundException(IDEA_NOT_FOUND);
-      }
-
-      if (idea.status !== IdeaStatus.DRAFT) {
-        if (idea.status === IdeaStatus.PUBLISHED) {
-          throw new BadRequestException('Idea is already published');
-        }
-        if (idea.status === IdeaStatus.ARCHIVED) {
-          throw new BadRequestException('Archived ideas cannot be published');
-        }
-        throw new BadRequestException(
-          `Cannot publish idea with status: ${idea.status as string}`,
-        );
-      }
-
-      const errors = this.validateForPublish({
-        title: idea.title,
-        description: idea.description,
-        stage: idea.stage,
-        problemsCount: idea.problems.length,
-      });
-
-      if (errors.length > 0) {
-        throw new UnprocessableEntityException({ errors });
-      }
-
-      const linkedProblemIds = idea.problems.map(link => link.problemId);
-      const publishedAt = new Date();
-
-      if (linkedProblemIds.length > 0) {
-        await tx.problem.updateMany({
-          where: {
-            id: { in: linkedProblemIds },
-            status: ProblemStatus.DRAFT,
-          },
-          data: {
-            status: ProblemStatus.PUBLISHED,
-            publishedAt,
-          },
+    const { published, shouldRequestSummary, publishedProblems } =
+      await this.prisma.$transaction(async tx => {
+        const idea = await tx.idea.findFirst({
+          where: { id, authorId },
+          include: IDEA_FORM_INCLUDE,
         });
-      }
 
-      return tx.idea.update({
-        where: { id },
-        data: {
-          status: IdeaStatus.PUBLISHED,
-          publishedAt,
-        },
-        include: IDEA_FORM_INCLUDE,
+        if (!idea) {
+          throw new NotFoundException(IDEA_NOT_FOUND);
+        }
+
+        if (idea.status !== IdeaStatus.DRAFT) {
+          if (idea.status === IdeaStatus.PUBLISHED) {
+            throw new BadRequestException('Idea is already published');
+          }
+          if (idea.status === IdeaStatus.ARCHIVED) {
+            throw new BadRequestException('Archived ideas cannot be published');
+          }
+          throw new BadRequestException(
+            `Cannot publish idea with status: ${idea.status as string}`,
+          );
+        }
+
+        const errors = this.validateForPublish({
+          title: idea.title,
+          description: idea.description,
+          stage: idea.stage,
+          problemsCount: idea.problems.length,
+        });
+
+        if (errors.length > 0) {
+          throw new UnprocessableEntityException({ errors });
+        }
+
+        const linkedProblemIds = idea.problems.map(link => link.problemId);
+        const publishedAt = new Date();
+        let publishedProblems: Array<{
+          id: string;
+          title: string;
+          description: string;
+          valueProposition: string | null;
+          category: string | null;
+          impact: string | null;
+        }> = [];
+
+        if (linkedProblemIds.length > 0) {
+          const draftProblems = await tx.problem.findMany({
+            where: {
+              id: { in: linkedProblemIds },
+              status: ProblemStatus.DRAFT,
+            },
+            select: {
+              id: true,
+              title: true,
+              description: true,
+              valueProposition: true,
+              category: true,
+              impact: true,
+            },
+          });
+
+          for (const problem of draftProblems) {
+            const summarizable = hasSummarizableContent({
+              entityType: 'problem',
+              title: problem.title,
+              description: problem.description,
+              valueProposition: problem.valueProposition,
+              category: problem.category,
+              impact: problem.impact,
+            });
+
+            await tx.problem.update({
+              where: { id: problem.id },
+              data: {
+                status: ProblemStatus.PUBLISHED,
+                publishedAt,
+                aiSummary: null,
+                summaryStatus: summarizable
+                  ? SummaryStatus.PENDING
+                  : SummaryStatus.SKIPPED,
+              },
+            });
+          }
+
+          publishedProblems = draftProblems.filter(problem =>
+            hasSummarizableContent({
+              entityType: 'problem',
+              title: problem.title,
+              description: problem.description,
+              valueProposition: problem.valueProposition,
+              category: problem.category,
+              impact: problem.impact,
+            }),
+          );
+        }
+
+        const requestSummary = hasSummarizableContent({
+          entityType: 'idea',
+          title: idea.title,
+          description: idea.description,
+        });
+
+        const publishedIdea = await tx.idea.update({
+          where: { id },
+          data: {
+            status: IdeaStatus.PUBLISHED,
+            publishedAt,
+            aiSummary: null,
+            summaryStatus: requestSummary
+              ? SummaryStatus.PENDING
+              : SummaryStatus.SKIPPED,
+          },
+          include: IDEA_FORM_INCLUDE,
+        });
+
+        return {
+          published: publishedIdea,
+          shouldRequestSummary: requestSummary,
+          publishedProblems,
+        };
       });
-    });
 
     this.eventEmitter.emit('entity.mutated', {
       entityType: 'idea',
       id: published.id,
     });
+
+    if (shouldRequestSummary) {
+      await this.aiSummaryService.requestGeneration({
+        entityType: 'idea',
+        id: published.id,
+      });
+    }
+
+    await this.queuePublishedProblemSummaries(publishedProblems);
 
     return toIdeaFormResponse(published, authorId);
   }
