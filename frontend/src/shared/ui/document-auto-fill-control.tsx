@@ -1,4 +1,4 @@
-import { FileUpIcon, Loader2 } from 'lucide-react';
+import { FileUpIcon } from 'lucide-react';
 import { useId, useRef } from 'react';
 
 import { AUTO_FILL_ACCEPT } from '@/shared/lib/document-auto-fill';
