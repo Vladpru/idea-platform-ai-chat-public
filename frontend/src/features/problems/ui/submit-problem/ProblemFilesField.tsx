@@ -18,11 +18,13 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip';
 type ProblemFilesFieldProps = {
   control: Control<SubmitProblemFormValues>;
   disabled?: boolean;
+  onFilesModified?: () => void;
 };
 
 export function ProblemFilesField({
   control,
   disabled = false,
+  onFilesModified,
 }: ProblemFilesFieldProps) {
   const [addFilesOpen, setAddFilesOpen] = useState(false);
 
@@ -35,18 +37,23 @@ export function ProblemFilesField({
         const atLimit = files.length >= MAX_ATTACHMENT_FILES;
         const remainingSlots = MAX_ATTACHMENT_FILES - files.length;
 
+        const handleFilesChange = (nextFiles: File[]) => {
+          field.onChange(nextFiles);
+          onFilesModified?.();
+        };
+
         const handleAdd = (incoming: File[]) => {
           const { merged, errors } = mergeAttachmentFiles(files, incoming);
           if (errors.length > 0) {
             errors.forEach(message => toast.error(message));
           }
           if (merged.length !== files.length) {
-            field.onChange(merged);
+            handleFilesChange(merged);
           }
         };
 
         const removeFile = (key: string) => {
-          field.onChange(
+          handleFilesChange(
             files.filter(file => getAttachmentFileKey(file) !== key),
           );
         };
@@ -62,7 +69,6 @@ export function ProblemFilesField({
                     file={file}
                     allFiles={files}
                     onRemove={() => removeFile(key)}
-                    disabled={disabled}
                   />
                 );
               })}

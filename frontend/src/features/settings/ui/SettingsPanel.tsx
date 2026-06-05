@@ -84,7 +84,7 @@ function SettingsAppearanceSection() {
 
       <div className="mt-6">
         <Tabs
-          value={String(theme || 'system').toLowerCase()}
+          value={String(theme || 'light').toLowerCase()}
           onValueChange={handleThemeClick}
           className="w-full max-w-sm"
         >

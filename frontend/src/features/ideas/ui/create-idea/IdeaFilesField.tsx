@@ -22,6 +22,7 @@ import { IdeaAttachmentCard } from './IdeaAttachmentCard';
 type IdeaFilesFieldProps = {
   control: Control<IdeaCreateFormValues>;
   disabled?: boolean;
+  onFilesModified?: () => void;
   ideaTitle?: string;
   ideaDescription?: string;
 };
@@ -29,6 +30,7 @@ type IdeaFilesFieldProps = {
 type IdeaFilesFieldContentProps = {
   files: File[];
   onFilesChange: (files: File[]) => void;
+  onFilesModified?: () => void;
   disabled: boolean;
   ideaTitle?: string;
   ideaDescription?: string;
@@ -37,11 +39,17 @@ type IdeaFilesFieldContentProps = {
 function IdeaFilesFieldContent({
   files,
   onFilesChange,
+  onFilesModified,
   disabled,
   ideaTitle,
   ideaDescription,
 }: IdeaFilesFieldContentProps) {
   const [addFilesOpen, setAddFilesOpen] = useState(false);
+
+  const handleFilesChange = (nextFiles: File[]) => {
+    onFilesChange(nextFiles);
+    onFilesModified?.();
+  };
 
   const { addFiles, removeFile, atLimit } = useFileHandler({
     maxFiles: MAX_ATTACHMENT_FILES,
@@ -50,7 +58,7 @@ function IdeaFilesFieldContent({
     allowedMessage: 'Only images, PDF, and DOCX files are allowed',
     validateAllowed: isAllowedAttachment,
     files,
-    onFilesChange,
+    onFilesChange: handleFilesChange,
   });
 
   const remainingSlots = MAX_ATTACHMENT_FILES - files.length;
@@ -65,7 +73,6 @@ function IdeaFilesFieldContent({
               key={key}
               file={file}
               allFiles={files}
-              disabled={disabled}
               onRemove={() => removeFile(key)}
             />
           );
@@ -124,6 +131,7 @@ function IdeaFilesFieldContent({
 export function IdeaFilesField({
   control,
   disabled = false,
+  onFilesModified,
   ideaTitle,
   ideaDescription,
 }: IdeaFilesFieldProps) {
@@ -134,7 +142,10 @@ export function IdeaFilesField({
       render={({ field }) => (
         <IdeaFilesFieldContent
           files={field.value ?? []}
-          onFilesChange={field.onChange}
+          onFilesChange={nextFiles => {
+            field.onChange(nextFiles);
+          }}
+          onFilesModified={onFilesModified}
           disabled={disabled}
           ideaTitle={ideaTitle}
           ideaDescription={ideaDescription}

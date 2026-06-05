@@ -24,8 +24,7 @@ import {
   type IdeaCreateFormValues,
   formValuesToSavePayload,
 } from '@/features/ideas/lib/create-idea';
-import { useCreateIdeaStore } from '@/features/ideas/store/create-idea.store';
-import { IDEA_STATUS } from '@/features/ideas/model/idea.types';
+import { IDEA_STATUS, type IdeaStatus } from '@/features/ideas/model/idea.types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { toast } from 'sonner';
@@ -61,17 +60,18 @@ export function invalidateIdeaQueries(
   }
 }
 
+type SaveIdeaDraftVariables = {
+  values: IdeaCreateFormValues;
+  ideaId: string | null;
+};
+
 export function useSaveIdeaDraftMutation() {
   const navigate = useNavigate();
 
   return useMutation({
     mutationKey: [...ideaMutationKeys.all, 'save-draft'],
-    mutationFn: async (values: IdeaCreateFormValues) => {
-      const store = useCreateIdeaStore.getState();
-      store.syncFromForm(values);
-
+    mutationFn: async ({ values, ideaId }: SaveIdeaDraftVariables) => {
       const payload = formValuesToSavePayload(values);
-      const ideaId = store.draft.id;
 
       const idea = ideaId
         ? await updateIdeaDraft(ideaId, payload)
@@ -91,12 +91,7 @@ export function useSaveIdeaDraftMutation() {
 
       return fetchIdeaById(idea.id);
     },
-    onMutate: () => {
-      useCreateIdeaStore.getState().setSaving(true);
-      useCreateIdeaStore.getState().setError(null);
-    },
-    onSuccess: idea => {
-      useCreateIdeaStore.getState().applyServerIdea(idea);
+    onSuccess: () => {
       toast.success('Draft saved', {
         action: {
           label: 'View Drafts',
@@ -113,11 +108,7 @@ export function useSaveIdeaDraftMutation() {
       const message = getApiErrorMessage(error, {
         invalidCredentialsMessage: 'Could not save draft',
       });
-      useCreateIdeaStore.getState().setError(message);
       toast.error(message);
-    },
-    onSettled: () => {
-      useCreateIdeaStore.getState().setSaving(false);
     },
   });
 }
@@ -166,11 +157,6 @@ export function useDeleteIdeaMutation() {
       });
       queryClient.removeQueries({ queryKey: ideaMutationKeys.detail(ideaId) });
 
-      const store = useCreateIdeaStore.getState();
-      if (store.draft.id === ideaId) {
-        store.reset();
-      }
-
       toast.success('Idea deleted');
     },
     onError: error => {
@@ -179,7 +165,11 @@ export function useDeleteIdeaMutation() {
   });
 }
 
-type PublishIdeaVariables = IdeaCreateFormValues;
+type PublishIdeaVariables = {
+  values: IdeaCreateFormValues;
+  ideaId: string | null;
+  ideaStatus: IdeaStatus;
+};
 
 async function uploadIdeaFiles(ideaId: string, values: IdeaCreateFormValues) {
   if (values.mainImage) {
@@ -200,13 +190,13 @@ export function usePublishIdeaMutation() {
 
   return useMutation({
     mutationKey: [...ideaMutationKeys.all, 'publish'],
-    mutationFn: async (values: PublishIdeaVariables) => {
-      const store = useCreateIdeaStore.getState();
-      store.syncFromForm(values);
-
+    mutationFn: async ({
+      values,
+      ideaId,
+      ideaStatus,
+    }: PublishIdeaVariables) => {
       const payload = formValuesToSavePayload(values);
-      const ideaId = store.draft.id;
-      const isPublishedIdea = store.draft.status === IDEA_STATUS.PUBLISHED;
+      const isPublishedIdea = ideaStatus === IDEA_STATUS.PUBLISHED;
 
       if (ideaId && isPublishedIdea) {
         await updatePublishedIdea(ideaId, payload);
@@ -233,24 +223,17 @@ export function usePublishIdeaMutation() {
         action: 'publish' as const,
       };
     },
-    onMutate: () => {
-      useCreateIdeaStore.getState().setSaving(true);
-      useCreateIdeaStore.getState().setError(null);
-    },
     onSuccess: ({ idea, action }) => {
-      useCreateIdeaStore.getState().applyServerIdea(idea);
       invalidateIdeaQueries(queryClient, idea.id, {
         invalidateDashboard: true,
       });
-      toast.success(action === 'update' ? 'Idea updated' : 'Idea published');
+      if (action === 'publish') {
+        toast.success('Idea published');
+      }
     },
     onError: error => {
       const message = getApiErrorMessage(error);
-      useCreateIdeaStore.getState().setError(message);
       toast.error(message);
-    },
-    onSettled: () => {
-      useCreateIdeaStore.getState().setSaving(false);
     },
   });
 }

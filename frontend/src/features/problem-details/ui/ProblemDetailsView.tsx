@@ -9,8 +9,12 @@ import {
 } from '@/features/problem-details/lib/use-problem-details-queries';
 import type { ProblemTabId } from '@/features/problem-details/model/problem-details.types';
 import { DEFAULT_PROBLEMS_DASHBOARD_SEARCH } from '@/features/problems-dashboard/lib/constants';
+import {
+  PROBLEM_UPDATED_SUCCESS_DESCRIPTION,
+  PROBLEM_UPDATED_SUCCESS_TITLE,
+} from '@/features/problems/lib/modals/copy';
 import { NotFoundPage } from '@/pages/not-found';
-import { useNavigate, useRouter } from '@tanstack/react-router';
+import { useNavigate, useRouter, useSearch } from '@tanstack/react-router';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { type MouseEvent, useEffect, useState } from 'react';
@@ -18,6 +22,7 @@ import { type MouseEvent, useEffect, useState } from 'react';
 import { ROUTES } from '@/shared/config/paths';
 import { cn } from '@/shared/lib/utils';
 import { AnimatedPanel, AnimatedPanelSwitch } from '@/shared/ui/motion';
+import { SuccessModal } from '@/shared/ui/success-modal';
 
 import { ProblemHeader } from './ProblemHeader';
 import { ProblemInfoCards } from './ProblemInfoCards';
@@ -34,8 +39,12 @@ type ProblemDetailsViewProps = {
 export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
   const navigate = useNavigate();
   const router = useRouter();
+  const { updated: showUpdatedSuccess } = useSearch({
+    from: '/_auth/problems/$problemId',
+  });
   const [activeTab, setActiveTab] = useState<ProblemTabId>('description');
   const [isScrolled, setIsScrolled] = useState(false);
+  const [updatedSuccessOpen, setUpdatedSuccessOpen] = useState(false);
   const userId = useAuthSessionStore(s => s.user?.id);
 
   const {
@@ -54,6 +63,22 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
     event.preventDefault();
     router.history.back();
   };
+
+  useEffect(() => {
+    if (!showUpdatedSuccess) {
+      return;
+    }
+
+    setUpdatedSuccessOpen(true);
+    void navigate({
+      to: ROUTES.problemDetail(problemId),
+      search: previous => {
+        const { updated: _updated, ...rest } = previous;
+        return rest;
+      },
+      replace: true,
+    });
+  }, [navigate, problemId, showUpdatedSuccess]);
 
   useEffect(() => {
     let ticking = false;
@@ -218,6 +243,14 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
           />
         ) : null}
       </div>
+
+      <SuccessModal
+        open={updatedSuccessOpen}
+        onOpenChange={setUpdatedSuccessOpen}
+        title={PROBLEM_UPDATED_SUCCESS_TITLE}
+        description={PROBLEM_UPDATED_SUCCESS_DESCRIPTION}
+        onClose={() => setUpdatedSuccessOpen(false)}
+      />
     </main>
   );
 }

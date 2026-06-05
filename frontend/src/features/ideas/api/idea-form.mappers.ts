@@ -1,7 +1,7 @@
 import type { IdeaFormResponseDto } from '@/features/ideas/api/idea-form-api.types';
 import type { IdeaApi } from '@/features/ideas/model/idea.types';
 
-/** Maps form API payload to legacy `IdeaApi` used by the create-idea store. */
+/** Maps form API payload to legacy `IdeaApi` shape used by create-idea mappers. */
 export function ideaFormDtoToIdeaApi(dto: IdeaFormResponseDto): IdeaApi {
   return {
     id: dto.id,

@@ -13,6 +13,12 @@ import {
   DEFAULT_EMBEDDING_MODEL,
   EMBEDDING_DIMENSIONS,
 } from '../config/embedding.config';
+import { buildDocumentExtractPrompt } from './document/document-extract-prompt.util';
+import {
+  normalizeIdeaDocumentExtractResponse,
+  normalizeProblemDocumentExtractResponse,
+} from './document/document-extract-response.util';
+import { DocumentEntityType } from './document/dto/extract-document.dto';
 import {
   createGeminiProviderException,
   createGeminiQuotaException,
@@ -36,6 +42,8 @@ import {
 import { buildEntitySummaryPrompt } from './gemini/summary-prompt.util';
 import type {
   AiProvider,
+  DocumentExtractInput,
+  DocumentExtractOutput,
   IdeaPrefillInput,
   IdeaPrefillOutput,
   SuggestTagsInput,
@@ -43,6 +51,14 @@ import type {
 
 const DEFAULT_TAG_SUGGESTIONS_TOTAL_TIMEOUT_MS = 15_000;
 const DEFAULT_SUMMARY_TIMEOUT_MS = 15_000;
+
+type GeminiModelFailureOutcome = {
+  kind: 'retry' | 'fatal';
+  lastProviderMessage: string;
+  lastStatus: number;
+  lastQuotaMessage?: string;
+  retryAfterSeconds?: number;
+};
 
 @Injectable()
 export class GeminiService implements AiProvider {
@@ -169,6 +185,24 @@ export class GeminiService implements AiProvider {
     }
 
     return [];
+  }
+
+  async generateDocumentExtract(
+    input: DocumentExtractInput,
+  ): Promise<DocumentExtractOutput> {
+    try {
+      return await this.generateDocumentExtractWithModelFallback(input);
+    } catch (error) {
+      if (this.isKnownHttpError(error)) {
+        throw error;
+      }
+
+      this.logger.error('Gemini document extract failed', error);
+      if (this.isAbortError(error)) {
+        throw new GatewayTimeoutException('AI document scan timed out');
+      }
+      throw new InternalServerErrorException('Unable to scan document with AI');
+    }
   }
 
   async generateIdeaPrefill(
@@ -317,6 +351,163 @@ export class GeminiService implements AiProvider {
     return text;
   }
 
+  private async generateDocumentExtractWithModelFallback(
+    input: DocumentExtractInput,
+  ): Promise<DocumentExtractOutput> {
+    let lastProviderMessage = 'Unknown provider error';
+    let lastStatus = 502;
+    let lastQuotaMessage: string | undefined;
+    let retryAfterSeconds: number | undefined;
+
+    const prompt = buildDocumentExtractPrompt(
+      input.documentText,
+      input.entityType as DocumentEntityType,
+    );
+
+    for (const model of buildModelsToTry(this.configuredModel)) {
+      this.logger.log(`Trying Gemini model for document-extract: ${model}`);
+
+      let result: Awaited<ReturnType<GeminiService['tryDocumentExtractModel']>>;
+      try {
+        result = await this.runWithPerModelTimeout(signal =>
+          this.tryDocumentExtractModel(model, prompt, input, signal),
+        );
+      } catch (error) {
+        if (this.isAbortError(error)) {
+          this.logger.warn(
+            `Model ${model} timed out for document-extract, trying next fallback`,
+          );
+          lastProviderMessage = 'Request timed out';
+          lastStatus = 504;
+          continue;
+        }
+        throw error;
+      }
+
+      if (result.kind === 'success') {
+        return result.data;
+      }
+
+      lastProviderMessage = result.lastProviderMessage;
+      lastStatus = result.lastStatus;
+      lastQuotaMessage = result.lastQuotaMessage;
+      retryAfterSeconds = result.retryAfterSeconds;
+
+      if (result.kind === 'retry') {
+        this.logger.warn(
+          `Model ${model} failed (${lastStatus}), trying next fallback`,
+        );
+        continue;
+      }
+
+      if (result.kind === 'fatal') {
+        throw createGeminiProviderException(
+          lastStatus,
+          lastProviderMessage,
+          this.isDevelopment,
+        );
+      }
+    }
+
+    if (lastQuotaMessage) {
+      throw createGeminiQuotaException(lastQuotaMessage, {
+        isDevelopment: this.isDevelopment,
+        retryAfterSeconds,
+      });
+    }
+
+    throw createGeminiProviderException(
+      lastStatus,
+      lastProviderMessage,
+      this.isDevelopment,
+    );
+  }
+
+  private async tryDocumentExtractModel(
+    model: string,
+    prompt: string,
+    input: DocumentExtractInput,
+    signal: AbortSignal,
+  ): Promise<
+    | { kind: 'success'; data: DocumentExtractOutput }
+    | {
+        kind: 'retry' | 'fatal';
+        lastProviderMessage: string;
+        lastStatus: number;
+        lastQuotaMessage?: string;
+        retryAfterSeconds?: number;
+      }
+  > {
+    const attempts: Array<{ jsonMode: boolean }> = [
+      { jsonMode: true },
+      { jsonMode: false },
+    ];
+
+    let lastProviderMessage = 'Unknown provider error';
+    let lastStatus = 502;
+    let lastQuotaMessage: string | undefined;
+    let retryAfterSeconds: number | undefined;
+
+    for (const attempt of attempts) {
+      const response = await generateGeminiJsonContent({
+        client: this.client,
+        model,
+        prompt,
+        jsonMode: attempt.jsonMode,
+        signal,
+      });
+
+      if (response.ok) {
+        if (!response.text) {
+          throw new InternalServerErrorException(
+            'AI returned an empty response',
+          );
+        }
+
+        const parsed = parseGeminiJsonResponse(response.text);
+        this.logSuccessfulGeneration('document-extract', model, {
+          jsonMode: attempt.jsonMode,
+        });
+
+        if (input.entityType === 'idea') {
+          return {
+            kind: 'success',
+            data: normalizeIdeaDocumentExtractResponse(parsed),
+          };
+        }
+
+        return {
+          kind: 'success',
+          data: normalizeProblemDocumentExtractResponse(parsed),
+        };
+      }
+
+      lastProviderMessage = response.message;
+      lastStatus = response.status;
+      this.logger.error(
+        `Gemini request failed (model=${model}, jsonMode=${attempt.jsonMode}, status=${response.status}): ${lastProviderMessage}`,
+      );
+
+      const failure = this.resolveFailedGeminiAttempt(
+        response.status,
+        response.message,
+        attempt.jsonMode,
+      );
+      if (failure === 'continue') {
+        continue;
+      }
+
+      return failure;
+    }
+
+    return this.buildGeminiRetryOutcome({
+      lastProviderMessage,
+      lastStatus,
+      lastQuotaMessage,
+      retryAfterSeconds,
+    });
+  }
+
   private async generateWithModelFallback(
     input: IdeaPrefillInput,
   ): Promise<IdeaPrefillOutput> {
@@ -416,8 +607,8 @@ export class GeminiService implements AiProvider {
 
     let lastProviderMessage = state.lastProviderMessage;
     let lastStatus = state.lastStatus;
-    let lastQuotaMessage = state.lastQuotaMessage;
-    let retryAfterSeconds = state.retryAfterSeconds;
+    const lastQuotaMessage = state.lastQuotaMessage;
+    const retryAfterSeconds = state.retryAfterSeconds;
 
     for (const attempt of attempts) {
       const response = await generateGeminiPrefillContent({
@@ -451,47 +642,24 @@ export class GeminiService implements AiProvider {
         `Gemini request failed (model=${model}, jsonMode=${attempt.jsonMode}, status=${response.status}): ${lastProviderMessage}`,
       );
 
-      if (isGeminiQuotaExceeded(response.status, lastProviderMessage)) {
-        lastQuotaMessage = lastProviderMessage;
-        retryAfterSeconds = parseGeminiRetryAfterSeconds(lastProviderMessage);
-        return {
-          kind: 'retry',
-          lastProviderMessage,
-          lastStatus,
-          lastQuotaMessage,
-          retryAfterSeconds,
-        };
-      }
-
-      if (response.status === 400 && attempt.jsonMode) {
+      const failure = this.resolveFailedGeminiAttempt(
+        response.status,
+        response.message,
+        attempt.jsonMode,
+      );
+      if (failure === 'continue') {
         continue;
       }
-      if (response.status === 404) {
-        return {
-          kind: 'retry',
-          lastProviderMessage,
-          lastStatus,
-          lastQuotaMessage,
-          retryAfterSeconds,
-        };
-      }
 
-      return {
-        kind: 'fatal',
-        lastProviderMessage,
-        lastStatus,
-        lastQuotaMessage,
-        retryAfterSeconds,
-      };
+      return failure;
     }
 
-    return {
-      kind: 'retry',
+    return this.buildGeminiRetryOutcome({
       lastProviderMessage,
       lastStatus,
       lastQuotaMessage,
       retryAfterSeconds,
-    };
+    });
   }
 
   private async tryTagSuggestionsForModel({
@@ -596,7 +764,11 @@ export class GeminiService implements AiProvider {
   }
 
   private logSuccessfulGeneration(
-    operation: 'idea-prefill' | 'tag-suggestions' | 'entity-summary',
+    operation:
+      | 'idea-prefill'
+      | 'tag-suggestions'
+      | 'entity-summary'
+      | 'document-extract',
     model: string,
     options?: { jsonMode?: boolean; tagCount?: number },
   ): void {
@@ -608,6 +780,52 @@ export class GeminiService implements AiProvider {
       details.push(`tagCount=${options.tagCount}`);
     }
     this.logger.log(`Gemini ${operation} succeeded (${details.join(', ')})`);
+  }
+
+  private resolveFailedGeminiAttempt(
+    status: number,
+    message: string,
+    jsonMode: boolean,
+  ): 'continue' | GeminiModelFailureOutcome {
+    if (isGeminiQuotaExceeded(status, message)) {
+      return this.buildGeminiRetryOutcome({
+        lastProviderMessage: message,
+        lastStatus: status,
+        lastQuotaMessage: message,
+        retryAfterSeconds: parseGeminiRetryAfterSeconds(message),
+      });
+    }
+
+    if (status === 400 && jsonMode) {
+      return 'continue';
+    }
+
+    return this.buildGeminiModelFailureOutcome(
+      status === 404 ? 'retry' : 'fatal',
+      {
+        lastProviderMessage: message,
+        lastStatus: status,
+      },
+    );
+  }
+
+  private buildGeminiRetryOutcome(
+    state: Omit<GeminiModelFailureOutcome, 'kind'>,
+  ): GeminiModelFailureOutcome {
+    return this.buildGeminiModelFailureOutcome('retry', state);
+  }
+
+  private buildGeminiModelFailureOutcome(
+    kind: GeminiModelFailureOutcome['kind'],
+    state: Omit<GeminiModelFailureOutcome, 'kind'>,
+  ): GeminiModelFailureOutcome {
+    return {
+      kind,
+      lastProviderMessage: state.lastProviderMessage,
+      lastStatus: state.lastStatus,
+      lastQuotaMessage: state.lastQuotaMessage,
+      retryAfterSeconds: state.retryAfterSeconds,
+    };
   }
 
   private isAbortError(error: unknown): boolean {

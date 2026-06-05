@@ -16,11 +16,12 @@ import {
 } from '@/features/problems/lib/submit-problem';
 import { SaveDraftButton } from '@/features/problems/ui/tooltips';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { useId } from 'react';
+import { useEffect, useId } from 'react';
 import { Controller } from 'react-hook-form';
 
 import { ROUTES } from '@/shared/config/paths';
 import { useCreateFormLeaveGuard } from '@/shared/hooks/use-create-form-leave-guard';
+import { useDocumentAutoFill } from '@/shared/hooks/use-document-auto-fill';
 import {
   SAVE_PROBLEM_PROGRESS_DESCRIPTION,
   UNDO_CHANGES_DESCRIPTION,
@@ -31,6 +32,7 @@ import { selectClass } from '@/shared/ui/TagsInput';
 import { Button } from '@/shared/ui/button';
 import { ConfirmModal } from '@/shared/ui/confirm-modal';
 import { Input } from '@/shared/ui/input';
+import { SaveProgressBeforeLeavingModal } from '@/shared/ui/save-progress-before-leaving-modal';
 import {
   Select,
   SelectContent,
@@ -38,14 +40,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/ui/select';
-import { SaveProgressBeforeLeavingModal } from '@/shared/ui/save-progress-before-leaving-modal';
 
 import { IdeaSelect } from './IdeaSelect';
 import { ProblemFilesField } from './ProblemFilesField';
 import { ProblemTagsField } from './ProblemTagsField';
 import { SimilarProblemsSection } from './SimilarProblemsSection';
 
-export function SubmitProblemForm() {
+export type ProblemDocumentAutoFillControls = {
+  isScanning: boolean;
+  handleFileSelected: (file: File) => void;
+  disabled: boolean;
+};
+
+type SubmitProblemFormProps = {
+  onDocumentAutoFillControlsChange?: (
+    controls: ProblemDocumentAutoFillControls,
+  ) => void;
+};
+
+export function SubmitProblemForm({
+  onDocumentAutoFillControlsChange,
+}: SubmitProblemFormProps) {
   const navigate = useNavigate();
   const { problemId: editingProblemId } = useSearch({
     from: '/_auth/problems/new',
@@ -55,6 +70,7 @@ export function SubmitProblemForm() {
   const {
     form,
     error,
+    clearError,
     isBusy,
     isHydrating,
     isSavingDraft,
@@ -86,6 +102,27 @@ export function SubmitProblemForm() {
       trimmedDescription,
     });
 
+  const { isScanning, handleFileSelected, confirmModalProps } =
+    useDocumentAutoFill({
+      entityType: 'problem',
+      form,
+    });
+
+  const formBusy = isBusy || isScanning;
+
+  useEffect(() => {
+    onDocumentAutoFillControlsChange?.({
+      isScanning,
+      handleFileSelected,
+      disabled: formBusy,
+    });
+  }, [
+    formBusy,
+    handleFileSelected,
+    isScanning,
+    onDocumentAutoFillControlsChange,
+  ]);
+
   const watchedValues = watch();
   const hasUnsavedProgress = hasSubmitProblemUnsavedProgress(
     formIsDirty,
@@ -116,7 +153,7 @@ export function SubmitProblemForm() {
     handleSaveAsDraft: handleLeaveSaveAsDraft,
   } = useCreateFormLeaveGuard({
     hasUnsavedProgress,
-    isBusy,
+    isBusy: formBusy,
     onSaveDraft: async () => {
       const wasEditing = isEditing;
       const problemId = await onSaveDraft();
@@ -139,10 +176,12 @@ export function SubmitProblemForm() {
   };
 
   const handlePublish = async () => {
+    const wasEditing = isEditing;
     const problemId = await onPublish();
     if (!problemId) return;
     void navigate({
       to: ROUTES.problemDetail(problemId),
+      search: wasEditing ? { updated: true } : undefined,
       replace: true,
     });
   };
@@ -182,7 +221,7 @@ export function SubmitProblemForm() {
               <Select
                 value={field.value}
                 onValueChange={field.onChange}
-                disabled={isBusy}
+                disabled={formBusy}
               >
                 <SelectTrigger
                   id={`${formId}-stage`}
@@ -213,9 +252,9 @@ export function SubmitProblemForm() {
               Problem Title
             </FieldLabel>
             <IdeaCreateAiAssistLink
-              disabled={isBusy || !canRegenerateTitle}
+              disabled={formBusy || !canRegenerateTitle}
               onClick={
-                canRegenerateTitle && !isBusy
+                canRegenerateTitle && !formBusy
                   ? () => openAssistModal('title')
                   : undefined
               }
@@ -230,7 +269,7 @@ export function SubmitProblemForm() {
             className="bg-card mt-2"
             placeholder="Keep it short and specific, e.g., 'Low visibility into equipment usage'..."
             aria-invalid={!!errors.title}
-            disabled={isBusy}
+            disabled={formBusy}
             maxLength={200}
             {...register('title')}
           />
@@ -248,9 +287,9 @@ export function SubmitProblemForm() {
               Description
             </FieldLabel>
             <IdeaCreateAiAssistLink
-              disabled={isBusy}
+              disabled={formBusy}
               onClick={
-                isBusy ? undefined : () => openAssistModal('description')
+                formBusy ? undefined : () => openAssistModal('description')
               }
             >
               {descriptionValue
@@ -263,7 +302,7 @@ export function SubmitProblemForm() {
             className={cn(textareaClass, 'mt-2')}
             placeholder="Add context, why this is a problem, and who it affects..."
             aria-invalid={!!errors.description}
-            disabled={isBusy}
+            disabled={formBusy}
             maxLength={5000}
             {...register('description')}
           />
@@ -281,9 +320,9 @@ export function SubmitProblemForm() {
               Value Proposition
             </FieldLabel>
             <IdeaCreateAiAssistLink
-              disabled={isBusy}
+              disabled={formBusy}
               onClick={
-                isBusy ? undefined : () => openAssistModal('valueProposition')
+                formBusy ? undefined : () => openAssistModal('valueProposition')
               }
             >
               {valuePropositionValue
@@ -296,7 +335,7 @@ export function SubmitProblemForm() {
             className={cn(textareaClass, 'mt-2')}
             placeholder="What are the potential benefits of solving this problem?"
             aria-invalid={!!errors.valueProposition}
-            disabled={isBusy}
+            disabled={formBusy}
             maxLength={5000}
             {...register('valueProposition')}
           />
@@ -330,7 +369,7 @@ export function SubmitProblemForm() {
                   maxLength={13}
                   inputMode="decimal"
                   aria-invalid={!!errors.costBenefit}
-                  disabled={isBusy}
+                  disabled={formBusy}
                   value={field.value ?? ''}
                   onChange={event =>
                     field.onChange(sanitizeCostBenefitInput(event.target.value))
@@ -351,12 +390,16 @@ export function SubmitProblemForm() {
           formId={formId}
           control={control}
           errors={errors}
-          disabled={isBusy}
+          disabled={formBusy}
         />
 
         <FieldGroup>
           <FieldLabel>Files</FieldLabel>
-          <ProblemFilesField control={control} disabled={isBusy} />
+          <ProblemFilesField
+            control={control}
+            disabled={formBusy}
+            onFilesModified={clearError}
+          />
           <FieldError message={errors.files?.message} />
         </FieldGroup>
 
@@ -370,7 +413,7 @@ export function SubmitProblemForm() {
           <button
             type="button"
             onClick={handleCancel}
-            disabled={isBusy}
+            disabled={formBusy}
             className="text-brand-orange hover:text-brand-orange-hover px-2 text-sm font-bold tracking-wide uppercase transition-colors disabled:opacity-50"
           >
             Cancel
@@ -379,14 +422,14 @@ export function SubmitProblemForm() {
             <SaveDraftButton
               canSave={canSaveDraft}
               isSaving={isSavingDraft}
-              disabled={isBusy}
+              disabled={formBusy}
               onSave={() => void handleSaveDraft()}
             />
           ) : null}
           <Button
             type="submit"
             className={publishBtnClass}
-            disabled={isBusy}
+            disabled={formBusy}
             isLoading={isPublishing}
           >
             {isEditing ? 'Save changes' : 'Publish problem'}
@@ -416,6 +459,8 @@ export function SubmitProblemForm() {
       )}
 
       <AiGenerationModal {...generationModalProps} />
+
+      <ConfirmModal {...confirmModalProps} />
     </>
   );
 }

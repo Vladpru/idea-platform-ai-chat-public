@@ -8,9 +8,8 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useTheme } from '@/app/providers/theme-context';
 
 function clientThemeToPreference(theme: string): ThemePreference {
-  if (theme === 'light') return 'LIGHT';
   if (theme === 'dark') return 'DARK';
-  return 'SYSTEM';
+  return 'LIGHT';
 }
 
 function preferenceToClientTheme(
@@ -18,7 +17,7 @@ function preferenceToClientTheme(
 ): 'light' | 'dark' | 'system' {
   if (pref === 'LIGHT') return 'light';
   if (pref === 'DARK') return 'dark';
-  return 'system';
+  return 'light';
 }
 
 export function useThemeSync(themePreference: ThemePreference | undefined) {
@@ -32,11 +31,13 @@ export function useThemeSync(themePreference: ThemePreference | undefined) {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (!themePreference || pendingLocalChange.current) return;
-    if (lastSyncedPref.current === themePreference) return;
+    if (pendingLocalChange.current) return;
 
-    lastSyncedPref.current = themePreference;
-    const normalizedPref = preferenceToClientTheme(themePreference);
+    const effectivePref = themePreference ?? 'LIGHT';
+    if (lastSyncedPref.current === effectivePref) return;
+
+    lastSyncedPref.current = effectivePref;
+    const normalizedPref = preferenceToClientTheme(effectivePref);
 
     if (localTheme !== normalizedPref) {
       setLocalTheme(normalizedPref);
@@ -50,7 +51,7 @@ export function useThemeSync(themePreference: ThemePreference | undefined) {
         return;
       }
 
-      const fallbackPref = lastSyncedPref.current || 'SYSTEM';
+      const fallbackPref = lastSyncedPref.current || 'LIGHT';
 
       void patchTheme({ theme: pref })
         .then(user => {
@@ -93,10 +94,11 @@ export function useThemeSync(themePreference: ThemePreference | undefined) {
     (next: 'light' | 'dark' | 'system') => {
       pendingLocalChange.current = true;
 
-      setLocalTheme(next);
+      const resolved = next === 'system' ? 'light' : next;
+      setLocalTheme(resolved);
 
       if (accessToken) {
-        debouncedPersist(clientThemeToPreference(next));
+        debouncedPersist(clientThemeToPreference(resolved));
       } else {
         pendingLocalChange.current = false;
       }
