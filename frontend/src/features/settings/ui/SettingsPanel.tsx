@@ -4,7 +4,7 @@ import { fetchCurrentUser } from '@/features/profile/api/profile.api';
 import { useThemeSync } from '@/hooks/useThemeSync';
 import { useQuery } from '@tanstack/react-query';
 import { Monitor, Moon, Sun } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 import { cn } from '@/shared/lib/utils';
 import { Switch } from '@/shared/ui';
@@ -69,22 +69,8 @@ function SettingsAppearanceSection() {
 
   const { theme, setTheme } = useThemeSync(user?.themePreference);
 
-  const [optimisticTheme, setOptimisticTheme] = useState(() =>
-    String(theme || 'system').toLowerCase(),
-  );
-
-  const currentContextTheme = String(theme || 'system').toLowerCase();
-  const [prevContextTheme, setPrevContextTheme] = useState(currentContextTheme);
-
-  if (currentContextTheme !== prevContextTheme) {
-    setPrevContextTheme(currentContextTheme);
-    setOptimisticTheme(currentContextTheme);
-  }
-
   const handleThemeClick = (newTheme: string) => {
-    const validTheme = newTheme as 'light' | 'dark' | 'system';
-    setOptimisticTheme(validTheme);
-    setTheme(validTheme);
+    setTheme(newTheme as 'light' | 'dark' | 'system');
   };
 
   return (
@@ -98,7 +84,7 @@ function SettingsAppearanceSection() {
 
       <div className="mt-6">
         <Tabs
-          value={optimisticTheme}
+          value={String(theme || 'system').toLowerCase()}
           onValueChange={handleThemeClick}
           className="w-full max-w-sm"
         >

@@ -50,6 +50,8 @@ export function useThemeSync(themePreference: ThemePreference | undefined) {
         return;
       }
 
+      const fallbackPref = lastSyncedPref.current || 'SYSTEM';
+
       void patchTheme({ theme: pref })
         .then(user => {
           queryClient.setQueryData(['users', 'me'], user);
@@ -59,11 +61,16 @@ export function useThemeSync(themePreference: ThemePreference | undefined) {
           }
           lastSyncedPref.current = user.themePreference;
         })
+        .catch(error => {
+          setLocalTheme(preferenceToClientTheme(fallbackPref));
+
+          console.error('Theme sync failed:', error);
+        })
         .finally(() => {
           pendingLocalChange.current = false;
         });
     },
-    [queryClient],
+    [queryClient, setLocalTheme],
   );
 
   const debouncedPersist = useCallback(
