@@ -1,6 +1,7 @@
 import type {
   ProblemStage,
   ProblemStatus,
+  SummaryStatus,
 } from '@/features/problems/api/problems-api.types';
 
 export type ProblemTabId =
@@ -63,6 +64,8 @@ export type ProblemDetails = {
   status: ProblemStatus;
   title: string;
   description: string;
+  aiSummary: string | null;
+  summaryStatus: SummaryStatus;
   valueProposition: string | null;
   costBenefit: string | null;
   stage: string;

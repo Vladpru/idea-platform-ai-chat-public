@@ -1,4 +1,5 @@
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
+import { EntityAiSummaryBlock } from '@/features/entity-ai-summary/EntityAiSummaryBlock';
 import { DiscussionTab } from '@/features/discussion/ui/DiscussionTab';
 import { IdeaStatsFooter } from '@/features/idea-details/ui/IdeaStatsFooter';
 import { IdeaTagCloud } from '@/features/idea-details/ui/IdeaTagCloud';
@@ -175,6 +176,10 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
                 className="space-y-6"
                 aria-label="Description"
               >
+                <EntityAiSummaryBlock
+                  aiSummary={problem.aiSummary}
+                  summaryStatus={problem.summaryStatus}
+                />
                 {problem.description ? (
                   <p className="text-brand-gray-800 font-EB-Garamond max-w-full min-w-0 text-sm leading-relaxed wrap-break-word whitespace-pre-wrap sm:text-base">
                     {problem.description}

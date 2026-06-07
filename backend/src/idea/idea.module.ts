@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { AiSummaryModule } from '../ai-summary/ai-summary.module';
 import { AiModule } from '../ai/ai.module';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 import { EmbeddingModule } from '../embedding/embedding.module';
@@ -12,7 +13,13 @@ import { IdeaController } from './idea.controller';
 import { IdeaService } from './idea.service';
 
 @Module({
-  imports: [PrismaModule, CloudinaryModule, AiModule, EmbeddingModule],
+  imports: [
+    PrismaModule,
+    CloudinaryModule,
+    AiModule,
+    EmbeddingModule,
+    AiSummaryModule,
+  ],
   controllers: [IdeaController],
   providers: [
     IdeaService,

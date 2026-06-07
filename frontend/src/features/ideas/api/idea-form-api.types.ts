@@ -50,12 +50,16 @@ export type IdeaMediaResponseDto = {
   createdAt: string;
 };
 
+export type SummaryStatus = 'PENDING' | 'COMPLETED' | 'FAILED' | 'SKIPPED';
+
 export type IdeaFormResponseDto = {
   id: string;
   status: IdeaStatus;
   stage: string | null;
   title: string | null;
   description: string | null;
+  aiSummary: string | null;
+  summaryStatus: SummaryStatus;
   publishedAt: string | null;
   viewCount?: number;
   likeCount?: number;

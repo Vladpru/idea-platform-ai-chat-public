@@ -1,11 +1,12 @@
 generator client {
   provider        = "prisma-client"
-  previewFeatures = ["fullTextSearchPostgres"]
+  previewFeatures = ["fullTextSearchPostgres", "postgresqlExtensions"]
   output          = "../generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider   = "postgresql"
+  extensions = [vector]
 }
 
 enum IdeaStatus {
@@ -47,6 +48,13 @@ enum ThemePreference {
   LIGHT
   DARK
   SYSTEM
+}
+
+enum SummaryStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  SKIPPED
 }
 
 model User {
@@ -104,6 +112,9 @@ model Idea {
   searchVector  Unsupported("tsvector")?    @map("search_vector")
   aiEmbedding   Unsupported("vector(768)")? @map("ai_embedding")
   embeddingHash String?                   @map("embedding_hash")
+  aiSummary     String?                   @map("ai_summary") @db.Text
+  summaryStatus SummaryStatus             @default(SKIPPED) @map("summary_status")
+  summaryRequestedAt DateTime?            @map("summary_requested_at")
 
   author   User         @relation("IdeaAuthor", fields: [authorId], references: [id], onDelete: Cascade)
   problems IdeaProblem[]
@@ -117,6 +128,7 @@ model Idea {
   @@index([authorId, status])
   @@index([status, publishedAt])
   @@index([searchVector], type: Gin)
+  @@index([aiEmbedding], map: "idea_ai_embedding_hnsw_idx")
   @@map("idea")
 }
 
@@ -180,6 +192,9 @@ model Problem {
   searchVector     Unsupported("tsvector")?    @map("search_vector")
   aiEmbedding      Unsupported("vector(768)")? @map("ai_embedding")
   embeddingHash    String?                   @map("embedding_hash")
+  aiSummary        String?                   @map("ai_summary") @db.Text
+  summaryStatus    SummaryStatus             @default(SKIPPED) @map("summary_status")
+  summaryRequestedAt DateTime?               @map("summary_requested_at")
 
   author   User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
   members  ProblemMember[]
@@ -193,6 +208,7 @@ model Problem {
   @@index([authorId, status])
   @@index([status])
   @@index([searchVector], type: Gin)
+  @@index([aiEmbedding], map: "problem_ai_embedding_hnsw_idx")
   @@map("problem")
 }
 
@@ -234,6 +250,7 @@ model Tag {
   ideas       IdeaTag[]
   problemTags ProblemTag[]
 
+  @@index([aiEmbedding], map: "tag_ai_embedding_hnsw_idx")
   @@map("tag")
 }
 

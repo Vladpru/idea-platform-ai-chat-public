@@ -1,5 +1,9 @@
 import type { IdeaPrefillMode } from '../../idea/dto/generate-idea-prefill.dto';
 
+import { DocumentEntityType } from '../document/dto/extract-document.dto';
+
+export { DocumentEntityType };
+
 export type {
   GenerateImageInput,
   GenerateImageOutput,
@@ -20,8 +24,6 @@ export type IdeaPrefillOutput = {
   problemStatement: string;
   tags: string[];
 };
-
-export type DocumentEntityType = 'idea' | 'problem';
 
 export type DocumentExtractInput = {
   documentText: string;

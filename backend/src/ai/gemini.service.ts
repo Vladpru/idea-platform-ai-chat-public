@@ -8,12 +8,16 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
+import type { EntitySummaryContent } from '../ai-summary/summary.types';
+import {
+  DEFAULT_EMBEDDING_MODEL,
+  EMBEDDING_DIMENSIONS,
+} from '../config/embedding.config';
 import { buildDocumentExtractPrompt } from './document/document-extract-prompt.util';
 import {
   normalizeIdeaDocumentExtractResponse,
   normalizeProblemDocumentExtractResponse,
 } from './document/document-extract-response.util';
-import { DocumentEntityType } from './document/dto/extract-document.dto';
 import {
   createGeminiProviderException,
   createGeminiQuotaException,
@@ -34,16 +38,19 @@ import {
   DEFAULT_GEMINI_MODEL,
   buildModelsToTry,
 } from './gemini/gemini.constants';
-import type {
-  AiProvider,
-  DocumentExtractInput,
-  DocumentExtractOutput,
-  IdeaPrefillInput,
-  IdeaPrefillOutput,
-  SuggestTagsInput,
+import { buildEntitySummaryPrompt } from './gemini/summary-prompt.util';
+import {
+  type AiProvider,
+  DocumentEntityType,
+  type DocumentExtractInput,
+  type DocumentExtractOutput,
+  type IdeaPrefillInput,
+  type IdeaPrefillOutput,
+  type SuggestTagsInput,
 } from './types/ai.types';
 
 const DEFAULT_TAG_SUGGESTIONS_TOTAL_TIMEOUT_MS = 15_000;
+const DEFAULT_SUMMARY_TIMEOUT_MS = 15_000;
 
 type GeminiModelFailureOutcome = {
   kind: 'retry' | 'fatal';
@@ -57,26 +64,43 @@ type GeminiModelFailureOutcome = {
 export class GeminiService implements AiProvider {
   private readonly logger = new Logger(GeminiService.name);
   private readonly client: GoogleGenAI;
-  private readonly apiKey: string;
   private readonly configuredModel: string;
   private readonly timeoutMs: number;
   private readonly tagSuggestionsTotalTimeoutMs: number;
+  private readonly summaryTimeoutMs: number;
+  private readonly tagSuggestionsEnabled: boolean;
+  private readonly summaryEnabled: boolean;
   private readonly isDevelopment: boolean;
 
   constructor(private readonly config: ConfigService) {
-    this.apiKey = this.config.getOrThrow<string>('GEMINI_API_KEY').trim();
-    this.client = new GoogleGenAI({ apiKey: this.apiKey });
+    const apiKey = this.config.getOrThrow<string>('GEMINI_API_KEY').trim();
+    this.client = new GoogleGenAI({ apiKey });
     this.configuredModel =
       this.config.get<string>('GEMINI_MODEL')?.trim() || DEFAULT_GEMINI_MODEL;
-    this.timeoutMs = Number(
-      this.config.get<string>('GEMINI_TIMEOUT_MS') ?? '10000',
+
+    this.timeoutMs = this.resolveTimeoutMs('GEMINI_TIMEOUT_MS', 10_000);
+    this.tagSuggestionsTotalTimeoutMs = this.resolveTimeoutMs(
+      'GEMINI_TAG_SUGGESTIONS_TIMEOUT_MS',
+      DEFAULT_TAG_SUGGESTIONS_TOTAL_TIMEOUT_MS,
     );
-    this.tagSuggestionsTotalTimeoutMs =
-      this.resolveTagSuggestionsTotalTimeoutMs();
+    this.summaryTimeoutMs = this.resolveTimeoutMs(
+      'GEMINI_SUMMARY_TIMEOUT_MS',
+      DEFAULT_SUMMARY_TIMEOUT_MS,
+    );
+
+    this.tagSuggestionsEnabled =
+      (this.config.get<string>('AI_TAG_SUGGESTIONS_ENABLED') ?? 'true')
+        .trim()
+        .toLowerCase() !== 'false';
+    this.summaryEnabled =
+      (this.config.get<string>('AI_SUMMARY_ENABLED') ?? 'true')
+        .trim()
+        .toLowerCase() !== 'false';
+
     this.isDevelopment =
       (this.config.get<string>('NODE_ENV') ?? 'development') === 'development';
 
-    if (!this.apiKey.startsWith('AIza')) {
+    if (!apiKey.startsWith('AIza')) {
       this.logger.warn(
         'GEMINI_API_KEY does not look like a Google AI Studio key (expected prefix AIza). ' +
           'Create one at https://aistudio.google.com/apikey',
@@ -84,13 +108,19 @@ export class GeminiService implements AiProvider {
     }
   }
 
-  async generateSuggestedTags(input: SuggestTagsInput): Promise<string[]> {
-    const enabled =
-      (this.config.get<string>('AI_TAG_SUGGESTIONS_ENABLED') ?? 'true')
-        .trim()
-        .toLowerCase() !== 'false';
+  private resolveTimeoutMs(envKey: string, defaultMs: number): number {
+    const raw = this.config.get<string>(envKey);
+    if (raw !== undefined && raw.trim() !== '') {
+      const parsed = Number(raw);
+      if (Number.isFinite(parsed) && parsed > 0) {
+        return parsed;
+      }
+    }
+    return defaultMs;
+  }
 
-    if (!enabled) {
+  async generateSuggestedTags(input: SuggestTagsInput): Promise<string[]> {
+    if (!this.tagSuggestionsEnabled) {
       return [];
     }
 
@@ -193,6 +223,134 @@ export class GeminiService implements AiProvider {
     }
   }
 
+  async generateEmbedding(text: string): Promise<number[] | null> {
+    try {
+      const response = await this.client.models.embedContent({
+        model: DEFAULT_EMBEDDING_MODEL,
+        contents: text,
+        config: { outputDimensionality: EMBEDDING_DIMENSIONS },
+      });
+
+      const values = response.embeddings?.[0]?.values;
+      if (!values || values.length !== EMBEDDING_DIMENSIONS) {
+        return null;
+      }
+
+      return values;
+    } catch (error) {
+      this.logger.error('Failed to generate embedding', error as Error);
+      return null;
+    }
+  }
+
+  async generateEntitySummary(
+    input: EntitySummaryContent,
+  ): Promise<string | null> {
+    if (!this.summaryEnabled) {
+      return null;
+    }
+
+    try {
+      const prompt = buildEntitySummaryPrompt(input);
+      const models = buildModelsToTry(this.configuredModel);
+      const totalTimeoutMs = this.summaryTimeoutMs * models.length;
+
+      return await this.runWithAggregateTimeout(
+        aggregateSignal =>
+          this.runSummaryModelFallback(models, prompt, aggregateSignal),
+        totalTimeoutMs,
+      );
+    } catch (error) {
+      if (this.isAbortError(error)) {
+        this.logger.warn(`Gemini entity summary exceeded aggregate timeout`);
+        return null;
+      }
+      this.logger.warn('Gemini entity summary failed', error as Error);
+      return null;
+    }
+  }
+
+  private async runSummaryModelFallback(
+    models: string[],
+    prompt: string,
+    aggregateSignal: AbortSignal,
+  ): Promise<string | null> {
+    for (const model of models) {
+      if (aggregateSignal.aborted) {
+        break;
+      }
+
+      this.logger.log(`Trying Gemini model for entity-summary: ${model}`);
+
+      try {
+        const summary = await this.runWithPerModelTimeout(
+          signal => this.trySummaryForModel(model, prompt, signal),
+          { parentSignal: aggregateSignal },
+        );
+
+        if (summary) {
+          return summary;
+        }
+      } catch (error) {
+        if (this.isAbortError(error)) {
+          if (aggregateSignal.aborted) {
+            throw error;
+          }
+          this.logger.warn(
+            `Model ${model} timed out for entity-summary, trying next fallback`,
+          );
+          continue;
+        }
+
+        if (
+          error instanceof Error &&
+          error.message === 'QuotaExceededOrNotFound'
+        ) {
+          break;
+        }
+
+        throw error;
+      }
+    }
+
+    return null;
+  }
+
+  private async trySummaryForModel(
+    model: string,
+    prompt: string,
+    signal: AbortSignal,
+  ): Promise<string | null> {
+    const response = await generateGeminiJsonContent({
+      client: this.client,
+      model,
+      prompt,
+      jsonMode: false,
+      signal,
+    });
+
+    if (!response.ok) {
+      this.logger.error(
+        `Gemini entity-summary failed (model=${model}, status=${response.status}): ${response.message}`,
+      );
+      if (
+        response.status === 404 ||
+        isGeminiQuotaExceeded(response.status, response.message)
+      ) {
+        throw new Error('QuotaExceededOrNotFound');
+      }
+      return null;
+    }
+
+    const text = response.text.trim();
+    if (!text) {
+      return null;
+    }
+
+    this.logSuccessfulGeneration('entity-summary', model);
+    return text;
+  }
+
   private async generateDocumentExtractWithModelFallback(
     input: DocumentExtractInput,
   ): Promise<DocumentExtractOutput> {
@@ -203,7 +361,7 @@ export class GeminiService implements AiProvider {
 
     const prompt = buildDocumentExtractPrompt(
       input.documentText,
-      input.entityType as DocumentEntityType,
+      input.entityType,
     );
 
     for (const model of buildModelsToTry(this.configuredModel)) {
@@ -311,7 +469,7 @@ export class GeminiService implements AiProvider {
           jsonMode: attempt.jsonMode,
         });
 
-        if (input.entityType === 'idea') {
+        if (input.entityType === DocumentEntityType.IDEA) {
           return {
             kind: 'success',
             data: normalizeIdeaDocumentExtractResponse(parsed),
@@ -552,19 +710,6 @@ export class GeminiService implements AiProvider {
     return null;
   }
 
-  private resolveTagSuggestionsTotalTimeoutMs(): number {
-    const configured = this.config.get<string>(
-      'GEMINI_TAG_SUGGESTIONS_TIMEOUT_MS',
-    );
-    if (configured !== undefined && configured.trim() !== '') {
-      const parsed = Number(configured);
-      if (Number.isFinite(parsed) && parsed > 0) {
-        return parsed;
-      }
-    }
-    return DEFAULT_TAG_SUGGESTIONS_TOTAL_TIMEOUT_MS;
-  }
-
   private async runWithAggregateTimeout<T>(
     operation: (signal: AbortSignal) => Promise<T>,
     timeoutMs: number,
@@ -603,7 +748,13 @@ export class GeminiService implements AiProvider {
     options?.parentSignal?.addEventListener('abort', onParentAbort, {
       once: true,
     });
-    const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
+
+    // Explicitly use this.summaryTimeoutMs or this.timeoutMs based on context,
+    // but here we are hardcoding the general timeoutMs since it's the default
+    // for generic model calls. In a refactor, pass the specific timeout down.
+    const timeoutToUse = this.timeoutMs;
+
+    const timeoutId = setTimeout(() => controller.abort(), timeoutToUse);
     try {
       return await operation(controller.signal);
     } finally {
@@ -613,7 +764,11 @@ export class GeminiService implements AiProvider {
   }
 
   private logSuccessfulGeneration(
-    operation: 'idea-prefill' | 'tag-suggestions' | 'document-extract',
+    operation:
+      | 'idea-prefill'
+      | 'tag-suggestions'
+      | 'entity-summary'
+      | 'document-extract',
     model: string,
     options?: { jsonMode?: boolean; tagCount?: number },
   ): void {

@@ -6,8 +6,8 @@ import {
   buildTagEmbeddingContent,
   hashEmbeddingContent,
 } from '../src/embedding/embedding-content.util';
-import { EmbeddingCron } from '../src/embedding/embedding.cron';
 import { EmbeddingService } from '../src/embedding/embedding.service';
+import { EntityEmbeddingSyncService } from '../src/embedding/entity-embedding-sync.service';
 import { toPgVectorLiteral } from '../src/embedding/vector.util';
 import { PrismaService } from '../src/prisma/prisma.service';
 
@@ -50,14 +50,12 @@ function parseCliArgs(): { entity: EntityType; batch: number } {
   };
 }
 
-async function countPending(
-  prisma: PrismaService,
-  table: 'idea' | 'problem',
-): Promise<number> {
-  const rows = await prisma.$queryRawUnsafe<{ count: bigint }[]>(
-    `SELECT COUNT(*)::bigint AS count FROM "${table}" WHERE ai_embedding IS NULL`,
-  );
-  return Number(rows[0]?.count ?? 0);
+async function countPendingIdeas(prisma: PrismaService): Promise<number> {
+  return prisma.idea.count({ where: { embeddingHash: null } });
+}
+
+async function countPendingProblems(prisma: PrismaService): Promise<number> {
+  return prisma.problem.count({ where: { embeddingHash: null } });
 }
 
 async function syncTagEmbedding(
@@ -115,7 +113,7 @@ async function backfillTags(
   while (true) {
     const rows = await prisma.$queryRaw<{ id: string }[]>`
       SELECT id FROM tag
-      WHERE ai_embedding IS NULL AND id > ${lastId}
+      WHERE embedding_hash IS NULL AND id > ${lastId}
       ORDER BY id ASC LIMIT ${batch}
     `;
 
@@ -144,22 +142,27 @@ async function backfillTags(
 
 async function backfillIdeasAndProblems(
   prisma: PrismaService,
-  embeddingCron: EmbeddingCron,
+  syncService: EntityEmbeddingSyncService,
   entity: EntityType,
 ): Promise<void> {
-  const tables: ('idea' | 'problem')[] =
+  const targets: ('idea' | 'problem')[] =
     entity === 'all' ? ['idea', 'problem'] : [entity as 'idea' | 'problem'];
 
-  for (const table of tables) {
-    let pending = await countPending(prisma, table);
+  for (const table of targets) {
+    const countPending =
+      table === 'idea'
+        ? () => countPendingIdeas(prisma)
+        : () => countPendingProblems(prisma);
+
+    let pending = await countPending();
     logger.log(`${table}: ${pending} pending embeddings`);
 
     let stalledPasses = 0;
 
     while (pending > 0) {
       const before = pending;
-      await embeddingCron.processPendingEmbeddings();
-      pending = await countPending(prisma, table);
+      await syncService.processPendingBatch(10);
+      pending = await countPending();
 
       if (pending >= before) {
         stalledPasses += 1;
@@ -189,11 +192,11 @@ async function main(): Promise<void> {
 
   try {
     const prisma = app.get(PrismaService);
-    const embeddingCron = app.get(EmbeddingCron);
+    const syncService = app.get(EntityEmbeddingSyncService);
     const embeddingService = app.get(EmbeddingService);
 
     if (entity === 'idea' || entity === 'problem' || entity === 'all') {
-      await backfillIdeasAndProblems(prisma, embeddingCron, entity);
+      await backfillIdeasAndProblems(prisma, syncService, entity);
     }
 
     if (entity === 'tag' || entity === 'all') {

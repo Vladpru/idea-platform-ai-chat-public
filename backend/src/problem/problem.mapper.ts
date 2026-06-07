@@ -112,6 +112,8 @@ export function toProblemFormResponse(
     costBenefit: problem.costBenefit?.toString() ?? null,
     category: problem.category,
     impact: problem.impact,
+    aiSummary: problem.aiSummary,
+    summaryStatus: problem.summaryStatus,
     publishedAt: problem.publishedAt?.toISOString() ?? null,
     ...mapProblemEngagementMetrics(problem),
     ideas: problem.ideas.map(toProblemLinkedIdea),

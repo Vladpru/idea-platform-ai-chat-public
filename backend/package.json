@@ -18,7 +18,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "backfill:embeddings": "ts-node scripts/backfill-embeddings.ts"
+    "backfill:embeddings": "ts-node scripts/backfill-embeddings.ts",
+    "backfill:ai-summaries": "ts-node scripts/backfill-ai-summaries.ts"
   },
   "dependencies": {
     "@google/genai": "^2.7.0",

@@ -82,6 +82,8 @@ export function toIdeaDetails(dto: IdeaFormResponseDto): IdeaDetails {
     status: dto.status,
     title: dto.title?.trim() ?? '',
     description: dto.description?.trim() ?? '',
+    aiSummary: dto.aiSummary,
+    summaryStatus: dto.summaryStatus,
     stage: toStageLabel(dto.stage),
     stageValue: (dto.stage?.toLowerCase() ?? null) as ApiStage | null,
     mainImage,

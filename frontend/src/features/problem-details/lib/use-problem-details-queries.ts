@@ -21,6 +21,9 @@ export function useProblemDetailsQuery(problemId: string) {
     },
     enabled: Boolean(problemId),
     retry: shouldRetryDetailResourceQuery,
+    refetchInterval: query =>
+      query.state.data?.summaryStatus === 'PENDING' ? 3000 : false,
+    refetchIntervalInBackground: false,
   });
 }
 

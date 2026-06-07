@@ -110,6 +110,8 @@ export function toIdeaFormResponse(
     stage: idea.stage,
     title: idea.title,
     description: idea.description,
+    aiSummary: idea.aiSummary,
+    summaryStatus: idea.summaryStatus,
     publishedAt: idea.publishedAt?.toISOString() ?? null,
     ...mapIdeaEngagementMetrics(idea),
     viewer: {
