@@ -1,6 +1,6 @@
 import type { IdeaCreateFormValues } from '@/features/ideas/lib/create-idea';
 import type { SubmitProblemFormValues } from '@/features/problems/lib/submit-problem';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { toast } from 'sonner';
 
@@ -65,13 +65,12 @@ async function finishExtractScan(
 
   applyDocumentExtractAndAttach(entityType, form, extracted, file);
 
-  notifyExtractResult(
-    hasDocumentExtractedContent(entityType, extracted),
-    meta,
-  );
+  notifyExtractResult(hasDocumentExtractedContent(entityType, extracted), meta);
 }
 
-function hasExistingAutoFillContent(params: UseDocumentAutoFillParams): boolean {
+function hasExistingAutoFillContent(
+  params: UseDocumentAutoFillParams,
+): boolean {
   if (params.entityType === 'idea') {
     return hasDocumentAutoFillContent(
       params.entityType,
@@ -99,20 +98,23 @@ export function useDocumentAutoFill(params: UseDocumentAutoFillParams) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const pendingFileRef = useRef<File | null>(null);
 
-  const runScan = useCallback(
-    async (file: File) => {
-      setIsScanning(true);
-      try {
-        await runExtractScan(params, file);
-      } catch (error) {
-        toast.error(getApiErrorMessage(error));
-      } finally {
-        setIsScanning(false);
-        pendingFileRef.current = null;
-      }
-    },
-    [params],
-  );
+  const paramsRef = useRef(params);
+
+  useEffect(() => {
+    paramsRef.current = params;
+  }, [params]);
+
+  const runScan = useCallback(async (file: File) => {
+    setIsScanning(true);
+    try {
+      await runExtractScan(paramsRef.current, file);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+    } finally {
+      setIsScanning(false);
+      pendingFileRef.current = null;
+    }
+  }, []);
 
   const handleFileSelected = useCallback(
     (file: File) => {
@@ -122,7 +124,7 @@ export function useDocumentAutoFill(params: UseDocumentAutoFillParams) {
         return;
       }
 
-      if (hasExistingAutoFillContent(params)) {
+      if (hasExistingAutoFillContent(paramsRef.current)) {
         pendingFileRef.current = file;
         setConfirmOpen(true);
         return;
@@ -130,7 +132,7 @@ export function useDocumentAutoFill(params: UseDocumentAutoFillParams) {
 
       void runScan(file);
     },
-    [params, runScan],
+    [runScan],
   );
 
   const handleConfirmOverwrite = useCallback(() => {
