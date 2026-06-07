@@ -6,22 +6,31 @@ import {
   toSimilarIdeaCard,
 } from '@/features/idea-details/model/idea-details.mapper';
 import { shouldRetryDetailResourceQuery } from '@/shared/lib/detail-resource-query';
+import { getSummaryRefetchInterval } from '@/shared/lib/summary-polling';
 import { useQuery } from '@tanstack/react-query';
+
+import type { IdeaDetails } from '../model/idea-details.types';
+
+async function fetchIdeaDetailsByQueryKey({
+  queryKey,
+}: {
+  queryKey: readonly unknown[];
+}): Promise<IdeaDetails | null> {
+  const ideaId = String(queryKey[2]);
+  const dto = await fetchIdeaFormById(ideaId);
+  if (!dto?.id) {
+    return null;
+  }
+  return toIdeaDetails(dto);
+}
 
 export function useIdeaDetailsQuery(ideaId: string) {
   return useQuery({
     queryKey: ideaMutationKeys.detail(ideaId),
-    queryFn: async () => {
-      const dto = await fetchIdeaFormById(ideaId);
-      if (!dto?.id) {
-        return null;
-      }
-      return toIdeaDetails(dto);
-    },
+    queryFn: fetchIdeaDetailsByQueryKey,
     enabled: Boolean(ideaId),
     retry: shouldRetryDetailResourceQuery,
-    refetchInterval: query =>
-      query.state.data?.summaryStatus === 'PENDING' ? 3000 : false,
+    refetchInterval: getSummaryRefetchInterval,
     refetchIntervalInBackground: false,
   });
 }
