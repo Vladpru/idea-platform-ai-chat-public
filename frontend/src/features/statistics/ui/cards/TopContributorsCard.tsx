@@ -1,18 +1,20 @@
 import { getInitials } from '@/features/idea-details/lib/get-initials';
-import { ROUTES } from '@/shared/config/paths';
-import { cn } from '@/shared/lib/utils';
 import { Link } from '@tanstack/react-router';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@/shared/ui/avatar';
 import { ArrowRight, Star } from 'lucide-react';
 
-import { formatContributorPoints } from '../lib/format-statistics-values';
-import type { StatisticsPeriod, TopContributor } from '../model/statistics.types';
+import { ROUTES } from '@/shared/config/paths';
+import { cn } from '@/shared/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 
-import { statisticsCardClass, statisticsIconTileClass } from './statistics-classes';
+import { formatContributorPoints } from '../../lib/format-statistics-values';
+import type {
+  StatisticsPeriod,
+  TopContributor,
+} from '../../model/statistics.types';
+import {
+  statisticsCardClass,
+  statisticsIconTileClass,
+} from '../statistics-classes';
 
 type TopContributorsCardProps = {
   contributors: TopContributor[];
@@ -71,11 +73,15 @@ export function TopContributorsCard({
         <span className={statisticsIconTileClass}>
           <Star className="size-5" aria-hidden />
         </span>
-        <h2 className="text-brand-dark-blue text-lg font-bold">Top contributors</h2>
+        <h2 className="text-brand-dark-blue text-lg font-bold">
+          Top contributors
+        </h2>
       </div>
 
       {contributors.length === 0 ? (
-        <p className="text-brand-gray-500 mt-6 text-sm">No contributor data yet.</p>
+        <p className="text-brand-gray-500 mt-6 text-sm">
+          No contributor data yet.
+        </p>
       ) : (
         <div className="mt-6 grid flex-1 gap-6 sm:grid-cols-2">
           <ul className="flex flex-col gap-5">

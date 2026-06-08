@@ -10,9 +10,9 @@ import {
   TooltipTrigger,
 } from '@/shared/ui/tooltip';
 
-import { getLeaderboardBreakdownItems } from '../lib/leaderboard-breakdown-labels';
-import { formatContributorPoints } from '../lib/format-statistics-values';
-import type { LeaderboardEntry } from '../model/statistics.types';
+import { getLeaderboardBreakdownItems } from '../../lib/leaderboard-breakdown-labels';
+import { formatContributorPoints } from '../../lib/format-statistics-values';
+import type { LeaderboardEntry } from '../../model/statistics.types';
 
 type LeaderboardRowProps = {
   rank: number;

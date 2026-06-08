@@ -1,4 +1,4 @@
-export { StatisticsDashboardPage } from './ui/StatisticsDashboardPage';
+export { StatisticsDashboardPage } from './ui/dashboard/StatisticsDashboardPage';
 export { fetchStatisticsSnapshot } from './api/statistics.api';
 export { useStatisticsSnapshot } from './hooks/use-statistics-snapshot';
 export type {

@@ -1,9 +1,12 @@
-import { cn } from '@/shared/lib/utils';
 import { DollarSign } from 'lucide-react';
 
-import { formatStatisticsCostBenefit } from '../lib/format-statistics-values';
+import { cn } from '@/shared/lib/utils';
 
-import { statisticsCardClass, statisticsIconTileClass } from './statistics-classes';
+import { formatStatisticsCostBenefit } from '../../lib/format-statistics-values';
+import {
+  statisticsCardClass,
+  statisticsIconTileClass,
+} from '../statistics-classes';
 
 type CostBenefitCardProps = {
   total: number;

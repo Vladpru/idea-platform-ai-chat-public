@@ -1,3 +1,5 @@
+import { ChevronDown } from 'lucide-react';
+
 import { cn } from '@/shared/lib/utils';
 import {
   DropdownMenu,
@@ -5,7 +7,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
-import { ChevronDown } from 'lucide-react';
 
 import type { StatisticsPeriod } from '../model/statistics.types';
 

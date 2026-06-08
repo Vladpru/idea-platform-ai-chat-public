@@ -1,4 +1,4 @@
-import { LeaderboardPage } from '@/features/statistics/ui/LeaderboardPage';
+import { LeaderboardPage } from '@/features/statistics/ui/leaderboard/LeaderboardPage';
 import type { StatisticsPeriod } from '@/features/statistics/model/statistics.types';
 
 const LEADERBOARD_PERIODS = [

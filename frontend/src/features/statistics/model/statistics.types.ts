@@ -60,10 +60,26 @@ export type StatisticsCharts = {
   activity: StatisticsChartPanel;
 };
 
+export type ScoreCategoryKey = keyof LeaderboardBreakdown;
+
+export type MyScoreCategory = {
+  key: ScoreCategoryKey;
+  label: string;
+  countLabel: string;
+  count: number;
+  points: number;
+};
+
+export type MyScore = {
+  totalPoints: number;
+  categories: MyScoreCategory[];
+};
+
 export type StatisticsSnapshot = {
   charts: StatisticsCharts;
   users: StatMetric[];
   activity: StatMetric[];
   topContributors: TopContributor[];
   costBenefitTotal: number;
+  myScore: MyScore;
 };

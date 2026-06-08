@@ -1,6 +1,6 @@
-import { Link } from '@tanstack/react-router';
-import { StatMetricCard } from '@/features/statistics/ui/StatMetricCard';
+import { StatMetricCard } from '@/features/statistics/ui/cards/StatMetricCard';
 import { statisticsPageTitleClass } from '@/features/statistics/ui/statistics-classes';
+import { Link } from '@tanstack/react-router';
 import {
   Activity,
   BarChart3,

@@ -1,11 +1,11 @@
 import type { LucideIcon } from 'lucide-react';
 
-import type { StatMetric } from '../model/statistics.types';
+import type { StatMetric } from '../../model/statistics.types';
 import {
   statisticsCardClass,
   statisticsIconTileClass,
   statisticsMetricValueClass,
-} from './statistics-classes';
+} from '../statistics-classes';
 
 type StatMetricCardProps = {
   title: string;

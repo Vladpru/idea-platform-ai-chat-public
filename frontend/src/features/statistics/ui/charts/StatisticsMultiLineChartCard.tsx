@@ -1,13 +1,12 @@
 import { cn } from '@/shared/lib/utils';
 
-import { getStatisticsSeriesColor } from '../lib/chart-series-colors';
+import { getStatisticsSeriesColor } from '../../lib/chart-series-colors';
 import type {
   StatisticsChartPanel,
   StatisticsPeriod,
-} from '../model/statistics.types';
-
+} from '../../model/statistics.types';
+import { statisticsCardClass } from '../statistics-classes';
 import { StatisticsMultiLineChart } from './StatisticsMultiLineChart';
-import { statisticsCardClass } from './statistics-classes';
 
 type StatisticsMultiLineChartCardProps = {
   title: string;
@@ -28,7 +27,10 @@ export function StatisticsMultiLineChartCard({
 }: StatisticsMultiLineChartCardProps) {
   return (
     <section
-      className={cn(`${statisticsCardClass} h-full w-full`, isFetching && 'opacity-70')}
+      className={cn(
+        `${statisticsCardClass} h-full w-full`,
+        isFetching && 'opacity-70',
+      )}
     >
       <h2 className="text-brand-black text-lg font-bold">{title}</h2>
 

@@ -8,12 +8,11 @@ import { Card } from '@/shared/ui';
 import { Button } from '@/shared/ui/button';
 import { Skeleton } from '@/shared/ui/skeleton';
 
-import { useStatisticsLeaderboard } from '../hooks/use-statistics-leaderboard';
-import type { StatisticsPeriod } from '../model/statistics.types';
-
+import { useStatisticsLeaderboard } from '../../hooks/use-statistics-leaderboard';
+import type { StatisticsPeriod } from '../../model/statistics.types';
+import { StatisticsTimeRangeSelect } from '../StatisticsTimeRangeSelect';
+import { statisticsPageTitleClass } from '../statistics-classes';
 import { LeaderboardRow } from './LeaderboardRow';
-import { StatisticsTimeRangeSelect } from './StatisticsTimeRangeSelect';
-import { statisticsPageTitleClass } from './statistics-classes';
 
 type LeaderboardPageProps = {
   initialPeriod?: StatisticsPeriod;
@@ -37,7 +36,9 @@ function LeaderboardSkeleton() {
   );
 }
 
-export function LeaderboardPage({ initialPeriod = 'year_to_date' }: LeaderboardPageProps) {
+export function LeaderboardPage({
+  initialPeriod = 'year_to_date',
+}: LeaderboardPageProps) {
   const [period, setPeriod] = useState<StatisticsPeriod>(initialPeriod);
   const { data, isLoading, isError, error, refetch, isFetching } =
     useStatisticsLeaderboard(period);
@@ -58,7 +59,8 @@ export function LeaderboardPage({ initialPeriod = 'year_to_date' }: LeaderboardP
             <div className="min-w-0">
               <h1 className={statisticsPageTitleClass}>Leaderboard</h1>
               <p className="text-brand-gray-600 mt-2 max-w-2xl text-sm">
-                Top contributors ranked by total points during selected time frame
+                Top contributors ranked by total points during selected time
+                frame
               </p>
             </div>
             <StatisticsTimeRangeSelect value={period} onChange={setPeriod} />

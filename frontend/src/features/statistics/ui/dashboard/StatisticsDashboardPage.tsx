@@ -5,13 +5,14 @@ import { Card } from '@/shared/ui';
 import { Button } from '@/shared/ui/button';
 import { SkeletonCard } from '@/shared/ui/skeleton';
 
-import { useStatisticsSnapshot } from '../hooks/use-statistics-snapshot';
-import type { StatisticsPeriod } from '../model/statistics.types';
-import { CostBenefitCard } from './CostBenefitCard';
-import { StatisticsMultiLineChartCard } from './StatisticsMultiLineChartCard';
-import { StatisticsTimeRangeSelect } from './StatisticsTimeRangeSelect';
-import { TopContributorsCard } from './TopContributorsCard';
-import { statisticsPageTitleClass } from './statistics-classes';
+import { useStatisticsSnapshot } from '../../hooks/use-statistics-snapshot';
+import type { StatisticsPeriod } from '../../model/statistics.types';
+import { StatisticsTimeRangeSelect } from '../StatisticsTimeRangeSelect';
+import { CostBenefitCard } from '../cards/CostBenefitCard';
+import { MyScoreCard } from '../cards/MyScoreCard';
+import { TopContributorsCard } from '../cards/TopContributorsCard';
+import { StatisticsMultiLineChartCard } from '../charts/StatisticsMultiLineChartCard';
+import { statisticsPageTitleClass } from '../statistics-classes';
 
 function StatisticsChartsSkeleton() {
   return (
@@ -25,6 +26,8 @@ function StatisticsChartsSkeleton() {
         <SkeletonCard className="h-72 lg:col-span-2" />
         <SkeletonCard className="h-72" />
       </div>
+      <SkeletonCard className="mt-4 h-96 lg:mt-5" />
+      <SkeletonCard className="mt-4 h-40 lg:mt-5" />
     </>
   );
 }
@@ -100,6 +103,10 @@ export function StatisticsDashboardPage() {
                   total={data.costBenefitTotal}
                   isFetching={isFetching}
                 />
+              </div>
+
+              <div className="mt-4 lg:mt-5">
+                <MyScoreCard myScore={data.myScore} isFetching={isFetching} />
               </div>
             </>
           )}

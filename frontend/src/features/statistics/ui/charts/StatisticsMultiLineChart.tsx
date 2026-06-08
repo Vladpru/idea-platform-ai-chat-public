@@ -15,11 +15,11 @@ import {
   ChartTooltipContent,
 } from '@/shared/ui/chart';
 
-import { getStatisticsSeriesColor } from '../lib/chart-series-colors';
+import { getStatisticsSeriesColor } from '../../lib/chart-series-colors';
 import type {
   StatisticsChartPanel,
   StatisticsPeriod,
-} from '../model/statistics.types';
+} from '../../model/statistics.types';
 
 const CHART_MARGINS = { top: 12, right: 8, left: 0, bottom: 0 };
 
@@ -104,7 +104,7 @@ export function StatisticsMultiLineChart({
   return (
     <ChartContainer
       config={chartConfig}
-      className="image.pngmt-4 aspect-auto h-[220px] w-full min-w-0 rounded-md [&_.recharts-cartesian-grid_line]:stroke-[var(--statistics-chart-grid)]"
+      className="mt-4 aspect-auto h-[220px] w-full min-w-0 rounded-md [&_.recharts-cartesian-grid_line]:stroke-[var(--statistics-chart-grid)]"
       initialDimension={{ width: 360, height: 220 }}
     >
       <ComposedChart
