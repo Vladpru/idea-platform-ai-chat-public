@@ -59,7 +59,7 @@ export class PasswordResetService {
       .getOrThrow<string>('FRONTEND_URL')
       .replace(/\/$/, '');
     const resetToken = `${tokenId}.${tokenSecret}`;
-    const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
+    const resetUrl = `${frontendUrl}/reset-password?token=${encodeURIComponent(resetToken)}`;
 
     try {
       await this.mail.sendPasswordResetEmail({

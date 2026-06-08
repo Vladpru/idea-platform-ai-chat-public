@@ -4,14 +4,21 @@ import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
-import { join } from 'path';
 
+import { RedisIoAdapter } from './adapters/redis-io.adapter';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   const config = app.get(ConfigService);
+
+  const redisIoAdapter = new RedisIoAdapter(app);
+  const redisUrl = config.getOrThrow<string>('REDIS_URL');
+  await redisIoAdapter.connectToRedis(redisUrl);
+  app.useWebSocketAdapter(redisIoAdapter);
+
+  app.enableShutdownHooks();
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -21,17 +28,11 @@ async function bootstrap() {
   );
 
   app.enableCors({
-    origin: true,
+    origin: [config.getOrThrow<string>('FRONTEND_URL')],
     credentials: true,
   });
 
   app.use(cookieParser());
-
-  const avatarsPath = join(process.cwd(), 'storage', 'avatars');
-  app.useStaticAssets(avatarsPath, {
-    prefix: '/files/avatars/',
-    index: false,
-  });
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Idea platform api')

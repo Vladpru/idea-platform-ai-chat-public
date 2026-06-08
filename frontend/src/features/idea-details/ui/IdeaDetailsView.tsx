@@ -70,11 +70,24 @@ type PendingDiscardAction = 'cancel-edit' | 'navigate-back' | 'tab-switch';
 export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
   const navigate = useNavigate();
   const router = useRouter();
-  const { edit: isEditSearch, updated: showUpdatedSuccess } = useSearch({
+  const {
+    edit: isEditSearch,
+    updated: showUpdatedSuccess,
+    replyTo: replyToCommentId,
+    tab: searchTab,
+    sort: discussionSort,
+  } = useSearch({
     from: '/_auth/ideas/$ideaId',
   });
   const formId = useId();
-  const [activeTab, setActiveTab] = useState<IdeaTabId>('description');
+  const [activeTab, setActiveTab] = useState<IdeaTabId>(() =>
+    replyToCommentId || searchTab === 'discussion'
+      ? 'discussion'
+      : 'description',
+  );
+  const searchDiscussionTab: IdeaTabId | null =
+    replyToCommentId || searchTab === 'discussion' ? 'discussion' : null;
+  const visibleTab = searchDiscussionTab ?? activeTab;
   const [isEditing, setIsEditing] = useState(false);
   const [editFormSnapshot, setEditFormSnapshot] =
     useState<IdeaEditFormValues | null>(null);
@@ -268,7 +281,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
 
   const handleTabChange = useCallback(
     (tab: IdeaTabId) => {
-      if (tab === activeTab) {
+      if (tab === visibleTab) {
         return;
       }
 
@@ -279,7 +292,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
         return;
       }
 
-      if (activeTab === 'discussion' && isEditingDirty && tab !== activeTab) {
+      if (visibleTab === 'discussion' && isEditingDirty && tab !== visibleTab) {
         setPendingTab(tab);
         scheduleHighlightDirtyComment(() => {
           setShowDiscussionDiscardModal(true);
@@ -289,7 +302,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
 
       setActiveTab(tab);
     },
-    [activeTab, hasUnsavedIdeaEdits, isEditingDirty],
+    [visibleTab, hasUnsavedIdeaEdits, isEditingDirty],
   );
 
   const handleConfirmDiscussionTabDiscard = () => {
@@ -307,6 +320,20 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
       setShowDiscussionDiscardModal(false);
     }
   };
+
+  const handleReplyToConsumed = useCallback(() => {
+    setActiveTab('discussion');
+    void navigate({
+      to: '/ideas/$ideaId',
+      params: { ideaId },
+      search: {
+        ...(discussionSort ? { sort: discussionSort } : {}),
+        ...(isEditSearch ? { edit: isEditSearch } : {}),
+        ...(showUpdatedSuccess ? { updated: showUpdatedSuccess } : {}),
+      },
+      replace: true,
+    });
+  }, [discussionSort, ideaId, isEditSearch, navigate, showUpdatedSuccess]);
 
   useEffect(() => {
     if (!showUpdatedSuccess) {
@@ -437,7 +464,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
               />
 
               <IdeaTabs
-                activeTab={activeTab}
+                activeTab={visibleTab}
                 onChange={handleTabChange}
                 idea={{ commentCount: idea.commentCount }}
                 counts={{
@@ -451,7 +478,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
 
         <div
           className={cn(
-            !isEditing && activeTab !== 'description' && 'min-h-[280px]',
+            !isEditing && visibleTab !== 'description' && 'min-h-[280px]',
           )}
         >
           {isEditing && editFormSnapshot ? (
@@ -472,7 +499,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
             </section>
           ) : (
             <AnimatedPanelSwitch>
-              {activeTab === 'description' && (
+              {visibleTab === 'description' && (
                 <AnimatedPanel
                   panelKey="description"
                   className="space-y-6"
@@ -513,23 +540,25 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
                 </AnimatedPanel>
               )}
 
-              {activeTab === 'attachments' && (
+              {visibleTab === 'attachments' && (
                 <AnimatedPanel panelKey="attachments">
                   <IdeaAttachmentsTab attachments={idea.attachments} />
                 </AnimatedPanel>
               )}
 
-              {activeTab === 'discussion' && (
+              {visibleTab === 'discussion' && (
                 <AnimatedPanel panelKey="discussion">
                   <DiscussionTab
                     entityType="IDEA"
                     entityId={ideaId}
-                    enabled={activeTab === 'discussion'}
+                    enabled={visibleTab === 'discussion'}
+                    replyToCommentId={replyToCommentId}
+                    onReplyToConsumed={handleReplyToConsumed}
                   />
                 </AnimatedPanel>
               )}
 
-              {activeTab === 'linked-problems' && (
+              {visibleTab === 'linked-problems' && (
                 <AnimatedPanel panelKey="linked-problems">
                   <IdeaLinkedProblemsTab
                     ideaId={ideaId}
@@ -566,7 +595,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
               SAVE CHANGES
             </Button>
           </div>
-        ) : activeTab === 'description' ? (
+        ) : visibleTab === 'description' ? (
           <SimilarIdeasWidget
             ideaId={ideaId}
             similarIdeas={similarIdeas}

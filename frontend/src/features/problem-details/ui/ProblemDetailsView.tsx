@@ -17,7 +17,7 @@ import { NotFoundPage } from '@/pages/not-found';
 import { useNavigate, useRouter, useSearch } from '@tanstack/react-router';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
-import { type MouseEvent, useEffect, useState } from 'react';
+import { type MouseEvent, useCallback, useEffect, useState } from 'react';
 
 import { ROUTES } from '@/shared/config/paths';
 import { entityDescriptionDetailClass } from '@/shared/lib/entity-description-classes';
@@ -40,10 +40,20 @@ type ProblemDetailsViewProps = {
 export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
   const navigate = useNavigate();
   const router = useRouter();
-  const { updated: showUpdatedSuccess } = useSearch({
+  const {
+    updated: showUpdatedSuccess,
+    replyTo: replyToCommentId,
+    tab: searchTab,
+    sort: discussionSort,
+  } = useSearch({
     from: '/_auth/problems/$problemId',
   });
-  const [activeTab, setActiveTab] = useState<ProblemTabId>('description');
+  const [activeTab, setActiveTab] = useState<ProblemTabId>(() =>
+    replyToCommentId || searchTab === 'discussion' ? 'discussion' : 'description',
+  );
+  const searchDiscussionTab: ProblemTabId | null =
+    replyToCommentId || searchTab === 'discussion' ? 'discussion' : null;
+  const visibleTab = searchDiscussionTab ?? activeTab;
   const [isScrolled, setIsScrolled] = useState(false);
   const [updatedSuccessOpen, setUpdatedSuccessOpen] = useState(false);
   const [prevShowUpdatedSuccess, setPrevShowUpdatedSuccess] =
@@ -73,6 +83,19 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
     event.preventDefault();
     router.history.back();
   };
+
+  const handleReplyToConsumed = useCallback(() => {
+    setActiveTab('discussion');
+    void navigate({
+      to: '/problems/$problemId',
+      params: { problemId },
+      search: {
+        ...(discussionSort ? { sort: discussionSort } : {}),
+        ...(showUpdatedSuccess ? { updated: showUpdatedSuccess } : {}),
+      },
+      replace: true,
+    });
+  }, [discussionSort, navigate, problemId, showUpdatedSuccess]);
 
   useEffect(() => {
     if (!showUpdatedSuccess) {
@@ -167,7 +190,7 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
 
           <div className="pt-1">
             <ProblemTabs
-              activeTab={activeTab}
+              activeTab={visibleTab}
               onChange={setActiveTab}
               commentCount={problem.commentCount}
               counts={{
@@ -180,7 +203,7 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
 
         <div className="min-h-[280px]">
           <AnimatedPanelSwitch>
-            {activeTab === 'description' && (
+            {visibleTab === 'description' && (
               <AnimatedPanel
                 panelKey="description"
                 className="space-y-6"
@@ -217,23 +240,25 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
               </AnimatedPanel>
             )}
 
-            {activeTab === 'attachments' && (
+            {visibleTab === 'attachments' && (
               <AnimatedPanel panelKey="attachments">
                 <ProblemAttachmentsTab attachments={problem.attachments} />
               </AnimatedPanel>
             )}
 
-            {activeTab === 'discussion' && (
+            {visibleTab === 'discussion' && (
               <AnimatedPanel panelKey="discussion">
                 <DiscussionTab
                   entityType="PROBLEM"
                   entityId={problemId}
-                  enabled={activeTab === 'discussion'}
+                  enabled={visibleTab === 'discussion'}
+                  replyToCommentId={replyToCommentId}
+                  onReplyToConsumed={handleReplyToConsumed}
                 />
               </AnimatedPanel>
             )}
 
-            {activeTab === 'linked-ideas' && (
+            {visibleTab === 'linked-ideas' && (
               <AnimatedPanel panelKey="linked-ideas">
                 <ProblemLinkedIdeasTab
                   problemId={problemId}
@@ -245,7 +270,7 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
           </AnimatedPanelSwitch>
         </div>
 
-        {activeTab === 'description' ? (
+        {visibleTab === 'description' ? (
           <SimilarProblemsWidget
             similarProblems={similarProblems}
             isLoading={isSimilarLoading}

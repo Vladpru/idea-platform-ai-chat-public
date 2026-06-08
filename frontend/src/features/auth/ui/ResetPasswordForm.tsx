@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
+import { Route as ResetPasswordRoute } from '@/routes/reset-password';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -19,8 +20,8 @@ export function ResetPasswordForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [passwordsVisible, setPasswordsVisible] = useState(false);
 
-  const search = useSearch({ strict: false }) as { token?: string };
-  const token = search.token?.trim();
+  const { token: rawToken } = ResetPasswordRoute.useSearch();
+  const token = rawToken?.trim();
   const hasToken = Boolean(token);
 
   const {
