@@ -1,14 +1,13 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { render } from '@react-email/components';
 import sgMail from '@sendgrid/mail';
 
+import { buildNotificationEmail } from './lib/build-notification-email';
 import { WelcomeEmail } from './templates/WelcomeEmail';
 import { buildPasswordResetEmail } from './templates/password-reset';
+import type { EnrichedEmailContext } from './types/enriched-email.types';
+import type { NotificationEmailJobData } from './types/notification-email.types';
 
 @Injectable()
 export class MailService {
@@ -36,9 +35,7 @@ export class MailService {
       });
     } catch (error) {
       this.logger.error('SendGrid send failed during welcome email', error);
-      throw new InternalServerErrorException(
-        'Unable to send welcome email, try again later',
-      );
+      throw new Error('Unable to send welcome email');
     }
   }
 
@@ -59,9 +56,33 @@ export class MailService {
       });
     } catch (error) {
       this.logger.error('SendGrid send failed during password reset', error);
-      throw new InternalServerErrorException(
-        'Unable to send email, try again later',
+      throw new Error('Unable to send password reset email');
+    }
+  }
+
+  async sendNotificationEmail(
+    data: NotificationEmailJobData,
+    enriched?: EnrichedEmailContext,
+  ): Promise<void> {
+    const { subject, text, html } = await buildNotificationEmail({
+      ...data,
+      enriched,
+    });
+
+    try {
+      await sgMail.send({
+        from: this.defaultFrom,
+        to: data.to,
+        subject,
+        text,
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `SendGrid send failed for notification ${data.notificationType}`,
+        error,
       );
+      throw new Error(`Notification email failed: ${String(error)}`);
     }
   }
 }
