@@ -3,7 +3,6 @@ import { ConfigService } from '@nestjs/config';
 import sgMail from '@sendgrid/mail';
 
 import { buildNotificationEmail } from './lib/build-notification-email';
-import { WelcomeEmail } from './templates/WelcomeEmail';
 import { buildPasswordResetEmail } from './templates/password-reset';
 import type { EnrichedEmailContext } from './types/enriched-email.types';
 import type { NotificationEmailJobData } from './types/notification-email.types';

@@ -1,4 +1,4 @@
-import { Text } from '@react-email/components';
+import { Text, render } from '@react-email/components';
 import * as React from 'react';
 
 import { TransactionalEmail } from './components/TransactionalEmail';
@@ -12,6 +12,7 @@ export const WelcomeEmail = () => {
       preview={previewText}
       headline="WELCOME TO THE IDEA PLATFORM"
       subheading="We're glad you're here"
+      disclaimer="If you did not create an account, you can safely ignore this email."
     >
       <Text className={emailClasses.bodyText}>
         Your account has been successfully created. We are excited to have you
@@ -22,9 +23,6 @@ export const WelcomeEmail = () => {
         You can now start exploring existing projects, submitting your own
         concepts, and collaborating with your team members to bring innovations
         to life.
-      </Text>
-      <Text className={`mt-[32px] ${emailClasses.subtleText}`}>
-        If you did not create an account, you can safely ignore this email.
       </Text>
     </TransactionalEmail>
   );
