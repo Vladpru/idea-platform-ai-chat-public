@@ -31,6 +31,7 @@ import type { Request } from 'express';
 import { JwtAuth } from '../shared/decorators/jwt-auth.decorator';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateNotificationPreferencesDto } from './dto/update-notification-preferences.dto';
 import { UpdateThemeDto } from './dto/update-theme.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AvatarUploadInterceptor } from './interceptors/avatar-upload.interceptor';
@@ -104,6 +105,19 @@ export class UserController {
     @Req() req: Request & { user: { id: string } },
   ) {
     return this.userService.updateTheme(req.user.id, dto.theme);
+  }
+
+  @Patch('me/notification-preferences')
+  @JwtAuth()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update current user notification preferences' })
+  @ApiBody({ type: UpdateNotificationPreferencesDto })
+  @ApiOkResponse({ description: 'Notification preferences updated' })
+  updateMyNotificationPreferences(
+    @Body() dto: UpdateNotificationPreferencesDto,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    return this.userService.updateNotificationPreferences(req.user.id, dto);
   }
 
   @Patch('me/password')

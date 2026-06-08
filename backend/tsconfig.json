@@ -2,7 +2,6 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "module": "commonjs",
-    // "moduleResolution": "node",
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
@@ -17,5 +16,10 @@
     "rootDir": "./",
     "skipLibCheck": true,
     "incremental": true
-  }
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "generated/prisma/**/*.ts"
+  ]
 }
