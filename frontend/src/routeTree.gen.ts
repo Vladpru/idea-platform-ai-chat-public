@@ -25,6 +25,7 @@ import { Route as AuthIdeasRouteRouteImport } from './routes/_auth/ideas/route'
 import { Route as AuthProfileIndexRouteImport } from './routes/_auth/profile/index'
 import { Route as AuthProblemsIndexRouteImport } from './routes/_auth/problems/index'
 import { Route as AuthIdeasIndexRouteImport } from './routes/_auth/ideas/index'
+import { Route as AuthSettingsNotificationsRouteImport } from './routes/_auth/settings.notifications'
 import { Route as AuthProfileProblemsRouteImport } from './routes/_auth/profile/problems'
 import { Route as AuthProfileIdeasRouteImport } from './routes/_auth/profile/ideas'
 import { Route as AuthProblemsNewRouteImport } from './routes/_auth/problems/new'
@@ -111,6 +112,12 @@ const AuthIdeasIndexRoute = AuthIdeasIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthIdeasRouteRoute,
 } as any)
+const AuthSettingsNotificationsRoute =
+  AuthSettingsNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthSettingsRoute,
+  } as any)
 const AuthProfileProblemsRoute = AuthProfileProblemsRouteImport.update({
   id: '/problems',
   path: '/problems',
@@ -152,7 +159,7 @@ export interface FileRoutesByFullPath {
   '/problems': typeof AuthProblemsRouteRouteWithChildren
   '/profile': typeof AuthProfileRouteRouteWithChildren
   '/search': typeof AuthSearchRoute
-  '/settings': typeof AuthSettingsRoute
+  '/settings': typeof AuthSettingsRouteWithChildren
   '/statistics': typeof AuthStatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/ideas/$ideaId': typeof AuthIdeasIdeaIdRoute
@@ -161,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/problems/new': typeof AuthProblemsNewRoute
   '/profile/ideas': typeof AuthProfileIdeasRoute
   '/profile/problems': typeof AuthProfileProblemsRoute
+  '/settings/notifications': typeof AuthSettingsNotificationsRoute
   '/ideas/': typeof AuthIdeasIndexRoute
   '/problems/': typeof AuthProblemsIndexRoute
   '/profile/': typeof AuthProfileIndexRoute
@@ -171,7 +179,7 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof AuthSearchRoute
-  '/settings': typeof AuthSettingsRoute
+  '/settings': typeof AuthSettingsRouteWithChildren
   '/statistics': typeof AuthStatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/': typeof AuthIndexRoute
@@ -181,6 +189,7 @@ export interface FileRoutesByTo {
   '/problems/new': typeof AuthProblemsNewRoute
   '/profile/ideas': typeof AuthProfileIdeasRoute
   '/profile/problems': typeof AuthProfileProblemsRoute
+  '/settings/notifications': typeof AuthSettingsNotificationsRoute
   '/ideas': typeof AuthIdeasIndexRoute
   '/problems': typeof AuthProblemsIndexRoute
   '/profile': typeof AuthProfileIndexRoute
@@ -196,7 +205,7 @@ export interface FileRoutesById {
   '/_auth/problems': typeof AuthProblemsRouteRouteWithChildren
   '/_auth/profile': typeof AuthProfileRouteRouteWithChildren
   '/_auth/search': typeof AuthSearchRoute
-  '/_auth/settings': typeof AuthSettingsRoute
+  '/_auth/settings': typeof AuthSettingsRouteWithChildren
   '/_auth/statistics': typeof AuthStatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/_auth/': typeof AuthIndexRoute
@@ -206,6 +215,7 @@ export interface FileRoutesById {
   '/_auth/problems/new': typeof AuthProblemsNewRoute
   '/_auth/profile/ideas': typeof AuthProfileIdeasRoute
   '/_auth/profile/problems': typeof AuthProfileProblemsRoute
+  '/_auth/settings/notifications': typeof AuthSettingsNotificationsRoute
   '/_auth/ideas/': typeof AuthIdeasIndexRoute
   '/_auth/problems/': typeof AuthProblemsIndexRoute
   '/_auth/profile/': typeof AuthProfileIndexRoute
@@ -231,6 +241,7 @@ export interface FileRouteTypes {
     | '/problems/new'
     | '/profile/ideas'
     | '/profile/problems'
+    | '/settings/notifications'
     | '/ideas/'
     | '/problems/'
     | '/profile/'
@@ -251,6 +262,7 @@ export interface FileRouteTypes {
     | '/problems/new'
     | '/profile/ideas'
     | '/profile/problems'
+    | '/settings/notifications'
     | '/ideas'
     | '/problems'
     | '/profile'
@@ -275,6 +287,7 @@ export interface FileRouteTypes {
     | '/_auth/problems/new'
     | '/_auth/profile/ideas'
     | '/_auth/profile/problems'
+    | '/_auth/settings/notifications'
     | '/_auth/ideas/'
     | '/_auth/problems/'
     | '/_auth/profile/'
@@ -403,6 +416,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthIdeasIndexRouteImport
       parentRoute: typeof AuthIdeasRouteRoute
     }
+    '/_auth/settings/notifications': {
+      id: '/_auth/settings/notifications'
+      path: '/notifications'
+      fullPath: '/settings/notifications'
+      preLoaderRoute: typeof AuthSettingsNotificationsRouteImport
+      parentRoute: typeof AuthSettingsRoute
+    }
     '/_auth/profile/problems': {
       id: '/_auth/profile/problems'
       path: '/problems'
@@ -494,12 +514,24 @@ const AuthProfileRouteRouteChildren: AuthProfileRouteRouteChildren = {
 const AuthProfileRouteRouteWithChildren =
   AuthProfileRouteRoute._addFileChildren(AuthProfileRouteRouteChildren)
 
+interface AuthSettingsRouteChildren {
+  AuthSettingsNotificationsRoute: typeof AuthSettingsNotificationsRoute
+}
+
+const AuthSettingsRouteChildren: AuthSettingsRouteChildren = {
+  AuthSettingsNotificationsRoute: AuthSettingsNotificationsRoute,
+}
+
+const AuthSettingsRouteWithChildren = AuthSettingsRoute._addFileChildren(
+  AuthSettingsRouteChildren,
+)
+
 interface AuthRouteChildren {
   AuthIdeasRouteRoute: typeof AuthIdeasRouteRouteWithChildren
   AuthProblemsRouteRoute: typeof AuthProblemsRouteRouteWithChildren
   AuthProfileRouteRoute: typeof AuthProfileRouteRouteWithChildren
   AuthSearchRoute: typeof AuthSearchRoute
-  AuthSettingsRoute: typeof AuthSettingsRoute
+  AuthSettingsRoute: typeof AuthSettingsRouteWithChildren
   AuthStatisticsRoute: typeof AuthStatisticsRoute
   AuthIndexRoute: typeof AuthIndexRoute
 }
@@ -509,7 +541,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthProblemsRouteRoute: AuthProblemsRouteRouteWithChildren,
   AuthProfileRouteRoute: AuthProfileRouteRouteWithChildren,
   AuthSearchRoute: AuthSearchRoute,
-  AuthSettingsRoute: AuthSettingsRoute,
+  AuthSettingsRoute: AuthSettingsRouteWithChildren,
   AuthStatisticsRoute: AuthStatisticsRoute,
   AuthIndexRoute: AuthIndexRoute,
 }
