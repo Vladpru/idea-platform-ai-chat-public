@@ -1,10 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { render } from '@react-email/components';
 import sgMail from '@sendgrid/mail';
 
 import { buildNotificationEmail } from './lib/build-notification-email';
-import { WelcomeEmail } from './templates/WelcomeEmail';
 import { buildPasswordResetEmail } from './templates/password-reset';
 import type { EnrichedEmailContext } from './types/enriched-email.types';
 import type { NotificationEmailJobData } from './types/notification-email.types';
@@ -20,10 +18,8 @@ export class MailService {
   }
 
   async sendWelcomeEmail(params: { to: string }) {
-    const subject = 'Welcome to The Idea Platform';
-
-    const html = await render(WelcomeEmail());
-    const text = await render(WelcomeEmail(), { plainText: true });
+    const { buildWelcomeEmail } = await import('./templates/welcome-email');
+    const { subject, text, html } = await buildWelcomeEmail();
 
     try {
       await sgMail.send({

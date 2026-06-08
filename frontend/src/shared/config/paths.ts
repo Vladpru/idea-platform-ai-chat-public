@@ -17,6 +17,7 @@ export const ROUTES = {
     `/problems/${id}?tab=discussion&replyTo=${encodeURIComponent(commentId)}`,
   search: '/search',
   statistics: '/statistics',
+  statisticsLeaderboard: '/statistic/leaderboard',
   profile: '/profile',
   settings: '/settings',
   settingsNotifications: '/settings/notifications',

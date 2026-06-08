@@ -20,7 +20,9 @@ export function EmailEntityCard({ entity }: EmailEntityCardProps) {
         />
       ) : null}
 
-      <Text className="m-0 mb-3 text-lg font-bold text-black">{entity.title}</Text>
+      <Text className="m-0 mb-3 text-lg font-bold text-black">
+        {entity.title}
+      </Text>
 
       <Row className="mb-3">
         <Column className="w-[32px] pr-2" valign="middle">
@@ -47,7 +49,7 @@ export function EmailEntityCard({ entity }: EmailEntityCardProps) {
       </Row>
 
       {entity.descriptionExcerpt ? (
-        <Text className="m-0 mb-4 text-[14px] leading-[24px] text-[#4b5563] [font-family:Georgia,Times_New_Roman,serif]">
+        <Text className="m-0 mb-4 [font-family:Georgia,Times_New_Roman,serif] text-[14px] leading-[24px] text-[#4b5563]">
           {entity.descriptionExcerpt}
         </Text>
       ) : null}

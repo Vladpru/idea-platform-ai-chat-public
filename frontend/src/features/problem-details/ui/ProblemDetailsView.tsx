@@ -1,6 +1,6 @@
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
-import { EntityAiSummaryBlock } from '@/features/entity-ai-summary/EntityAiSummaryBlock';
 import { DiscussionTab } from '@/features/discussion/ui/DiscussionTab';
+import { EntityAiSummaryBlock } from '@/features/entity-ai-summary/EntityAiSummaryBlock';
 import { IdeaStatsFooter } from '@/features/idea-details/ui/IdeaStatsFooter';
 import { IdeaTagCloud } from '@/features/idea-details/ui/IdeaTagCloud';
 import {
@@ -20,6 +20,7 @@ import { ArrowLeft } from 'lucide-react';
 import { type MouseEvent, useCallback, useEffect, useState } from 'react';
 
 import { ROUTES } from '@/shared/config/paths';
+import { entityDescriptionDetailClass } from '@/shared/lib/entity-description-classes';
 import { cn } from '@/shared/lib/utils';
 import { AnimatedPanel, AnimatedPanelSwitch } from '@/shared/ui/motion';
 import { SuccessModal } from '@/shared/ui/success-modal';
@@ -55,7 +56,16 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
   const visibleTab = searchDiscussionTab ?? activeTab;
   const [isScrolled, setIsScrolled] = useState(false);
   const [updatedSuccessOpen, setUpdatedSuccessOpen] = useState(false);
+  const [prevShowUpdatedSuccess, setPrevShowUpdatedSuccess] =
+    useState(showUpdatedSuccess);
   const userId = useAuthSessionStore(s => s.user?.id);
+
+  if (showUpdatedSuccess !== prevShowUpdatedSuccess) {
+    setPrevShowUpdatedSuccess(showUpdatedSuccess);
+    if (showUpdatedSuccess) {
+      setUpdatedSuccessOpen(true);
+    }
+  }
 
   const {
     data: problem,
@@ -92,12 +102,12 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
       return;
     }
 
-    setUpdatedSuccessOpen(true);
     void navigate({
       to: ROUTES.problemDetail(problemId),
       search: previous => {
-        const { updated: _updated, ...rest } = previous;
-        return rest;
+        const next = { ...previous };
+        delete next.updated;
+        return next;
       },
       replace: true,
     });
@@ -164,7 +174,7 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
           ) : null}
         </AnimatePresence>
 
-        <div className="bg-card sticky top-[56px] z-30 -mx-4 px-4 py-3 shadow-sm transition-all duration-300 sm:-mx-6 sm:px-6">
+        <div className="bg-card sticky top-[56px] z-30 -mx-4 px-4 py-3 shadow-none transition-all duration-300 sm:-mx-6 sm:px-6">
           <ProblemHeader
             problem={problem}
             isAuthor={isAuthor}
@@ -204,7 +214,7 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
                   summaryStatus={problem.summaryStatus}
                 />
                 {problem.description ? (
-                  <p className="text-brand-gray-800 font-EB-Garamond max-w-full min-w-0 text-sm leading-relaxed wrap-break-word whitespace-pre-wrap sm:text-base">
+                  <p className={entityDescriptionDetailClass}>
                     {problem.description}
                   </p>
                 ) : (

@@ -12,6 +12,7 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@fontsource-variable/eb-garamond": "^5.2.7",
     "@fontsource-variable/geist": "^5.2.8",
     "@hookform/resolvers": "^5.2.2",
     "@tailwindcss/vite": "^4.3.0",

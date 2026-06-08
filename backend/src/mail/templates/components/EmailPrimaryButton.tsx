@@ -18,12 +18,11 @@ export function EmailPrimaryButton({
 }: EmailPrimaryButtonProps) {
   return (
     <Section
-      className={withSpacing ? 'mt-[24px] mb-[24px] text-center' : 'text-center'}
+      className={
+        withSpacing ? 'mt-[24px] mb-[24px] text-center' : 'text-center'
+      }
     >
-      <Button
-        href={href}
-        className={className ?? emailClasses.primaryButton}
-      >
+      <Button href={href} className={className ?? emailClasses.primaryButton}>
         {label}
       </Button>
     </Section>

@@ -2,12 +2,14 @@
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
 @import '@fontsource-variable/geist';
+@import '@fontsource-variable/eb-garamond';
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --font-heading: var(--font-sans);
   --font-sans: 'Geist Variable', sans-serif;
+  --font-description: 'EB Garamond Variable', 'EB Garamond', serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -66,6 +68,7 @@
   --color-brand-gray-mobile: var(--brand-gray-mobile);
   --color-brand-gray-200: var(--brand-gray-200);
   --color-brand-gray-100: var(--brand-gray-100);
+  --color-brand-gray-50: var(--brand-gray-50);
   --color-brand-hover-red-700: var(--brand-hover-red-700);
   --color-brand-orange: var(--brand-orange);
   --color-brand-orange-hover: var(--brand-orange-hover);
@@ -82,10 +85,19 @@
   --color-statistics-chart-axis-value: var(--statistics-chart-axis-value);
   --color-statistics-chart-cursor: var(--statistics-chart-cursor);
   --color-statistics-chart-dot-ring: var(--statistics-chart-dot-ring);
+  --color-ideas: var(--statistics-series-ideas);
+  --color-problems: var(--statistics-series-problems);
+  --color-activeUsers: var(--statistics-series-active-users);
+  --color-newUsers: var(--statistics-series-new-users);
+  --color-updates: var(--statistics-series-updates);
+  --color-comments: var(--statistics-series-comments);
+  --color-views: var(--statistics-series-views);
+  --color-likes: var(--statistics-series-likes);
   --color-header-background: var(--header-background);
 
   --shadow-shadow-soft: var(--shadow-soft);
 
+  --radius-xs: 4px;
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -172,6 +184,7 @@
   --brand-gray-400: #a8b0b9;
   --brand-gray-200: #e4e8ec;
   --brand-gray-100: #f5f7fa;
+  --brand-gray-50: #fafbfc;
   --brand-extra-black: #000000;
   --brand-black: #101820;
   --brand-dark-blue: #003057;
@@ -188,13 +201,22 @@
   --idea-archived: #8c3890;
   --idea-paused: #4e6374;
 
-  /* Statistics — new ideas line chart */
+  /* Statistics charts */
   --statistics-chart-line: var(--brand-dark-blue);
-  --statistics-chart-grid: var(--brand-gray-200);
+  --statistics-chart-grid: #e8ebef;
+  --statistics-chart-plot-bg: var(--brand-white);
   --statistics-chart-axis-label: var(--brand-gray-600);
   --statistics-chart-axis-value: var(--brand-gray-500);
   --statistics-chart-cursor: var(--brand-gray-200);
   --statistics-chart-dot-ring: var(--brand-white);
+  --statistics-series-ideas: #003057;
+  --statistics-series-problems: #ffa900;
+  --statistics-series-active-users: #2b787c;
+  --statistics-series-new-users: #7cb342;
+  --statistics-series-updates: #e10600;
+  --statistics-series-comments: #8c3890;
+  --statistics-series-views: #4a7fd4;
+  --statistics-series-likes: #2b787c;
 
   --shadow-soft:
     0px 3px 6px rgba(145, 145, 145, 0.1),
@@ -277,6 +299,7 @@
   --idea-paused: #7b94aa;
   --statistics-chart-line: hsl(207, 76%, 63%);
   --statistics-chart-grid: rgba(255, 255, 255, 0.1);
+  --statistics-chart-plot-bg: var(--card);
   --statistics-chart-axis-label: #9aa6b4;
   --statistics-chart-axis-value: #88919a;
   --statistics-chart-cursor: rgba(255, 255, 255, 0.15);
@@ -315,6 +338,12 @@
   --sidebar-ring: oklch(0.556 0 0);
   --skeleton-base: #252d38;
   --skeleton-shine-peak: rgba(255, 255, 255, 0.22);
+}
+
+@utility font-description {
+  font-family: var(--font-description);
+  font-weight: 420;
+  font-style: normal;
 }
 
 @layer utilities {

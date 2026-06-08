@@ -28,9 +28,7 @@ const PasswordResetEmailTemplate = ({
         Click the button below to set up a new password.
       </Text>
 
-      <EmailCtaGroup
-        primary={{ href: resetUrl, label: 'Reset Password' }}
-      />
+      <EmailCtaGroup primary={{ href: resetUrl, label: 'Reset Password' }} />
 
       <Text className={emailClasses.bodyText}>
         This link will expire in <strong>{expiresMinutes} minutes</strong>.

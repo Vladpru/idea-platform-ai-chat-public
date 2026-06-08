@@ -1,13 +1,24 @@
-export type StatisticsPeriod = 'week' | 'month' | 'year';
+export type StatisticsPeriod =
+  | 'day'
+  | 'month'
+  | 'year'
+  | 'year_to_date'
+  | 'all_time';
 
-export type NewIdeasDataPoint = {
+export type StatisticsChartRow = {
   label: string;
-  value: number;
+  [seriesKey: string]: string | number;
 };
 
-export type StatusChangeItem = {
+export type StatisticsChartSeriesMeta = {
+  key: string;
   label: string;
-  percent: number;
+  total: number;
+};
+
+export type StatisticsChartPanel = {
+  series: StatisticsChartSeriesMeta[];
+  rows: StatisticsChartRow[];
 };
 
 export type StatMetric = {
@@ -18,15 +29,57 @@ export type StatMetric = {
 export type TopContributor = {
   id: string;
   name: string;
-  score: number;
+  points: number;
   avatarUrl: string | null;
 };
 
+export type LeaderboardBreakdown = {
+  ideas: number;
+  updates: number;
+  joinedProjects: number;
+  comments: number;
+  views: number;
+  likes: number;
+};
+
+export type LeaderboardEntry = {
+  id: string;
+  name: string;
+  points: number;
+  avatarUrl: string | null;
+  breakdown: LeaderboardBreakdown;
+};
+
+export type LeaderboardResponse = {
+  entries: LeaderboardEntry[];
+};
+
+export type StatisticsCharts = {
+  newEntities: StatisticsChartPanel;
+  users: StatisticsChartPanel;
+  activity: StatisticsChartPanel;
+};
+
+export type ScoreCategoryKey = keyof LeaderboardBreakdown;
+
+export type MyScoreCategory = {
+  key: ScoreCategoryKey;
+  label: string;
+  countLabel: string;
+  count: number;
+  points: number;
+};
+
+export type MyScore = {
+  totalPoints: number;
+  categories: MyScoreCategory[];
+};
+
 export type StatisticsSnapshot = {
-  newIdeasTotal: number;
-  newIdeasSeries: NewIdeasDataPoint[];
-  statusChanges: StatusChangeItem[];
+  charts: StatisticsCharts;
   users: StatMetric[];
   activity: StatMetric[];
   topContributors: TopContributor[];
+  costBenefitTotal: number;
+  myScore: MyScore;
 };

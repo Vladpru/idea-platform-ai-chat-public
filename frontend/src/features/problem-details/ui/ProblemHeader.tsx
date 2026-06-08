@@ -147,7 +147,7 @@ export function ProblemHeader({
           <ArrowLeft className="size-4" />
           Back
         </button>
-        <h1 className="text-brand-black line-clamp-1 min-w-0 flex-1 text-sm font-bold">
+        <h1 className="text-brand-black ml-5 line-clamp-1 min-w-0 flex-1 text-base font-bold">
           {title}
         </h1>
         <ManageDropdown
@@ -169,7 +169,7 @@ export function ProblemHeader({
         transition={{ duration: 0.2 }}
         className="overflow-hidden"
       >
-        <div className="flex flex-col gap-4 pb-4 md:flex-row md:items-start md:justify-between">
+        <div className="flex flex-col gap-4 pb-4 shadow-none md:flex-row md:items-start md:justify-between">
           <div className="min-w-0 flex-1 space-y-4">
             <h1 className={cn(pageTitleClass, 'text-brand-black normal-case')}>
               {title}

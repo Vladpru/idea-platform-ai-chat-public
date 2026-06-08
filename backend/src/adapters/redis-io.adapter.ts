@@ -1,16 +1,19 @@
 import { INestApplicationContext, Logger } from '@nestjs/common';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
-import Redis from 'ioredis';
+import { Redis as IORedis } from 'ioredis';
 import { Server, type ServerOptions } from 'socket.io';
+
+type RedisClient = IORedis;
+type RedisClosable = Pick<RedisClient, 'quit' | 'disconnect'>;
 
 type RedisAdapterFactory = ReturnType<typeof createAdapter>;
 
 export class RedisIoAdapter extends IoAdapter {
   private readonly logger = new Logger(RedisIoAdapter.name);
   private adapterConstructor!: RedisAdapterFactory;
-  private pubClient!: Redis;
-  private subClient!: Redis;
+  private pubClient!: RedisClient;
+  private subClient!: RedisClient;
 
   constructor(app: INestApplicationContext) {
     super(app);
@@ -22,7 +25,7 @@ export class RedisIoAdapter extends IoAdapter {
       throw new Error('REDIS_URL is required but was not configured');
     }
 
-    const pubClient = new Redis(trimmedUrl, {
+    const pubClient = new IORedis(trimmedUrl, {
       maxRetriesPerRequest: 3,
       lazyConnect: true,
     });
@@ -60,8 +63,8 @@ export class RedisIoAdapter extends IoAdapter {
   }
 
   private async disconnectClients(
-    pubClient: Redis | null | undefined,
-    subClient: Redis | null | undefined,
+    pubClient: RedisClosable | null | undefined,
+    subClient: RedisClosable | null | undefined,
   ): Promise<void> {
     const tasks: Promise<unknown>[] = [];
     if (pubClient) {

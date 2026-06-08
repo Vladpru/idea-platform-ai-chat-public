@@ -25,6 +25,7 @@ import { Route as AuthIdeasRouteRouteImport } from './routes/_auth/ideas/route'
 import { Route as AuthProfileIndexRouteImport } from './routes/_auth/profile/index'
 import { Route as AuthProblemsIndexRouteImport } from './routes/_auth/problems/index'
 import { Route as AuthIdeasIndexRouteImport } from './routes/_auth/ideas/index'
+import { Route as AuthStatisticLeaderboardRouteImport } from './routes/_auth/statistic/leaderboard'
 import { Route as AuthSettingsNotificationsRouteImport } from './routes/_auth/settings.notifications'
 import { Route as AuthProfileProblemsRouteImport } from './routes/_auth/profile/problems'
 import { Route as AuthProfileIdeasRouteImport } from './routes/_auth/profile/ideas'
@@ -112,6 +113,12 @@ const AuthIdeasIndexRoute = AuthIdeasIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthIdeasRouteRoute,
 } as any)
+const AuthStatisticLeaderboardRoute =
+  AuthStatisticLeaderboardRouteImport.update({
+    id: '/statistic/leaderboard',
+    path: '/statistic/leaderboard',
+    getParentRoute: () => AuthRoute,
+  } as any)
 const AuthSettingsNotificationsRoute =
   AuthSettingsNotificationsRouteImport.update({
     id: '/notifications',
@@ -169,6 +176,7 @@ export interface FileRoutesByFullPath {
   '/profile/ideas': typeof AuthProfileIdeasRoute
   '/profile/problems': typeof AuthProfileProblemsRoute
   '/settings/notifications': typeof AuthSettingsNotificationsRoute
+  '/statistic/leaderboard': typeof AuthStatisticLeaderboardRoute
   '/ideas/': typeof AuthIdeasIndexRoute
   '/problems/': typeof AuthProblemsIndexRoute
   '/profile/': typeof AuthProfileIndexRoute
@@ -190,6 +198,7 @@ export interface FileRoutesByTo {
   '/profile/ideas': typeof AuthProfileIdeasRoute
   '/profile/problems': typeof AuthProfileProblemsRoute
   '/settings/notifications': typeof AuthSettingsNotificationsRoute
+  '/statistic/leaderboard': typeof AuthStatisticLeaderboardRoute
   '/ideas': typeof AuthIdeasIndexRoute
   '/problems': typeof AuthProblemsIndexRoute
   '/profile': typeof AuthProfileIndexRoute
@@ -216,6 +225,7 @@ export interface FileRoutesById {
   '/_auth/profile/ideas': typeof AuthProfileIdeasRoute
   '/_auth/profile/problems': typeof AuthProfileProblemsRoute
   '/_auth/settings/notifications': typeof AuthSettingsNotificationsRoute
+  '/_auth/statistic/leaderboard': typeof AuthStatisticLeaderboardRoute
   '/_auth/ideas/': typeof AuthIdeasIndexRoute
   '/_auth/problems/': typeof AuthProblemsIndexRoute
   '/_auth/profile/': typeof AuthProfileIndexRoute
@@ -242,6 +252,7 @@ export interface FileRouteTypes {
     | '/profile/ideas'
     | '/profile/problems'
     | '/settings/notifications'
+    | '/statistic/leaderboard'
     | '/ideas/'
     | '/problems/'
     | '/profile/'
@@ -263,6 +274,7 @@ export interface FileRouteTypes {
     | '/profile/ideas'
     | '/profile/problems'
     | '/settings/notifications'
+    | '/statistic/leaderboard'
     | '/ideas'
     | '/problems'
     | '/profile'
@@ -288,6 +300,7 @@ export interface FileRouteTypes {
     | '/_auth/profile/ideas'
     | '/_auth/profile/problems'
     | '/_auth/settings/notifications'
+    | '/_auth/statistic/leaderboard'
     | '/_auth/ideas/'
     | '/_auth/problems/'
     | '/_auth/profile/'
@@ -416,6 +429,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthIdeasIndexRouteImport
       parentRoute: typeof AuthIdeasRouteRoute
     }
+    '/_auth/statistic/leaderboard': {
+      id: '/_auth/statistic/leaderboard'
+      path: '/statistic/leaderboard'
+      fullPath: '/statistic/leaderboard'
+      preLoaderRoute: typeof AuthStatisticLeaderboardRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_auth/settings/notifications': {
       id: '/_auth/settings/notifications'
       path: '/notifications'
@@ -534,6 +554,7 @@ interface AuthRouteChildren {
   AuthSettingsRoute: typeof AuthSettingsRouteWithChildren
   AuthStatisticsRoute: typeof AuthStatisticsRoute
   AuthIndexRoute: typeof AuthIndexRoute
+  AuthStatisticLeaderboardRoute: typeof AuthStatisticLeaderboardRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
@@ -544,6 +565,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthSettingsRoute: AuthSettingsRouteWithChildren,
   AuthStatisticsRoute: AuthStatisticsRoute,
   AuthIndexRoute: AuthIndexRoute,
+  AuthStatisticLeaderboardRoute: AuthStatisticLeaderboardRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)

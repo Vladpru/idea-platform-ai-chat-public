@@ -12,7 +12,7 @@ export const homeOverviewKeys = {
   ideasTotals: () => [...homeOverviewKeys.all, 'ideas-totals'] as const,
   problemsTotals: () => [...homeOverviewKeys.all, 'problems-totals'] as const,
   statistics: (timeZone: string) =>
-    [...homeOverviewKeys.all, 'statistics', 'week', timeZone] as const,
+    [...homeOverviewKeys.all, 'statistics', 'month', timeZone] as const,
 };
 
 type DashboardTotals = {
@@ -41,7 +41,7 @@ export function useHomeOverview() {
       },
       {
         queryKey: homeOverviewKeys.statistics(timeZone),
-        queryFn: () => fetchStatisticsSnapshot('week', timeZone),
+        queryFn: () => fetchStatisticsSnapshot('month', timeZone),
       },
     ],
   });
