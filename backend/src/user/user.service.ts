@@ -7,7 +7,13 @@ import {
 } from '@nestjs/common';
 import { hash, verify } from 'argon2';
 
+import { Prisma, ThemePreference } from '../../generated/prisma/client';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import type { NotificationPreferencesMap } from '../notification/events/notification.events';
+import {
+  mergeNotificationPreferences,
+  parseNotificationPreferences,
+} from '../notification/lib/notification-preferences.util';
 import { PrismaService } from '../prisma/prisma.service';
 import type { UserPublic } from '../shared/types/user.types';
 import { isUniqueConstraintError } from '../shared/utils/is-unique-error.util';
@@ -17,7 +23,7 @@ import {
 } from '../shared/utils/validate-password.util';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { CreateUserDto } from './dto/create-user.dto';
-import { ThemePreference } from '../../generated/prisma/client';
+import { UpdateNotificationPreferencesDto } from './dto/update-notification-preferences.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import type {
   UpsertOAuthUserInput,
@@ -31,9 +37,31 @@ const USER_PUBLIC_SELECT = {
   lastName: true,
   avatarUrl: true,
   themePreference: true,
+  notificationPreferences: true,
   createdAt: true,
   updatedAt: true,
 } as const;
+
+function toUserPublic(user: {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  avatarUrl: string | null;
+  themePreference: ThemePreference;
+  notificationPreferences: unknown;
+  createdAt: Date;
+  updatedAt: Date;
+}): UserPublic {
+  return {
+    ...user,
+    notificationPreferences: parseNotificationPreferences(
+      user.notificationPreferences as Parameters<
+        typeof parseNotificationPreferences
+      >[0],
+    ),
+  };
+}
 
 @Injectable()
 export class UserService {
@@ -50,7 +78,7 @@ export class UserService {
     const hashedPassword = await hash(dto.password);
 
     try {
-      return await this.prisma.user.create({
+      const user = await this.prisma.user.create({
         data: {
           email: dto.email.toLowerCase(),
           firstName: dto.firstName,
@@ -59,6 +87,7 @@ export class UserService {
         },
         select: USER_PUBLIC_SELECT,
       });
+      return toUserPublic(user);
     } catch (error: unknown) {
       if (isUniqueConstraintError(error)) {
         throw new ConflictException('User with this email already exists');
@@ -90,7 +119,7 @@ export class UserService {
       select: { id: true },
     });
 
-    const user: UserPublic = await this.prisma.user.upsert({
+    const userRecord = await this.prisma.user.upsert({
       where: { email: dto.email },
       update: {},
       create: {
@@ -102,14 +131,27 @@ export class UserService {
       select: USER_PUBLIC_SELECT,
     });
 
+    const user = toUserPublic(userRecord);
+
     return { user, isNewUser: existing === null };
   }
 
-  findAll() {
-    return this.prisma.user.findMany({
-      orderBy: { createdAt: 'desc' },
-      select: USER_PUBLIC_SELECT,
-    });
+  async findAll(limit: number = 50, cursor?: string) {
+    const users = cursor
+      ? await this.prisma.user.findMany({
+          take: limit,
+          skip: 1,
+          cursor: { id: cursor },
+          orderBy: { createdAt: 'desc' },
+          select: USER_PUBLIC_SELECT,
+        })
+      : await this.prisma.user.findMany({
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+          select: USER_PUBLIC_SELECT,
+        });
+
+    return users.map(toUserPublic);
   }
 
   async findOne(id: string): Promise<UserPublic> {
@@ -118,7 +160,7 @@ export class UserService {
       select: USER_PUBLIC_SELECT,
     });
     if (!user) throw new NotFoundException(`User not found`);
-    return user;
+    return toUserPublic(user);
   }
 
   getProfileForUser(id: string): Promise<UserPublic> {
@@ -129,17 +171,24 @@ export class UserService {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
 
-    if (user.avatarUrl) {
-      await this.cloudinary.deleteAvatar(user.avatarUrl);
-    }
-
     const secureUrl = await this.cloudinary.uploadAvatar(file);
 
-    return this.prisma.user.update({
-      where: { id: userId },
-      data: { avatarUrl: secureUrl },
-      select: USER_PUBLIC_SELECT,
-    });
+    try {
+      const updated = await this.prisma.user.update({
+        where: { id: userId },
+        data: { avatarUrl: secureUrl },
+        select: USER_PUBLIC_SELECT,
+      });
+
+      if (user.avatarUrl) {
+        void this.cloudinary.deleteAvatar(user.avatarUrl).catch(() => null);
+      }
+
+      return toUserPublic(updated);
+    } catch (error) {
+      void this.cloudinary.deleteAvatar(secureUrl).catch(() => null);
+      throw error;
+    }
   }
 
   async removeAvatar(userId: string) {
@@ -147,15 +196,17 @@ export class UserService {
 
     if (!user) throw new NotFoundException('User not found');
 
-    if (user.avatarUrl) {
-      await this.cloudinary.deleteAvatar(user.avatarUrl);
-    }
-
-    return this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id: userId },
       data: { avatarUrl: null },
       select: USER_PUBLIC_SELECT,
     });
+
+    if (user.avatarUrl) {
+      void this.cloudinary.deleteAvatar(user.avatarUrl).catch(() => null);
+    }
+
+    return toUserPublic(updated);
   }
 
   async changePassword(userId: string, dto: ChangePasswordDto) {
@@ -212,10 +263,49 @@ export class UserService {
   }
 
   async updateTheme(userId: string, theme: ThemePreference) {
-    return this.prisma.user.update({
+    const user = await this.prisma.user.update({
       where: { id: userId },
       data: { themePreference: theme },
       select: USER_PUBLIC_SELECT,
+    });
+
+    return toUserPublic(user);
+  }
+
+  async updateNotificationPreferences(
+    userId: string,
+    dto: UpdateNotificationPreferencesDto,
+  ): Promise<{ notificationPreferences: NotificationPreferencesMap }> {
+    return this.prisma.$transaction(async tx => {
+      const lockedRows = await tx.$queryRaw<
+        Array<{ notification_preferences: Prisma.JsonValue }>
+      >`
+        SELECT notification_preferences
+        FROM "user"
+        WHERE id = ${userId}
+        FOR UPDATE
+      `;
+
+      const row = lockedRows[0];
+
+      if (!row) {
+        throw new NotFoundException('User not found');
+      }
+
+      const current = parseNotificationPreferences(
+        row.notification_preferences,
+      );
+      const merged = mergeNotificationPreferences(
+        current,
+        dto as Partial<NotificationPreferencesMap>,
+      );
+
+      await tx.user.update({
+        where: { id: userId },
+        data: { notificationPreferences: merged },
+      });
+
+      return { notificationPreferences: merged };
     });
   }
 
@@ -229,11 +319,12 @@ export class UserService {
     }
 
     try {
-      return await this.prisma.user.update({
+      const user = await this.prisma.user.update({
         where: { id },
         data,
         select: USER_PUBLIC_SELECT,
       });
+      return toUserPublic(user);
     } catch (error: unknown) {
       if (isUniqueConstraintError(error)) {
         throw new ConflictException('User with this email already exists');

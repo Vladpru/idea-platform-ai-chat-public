@@ -2,6 +2,21 @@ import { api } from '@/shared/api/http';
 
 export type ThemePreference = 'LIGHT' | 'DARK' | 'SYSTEM';
 
+export type NotificationChannelPreferences = {
+  inApp: boolean;
+  email: boolean;
+};
+
+export type NotificationPreferencesMap = {
+  newSimilarIdeas: NotificationChannelPreferences;
+  newSimilarProblems: NotificationChannelPreferences;
+  statusChange: NotificationChannelPreferences;
+  newSupporters: NotificationChannelPreferences;
+  newComments: NotificationChannelPreferences;
+  assignedIdeasAndProblems: NotificationChannelPreferences;
+  followUps: NotificationChannelPreferences;
+};
+
 /** Matches backend `UserPublic` (JSON dates). */
 export type UserPublic = {
   id: string;
@@ -10,6 +25,7 @@ export type UserPublic = {
   lastName: string | null;
   avatarUrl: string | null;
   themePreference: ThemePreference;
+  notificationPreferences: NotificationPreferencesMap;
   createdAt: string;
   updatedAt: string;
 };

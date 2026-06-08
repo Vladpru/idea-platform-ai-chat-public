@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 import { GeminiService } from '../ai/gemini.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -7,6 +8,7 @@ import {
   buildProblemEmbeddingContent,
   hashEmbeddingContent,
 } from './embedding-content.util';
+import { EMBEDDING_EVENTS } from './embedding.events';
 
 @Injectable()
 export class EntityEmbeddingSyncService {
@@ -15,6 +17,7 @@ export class EntityEmbeddingSyncService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly geminiService: GeminiService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async processPendingBatch(limit: number): Promise<void> {
@@ -23,9 +26,19 @@ export class EntityEmbeddingSyncService {
   }
 
   private async processIdeas(limit: number): Promise<void> {
+    const lockedRows = await this.prisma.$queryRaw<{ id: string }[]>`
+      SELECT id FROM "idea"
+      WHERE "embedding_hash" IS NULL
+      LIMIT ${limit}
+      FOR UPDATE SKIP LOCKED
+    `;
+
+    if (!lockedRows || lockedRows.length === 0) return;
+
+    const ids = lockedRows.map(row => row.id);
+
     const pending = await this.prisma.idea.findMany({
-      where: { embeddingHash: null },
-      take: limit,
+      where: { id: { in: ids } },
       select: {
         id: true,
         title: true,
@@ -50,22 +63,42 @@ export class EntityEmbeddingSyncService {
 
         const vectorLiteral = `[${vector.join(',')}]`;
 
-        await this.prisma.$executeRawUnsafe(
-          `UPDATE idea SET ai_embedding = $1::vector, embedding_hash = $2 WHERE id = $3`,
+        await this.prisma.$executeRaw`
+          UPDATE "idea" 
+          SET "ai_embedding" = ${vectorLiteral}::vector, "embedding_hash" = ${hash} 
+          WHERE id = ${idea.id}
+        `;
+
+        this.eventEmitter.emit(EMBEDDING_EVENTS.SYNCED, {
+          entityType: 'idea',
+          entityId: idea.id,
           vectorLiteral,
-          hash,
-          idea.id,
-        );
+        });
       } catch (error) {
         this.logger.error(`Failed to sync idea ${idea.id}`, error);
+        await this.prisma.$executeRaw`
+          UPDATE "idea" 
+          SET "embedding_hash" = 'ERROR' 
+          WHERE id = ${idea.id}
+        `;
       }
     }
   }
 
   private async processProblems(limit: number): Promise<void> {
+    const lockedRows = await this.prisma.$queryRaw<{ id: string }[]>`
+      SELECT id FROM "problem"
+      WHERE "embedding_hash" IS NULL
+      LIMIT ${limit}
+      FOR UPDATE SKIP LOCKED
+    `;
+
+    if (!lockedRows || lockedRows.length === 0) return;
+
+    const ids = lockedRows.map(row => row.id);
+
     const pending = await this.prisma.problem.findMany({
-      where: { embeddingHash: null },
-      take: limit,
+      where: { id: { in: ids } },
       select: {
         id: true,
         title: true,
@@ -96,14 +129,24 @@ export class EntityEmbeddingSyncService {
 
         const vectorLiteral = `[${vector.join(',')}]`;
 
-        await this.prisma.$executeRawUnsafe(
-          `UPDATE problem SET ai_embedding = $1::vector, embedding_hash = $2 WHERE id = $3`,
+        await this.prisma.$executeRaw`
+          UPDATE "problem" 
+          SET "ai_embedding" = ${vectorLiteral}::vector, "embedding_hash" = ${hash} 
+          WHERE id = ${problem.id}
+        `;
+
+        this.eventEmitter.emit(EMBEDDING_EVENTS.SYNCED, {
+          entityType: 'problem',
+          entityId: problem.id,
           vectorLiteral,
-          hash,
-          problem.id,
-        );
+        });
       } catch (error) {
         this.logger.error(`Failed to sync problem ${problem.id}`, error);
+        await this.prisma.$executeRaw`
+          UPDATE "problem" 
+          SET "embedding_hash" = 'ERROR' 
+          WHERE id = ${problem.id}
+        `;
       }
     }
   }

@@ -1,5 +1,6 @@
+import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -12,6 +13,7 @@ import { AuthModule } from './auth/auth.module';
 import { CommentModule } from './comment/comment.module';
 import { IdeaModule } from './idea/idea.module';
 import { MailModule } from './mail/mail.module';
+import { NotificationModule } from './notification/notification.module';
 import { PasswordResetModule } from './password-reset/password-reset.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProblemModule } from './problem/problem.module';
@@ -27,6 +29,15 @@ import { UserModule } from './user/user.module';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: `.env.${process.env.APP_ENV ?? 'development'}`,
+    }),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        connection: {
+          url: config.getOrThrow<string>('REDIS_URL'),
+        },
+      }),
     }),
     ThrottlerModule.forRoot([
       {
@@ -48,6 +59,7 @@ import { UserModule } from './user/user.module';
     PasswordResetModule,
     TokenModule,
     MailModule,
+    NotificationModule,
     SearchModule,
     SimilarityModule,
     StatisticsModule,

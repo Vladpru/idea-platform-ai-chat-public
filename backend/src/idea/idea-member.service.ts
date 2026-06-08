@@ -4,14 +4,21 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 import { IdeaStatus, Prisma } from '../../generated/prisma/client';
 import type { IdeaMemberModel } from '../../generated/prisma/models/IdeaMember';
+import { NOTIFICATION_EVENTS } from '../notification/events/notification-event-names';
+import type { SupporterAddedNotificationEvent } from '../notification/events/notification.events';
+import { resolveActorDisplayName } from '../notification/lib/notification-integration.util';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class IdeaMemberService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   private ideaMemberKey(
     ideaId: string,
@@ -23,7 +30,7 @@ export class IdeaMemberService {
   async joinIdea(ideaId: string, userId: string): Promise<IdeaMemberModel> {
     const idea = await this.prisma.idea.findUnique({
       where: { id: ideaId },
-      select: { authorId: true, status: true },
+      select: { authorId: true, status: true, title: true },
     });
 
     if (!idea) {
@@ -47,12 +54,27 @@ export class IdeaMemberService {
       throw new ConflictException();
     }
 
-    return this.prisma.ideaMember.create({
+    const member = await this.prisma.ideaMember.create({
       data: {
         ideaId,
         userId,
       },
     });
+
+    const actorName = await resolveActorDisplayName(this.prisma, userId);
+
+    const event: SupporterAddedNotificationEvent = {
+      recipientUserId: idea.authorId,
+      entityType: 'idea',
+      entityId: ideaId,
+      entityTitle: idea.title ?? 'Untitled',
+      actorId: userId,
+      actorName,
+    };
+
+    this.eventEmitter.emit(NOTIFICATION_EVENTS.IDEA_SUPPORTER_ADDED, event);
+
+    return member;
   }
 
   async leaveIdea(ideaId: string, userId: string): Promise<IdeaMemberModel> {

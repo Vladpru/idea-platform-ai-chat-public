@@ -58,28 +58,45 @@ enum SummaryStatus {
 }
 
 model User {
-  id                  String               @id @default(uuid())
-  email               String               @unique
-  firstName           String?              @map("first_name")
-  lastName            String?              @map("last_name")
-  password            String?
-  createdAt           DateTime             @default(now()) @map("created_at")
-  updatedAt           DateTime             @updatedAt @map("updated_at")
-  avatarUrl           String?              @map("avatar_url")
-  themePreference     ThemePreference      @default(SYSTEM) @map("theme_preference")
-  passwordResetTokens PasswordResetToken[]
-  ideas               Idea[]               @relation("IdeaAuthor")
-  problems            Problem[]
-  joinedIdeas         IdeaMember[]
-  joinedProblems      ProblemMember[]
-  ideaLikes           IdeaLike[]
-  problemLikes        ProblemLike[]
-  ideaViews           IdeaView[]
-  problemViews        ProblemView[]
-  comments            Comment[]            @relation("CommentAuthor")
-  commentLikes        CommentLike[]
+  id                      String               @id @default(uuid())
+  email                   String               @unique
+  firstName               String?              @map("first_name")
+  lastName                String?              @map("last_name")
+  password                String?
+  createdAt               DateTime             @default(now()) @map("created_at")
+  updatedAt               DateTime             @updatedAt @map("updated_at")
+  avatarUrl               String?              @map("avatar_url")
+  themePreference         ThemePreference      @default(SYSTEM) @map("theme_preference")
+  notificationPreferences Json                 @default("{}") @map("notification_preferences")
+  passwordResetTokens     PasswordResetToken[]
+  ideas                   Idea[]               @relation("IdeaAuthor")
+  problems                Problem[]
+  joinedIdeas             IdeaMember[]
+  joinedProblems          ProblemMember[]
+  ideaLikes               IdeaLike[]
+  problemLikes            ProblemLike[]
+  ideaViews               IdeaView[]
+  problemViews            ProblemView[]
+  comments                Comment[]            @relation("CommentAuthor")
+  commentLikes            CommentLike[]
+  notifications           Notification[]
 
   @@map("user")
+}
+
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  type      String
+  payload   Json
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+  @@map("notification")
 }
 
 model PasswordResetToken {

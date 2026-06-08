@@ -21,6 +21,13 @@ import {
 } from '../ai-summary/summary-content.util';
 import { buildSummaryResetData } from '../ai-summary/summary-reset.util';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { NOTIFICATION_EVENTS } from '../notification/events/notification-event-names';
+import type { StatusChangedNotificationEvent } from '../notification/events/notification.events';
+import {
+  hasLifecycleChange,
+  resolveActorDisplayName,
+  resolveProblemRecipientUserIds,
+} from '../notification/lib/notification-integration.util';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   deleteAllProblemMedia,
@@ -82,10 +89,14 @@ export class ProblemService {
   ) {}
 
   async toggleLike(problemId: string, userId: string): Promise<void> {
+    let likeAdded = false;
+    let recipientUserId: string | null = null;
+    let entityTitle: string | null = null;
+
     await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const existing = await tx.problem.findFirst({
         where: { id: problemId },
-        select: { id: true, status: true, authorId: true },
+        select: { id: true, status: true, authorId: true, title: true },
       });
 
       if (!existing) {
@@ -129,7 +140,24 @@ export class ProblemService {
         data: { likeCount: { increment: 1 } },
         select: { id: true },
       });
+
+      likeAdded = true;
+      recipientUserId = existing.authorId;
+      entityTitle = existing.title;
     });
+
+    if (likeAdded && recipientUserId && recipientUserId !== userId) {
+      const actorName = await resolveActorDisplayName(this.prisma, userId);
+
+      this.eventEmitter.emit(NOTIFICATION_EVENTS.PROBLEM_SUPPORTER_ADDED, {
+        recipientUserId,
+        entityType: 'problem',
+        entityId: problemId,
+        entityTitle: entityTitle ?? 'Untitled',
+        actorId: userId,
+        actorName,
+      });
+    }
   }
 
   private enqueueCloudinaryDeletes(publicIds: string[]): void {
@@ -395,14 +423,44 @@ export class ProblemService {
     }
   }
 
+  private async emitProblemStatusChanged(params: {
+    problemId: string;
+    problemTitle: string | null;
+    actorId: string;
+    previousStatus: string;
+    previousStage: string | null;
+    nextStatus: string;
+    nextStage: string | null;
+  }): Promise<void> {
+    const [recipientUserIds, actorName] = await Promise.all([
+      resolveProblemRecipientUserIds(this.prisma, params.problemId),
+      resolveActorDisplayName(this.prisma, params.actorId),
+    ]);
+
+    const event: StatusChangedNotificationEvent = {
+      entityType: 'problem',
+      entityId: params.problemId,
+      entityTitle: params.problemTitle ?? 'Untitled',
+      actorId: params.actorId,
+      actorName,
+      recipientUserIds,
+      previousStatus: params.previousStatus,
+      previousStage: params.previousStage,
+      nextStatus: params.nextStatus,
+      nextStage: params.nextStage,
+    };
+
+    this.eventEmitter.emit(NOTIFICATION_EVENTS.STATUS_CHANGED, event);
+  }
+
   async create(
     authorId: string,
     dto: CreateProblemDto,
   ): Promise<ProblemFormResponse> {
     const { isPublished, ...updateDto } = dto;
 
-    const { problem, shouldRequestSummary } = await this.prisma.$transaction(
-      async tx => {
+    const { problem, shouldRequestSummary, publishLifecycle } =
+      await this.prisma.$transaction(async tx => {
         if (!isPublished) {
           const currentDraftsCount = await tx.problem.count({
             where: { authorId, status: ProblemStatus.DRAFT },
@@ -414,6 +472,8 @@ export class ProblemService {
             );
           }
         }
+
+        const initialStage = dto.stage ?? null;
 
         const created = await tx.problem.create({
           data: {
@@ -483,14 +543,34 @@ export class ProblemService {
           });
         }
 
-        return { problem: results, shouldRequestSummary: requestSummary };
-      },
-    );
+        return {
+          problem: results,
+          shouldRequestSummary: requestSummary,
+          publishLifecycle: isPublished
+            ? {
+                previousStatus: ProblemStatus.DRAFT,
+                previousStage: initialStage,
+              }
+            : null,
+        };
+      });
 
     this.eventEmitter.emit('entity.mutated', {
       entityType: 'problem',
       id: problem.id,
     });
+
+    if (publishLifecycle) {
+      await this.emitProblemStatusChanged({
+        problemId: problem.id,
+        problemTitle: problem.title,
+        actorId: authorId,
+        previousStatus: publishLifecycle.previousStatus,
+        previousStage: publishLifecycle.previousStage,
+        nextStatus: problem.status,
+        nextStage: problem.stage,
+      });
+    }
 
     if (shouldRequestSummary) {
       this.aiSummaryService.enqueueProblemSummary(problem.id);
@@ -651,13 +731,14 @@ export class ProblemService {
     authorId: string,
     dto: UpdateProblemDraftDto,
   ): Promise<ProblemFormResponse> {
-    const { updated, shouldResetSummary } = await this.prisma.$transaction(
-      async tx => {
+    const { updated, shouldResetSummary, existing } =
+      await this.prisma.$transaction(async tx => {
         const existing = await tx.problem.findFirst({
           where: { id, authorId },
           select: {
             id: true,
             status: true,
+            stage: true,
             title: true,
             description: true,
             valueProposition: true,
@@ -698,14 +779,25 @@ export class ProblemService {
           throw new NotFoundException(PROBLEM_NOT_FOUND);
         }
 
-        return { updated: record, shouldResetSummary: resetSummary };
-      },
-    );
+        return { updated: record, shouldResetSummary: resetSummary, existing };
+      });
 
     this.eventEmitter.emit('entity.mutated', {
       entityType: 'problem',
       id: updated.id,
     });
+
+    if (hasLifecycleChange(existing, updated)) {
+      await this.emitProblemStatusChanged({
+        problemId: updated.id,
+        problemTitle: updated.title,
+        actorId: authorId,
+        previousStatus: existing.status,
+        previousStage: existing.stage,
+        nextStatus: updated.status,
+        nextStage: updated.stage,
+      });
+    }
 
     if (shouldResetSummary && updated.status === ProblemStatus.PUBLISHED) {
       this.aiSummaryService.enqueueProblemSummary(updated.id);
