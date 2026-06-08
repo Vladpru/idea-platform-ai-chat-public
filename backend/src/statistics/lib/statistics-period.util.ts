@@ -2,11 +2,15 @@ import {
   endOfDay,
   startOfDay,
   startOfMonth,
+  startOfYear,
   subDays,
   subMonths,
 } from 'date-fns';
 
-import type { StatisticsPeriod } from '../../shared/types/statistics.types';
+import type {
+  StatisticsBucketGranularity,
+  StatisticsPeriod,
+} from '../../shared/types/statistics.types';
 
 export type StatisticsPeriodRange = {
   period: StatisticsPeriod;
@@ -92,14 +96,16 @@ export function resolveStatisticsPeriodRange(
   period: StatisticsPeriod,
   timeZone: string,
   now = new Date(),
+  allTimeStart?: Date,
 ): StatisticsPeriodRange {
   const zonedNow = toZonedTime(now, timeZone);
-  const end = fromZonedTime(endOfDay(zonedNow), timeZone);
+  let end = fromZonedTime(endOfDay(zonedNow), timeZone);
   let start = fromZonedTime(startOfDay(zonedNow), timeZone);
 
   switch (period) {
-    case 'week':
-      start = fromZonedTime(startOfDay(subDays(zonedNow, 6)), timeZone);
+    case 'day':
+      start = fromZonedTime(startOfDay(zonedNow), timeZone);
+      end = now;
       break;
     case 'month':
       start = fromZonedTime(startOfDay(subDays(zonedNow, 29)), timeZone);
@@ -110,11 +116,36 @@ export function resolveStatisticsPeriodRange(
         timeZone,
       );
       break;
+    case 'year_to_date':
+      start = fromZonedTime(startOfYear(zonedNow), timeZone);
+      break;
+    case 'all_time':
+      start = allTimeStart
+        ? fromZonedTime(startOfDay(toZonedTime(allTimeStart, timeZone)), timeZone)
+        : fromZonedTime(startOfDay(subMonths(zonedNow, 11)), timeZone);
+      break;
     default:
-      start = fromZonedTime(startOfDay(subDays(zonedNow, 6)), timeZone);
+      start = fromZonedTime(startOfYear(zonedNow), timeZone);
   }
 
   return { period, start, end };
+}
+
+export function resolveStatisticsBucketGranularity(
+  period: StatisticsPeriod,
+  start: Date,
+  end: Date,
+): StatisticsBucketGranularity {
+  if (period === 'day') {
+    return 'hour';
+  }
+
+  if (period === 'year' || period === 'all_time') {
+    return 'month';
+  }
+
+  const daySpan = (end.getTime() - start.getTime()) / 86_400_000;
+  return daySpan > 90 ? 'month' : 'day';
 }
 
 export function bucketDateToZonedInstant(
@@ -126,10 +157,10 @@ export function bucketDateToZonedInstant(
       bucketDate.getUTCFullYear(),
       bucketDate.getUTCMonth(),
       bucketDate.getUTCDate(),
-      0,
-      0,
-      0,
-      0,
+      bucketDate.getUTCHours(),
+      bucketDate.getUTCMinutes(),
+      bucketDate.getUTCSeconds(),
+      bucketDate.getUTCMilliseconds(),
     ),
     timeZone,
   );

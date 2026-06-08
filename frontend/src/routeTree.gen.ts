@@ -25,6 +25,7 @@ import { Route as AuthIdeasRouteRouteImport } from './routes/_auth/ideas/route'
 import { Route as AuthProfileIndexRouteImport } from './routes/_auth/profile/index'
 import { Route as AuthProblemsIndexRouteImport } from './routes/_auth/problems/index'
 import { Route as AuthIdeasIndexRouteImport } from './routes/_auth/ideas/index'
+import { Route as AuthStatisticLeaderboardRouteImport } from './routes/_auth/statistic/leaderboard'
 import { Route as AuthProfileProblemsRouteImport } from './routes/_auth/profile/problems'
 import { Route as AuthProfileIdeasRouteImport } from './routes/_auth/profile/ideas'
 import { Route as AuthProblemsNewRouteImport } from './routes/_auth/problems/new'
@@ -111,6 +112,12 @@ const AuthIdeasIndexRoute = AuthIdeasIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthIdeasRouteRoute,
 } as any)
+const AuthStatisticLeaderboardRoute =
+  AuthStatisticLeaderboardRouteImport.update({
+    id: '/statistic/leaderboard',
+    path: '/statistic/leaderboard',
+    getParentRoute: () => AuthRoute,
+  } as any)
 const AuthProfileProblemsRoute = AuthProfileProblemsRouteImport.update({
   id: '/problems',
   path: '/problems',
@@ -161,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/problems/new': typeof AuthProblemsNewRoute
   '/profile/ideas': typeof AuthProfileIdeasRoute
   '/profile/problems': typeof AuthProfileProblemsRoute
+  '/statistic/leaderboard': typeof AuthStatisticLeaderboardRoute
   '/ideas/': typeof AuthIdeasIndexRoute
   '/problems/': typeof AuthProblemsIndexRoute
   '/profile/': typeof AuthProfileIndexRoute
@@ -181,6 +189,7 @@ export interface FileRoutesByTo {
   '/problems/new': typeof AuthProblemsNewRoute
   '/profile/ideas': typeof AuthProfileIdeasRoute
   '/profile/problems': typeof AuthProfileProblemsRoute
+  '/statistic/leaderboard': typeof AuthStatisticLeaderboardRoute
   '/ideas': typeof AuthIdeasIndexRoute
   '/problems': typeof AuthProblemsIndexRoute
   '/profile': typeof AuthProfileIndexRoute
@@ -206,6 +215,7 @@ export interface FileRoutesById {
   '/_auth/problems/new': typeof AuthProblemsNewRoute
   '/_auth/profile/ideas': typeof AuthProfileIdeasRoute
   '/_auth/profile/problems': typeof AuthProfileProblemsRoute
+  '/_auth/statistic/leaderboard': typeof AuthStatisticLeaderboardRoute
   '/_auth/ideas/': typeof AuthIdeasIndexRoute
   '/_auth/problems/': typeof AuthProblemsIndexRoute
   '/_auth/profile/': typeof AuthProfileIndexRoute
@@ -231,6 +241,7 @@ export interface FileRouteTypes {
     | '/problems/new'
     | '/profile/ideas'
     | '/profile/problems'
+    | '/statistic/leaderboard'
     | '/ideas/'
     | '/problems/'
     | '/profile/'
@@ -251,6 +262,7 @@ export interface FileRouteTypes {
     | '/problems/new'
     | '/profile/ideas'
     | '/profile/problems'
+    | '/statistic/leaderboard'
     | '/ideas'
     | '/problems'
     | '/profile'
@@ -275,6 +287,7 @@ export interface FileRouteTypes {
     | '/_auth/problems/new'
     | '/_auth/profile/ideas'
     | '/_auth/profile/problems'
+    | '/_auth/statistic/leaderboard'
     | '/_auth/ideas/'
     | '/_auth/problems/'
     | '/_auth/profile/'
@@ -403,6 +416,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthIdeasIndexRouteImport
       parentRoute: typeof AuthIdeasRouteRoute
     }
+    '/_auth/statistic/leaderboard': {
+      id: '/_auth/statistic/leaderboard'
+      path: '/statistic/leaderboard'
+      fullPath: '/statistic/leaderboard'
+      preLoaderRoute: typeof AuthStatisticLeaderboardRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_auth/profile/problems': {
       id: '/_auth/profile/problems'
       path: '/problems'
@@ -502,6 +522,7 @@ interface AuthRouteChildren {
   AuthSettingsRoute: typeof AuthSettingsRoute
   AuthStatisticsRoute: typeof AuthStatisticsRoute
   AuthIndexRoute: typeof AuthIndexRoute
+  AuthStatisticLeaderboardRoute: typeof AuthStatisticLeaderboardRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
@@ -512,6 +533,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthSettingsRoute: AuthSettingsRoute,
   AuthStatisticsRoute: AuthStatisticsRoute,
   AuthIndexRoute: AuthIndexRoute,
+  AuthStatisticLeaderboardRoute: AuthStatisticLeaderboardRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)

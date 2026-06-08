@@ -13,6 +13,7 @@ export const ROUTES = {
   problemDetail: (id: string) => `/problems/${id}`,
   search: '/search',
   statistics: '/statistics',
+  statisticsLeaderboard: '/statistic/leaderboard',
   profile: '/profile',
   settings: '/settings',
   profileIdeas: '/profile/ideas',

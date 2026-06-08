@@ -1,15 +1,32 @@
-export type StatisticsPeriod = 'week' | 'month' | 'year';
+export type StatisticsPeriod =
+  | 'day'
+  | 'month'
+  | 'year'
+  | 'year_to_date'
+  | 'all_time';
 
-export type StatisticsEntityType = 'idea' | 'problem';
+export type StatisticsBucketGranularity = 'hour' | 'day' | 'month';
 
 export interface StatisticsDataPoint {
   label: string;
   value: number;
 }
 
-export interface StatisticsStatusChange {
+export interface StatisticsChartSeries {
+  key: string;
   label: string;
-  percent: number;
+  total: number;
+  points: StatisticsDataPoint[];
+}
+
+export interface StatisticsChartRow {
+  label: string;
+  [seriesKey: string]: string | number;
+}
+
+export interface StatisticsChartPanel {
+  series: Array<Pick<StatisticsChartSeries, 'key' | 'label' | 'total'>>;
+  rows: StatisticsChartRow[];
 }
 
 export interface StatisticsMetric {
@@ -20,15 +37,41 @@ export interface StatisticsMetric {
 export interface StatisticsContributor {
   id: string;
   name: string;
-  score: number;
+  points: number;
   avatarUrl: string | null;
 }
 
+export interface LeaderboardBreakdown {
+  ideas: number;
+  updates: number;
+  joinedProjects: number;
+  comments: number;
+  views: number;
+  likes: number;
+}
+
+export interface LeaderboardEntry {
+  id: string;
+  name: string;
+  points: number;
+  avatarUrl: string | null;
+  breakdown: LeaderboardBreakdown;
+}
+
+export interface LeaderboardResponse {
+  entries: LeaderboardEntry[];
+}
+
+export interface StatisticsChartsResponse {
+  newEntities: StatisticsChartPanel;
+  users: StatisticsChartPanel;
+  activity: StatisticsChartPanel;
+}
+
 export interface StatisticsSnapshotResponse {
-  newIdeasTotal: number;
-  newIdeasSeries: StatisticsDataPoint[];
-  statusChanges: StatisticsStatusChange[];
+  charts: StatisticsChartsResponse;
   users: StatisticsMetric[];
   activity: StatisticsMetric[];
   topContributors: StatisticsContributor[];
+  costBenefitTotal: number;
 }

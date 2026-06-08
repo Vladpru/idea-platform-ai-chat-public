@@ -9,7 +9,10 @@ import {
 
 import { JwtAuth } from '../shared/decorators/jwt-auth.decorator';
 import { GetStatisticsQueryDto } from '../shared/dto/get-statistics-query.dto';
-import type { StatisticsSnapshotResponse } from '../shared/types/statistics.types';
+import type {
+  LeaderboardResponse,
+  StatisticsSnapshotResponse,
+} from '../shared/types/statistics.types';
 import { StatisticsService } from './statistics.service';
 
 @ApiTags('statistics')
@@ -28,10 +31,21 @@ export class StatisticsController {
   getSnapshot(
     @Query() query: GetStatisticsQueryDto,
   ): Promise<StatisticsSnapshotResponse> {
-    return this.statisticsService.getSnapshot(
-      query.period,
-      query.entityType,
-      query.timeZone,
-    );
+    return this.statisticsService.getSnapshot(query.period, query.timeZone);
+  }
+
+  @Get('leaderboard')
+  @JwtAuth()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Full contributor leaderboard' })
+  @ApiOkResponse({
+    description:
+      'Ranked contributors with point breakdown for the selected period',
+  })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  getLeaderboard(
+    @Query() query: GetStatisticsQueryDto,
+  ): Promise<LeaderboardResponse> {
+    return this.statisticsService.getLeaderboard(query.period, query.timeZone);
   }
 }

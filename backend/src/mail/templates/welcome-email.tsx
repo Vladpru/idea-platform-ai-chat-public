@@ -11,11 +11,12 @@ import {
   Section,
   Tailwind,
   Text,
+  render,
 } from '@react-email/components';
 import * as React from 'react';
 
-export const WelcomeEmail = () => {
-  const previewText = `Welcome to The Idea Platform`;
+const WelcomeEmailTemplate = () => {
+  const previewText = 'Welcome to The Idea Platform';
 
   return (
     <Html>
@@ -24,7 +25,6 @@ export const WelcomeEmail = () => {
       <Tailwind>
         <Body className="mx-auto my-auto bg-[#f4f4f5] px-2 font-sans">
           <Container className="mx-auto my-[40px] max-w-[600px] overflow-hidden rounded border border-solid border-[#eaeaea] bg-white p-[20px]">
-            {/* Header */}
             <Section className="-m-[20px] mb-6 bg-[#003366] p-6">
               <div className="flex items-center">
                 <Img
@@ -66,7 +66,6 @@ export const WelcomeEmail = () => {
               </Text>
             </Section>
 
-            {/* Footer */}
             <Section className="border-t border-solid border-[#e5e7eb] pt-[24px] pb-[8px] text-center">
               <Text className="m-0 mb-4">
                 <Link
@@ -101,3 +100,11 @@ export const WelcomeEmail = () => {
     </Html>
   );
 };
+
+export async function buildWelcomeEmail() {
+  const subject = 'Welcome to The Idea Platform';
+  const html = await render(<WelcomeEmailTemplate />);
+  const text = await render(<WelcomeEmailTemplate />, { plainText: true });
+
+  return { subject, text, html };
+}

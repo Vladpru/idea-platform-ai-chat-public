@@ -1,6 +1,22 @@
+import type { StatisticsBucketGranularity } from '../../shared/types/statistics.types';
 import { bucketDateToZonedInstant } from './statistics-period.util';
 
-export type ChartLabelStyle = 'weekday' | 'shortDate' | 'month';
+export type ChartLabelStyle = 'hour' | 'weekday' | 'shortDate' | 'month';
+
+export function resolveChartLabelStyle(
+  granularity: StatisticsBucketGranularity,
+  bucketCount: number,
+): ChartLabelStyle {
+  if (granularity === 'hour') {
+    return 'hour';
+  }
+
+  if (granularity === 'month') {
+    return 'month';
+  }
+
+  return bucketCount <= 7 ? 'weekday' : 'shortDate';
+}
 
 export function formatChartBucketLabel(
   bucketDate: Date,
@@ -8,6 +24,15 @@ export function formatChartBucketLabel(
   style: ChartLabelStyle,
 ): string {
   const instant = bucketDateToZonedInstant(bucketDate, timeZone);
+
+  if (style === 'hour') {
+    return new Intl.DateTimeFormat('en-US', {
+      hour: 'numeric',
+      hour12: true,
+      timeZone,
+    }).format(instant);
+  }
+
   if (style === 'weekday') {
     return new Intl.DateTimeFormat('en-US', {
       weekday: 'short',

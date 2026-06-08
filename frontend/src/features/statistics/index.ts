@@ -2,11 +2,9 @@ export { StatisticsDashboardPage } from './ui/StatisticsDashboardPage';
 export { fetchStatisticsSnapshot } from './api/statistics.api';
 export { useStatisticsSnapshot } from './hooks/use-statistics-snapshot';
 export type {
-  StatisticsEntityType,
   StatisticsPeriod,
   StatisticsSnapshot,
-  NewIdeasDataPoint,
-  StatusChangeItem,
+  StatisticsChartPanel,
+  StatisticsCharts,
   StatMetric,
-  TopContributor,
 } from './model/statistics.types';
