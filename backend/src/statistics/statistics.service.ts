@@ -1,10 +1,17 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 
-import { IdeaStatus, Stage } from '../../generated/prisma/client';
+import {
+  IdeaStatus,
+  Prisma,
+  ProblemStage,
+  ProblemStatus,
+  Stage,
+} from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import type {
   StatisticsContributor,
   StatisticsDataPoint,
+  StatisticsEntityType,
   StatisticsPeriod,
   StatisticsSnapshotResponse,
   StatisticsStatusChange,
@@ -33,6 +40,23 @@ const PUBLISHED_IDEA_WHERE = {
   publishedAt: { not: null },
 } as const;
 
+const PUBLISHED_PROBLEM_WHERE = {
+  status: ProblemStatus.PUBLISHED,
+  publishedAt: { not: null },
+} as const;
+
+const PROBLEM_STAGE_ORDER: ProblemStage[] = [
+  ProblemStage.active,
+  ProblemStage.completed,
+  ProblemStage.archived,
+];
+
+const PROBLEM_STAGE_LABELS: Record<ProblemStage, string> = {
+  [ProblemStage.active]: 'Active',
+  [ProblemStage.completed]: 'Completed',
+  [ProblemStage.archived]: 'Archived',
+};
+
 type DayCountRow = { day: Date; count: bigint };
 type MonthCountRow = { month: Date; count: bigint };
 type CountRow = { count: bigint };
@@ -44,6 +68,7 @@ export class StatisticsService {
 
   async getSnapshot(
     period: StatisticsPeriod,
+    entityType: StatisticsEntityType = 'idea',
     timeZoneRaw?: string,
   ): Promise<StatisticsSnapshotResponse> {
     const timeZone = this.resolveTimeZone(timeZoneRaw);
@@ -54,21 +79,29 @@ export class StatisticsService {
       statusChanges,
       newUsers,
       activeUsers,
-      ideaUpdates,
+      entityUpdates,
       topContributors,
     ] = await Promise.all([
-      this.getNewIdeasSeries(period, range.start, range.end, timeZone),
-      this.getStageDistribution(),
+      this.getNewEntitiesSeries(
+        entityType,
+        period,
+        range.start,
+        range.end,
+        timeZone,
+      ),
+      this.getStageDistribution(entityType),
       this.countNewUsers(range.start, range.end),
       this.countActiveUsers(range.start, range.end),
-      this.countIdeaUpdates(range.start, range.end),
-      this.getTopContributors(),
+      this.countEntityUpdates(entityType, range.start, range.end),
+      this.getTopContributors(entityType),
     ]);
 
     const newIdeasTotal = newIdeasSeries.reduce(
       (sum, point) => sum + point.value,
       0,
     );
+
+    const newEntityLabel = entityType === 'idea' ? 'New Ideas' : 'New Problems';
 
     return {
       newIdeasTotal,
@@ -79,32 +112,44 @@ export class StatisticsService {
         { label: 'Active Users', value: activeUsers },
       ],
       activity: [
-        { label: 'New Ideas', value: newIdeasTotal },
-        { label: 'Updates', value: ideaUpdates },
+        { label: newEntityLabel, value: newIdeasTotal },
+        { label: 'Updates', value: entityUpdates },
       ],
       topContributors,
     };
   }
 
-  private async getNewIdeasSeries(
+  private async getNewEntitiesSeries(
+    entityType: StatisticsEntityType,
     period: StatisticsPeriod,
     start: Date,
     end: Date,
     timeZone: string,
   ): Promise<StatisticsDataPoint[]> {
     if (period === 'year') {
-      return this.getNewIdeasMonthlySeries(start, end, timeZone);
+      return this.getNewEntitiesMonthlySeries(entityType, start, end, timeZone);
     }
 
-    return this.getNewIdeasDailySeries(period, start, end, timeZone);
+    return this.getNewEntitiesDailySeries(
+      entityType,
+      period,
+      start,
+      end,
+      timeZone,
+    );
   }
 
-  private async getNewIdeasDailySeries(
+  private async getNewEntitiesDailySeries(
+    entityType: StatisticsEntityType,
     period: StatisticsPeriod,
     start: Date,
     end: Date,
     timeZone: string,
   ): Promise<StatisticsDataPoint[]> {
+    const table = Prisma.raw(`"${entityType}"`);
+    const publishedStatus =
+      entityType === 'idea' ? IdeaStatus.PUBLISHED : ProblemStatus.PUBLISHED;
+
     const rows = await this.prisma.$queryRaw<DayCountRow[]>`
       WITH buckets AS (
         SELECT generate_series(
@@ -117,8 +162,8 @@ export class StatisticsService {
         SELECT
           (published_at AT TIME ZONE ${timeZone})::date AS day,
           COUNT(*)::bigint AS count
-        FROM "idea"
-        WHERE "status" = ${IdeaStatus.PUBLISHED}
+        FROM ${table}
+        WHERE "status" = ${publishedStatus}
           AND "published_at" IS NOT NULL
           AND "published_at" >= ${start}
           AND "published_at" <= ${end}
@@ -140,11 +185,16 @@ export class StatisticsService {
     }));
   }
 
-  private async getNewIdeasMonthlySeries(
+  private async getNewEntitiesMonthlySeries(
+    entityType: StatisticsEntityType,
     start: Date,
     end: Date,
     timeZone: string,
   ): Promise<StatisticsDataPoint[]> {
+    const table = Prisma.raw(`"${entityType}"`);
+    const publishedStatus =
+      entityType === 'idea' ? IdeaStatus.PUBLISHED : ProblemStatus.PUBLISHED;
+
     const rows = await this.prisma.$queryRaw<MonthCountRow[]>`
       WITH buckets AS (
         SELECT generate_series(
@@ -157,8 +207,8 @@ export class StatisticsService {
         SELECT
           DATE_TRUNC('month', published_at AT TIME ZONE ${timeZone})::date AS month,
           COUNT(*)::bigint AS count
-        FROM "idea"
-        WHERE "status" = ${IdeaStatus.PUBLISHED}
+        FROM ${table}
+        WHERE "status" = ${publishedStatus}
           AND "published_at" IS NOT NULL
           AND "published_at" >= ${start}
           AND "published_at" <= ${end}
@@ -186,7 +236,13 @@ export class StatisticsService {
     }
   }
 
-  private async getStageDistribution(): Promise<StatisticsStatusChange[]> {
+  private async getStageDistribution(
+    entityType: StatisticsEntityType,
+  ): Promise<StatisticsStatusChange[]> {
+    if (entityType === 'problem') {
+      return this.getProblemStageDistribution();
+    }
+
     const grouped = await this.prisma.idea.groupBy({
       by: ['stage'],
       where: {
@@ -209,6 +265,38 @@ export class StatisticsService {
 
     return STAGE_ORDER.map((stage, index) => ({
       label: STAGE_LABELS[stage],
+      percent: percents[index],
+    }));
+  }
+
+  private async getProblemStageDistribution(): Promise<
+    StatisticsStatusChange[]
+  > {
+    const grouped = await this.prisma.problem.groupBy({
+      by: ['stage'],
+      where: {
+        ...PUBLISHED_PROBLEM_WHERE,
+        stage: { not: null },
+      },
+      _count: { _all: true },
+    });
+
+    const countsByStage = new Map<ProblemStage, number>(
+      grouped
+        .filter(
+          (row): row is typeof row & { stage: ProblemStage } =>
+            row.stage !== null,
+        )
+        .map(row => [row.stage, row._count._all]),
+    );
+
+    const counts = PROBLEM_STAGE_ORDER.map(
+      stage => countsByStage.get(stage) ?? 0,
+    );
+    const percents = this.distributeRoundedPercents(counts);
+
+    return PROBLEM_STAGE_ORDER.map((stage, index) => ({
+      label: PROBLEM_STAGE_LABELS[stage],
       percent: percents[index],
     }));
   }
@@ -268,11 +356,19 @@ export class StatisticsService {
     return Number(rows[0]?.count ?? 0);
   }
 
-  private async countIdeaUpdates(start: Date, end: Date): Promise<number> {
+  private async countEntityUpdates(
+    entityType: StatisticsEntityType,
+    start: Date,
+    end: Date,
+  ): Promise<number> {
+    const table = Prisma.raw(`"${entityType}"`);
+    const publishedStatus =
+      entityType === 'idea' ? IdeaStatus.PUBLISHED : ProblemStatus.PUBLISHED;
+
     const rows = await this.prisma.$queryRaw<CountRow[]>`
       SELECT COUNT(*)::bigint AS count
-      FROM "idea"
-      WHERE "status" = ${IdeaStatus.PUBLISHED}
+      FROM ${table}
+      WHERE "status" = ${publishedStatus}
         AND "published_at" IS NOT NULL
         AND "updated_at" >= ${start}
         AND "updated_at" <= ${end}
@@ -282,7 +378,13 @@ export class StatisticsService {
     return Number(rows[0]?.count ?? 0);
   }
 
-  private async getTopContributors(): Promise<StatisticsContributor[]> {
+  private async getTopContributors(
+    entityType: StatisticsEntityType,
+  ): Promise<StatisticsContributor[]> {
+    const table = Prisma.raw(`"${entityType}"`);
+    const publishedStatus =
+      entityType === 'idea' ? IdeaStatus.PUBLISHED : ProblemStatus.PUBLISHED;
+
     const ranked = await this.prisma.$queryRaw<ContributorScoreRow[]>`
       SELECT
         "author_id",
@@ -291,8 +393,8 @@ export class StatisticsService {
           COALESCE(SUM("like_count"), 0) +
           COALESCE(SUM("comment_count"), 0)
         )::bigint AS score
-      FROM "idea"
-      WHERE "status" = ${IdeaStatus.PUBLISHED}
+      FROM ${table}
+      WHERE "status" = ${publishedStatus}
       GROUP BY "author_id"
       HAVING (
         COALESCE(SUM("view_count"), 0) +

@@ -41,7 +41,7 @@ export function useHomeOverview() {
       },
       {
         queryKey: homeOverviewKeys.statistics(timeZone),
-        queryFn: () => fetchStatisticsSnapshot('week', timeZone),
+        queryFn: () => fetchStatisticsSnapshot('week', 'idea', timeZone),
       },
     ],
   });

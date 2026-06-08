@@ -7,9 +7,13 @@ import { Button } from '@/shared/ui/button';
 import { SkeletonCard } from '@/shared/ui/skeleton';
 
 import { useStatisticsSnapshot } from '../hooks/use-statistics-snapshot';
-import type { StatisticsPeriod } from '../model/statistics.types';
+import type {
+  StatisticsEntityType,
+  StatisticsPeriod,
+} from '../model/statistics.types';
 import { NewIdeasChartCard } from './NewIdeasChartCard';
 import { StatMetricCard } from './StatMetricCard';
+import { StatisticsEntityTypeSelect } from './StatisticsEntityTypeSelect';
 import { StatusChangesCard } from './StatusChangesCard';
 import { TopContributorsCard } from './TopContributorsCard';
 import { statisticsPageTitleClass } from './statistics-classes';
@@ -32,14 +36,21 @@ function StatisticsGridSkeleton() {
 
 export function StatisticsDashboardPage() {
   const [period, setPeriod] = useState<StatisticsPeriod>('week');
+  const [entityType, setEntityType] = useState<StatisticsEntityType>('idea');
   const { data, isLoading, isError, error, refetch, isFetching } =
-    useStatisticsSnapshot(period);
+    useStatisticsSnapshot(period, entityType);
 
   return (
     <main className="bg-brand-neutral min-h-[calc(100vh-56px)] px-4 md:px-8 lg:px-12">
       <div className="mx-auto max-w-5xl 2xl:max-w-6xl">
         <Card className="text-card-foreground bg-card min-h-[calc(100vh-56px)] rounded-none p-6 md:p-10">
-          <h1 className={statisticsPageTitleClass}>Statistics</h1>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <h1 className={statisticsPageTitleClass}>Statistics</h1>
+            <StatisticsEntityTypeSelect
+              value={entityType}
+              onChange={setEntityType}
+            />
+          </div>
 
           {isLoading ? (
             <StatisticsGridSkeleton />
@@ -62,6 +73,7 @@ export function StatisticsDashboardPage() {
               <div className="mt-6 grid grid-cols-1 items-stretch gap-4 lg:mt-8 lg:grid-cols-7 lg:gap-5">
                 <div className="flex min-w-0 lg:col-span-5">
                   <NewIdeasChartCard
+                    entityType={entityType}
                     period={period}
                     onPeriodChange={setPeriod}
                     newIdeasTotal={data.newIdeasTotal}
@@ -70,7 +82,10 @@ export function StatisticsDashboardPage() {
                   />
                 </div>
                 <div className="flex min-w-0 lg:col-span-2">
-                  <StatusChangesCard statusChanges={data.statusChanges} />
+                  <StatusChangesCard
+                    statusChanges={data.statusChanges}
+                    entityType={entityType}
+                  />
                 </div>
               </div>
 

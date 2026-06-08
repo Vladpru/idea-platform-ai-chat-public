@@ -28,6 +28,10 @@ export class StatisticsController {
   getSnapshot(
     @Query() query: GetStatisticsQueryDto,
   ): Promise<StatisticsSnapshotResponse> {
-    return this.statisticsService.getSnapshot(query.period, query.timeZone);
+    return this.statisticsService.getSnapshot(
+      query.period,
+      query.entityType,
+      query.timeZone,
+    );
   }
 }

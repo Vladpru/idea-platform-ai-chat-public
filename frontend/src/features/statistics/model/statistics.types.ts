@@ -1,5 +1,7 @@
 export type StatisticsPeriod = 'week' | 'month' | 'year';
 
+export type StatisticsEntityType = 'idea' | 'problem';
+
 export type NewIdeasDataPoint = {
   label: string;
   value: number;

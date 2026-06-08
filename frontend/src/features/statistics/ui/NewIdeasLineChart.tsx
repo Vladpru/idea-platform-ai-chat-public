@@ -8,14 +8,21 @@ import {
   ChartTooltipContent,
 } from '@/shared/ui/chart';
 
-import type { NewIdeasDataPoint } from '../model/statistics.types';
+import type {
+  NewIdeasDataPoint,
+  StatisticsEntityType,
+} from '../model/statistics.types';
 
-const CHART_CONFIG = {
-  ideas: {
-    label: 'New ideas',
-    color: 'var(--statistics-chart-line)',
-  },
-} satisfies ChartConfig;
+function getChartConfig(entityType: StatisticsEntityType): ChartConfig {
+  const dataKey = entityType === 'idea' ? 'ideas' : 'problems';
+
+  return {
+    [dataKey]: {
+      label: entityType === 'idea' ? 'New ideas' : 'New problems',
+      color: 'var(--statistics-chart-line)',
+    },
+  };
+}
 
 const CHART_MARGINS = { top: 8, right: 12, left: 0, bottom: 0 };
 
@@ -31,22 +38,26 @@ function resolveChartScale(data: NewIdeasDataPoint[]) {
 }
 
 type NewIdeasLineChartProps = {
+  entityType: StatisticsEntityType;
   data: NewIdeasDataPoint[];
 };
 
-export function NewIdeasLineChart({ data }: NewIdeasLineChartProps) {
+export function NewIdeasLineChart({ entityType, data }: NewIdeasLineChartProps) {
+  const dataKey = entityType === 'idea' ? 'ideas' : 'problems';
+  const chartConfig = useMemo(() => getChartConfig(entityType), [entityType]);
+
   const { chartData, yMax, yTicks } = useMemo(() => {
     const chartData = data.map(point => ({
       label: point.label,
-      ideas: point.value,
+      [dataKey]: point.value,
     }));
     const { yMax, yTicks } = resolveChartScale(data);
     return { chartData, yMax, yTicks };
-  }, [data]);
+  }, [data, dataKey]);
 
   return (
     <ChartContainer
-      config={CHART_CONFIG}
+      config={chartConfig}
       className="mt-4 aspect-auto h-[220px] w-full min-w-0"
       initialDimension={{ width: 520, height: 220 }}
     >
@@ -54,7 +65,11 @@ export function NewIdeasLineChart({ data }: NewIdeasLineChartProps) {
         accessibilityLayer
         data={chartData}
         margin={CHART_MARGINS}
-        aria-label="New ideas over time"
+        aria-label={
+          entityType === 'idea'
+            ? 'New ideas over time'
+            : 'New problems over time'
+        }
       >
         <CartesianGrid
           aria-hidden="true"
@@ -92,25 +107,25 @@ export function NewIdeasLineChart({ data }: NewIdeasLineChartProps) {
           content={
             <ChartTooltipContent
               labelKey="label"
-              nameKey="ideas"
+              nameKey={dataKey}
               indicator="dot"
             />
           }
         />
         <Line
-          dataKey="ideas"
+          dataKey={dataKey}
           type="monotone"
-          stroke="var(--color-ideas)"
+          stroke={`var(--color-${dataKey})`}
           strokeWidth={2.5}
           dot={{
             r: 4,
-            fill: 'var(--color-ideas)',
+            fill: `var(--color-${dataKey})`,
             stroke: 'var(--statistics-chart-dot-ring)',
             strokeWidth: 2,
           }}
           activeDot={{
             r: 5,
-            fill: 'var(--color-ideas)',
+            fill: `var(--color-${dataKey})`,
             stroke: 'var(--statistics-chart-dot-ring)',
             strokeWidth: 2,
           }}
