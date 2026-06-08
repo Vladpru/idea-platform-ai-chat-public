@@ -26,13 +26,16 @@ cp .env.example .env
 
 ## 3. Database
 
-### Docker Compose (Postgres in this repo)
+### Docker Compose (Postgres + Redis)
 
 ```bash
 docker compose up -d
 ```
 
-Default DB from `docker-compose.yml`: user `postgres`, password `postgres`, database `oril-app`, port `5432`. Point `DATABASE_URL` at that instance.
+Default services from `docker-compose.yml`:
+
+- **Postgres** — user `postgres`, password `postgres`, database `oril-app`, port `5432`. Point `DATABASE_URL` at that instance.
+- **Redis** — port `6379`. Set `REDIS_URL=redis://localhost:6379` in `.env` for local Socket.IO scaling tests.
 
 ### Apply schema (migrations)
 
