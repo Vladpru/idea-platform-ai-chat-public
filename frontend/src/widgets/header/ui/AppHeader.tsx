@@ -1,8 +1,9 @@
 import PolycodersLogoWhiteText from '@/assets/svg/polycodersLogoWhiteText.svg';
 import { UserNav } from '@/features/auth';
+import { NotificationBell } from '@/features/notifications';
 import { HEADER_ACTION_BUTTON_CLASS } from '@/widgets/header/lib/header-action-button-class';
 import { Link, useMatchRoute } from '@tanstack/react-router';
-import { Bell, ChevronDown, Search } from 'lucide-react';
+import { ChevronDown, Search } from 'lucide-react';
 
 import { ROUTES } from '@/shared/config/paths';
 import { cn } from '@/shared/lib/utils';
@@ -127,13 +128,7 @@ export function AppHeader() {
           <Search size={22} strokeWidth={2} />
         </Link>
 
-        <button
-          type="button"
-          className={HEADER_ACTION_BUTTON_CLASS}
-          aria-label="Notifications"
-        >
-          <Bell size={22} strokeWidth={2} />
-        </button>
+        <NotificationBell />
 
         <div className="w-min-[] hidden lg:block">
           <UserNav triggerClassName=" transition-opacity cursor-pointer" />

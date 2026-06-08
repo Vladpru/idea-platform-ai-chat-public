@@ -127,21 +127,24 @@ export function IdeaCreateForm({
     });
 
   const formBusy = isBusy || isScanning;
-  const allowNextLeaveRef = useRef<(continueLeave: () => void) => void>(() => {});
+  const allowNextLeaveRef = useRef<(continueLeave: () => void) => void>(
+    () => {},
+  );
   const handleSaveDraftRef = useRef<(() => Promise<boolean>) | null>(null);
 
+  const onControlsChangeRef = useRef(onDocumentAutoFillControlsChange);
+
   useEffect(() => {
-    onDocumentAutoFillControlsChange?.({
+    onControlsChangeRef.current = onDocumentAutoFillControlsChange;
+  }, [onDocumentAutoFillControlsChange]);
+
+  useEffect(() => {
+    onControlsChangeRef.current?.({
       isScanning,
       handleFileSelected,
       disabled: formBusy,
     });
-  }, [
-    formBusy,
-    handleFileSelected,
-    isScanning,
-    onDocumentAutoFillControlsChange,
-  ]);
+  }, [formBusy, handleFileSelected, isScanning]);
 
   const {
     leaveModalOpen,

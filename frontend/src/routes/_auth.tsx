@@ -1,5 +1,6 @@
 import { AuthSessionSync } from '@/features/auth';
 import { hasValidSession } from '@/features/auth/model/auth-session-store';
+import { NotificationSocketProvider } from '@/features/notifications';
 import { NotFoundPage } from '@/pages/not-found';
 import { AppHeader } from '@/widgets/header';
 import { createFileRoute, redirect } from '@tanstack/react-router';
@@ -14,6 +15,7 @@ export const Route = createFileRoute('/_auth')({
   component: () => (
     <>
       <AuthSessionSync />
+      <NotificationSocketProvider />
       <AppHeader />
       <Outlet />
     </>

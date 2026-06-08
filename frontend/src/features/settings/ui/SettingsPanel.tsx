@@ -1,21 +1,23 @@
 import { pageTitleClass } from '@/features/ideas/lib/styles';
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
-import { fetchCurrentUser } from '@/features/profile/api/profile.api';
+import {
+  useCurrentUserQuery,
+  useUpdateNotificationPreferences,
+} from '@/features/settings/hooks/use-notification-preferences';
+import {
+  buildAllChannelsPatch,
+  type NotificationPreferenceKey,
+} from '@/features/settings/model/notification-preferences.types';
 import { useThemeSync } from '@/hooks/useThemeSync';
-import { useQuery } from '@tanstack/react-query';
 import { Monitor, Moon, Sun } from 'lucide-react';
 import { useMemo } from 'react';
 
 import { cn } from '@/shared/lib/utils';
 import { Switch } from '@/shared/ui';
 import { Tabs, TabsList, TabsTrigger } from '@/shared/ui/tabs';
-import {
-  useNotificationStore,
-  type NotificationKey,
-} from '../model/notification-store';
 
 type NotificationItem = {
-  key: NotificationKey;
+  key: NotificationPreferenceKey;
   title: string;
   description?: string;
 };
@@ -46,12 +48,22 @@ type ChannelToggleProps = {
   checked: boolean;
   onChange: (checked: boolean) => void;
   label: string;
+  disabled?: boolean;
 };
 
-function ChannelToggle({ checked, onChange, label }: ChannelToggleProps) {
+function ChannelToggle({
+  checked,
+  onChange,
+  label,
+  disabled,
+}: ChannelToggleProps) {
   return (
     <label className="text-foreground inline-flex cursor-pointer items-center gap-2 text-sm sm:gap-3">
-      <Switch checked={checked} onCheckedChange={onChange} />
+      <Switch
+        checked={checked}
+        onCheckedChange={onChange}
+        disabled={disabled}
+      />
       <span className="leading-tight select-none">{label}</span>
     </label>
   );
@@ -60,11 +72,8 @@ function ChannelToggle({ checked, onChange, label }: ChannelToggleProps) {
 function SettingsAppearanceSection() {
   const accessToken = useAuthSessionStore(s => s.accessToken);
 
-  const { data: user } = useQuery({
-    queryKey: ['users', 'me'],
-    queryFn: fetchCurrentUser,
+  const { data: user } = useCurrentUserQuery({
     enabled: Boolean(accessToken),
-    staleTime: 60_000,
   });
 
   const { theme, setTheme } = useThemeSync(user?.themePreference);
@@ -118,23 +127,46 @@ function SettingsAppearanceSection() {
 }
 
 export function SettingsPanel() {
-  const channels = useNotificationStore(s => s.channels);
-  const setAll = useNotificationStore(s => s.setAll);
-  const setOneChannel = useNotificationStore(s => s.setOneChannel);
+  const accessToken = useAuthSessionStore(s => s.accessToken);
+  const { data: user, isLoading } = useCurrentUserQuery({
+    enabled: Boolean(accessToken),
+  });
+  const updatePreferences = useUpdateNotificationPreferences();
+  const channels = user?.notificationPreferences;
 
   const isAllEnabled = useMemo(
     () =>
-      Object.values(channels).every(channel => channel.inApp && channel.email),
+      channels
+        ? Object.values(channels).every(
+            channel => channel.inApp && channel.email,
+          )
+        : false,
     [channels],
   );
 
   const isAllDisabled = useMemo(
     () =>
-      Object.values(channels).every(
-        channel => !channel.inApp && !channel.email,
-      ),
+      channels
+        ? Object.values(channels).every(
+            channel => !channel.inApp && !channel.email,
+          )
+        : false,
     [channels],
   );
+
+  const handleSetAll = (value: boolean) => {
+    updatePreferences.mutate(buildAllChannelsPatch(value));
+  };
+
+  const handleSetOneChannel = (
+    key: NotificationPreferenceKey,
+    channel: 'inApp' | 'email',
+    value: boolean,
+  ) => {
+    updatePreferences.mutate({
+      [key]: { [channel]: value },
+    });
+  };
 
   return (
     <main className="bg-brand-neutral dark:bg-background min-h-[calc(100vh-72px)]">
@@ -158,12 +190,12 @@ export function SettingsPanel() {
               <button
                 className={cn(
                   actionButtonClassName,
-                  isAllEnabled
+                  isAllEnabled || isLoading
                     ? 'text-muted-foreground/50 cursor-not-allowed'
                     : 'text-primary hover:text-primary/80 cursor-pointer',
                 )}
-                onClick={() => setAll(true)}
-                disabled={isAllEnabled}
+                onClick={() => handleSetAll(true)}
+                disabled={isAllEnabled || isLoading || updatePreferences.isPending}
                 type="button"
               >
                 Enable all
@@ -171,12 +203,14 @@ export function SettingsPanel() {
               <button
                 className={cn(
                   actionButtonClassName,
-                  isAllDisabled
+                  isAllDisabled || isLoading
                     ? 'text-muted-foreground/50 cursor-not-allowed'
                     : 'text-primary hover:text-primary/80 cursor-pointer',
                 )}
-                onClick={() => setAll(false)}
-                disabled={isAllDisabled}
+                onClick={() => handleSetAll(false)}
+                disabled={
+                  isAllDisabled || isLoading || updatePreferences.isPending
+                }
                 type="button"
               >
                 Disable all
@@ -200,14 +234,20 @@ export function SettingsPanel() {
 
                 <div className="flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-10 sm:gap-y-3">
                   <ChannelToggle
-                    checked={channels[item.key].inApp}
+                    checked={channels?.[item.key]?.inApp ?? true}
                     label="In-App Notifications"
-                    onChange={value => setOneChannel(item.key, 'inApp', value)}
+                    disabled={isLoading || !channels}
+                    onChange={value =>
+                      handleSetOneChannel(item.key, 'inApp', value)
+                    }
                   />
                   <ChannelToggle
-                    checked={channels[item.key].email}
+                    checked={channels?.[item.key]?.email ?? true}
                     label="Email Notifications"
-                    onChange={value => setOneChannel(item.key, 'email', value)}
+                    disabled={isLoading || !channels}
+                    onChange={value =>
+                      handleSetOneChannel(item.key, 'email', value)
+                    }
                   />
                 </div>
               </div>
