@@ -9,6 +9,7 @@ import {
   LinkedItemsSection,
   STATS_BELOW_TAGS_COLUMN_THRESHOLD,
 } from '@/shared/dashboard';
+import { entityDescriptionPreviewClass } from '@/shared/lib/entity-description-classes';
 import { cn } from '@/shared/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { StageChevronBadge } from '@/shared/ui/stage-chevron-badge';
@@ -101,7 +102,12 @@ function ProblemDashboardCardStandardInner({
                 ) : null}
               </div>
 
-              <p className="text-brand-gray-600 line-clamp-3 text-sm leading-relaxed">
+              <p
+                className={cn(
+                  entityDescriptionPreviewClass,
+                  'text-brand-gray-600 line-clamp-3',
+                )}
+              >
                 {card.description?.trim() || emptyDescriptionText}
               </p>
             </div>

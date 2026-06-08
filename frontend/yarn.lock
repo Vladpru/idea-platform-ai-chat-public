@@ -365,6 +365,11 @@
   resolved "https://registry.npmjs.org/@floating-ui/utils/-/utils-0.2.11.tgz"
   integrity sha512-RiB/yIh78pcIxl6lLMG0CgBXAZ2Y0eVHqMPYugu+9U0AeT6YBeiJpf7lbdJNIugFP5SIjwNRgo4DhR1Qxi26Gg==
 
+"@fontsource-variable/eb-garamond@^5.2.7":
+  version "5.2.7"
+  resolved "https://registry.yarnpkg.com/@fontsource-variable/eb-garamond/-/eb-garamond-5.2.7.tgz#07cf27c3561cd09047be26fac6b444eafe57c6cc"
+  integrity sha512-TbR+Pun4k5g85lgdxRNSbWka5vJgi9pzdFzFswgf7/7NRhKssvoumft1+ZGz3n91YYet96JcnjWrgPGGj6JTzg==
+
 "@fontsource-variable/geist@^5.2.8":
   version "5.2.8"
   resolved "https://registry.npmjs.org/@fontsource-variable/geist/-/geist-5.2.8.tgz"

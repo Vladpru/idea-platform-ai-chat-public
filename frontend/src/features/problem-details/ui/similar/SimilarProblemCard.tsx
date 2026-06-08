@@ -5,6 +5,7 @@ import { Link } from '@tanstack/react-router';
 import { Eye, Heart, MessageCircle } from 'lucide-react';
 
 import { ROUTES } from '@/shared/config/paths';
+import { entityDescriptionPreviewClass } from '@/shared/lib/entity-description-classes';
 import { cn } from '@/shared/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { StageChevronBadge } from '@/shared/ui/stage-chevron-badge';
@@ -43,7 +44,7 @@ function SimilarProblemCardContent({ card }: SimilarProblemCardProps) {
           <StageChevronBadge stage={card.stage} stageText={false} />
         </div>
 
-        <p className="text-brand-black font-EB-Garamond line-clamp-4 text-sm leading-relaxed whitespace-pre-wrap">
+        <p className={cn(entityDescriptionPreviewClass, 'line-clamp-4')}>
           {card.description || 'No description available for this problem.'}
         </p>
       </div>

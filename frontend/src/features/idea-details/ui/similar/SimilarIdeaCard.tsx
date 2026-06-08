@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router';
 import { Eye, MessageCircle } from 'lucide-react';
 
 import { ROUTES } from '@/shared/config/paths';
+import { entityDescriptionPreviewClass } from '@/shared/lib/entity-description-classes';
 import { cn } from '@/shared/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { LikeButton } from '@/shared/ui/LikeButton';
@@ -63,7 +64,7 @@ function SimilarIdeaCardContent({ card }: SimilarIdeaCardProps) {
             <StageChevronBadge stage={card.stage} stageText={false} />
           </div>
 
-          <p className="text-brand-black font-EB-Garamond line-clamp-3 text-sm leading-relaxed whitespace-pre-wrap sm:text-base">
+          <p className={cn(entityDescriptionPreviewClass, 'line-clamp-3')}>
             {card.description || 'No description available for this idea.'}
           </p>
         </div>

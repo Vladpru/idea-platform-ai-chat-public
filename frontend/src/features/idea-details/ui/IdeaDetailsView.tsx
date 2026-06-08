@@ -27,7 +27,12 @@ import { outlineBtnClass, primaryBtnClass } from '@/features/ideas/lib/styles';
 import { IdeaEditorPageHeading } from '@/features/ideas/ui/IdeaEditorPageHeading';
 import { IdeaForm } from '@/features/ideas/ui/idea-form/IdeaForm';
 import { NotFoundPage } from '@/pages/not-found';
-import { useBlocker, useNavigate, useRouter, useSearch } from '@tanstack/react-router';
+import {
+  useBlocker,
+  useNavigate,
+  useRouter,
+  useSearch,
+} from '@tanstack/react-router';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import {
@@ -40,6 +45,7 @@ import {
 } from 'react';
 
 import { ROUTES } from '@/shared/config/paths';
+import { entityDescriptionDetailClass } from '@/shared/lib/entity-description-classes';
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
 import { ConfirmModal } from '@/shared/ui/confirm-modal';
@@ -76,6 +82,8 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [ideaDiscardModalOpen, setIdeaDiscardModalOpen] = useState(false);
   const [updatedSuccessOpen, setUpdatedSuccessOpen] = useState(false);
+  const [prevShowUpdatedSuccess, setPrevShowUpdatedSuccess] =
+    useState(showUpdatedSuccess);
   const [pendingDiscardAction, setPendingDiscardAction] =
     useState<PendingDiscardAction | null>(null);
   const [pendingTab, setPendingTab] = useState<IdeaTabId | null>(null);
@@ -84,6 +92,13 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const skipEditNavigationBlockRef = useRef(false);
   const hasRestoredEditFromUrlRef = useRef(false);
+
+  if (showUpdatedSuccess !== prevShowUpdatedSuccess) {
+    setPrevShowUpdatedSuccess(showUpdatedSuccess);
+    if (showUpdatedSuccess) {
+      setUpdatedSuccessOpen(true);
+    }
+  }
 
   const isEditingDirty = useDiscussionUiStore(s => s.isEditingDirty);
   const discardAllUnsaved = useDiscussionUiStore(s => s.discardAllUnsaved);
@@ -145,8 +160,9 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
         void navigate({
           to: ROUTES.ideaDetail(ideaId),
           search: previous => {
-            const { edit: _edit, ...rest } = previous;
-            return rest;
+            const next = { ...previous };
+            delete next.edit;
+            return next;
           },
           replace: true,
         });
@@ -297,13 +313,13 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
       return;
     }
 
-    setUpdatedSuccessOpen(true);
     skipEditNavigationBlockRef.current = true;
     void navigate({
       to: ROUTES.ideaDetail(ideaId),
       search: previous => {
-        const { updated: _updated, ...rest } = previous;
-        return rest;
+        const next = { ...previous };
+        delete next.updated;
+        return next;
       },
       replace: true,
     });
@@ -402,7 +418,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
               ) : null}
             </AnimatePresence>
 
-            <div className="bg-card sticky top-[56px] z-30 -mx-4 px-4 py-2 shadow-sm transition-all duration-300 sm:-mx-6 sm:px-6">
+            <div className="bg-card sticky top-[56px] z-30 -mx-4 px-4 py-2 shadow-none transition-all duration-300 sm:-mx-6 sm:px-6">
               <IdeaHeader
                 idea={idea}
                 isAuthor={isAuthor}
@@ -476,7 +492,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
                     summaryStatus={idea.summaryStatus}
                   />
                   {idea.description ? (
-                    <p className="text-brand-gray-800 font-EB-Garamond max-w-full min-w-0 text-sm leading-relaxed wrap-break-word whitespace-pre-wrap sm:text-base">
+                    <p className={entityDescriptionDetailClass}>
                       {idea.description}
                     </p>
                   ) : (
