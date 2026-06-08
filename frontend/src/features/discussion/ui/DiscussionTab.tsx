@@ -12,6 +12,7 @@ import { useDiscussionUiStore } from '@/features/discussion/model/discussion-ui-
 import { DashboardControls } from '@/shared/dashboard';
 import { CommentInputArea } from '@/features/discussion/ui/CommentInputArea';
 import { CommentList } from '@/features/discussion/ui/CommentList';
+import { ReplyFromSearchEffect } from '@/features/discussion/ui/ReplyFromSearchEffect';
 import { ReplyProvider } from '@/features/discussion/ui/ReplyProvider';
 import { Route as IdeaDetailsRoute } from '@/routes/_auth/ideas/$ideaId';
 import { Route as ProblemDetailsRoute } from '@/routes/_auth/problems/$problemId';
@@ -27,6 +28,8 @@ type DiscussionTabProps = {
   entityId: string;
   enabled?: boolean;
   className?: string;
+  replyToCommentId?: string;
+  onReplyToConsumed?: () => void;
 };
 
 type DiscussionTabLayoutProps = DiscussionTabProps & {
@@ -77,7 +80,12 @@ function DiscussionTabLayout({
   className,
   sort,
   onSortChange,
-}: DiscussionTabLayoutProps) {
+  replyToCommentId,
+  onReplyToConsumed,
+}: DiscussionTabLayoutProps & {
+  replyToCommentId?: string;
+  onReplyToConsumed?: () => void;
+}) {
   const draftClearToken = useDiscussionUiStore(s => s.draftClearToken);
 
   const {
@@ -112,6 +120,16 @@ function DiscussionTabLayout({
       className={cn('bg-brand-gray-100 w-full rounded-sm p-2', className)}
       aria-label="Discussion"
     >
+      <ReplyFromSearchEffect
+        replyToCommentId={replyToCommentId}
+        enabled={enabled}
+        isLoading={isLoading}
+        isFetchingNextPage={isFetchingNextPage}
+        comments={comments}
+        hasNextPage={hasNextPage ?? false}
+        fetchNextPage={fetchNextPage}
+        onConsumed={() => onReplyToConsumed?.()}
+      />
       <div className="flex items-center justify-between px-2 sm:px-4">
         <h2 className="text-brand-gray-600 text-sm font-semibold">Sort by:</h2>
         <DashboardControls
@@ -152,6 +170,8 @@ function IdeaDiscussionTabContent({
   entityId,
   enabled,
   className,
+  replyToCommentId,
+  onReplyToConsumed,
 }: Omit<DiscussionTabProps, 'entityType'>) {
   const { sort, onSortChange } = useIdeaDiscussionCommentSort();
 
@@ -163,6 +183,8 @@ function IdeaDiscussionTabContent({
       className={className}
       sort={sort}
       onSortChange={onSortChange}
+      replyToCommentId={replyToCommentId}
+      onReplyToConsumed={onReplyToConsumed}
     />
   );
 }
@@ -171,6 +193,8 @@ function ProblemDiscussionTabContent({
   entityId,
   enabled,
   className,
+  replyToCommentId,
+  onReplyToConsumed,
 }: Omit<DiscussionTabProps, 'entityType'>) {
   const { sort, onSortChange } = useProblemDiscussionCommentSort();
 
@@ -182,6 +206,8 @@ function ProblemDiscussionTabContent({
       className={className}
       sort={sort}
       onSortChange={onSortChange}
+      replyToCommentId={replyToCommentId}
+      onReplyToConsumed={onReplyToConsumed}
     />
   );
 }
@@ -191,6 +217,8 @@ export function DiscussionTab({
   entityId,
   enabled = true,
   className,
+  replyToCommentId,
+  onReplyToConsumed,
 }: DiscussionTabProps) {
   return (
     <ReplyProvider>
@@ -199,12 +227,16 @@ export function DiscussionTab({
           entityId={entityId}
           enabled={enabled}
           className={className}
+          replyToCommentId={replyToCommentId}
+          onReplyToConsumed={onReplyToConsumed}
         />
       ) : (
         <ProblemDiscussionTabContent
           entityId={entityId}
           enabled={enabled}
           className={className}
+          replyToCommentId={replyToCommentId}
+          onReplyToConsumed={onReplyToConsumed}
         />
       )}
     </ReplyProvider>
