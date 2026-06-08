@@ -5,6 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { randomUUID } from 'crypto';
 
 import {
@@ -14,6 +15,9 @@ import {
   ProblemStatus,
 } from '../../generated/prisma/client';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { NOTIFICATION_EVENTS } from '../notification/events/notification-event-names';
+import type { CommentCreatedNotificationEvent } from '../notification/events/notification.events';
+import { resolveActorDisplayName } from '../notification/lib/notification-integration.util';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   ALLOWED_COMMENT_ATTACHMENT_TYPES,
@@ -24,6 +28,7 @@ import {
   MAX_COMMENT_ATTACHMENTS,
   PARENT_COMMENT_ENTITY_MISMATCH,
   PARENT_COMMENT_NOT_FOUND,
+  PARENT_QUOTE_CONTENT_MAX_LENGTH,
   PROBLEM_NOT_FOUND,
   commentDetailInclude,
   commentListInclude,
@@ -49,6 +54,7 @@ export class CommentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cloudinary: CloudinaryService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async findIdeaComments(
@@ -56,11 +62,7 @@ export class CommentService {
     query: GetCommentsQueryDto,
     userId: string,
   ): Promise<PaginatedCommentsResponse> {
-    await this.assertEntityVisibleOutsideTx(
-      CommentTargetEntity.IDEA,
-      ideaId,
-      userId,
-    );
+    await this.getVisibleEntity(CommentTargetEntity.IDEA, ideaId, userId);
     return this.findCommentsForEntity(
       CommentTargetEntity.IDEA,
       ideaId,
@@ -74,11 +76,7 @@ export class CommentService {
     query: GetCommentsQueryDto,
     userId: string,
   ): Promise<PaginatedCommentsResponse> {
-    await this.assertEntityVisibleOutsideTx(
-      CommentTargetEntity.PROBLEM,
-      problemId,
-      userId,
-    );
+    await this.getVisibleEntity(CommentTargetEntity.PROBLEM, problemId, userId);
     return this.findCommentsForEntity(
       CommentTargetEntity.PROBLEM,
       problemId,
@@ -93,7 +91,7 @@ export class CommentService {
     userId: string,
     files: Express.Multer.File[] = [],
   ): Promise<CommentDto> {
-    await this.assertEntityVisibleOutsideTx(
+    const entity = await this.getVisibleEntity(
       CommentTargetEntity.IDEA,
       ideaId,
       userId,
@@ -101,6 +99,7 @@ export class CommentService {
     return this.createCommentForEntity(
       CommentTargetEntity.IDEA,
       ideaId,
+      entity,
       dto,
       userId,
       files,
@@ -113,7 +112,7 @@ export class CommentService {
     userId: string,
     files: Express.Multer.File[] = [],
   ): Promise<CommentDto> {
-    await this.assertEntityVisibleOutsideTx(
+    const entity = await this.getVisibleEntity(
       CommentTargetEntity.PROBLEM,
       problemId,
       userId,
@@ -121,6 +120,7 @@ export class CommentService {
     return this.createCommentForEntity(
       CommentTargetEntity.PROBLEM,
       problemId,
+      entity,
       dto,
       userId,
       files,
@@ -178,7 +178,7 @@ export class CommentService {
           select: { id: true, publicId: true },
         });
 
-        const existingMediaIds = new Set(existingMedia.map(media => media.id));
+        const existingMediaIds = new Set(existingMedia.map(m => m.id));
         for (const attachmentId of deletedAttachmentIds) {
           if (!existingMediaIds.has(attachmentId)) {
             throw new BadRequestException('Invalid attachment id');
@@ -268,27 +268,33 @@ export class CommentService {
     await this.prisma.$transaction(async tx => {
       const comment = await tx.comment.findUnique({
         where: { id: commentId },
-        select: { id: true, ideaId: true, problemId: true },
+        select: {
+          id: true,
+          ideaId: true,
+          problemId: true,
+          idea: { select: { status: true, authorId: true } },
+          problem: { select: { status: true, authorId: true } },
+        },
       });
 
       if (!comment) {
         throw new NotFoundException(COMMENT_NOT_FOUND);
       }
 
-      if (comment.ideaId) {
-        await this.assertEntityVisible(
-          tx,
-          CommentTargetEntity.IDEA,
-          comment.ideaId,
-          userId,
-        );
-      } else if (comment.problemId) {
-        await this.assertEntityVisible(
-          tx,
-          CommentTargetEntity.PROBLEM,
-          comment.problemId,
-          userId,
-        );
+      if (comment.ideaId && comment.idea) {
+        if (
+          comment.idea.authorId !== userId &&
+          comment.idea.status !== IdeaStatus.PUBLISHED
+        ) {
+          throw new NotFoundException(IDEA_NOT_FOUND);
+        }
+      } else if (comment.problemId && comment.problem) {
+        if (
+          comment.problem.authorId !== userId &&
+          comment.problem.status !== ProblemStatus.PUBLISHED
+        ) {
+          throw new NotFoundException(PROBLEM_NOT_FOUND);
+        }
       } else {
         throw new NotFoundException(COMMENT_NOT_FOUND);
       }
@@ -354,6 +360,7 @@ export class CommentService {
   private async createCommentForEntity(
     entityType: CommentTargetEntity,
     entityId: string,
+    entityMeta: { authorId: string; title: string | null },
     dto: CreateCommentDto,
     userId: string,
     files: Express.Multer.File[],
@@ -428,6 +435,16 @@ export class CommentService {
         });
       });
 
+      await this.emitCommentCreatedNotification({
+        commentId: fullComment.id,
+        entityType,
+        entityId,
+        actorId: userId,
+        content,
+        entityAuthorId: entityMeta.authorId,
+        entityTitle: entityMeta.title,
+      });
+
       return toCommentResponse(fullComment);
     } catch (error) {
       await this.cleanupCloudinaryAssetsGraceful(
@@ -435,6 +452,42 @@ export class CommentService {
       );
       throw error;
     }
+  }
+
+  private truncateContentSnippet(content: string): string {
+    if (content.length <= PARENT_QUOTE_CONTENT_MAX_LENGTH) return content;
+    return `${content.slice(0, PARENT_QUOTE_CONTENT_MAX_LENGTH).trimEnd()}…`;
+  }
+
+  private async emitCommentCreatedNotification(params: {
+    commentId: string;
+    entityType: CommentTargetEntity;
+    entityId: string;
+    actorId: string;
+    content: string;
+    entityAuthorId: string;
+    entityTitle: string | null;
+  }): Promise<void> {
+    if (params.entityAuthorId === params.actorId) return;
+
+    const actorName = await resolveActorDisplayName(
+      this.prisma,
+      params.actorId,
+    );
+
+    const event: CommentCreatedNotificationEvent = {
+      recipientUserId: params.entityAuthorId,
+      commentId: params.commentId,
+      entityType:
+        params.entityType === CommentTargetEntity.IDEA ? 'idea' : 'problem',
+      entityId: params.entityId,
+      entityTitle: params.entityTitle ?? 'Untitled',
+      actorId: params.actorId,
+      actorName,
+      contentSnippet: this.truncateContentSnippet(params.content),
+    };
+
+    this.eventEmitter.emit(NOTIFICATION_EVENTS.COMMENT_CREATED, event);
   }
 
   private assertCommentNotEmpty(
@@ -493,43 +546,74 @@ export class CommentService {
     }
   }
 
+  private async getVisibleEntity(
+    entityType: CommentTargetEntity,
+    entityId: string,
+    userId: string,
+  ): Promise<{ authorId: string; title: string | null }> {
+    if (entityType === CommentTargetEntity.IDEA) {
+      const idea = await this.prisma.idea.findUnique({
+        where: { id: entityId },
+        select: { status: true, authorId: true, title: true },
+      });
+      if (
+        !idea ||
+        (idea.authorId !== userId && idea.status !== IdeaStatus.PUBLISHED)
+      ) {
+        throw new NotFoundException(IDEA_NOT_FOUND);
+      }
+      return idea;
+    } else {
+      const problem = await this.prisma.problem.findUnique({
+        where: { id: entityId },
+        select: { status: true, authorId: true, title: true },
+      });
+      if (
+        !problem ||
+        (problem.authorId !== userId &&
+          problem.status !== ProblemStatus.PUBLISHED)
+      ) {
+        throw new NotFoundException(PROBLEM_NOT_FOUND);
+      }
+      return problem;
+    }
+  }
+
   private async assertCommentMutable(
     tx: Prisma.TransactionClient,
     commentId: string,
     userId: string,
-  ): Promise<{
-    id: string;
-    authorId: string;
-    ideaId: string | null;
-    problemId: string | null;
-  }> {
+  ): Promise<{ id: string }> {
     const comment = await tx.comment.findUnique({
       where: { id: commentId },
-      select: { id: true, authorId: true, ideaId: true, problemId: true },
+      select: {
+        id: true,
+        authorId: true,
+        ideaId: true,
+        problemId: true,
+        idea: { select: { status: true, authorId: true } },
+        problem: { select: { status: true, authorId: true } },
+      },
     });
 
-    if (!comment) {
-      throw new NotFoundException(COMMENT_NOT_FOUND);
-    }
-
-    if (comment.authorId !== userId) {
+    if (!comment) throw new NotFoundException(COMMENT_NOT_FOUND);
+    if (comment.authorId !== userId)
       throw new ForbiddenException(COMMENT_FORBIDDEN);
-    }
 
-    if (comment.ideaId) {
-      await this.assertEntityVisible(
-        tx,
-        CommentTargetEntity.IDEA,
-        comment.ideaId,
-        userId,
-      );
-    } else if (comment.problemId) {
-      await this.assertEntityVisible(
-        tx,
-        CommentTargetEntity.PROBLEM,
-        comment.problemId,
-        userId,
-      );
+    if (comment.ideaId && comment.idea) {
+      if (
+        comment.idea.authorId !== userId &&
+        comment.idea.status !== IdeaStatus.PUBLISHED
+      ) {
+        throw new NotFoundException(IDEA_NOT_FOUND);
+      }
+    } else if (comment.problemId && comment.problem) {
+      if (
+        comment.problem.authorId !== userId &&
+        comment.problem.status !== ProblemStatus.PUBLISHED
+      ) {
+        throw new NotFoundException(PROBLEM_NOT_FOUND);
+      }
     } else {
       throw new NotFoundException(COMMENT_NOT_FOUND);
     }
@@ -548,82 +632,16 @@ export class CommentService {
       select: { id: true, ideaId: true, problemId: true },
     });
 
-    if (!parent) {
-      throw new BadRequestException(PARENT_COMMENT_NOT_FOUND);
-    }
+    if (!parent) throw new BadRequestException(PARENT_COMMENT_NOT_FOUND);
 
     if (entityType === CommentTargetEntity.IDEA && parent.ideaId !== entityId) {
       throw new BadRequestException(PARENT_COMMENT_ENTITY_MISMATCH);
     }
-
     if (
       entityType === CommentTargetEntity.PROBLEM &&
       parent.problemId !== entityId
     ) {
       throw new BadRequestException(PARENT_COMMENT_ENTITY_MISMATCH);
-    }
-  }
-
-  private async assertEntityVisibleOutsideTx(
-    entityType: CommentTargetEntity,
-    entityId: string,
-    userId: string,
-  ): Promise<void> {
-    if (entityType === CommentTargetEntity.IDEA) {
-      const idea = await this.prisma.idea.findUnique({
-        where: { id: entityId },
-        select: { status: true, authorId: true },
-      });
-      if (
-        !idea ||
-        (idea.authorId !== userId && idea.status !== IdeaStatus.PUBLISHED)
-      ) {
-        throw new NotFoundException(IDEA_NOT_FOUND);
-      }
-    } else {
-      const problem = await this.prisma.problem.findUnique({
-        where: { id: entityId },
-        select: { status: true, authorId: true },
-      });
-      if (
-        !problem ||
-        (problem.authorId !== userId &&
-          problem.status !== ProblemStatus.PUBLISHED)
-      ) {
-        throw new NotFoundException(PROBLEM_NOT_FOUND);
-      }
-    }
-  }
-
-  private async assertEntityVisible(
-    tx: Prisma.TransactionClient,
-    entityType: CommentTargetEntity,
-    entityId: string,
-    userId: string,
-  ): Promise<void> {
-    if (entityType === CommentTargetEntity.IDEA) {
-      const idea = await tx.idea.findUnique({
-        where: { id: entityId },
-        select: { status: true, authorId: true },
-      });
-      if (
-        !idea ||
-        (idea.authorId !== userId && idea.status !== IdeaStatus.PUBLISHED)
-      ) {
-        throw new NotFoundException(IDEA_NOT_FOUND);
-      }
-    } else {
-      const problem = await tx.problem.findUnique({
-        where: { id: entityId },
-        select: { status: true, authorId: true },
-      });
-      if (
-        !problem ||
-        (problem.authorId !== userId &&
-          problem.status !== ProblemStatus.PUBLISHED)
-      ) {
-        throw new NotFoundException(PROBLEM_NOT_FOUND);
-      }
     }
   }
 }

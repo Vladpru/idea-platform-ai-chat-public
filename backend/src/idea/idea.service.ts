@@ -20,6 +20,13 @@ import {
   hasSummarizableContent,
 } from '../ai-summary/summary-content.util';
 import { buildSummaryResetData } from '../ai-summary/summary-reset.util';
+import { NOTIFICATION_EVENTS } from '../notification/events/notification-event-names';
+import type { StatusChangedNotificationEvent } from '../notification/events/notification.events';
+import {
+  hasLifecycleChange,
+  resolveActorDisplayName,
+  resolveIdeaRecipientUserIds,
+} from '../notification/lib/notification-integration.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateIdeaDto } from './dto/create-idea.dto';
 import { UpdateIdeaDraftDto } from './dto/update-idea-draft.dto';
@@ -57,10 +64,14 @@ export class IdeaService {
   ) {}
 
   async toggleLike(ideaId: string, userId: string): Promise<void> {
+    let likeAdded = false;
+    let recipientUserId: string | null = null;
+    let entityTitle: string | null = null;
+
     await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const existing = await tx.idea.findFirst({
         where: { id: ideaId },
-        select: { id: true, status: true, authorId: true },
+        select: { id: true, status: true, authorId: true, title: true },
       });
 
       if (!existing) {
@@ -104,7 +115,24 @@ export class IdeaService {
         data: { likeCount: { increment: 1 } },
         select: { id: true },
       });
+
+      likeAdded = true;
+      recipientUserId = existing.authorId;
+      entityTitle = existing.title;
     });
+
+    if (likeAdded && recipientUserId && recipientUserId !== userId) {
+      const actorName = await resolveActorDisplayName(this.prisma, userId);
+
+      this.eventEmitter.emit(NOTIFICATION_EVENTS.IDEA_SUPPORTER_ADDED, {
+        recipientUserId,
+        entityType: 'idea',
+        entityId: ideaId,
+        entityTitle: entityTitle ?? 'Untitled',
+        actorId: userId,
+        actorName,
+      });
+    }
   }
 
   private async cleanupOrphanedDraftProblems(
@@ -366,13 +394,43 @@ export class IdeaService {
       .filter((tagId): tagId is string => Boolean(tagId));
   }
 
+  private async emitIdeaStatusChanged(params: {
+    ideaId: string;
+    ideaTitle: string | null;
+    actorId: string;
+    previousStatus: string;
+    previousStage: string | null;
+    nextStatus: string;
+    nextStage: string | null;
+  }): Promise<void> {
+    const [recipientUserIds, actorName] = await Promise.all([
+      resolveIdeaRecipientUserIds(this.prisma, params.ideaId),
+      resolveActorDisplayName(this.prisma, params.actorId),
+    ]);
+
+    const event: StatusChangedNotificationEvent = {
+      entityType: 'idea',
+      entityId: params.ideaId,
+      entityTitle: params.ideaTitle ?? 'Untitled',
+      actorId: params.actorId,
+      actorName,
+      recipientUserIds,
+      previousStatus: params.previousStatus,
+      previousStage: params.previousStage,
+      nextStatus: params.nextStatus,
+      nextStage: params.nextStage,
+    };
+
+    this.eventEmitter.emit(NOTIFICATION_EVENTS.STATUS_CHANGED, event);
+  }
+
   async create(
     authorId: string,
     dto: CreateIdeaDto,
   ): Promise<IdeaFormResponse> {
     const { isPublished, ...updateDto } = dto;
 
-    const { idea, shouldRequestSummary, publishedProblems } =
+    const { idea, shouldRequestSummary, publishedProblems, publishLifecycle } =
       await this.prisma.$transaction(async tx => {
         if (!isPublished) {
           const currentDraftsCount = await tx.idea.count({
@@ -385,6 +443,8 @@ export class IdeaService {
             );
           }
         }
+
+        const initialStage = dto.stage ?? null;
 
         let created = await tx.idea.create({
           data: {
@@ -506,6 +566,12 @@ export class IdeaService {
             idea: created,
             shouldRequestSummary: requestSummary,
             publishedProblems,
+            publishLifecycle: isPublished
+              ? {
+                  previousStatus: IdeaStatus.DRAFT,
+                  previousStage: initialStage,
+                }
+              : null,
           };
         } else {
           const reloaded = await tx.idea.findUnique({
@@ -520,6 +586,7 @@ export class IdeaService {
           idea: created,
           shouldRequestSummary: false,
           publishedProblems: [],
+          publishLifecycle: null,
         };
       });
 
@@ -527,6 +594,18 @@ export class IdeaService {
       entityType: 'idea',
       id: idea.id,
     });
+
+    if (publishLifecycle) {
+      await this.emitIdeaStatusChanged({
+        ideaId: idea.id,
+        ideaTitle: idea.title,
+        actorId: authorId,
+        previousStatus: publishLifecycle.previousStatus,
+        previousStage: publishLifecycle.previousStage,
+        nextStatus: idea.status,
+        nextStage: idea.stage,
+      });
+    }
 
     if (shouldRequestSummary) {
       this.aiSummaryService.enqueueIdeaSummary(idea.id);
@@ -544,11 +623,17 @@ export class IdeaService {
     authorId: string,
     dto: UpdateIdeaDraftDto,
   ): Promise<IdeaFormResponse> {
-    const { updated, shouldResetSummary } = await this.prisma.$transaction(
-      async tx => {
+    const { updated, shouldResetSummary, existing } =
+      await this.prisma.$transaction(async tx => {
         const existing = await tx.idea.findFirst({
           where: { id, authorId },
-          select: { id: true, status: true, title: true, description: true },
+          select: {
+            id: true,
+            status: true,
+            stage: true,
+            title: true,
+            description: true,
+          },
         });
 
         if (!existing) {
@@ -580,14 +665,25 @@ export class IdeaService {
           throw new NotFoundException(IDEA_NOT_FOUND);
         }
 
-        return { updated: record, shouldResetSummary: resetSummary };
-      },
-    );
+        return { updated: record, shouldResetSummary: resetSummary, existing };
+      });
 
     this.eventEmitter.emit('entity.mutated', {
       entityType: 'idea',
       id: updated.id,
     });
+
+    if (hasLifecycleChange(existing, updated)) {
+      await this.emitIdeaStatusChanged({
+        ideaId: updated.id,
+        ideaTitle: updated.title,
+        actorId: authorId,
+        previousStatus: existing.status,
+        previousStage: existing.stage,
+        nextStatus: updated.status,
+        nextStage: updated.stage,
+      });
+    }
 
     if (shouldResetSummary && updated.status === IdeaStatus.PUBLISHED) {
       this.aiSummaryService.enqueueIdeaSummary(updated.id);
@@ -601,8 +697,8 @@ export class IdeaService {
     authorId: string,
     dto: UpdatePublishedIdeaDto,
   ): Promise<IdeaFormResponse> {
-    const { updated, shouldResetSummary } = await this.prisma.$transaction(
-      async tx => {
+    const { updated, shouldResetSummary, existing } =
+      await this.prisma.$transaction(async tx => {
         const existing = await tx.idea.findFirst({
           where: { id, authorId },
           include: IDEA_FORM_INCLUDE,
@@ -659,14 +755,25 @@ export class IdeaService {
           throw new NotFoundException(IDEA_NOT_FOUND);
         }
 
-        return { updated: record, shouldResetSummary: resetSummary };
-      },
-    );
+        return { updated: record, shouldResetSummary: resetSummary, existing };
+      });
 
     this.eventEmitter.emit('entity.mutated', {
       entityType: 'idea',
       id: updated.id,
     });
+
+    if (hasLifecycleChange(existing, updated)) {
+      await this.emitIdeaStatusChanged({
+        ideaId: updated.id,
+        ideaTitle: updated.title,
+        actorId: authorId,
+        previousStatus: existing.status,
+        previousStage: existing.stage,
+        nextStatus: updated.status,
+        nextStage: updated.stage,
+      });
+    }
 
     if (shouldResetSummary) {
       this.aiSummaryService.enqueueIdeaSummary(updated.id);
@@ -676,125 +783,143 @@ export class IdeaService {
   }
 
   async publish(id: string, authorId: string): Promise<IdeaFormResponse> {
-    const { published, shouldRequestSummary, publishedProblems } =
-      await this.prisma.$transaction(async tx => {
-        const idea = await tx.idea.findFirst({
-          where: { id, authorId },
-          include: IDEA_FORM_INCLUDE,
+    const {
+      published,
+      shouldRequestSummary,
+      publishedProblems,
+      previousLifecycle,
+    } = await this.prisma.$transaction(async tx => {
+      const idea = await tx.idea.findFirst({
+        where: { id, authorId },
+        include: IDEA_FORM_INCLUDE,
+      });
+
+      if (!idea) {
+        throw new NotFoundException(IDEA_NOT_FOUND);
+      }
+
+      if (idea.status !== IdeaStatus.DRAFT) {
+        if (idea.status === IdeaStatus.PUBLISHED) {
+          throw new BadRequestException('Idea is already published');
+        }
+        if (idea.status === IdeaStatus.ARCHIVED) {
+          throw new BadRequestException('Archived ideas cannot be published');
+        }
+        throw new BadRequestException(
+          `Cannot publish idea with status: ${idea.status as string}`,
+        );
+      }
+
+      const errors = this.validateForPublish({
+        title: idea.title,
+        description: idea.description,
+        stage: idea.stage,
+        problemsCount: idea.problems.length,
+      });
+
+      if (errors.length > 0) {
+        throw new UnprocessableEntityException({ errors });
+      }
+
+      const linkedProblemIds = idea.problems.map(link => link.problemId);
+      const publishedAt = new Date();
+      let publishedProblems: Array<{
+        id: string;
+        title: string;
+        description: string;
+        valueProposition: string | null;
+        category: string | null;
+        impact: string | null;
+      }> = [];
+
+      if (linkedProblemIds.length > 0) {
+        const draftProblems = await tx.problem.findMany({
+          where: {
+            id: { in: linkedProblemIds },
+            status: ProblemStatus.DRAFT,
+          },
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            valueProposition: true,
+            category: true,
+            impact: true,
+          },
         });
 
-        if (!idea) {
-          throw new NotFoundException(IDEA_NOT_FOUND);
-        }
-
-        if (idea.status !== IdeaStatus.DRAFT) {
-          if (idea.status === IdeaStatus.PUBLISHED) {
-            throw new BadRequestException('Idea is already published');
-          }
-          if (idea.status === IdeaStatus.ARCHIVED) {
-            throw new BadRequestException('Archived ideas cannot be published');
-          }
-          throw new BadRequestException(
-            `Cannot publish idea with status: ${idea.status as string}`,
-          );
-        }
-
-        const errors = this.validateForPublish({
-          title: idea.title,
-          description: idea.description,
-          stage: idea.stage,
-          problemsCount: idea.problems.length,
-        });
-
-        if (errors.length > 0) {
-          throw new UnprocessableEntityException({ errors });
-        }
-
-        const linkedProblemIds = idea.problems.map(link => link.problemId);
-        const publishedAt = new Date();
-        let publishedProblems: Array<{
-          id: string;
-          title: string;
-          description: string;
-          valueProposition: string | null;
-          category: string | null;
-          impact: string | null;
-        }> = [];
-
-        if (linkedProblemIds.length > 0) {
-          const draftProblems = await tx.problem.findMany({
-            where: {
-              id: { in: linkedProblemIds },
-              status: ProblemStatus.DRAFT,
-            },
-            select: {
-              id: true,
-              title: true,
-              description: true,
-              valueProposition: true,
-              category: true,
-              impact: true,
-            },
+        for (const problem of draftProblems) {
+          const summarizable = hasSummarizableContent({
+            entityType: 'problem',
+            title: problem.title,
+            description: problem.description,
+            valueProposition: problem.valueProposition,
+            category: problem.category,
+            impact: problem.impact,
           });
 
-          for (const problem of draftProblems) {
-            const summarizable = hasSummarizableContent({
-              entityType: 'problem',
-              title: problem.title,
-              description: problem.description,
-              valueProposition: problem.valueProposition,
-              category: problem.category,
-              impact: problem.impact,
-            });
-
-            await tx.problem.update({
-              where: { id: problem.id },
-              data: {
-                status: ProblemStatus.PUBLISHED,
-                publishedAt,
-                ...buildSummaryResetData(summarizable),
-              },
-            });
-          }
-
-          publishedProblems = draftProblems.filter(problem =>
-            hasSummarizableContent({
-              entityType: 'problem',
-              title: problem.title,
-              description: problem.description,
-              valueProposition: problem.valueProposition,
-              category: problem.category,
-              impact: problem.impact,
-            }),
-          );
+          await tx.problem.update({
+            where: { id: problem.id },
+            data: {
+              status: ProblemStatus.PUBLISHED,
+              publishedAt,
+              ...buildSummaryResetData(summarizable),
+            },
+          });
         }
 
-        const requestSummary = hasSummarizableContent({
-          entityType: 'idea',
-          title: idea.title,
-          description: idea.description,
-        });
+        publishedProblems = draftProblems.filter(problem =>
+          hasSummarizableContent({
+            entityType: 'problem',
+            title: problem.title,
+            description: problem.description,
+            valueProposition: problem.valueProposition,
+            category: problem.category,
+            impact: problem.impact,
+          }),
+        );
+      }
 
-        const publishedIdea = await tx.idea.update({
-          where: { id },
-          data: {
-            status: IdeaStatus.PUBLISHED,
-            publishedAt,
-            ...buildSummaryResetData(requestSummary),
-          },
-          include: IDEA_FORM_INCLUDE,
-        });
-
-        return {
-          published: publishedIdea,
-          shouldRequestSummary: requestSummary,
-          publishedProblems,
-        };
+      const requestSummary = hasSummarizableContent({
+        entityType: 'idea',
+        title: idea.title,
+        description: idea.description,
       });
+
+      const publishedIdea = await tx.idea.update({
+        where: { id },
+        data: {
+          status: IdeaStatus.PUBLISHED,
+          publishedAt,
+          ...buildSummaryResetData(requestSummary),
+        },
+        include: IDEA_FORM_INCLUDE,
+      });
+
+      return {
+        published: publishedIdea,
+        shouldRequestSummary: requestSummary,
+        publishedProblems,
+        previousLifecycle: {
+          status: idea.status,
+          stage: idea.stage,
+        },
+      };
+    });
 
     this.eventEmitter.emit('entity.mutated', {
       entityType: 'idea',
       id: published.id,
+    });
+
+    await this.emitIdeaStatusChanged({
+      ideaId: published.id,
+      ideaTitle: published.title,
+      actorId: authorId,
+      previousStatus: previousLifecycle.status,
+      previousStage: previousLifecycle.stage,
+      nextStatus: published.status,
+      nextStage: published.stage,
     });
 
     if (shouldRequestSummary) {
