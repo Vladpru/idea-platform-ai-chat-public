@@ -1,5 +1,5 @@
-import type { StatisticsBucketGranularity } from '../../shared/types/statistics.types';
-import { bucketDateToZonedInstant } from './statistics-period.util';
+import type { StatisticsBucketGranularity } from '../../../shared/types/statistics.types';
+import { bucketDateToZonedInstant } from '../period/period.util';
 
 export type ChartLabelStyle = 'hour' | 'weekday' | 'shortDate' | 'month';
 

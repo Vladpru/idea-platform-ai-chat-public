@@ -2,7 +2,7 @@ import type {
   StatisticsChartPanel,
   StatisticsChartSeries,
   StatisticsDataPoint,
-} from '../../shared/types/statistics.types';
+} from '../../../shared/types/statistics.types';
 
 export function sumSeriesPoints(points: StatisticsDataPoint[]): number {
   return points.reduce((sum, point) => sum + point.value, 0);

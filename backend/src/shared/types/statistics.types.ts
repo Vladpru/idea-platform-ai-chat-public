@@ -62,6 +62,21 @@ export interface LeaderboardResponse {
   entries: LeaderboardEntry[];
 }
 
+export interface MyScoreCategory {
+  key: ScoreCategoryKey;
+  label: string;
+  countLabel: string;
+  count: number;
+  points: number;
+}
+
+export type ScoreCategoryKey = keyof LeaderboardBreakdown;
+
+export interface MyScore {
+  totalPoints: number;
+  categories: MyScoreCategory[];
+}
+
 export interface StatisticsChartsResponse {
   newEntities: StatisticsChartPanel;
   users: StatisticsChartPanel;
@@ -74,4 +89,5 @@ export interface StatisticsSnapshotResponse {
   activity: StatisticsMetric[];
   topContributors: StatisticsContributor[];
   costBenefitTotal: number;
+  myScore: MyScore;
 }

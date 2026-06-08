@@ -7,10 +7,7 @@ import {
   subMonths,
 } from 'date-fns';
 
-import type {
-  StatisticsBucketGranularity,
-  StatisticsPeriod,
-} from '../../shared/types/statistics.types';
+import type { StatisticsPeriod } from '../../../shared/types/statistics.types';
 
 export type StatisticsPeriodRange = {
   period: StatisticsPeriod;
@@ -121,7 +118,10 @@ export function resolveStatisticsPeriodRange(
       break;
     case 'all_time':
       start = allTimeStart
-        ? fromZonedTime(startOfDay(toZonedTime(allTimeStart, timeZone)), timeZone)
+        ? fromZonedTime(
+            startOfDay(toZonedTime(allTimeStart, timeZone)),
+            timeZone,
+          )
         : fromZonedTime(startOfDay(subMonths(zonedNow, 11)), timeZone);
       break;
     default:
@@ -129,23 +129,6 @@ export function resolveStatisticsPeriodRange(
   }
 
   return { period, start, end };
-}
-
-export function resolveStatisticsBucketGranularity(
-  period: StatisticsPeriod,
-  start: Date,
-  end: Date,
-): StatisticsBucketGranularity {
-  if (period === 'day') {
-    return 'hour';
-  }
-
-  if (period === 'year' || period === 'all_time') {
-    return 'month';
-  }
-
-  const daySpan = (end.getTime() - start.getTime()) / 86_400_000;
-  return daySpan > 90 ? 'month' : 'day';
 }
 
 export function bucketDateToZonedInstant(
