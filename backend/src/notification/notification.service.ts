@@ -43,7 +43,7 @@ export class NotificationService {
       take: limit + 1,
       skip: query.cursor ? 1 : 0,
       cursor: query.cursor ? { id: query.cursor } : undefined,
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     });
 
     const hasNextPage = notifications.length > limit;
