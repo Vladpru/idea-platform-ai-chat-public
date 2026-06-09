@@ -88,6 +88,7 @@ export class LiveChatGateway
     }
 
     client.data.userId = userId;
+    client.emit('connection_ready');
     this.logger.debug(`Live chat client connected: ${client.id}`);
   }
 

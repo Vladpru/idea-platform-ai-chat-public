@@ -1,7 +1,7 @@
 import { Prisma } from '../../generated/prisma/client';
 
 export const LIVE_CHAT_ROOM_NOT_FOUND = 'Live chat room not found';
-export const LIVE_CHAT_MESSAGE_CONTENT_MAX_LENGTH = 5000;
+export const LIVE_CHAT_MESSAGE_CONTENT_MAX_LENGTH = 2000;
 export const LIVE_CHAT_MESSAGE_LIST_MAX = 50;
 export const LIVE_CHAT_MESSAGE_RATE_LIMIT = 10;
 export const LIVE_CHAT_MESSAGE_RATE_WINDOW_MS = 10_000;
