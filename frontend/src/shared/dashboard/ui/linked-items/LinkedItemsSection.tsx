@@ -55,7 +55,8 @@ export function LinkedItemsSection({
 
     const syncScrollable = () => {
       setIsScrollable(
-        scrollContainer.scrollWidth > scrollContainer.clientWidth + 1,
+        items.length > 1 &&
+          scrollContainer.scrollWidth > scrollContainer.clientWidth + 1,
       );
     };
 
@@ -74,7 +75,7 @@ export function LinkedItemsSection({
       scrollContainer.removeEventListener('scroll', syncScrollable);
       resizeObserver.disconnect();
     };
-  }, [expanded, items]);
+  }, [columnCount, expanded, items]);
 
   if (items.length === 0) {
     return null;

@@ -1,11 +1,10 @@
 import { type SessionUser, nameInitial } from '@/features/auth';
-import { fetchHasPassword } from '@/features/profile/api/profile.api';
 import { ChangePasswordModal } from '@/features/profile/ui/ChangePasswordModal';
 import {
   outlineBtn,
   primaryBtn,
 } from '@/features/profile/ui/profile-view-classes';
-import { useQuery } from '@tanstack/react-query';
+import { useCurrentUserQuery } from '@/features/settings/hooks/use-notification-preferences';
 import { useState } from 'react';
 
 import { cn } from '@/shared/lib/utils';
@@ -24,10 +23,8 @@ export function ProfileDisplayPanel({
   onEdit,
 }: ProfileDisplayPanelProps) {
   const [passwordOpen, setPasswordOpen] = useState(false);
-  const { data: hasPassword } = useQuery({
-    queryKey: ['users', 'me', 'has-password'],
-    queryFn: fetchHasPassword,
-  });
+  const { data: currentUser } = useCurrentUserQuery();
+  const hasPassword = currentUser?.hasPassword ?? false;
 
   return (
     <div className="mt-8 flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">

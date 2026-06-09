@@ -1,4 +1,9 @@
-import { fetchCurrentUser, type UserPublic } from '@/features/profile/api/profile.api';
+import {
+  fetchCurrentUser,
+  mergeCurrentUser,
+  type CurrentUser,
+  type UserPublic,
+} from '@/features/profile/api/profile.api';
 import { updateNotificationPreferences } from '@/features/settings/api/notification-preferences.api';
 import {
   DEFAULT_NOTIFICATION_PREFERENCES,
@@ -17,7 +22,7 @@ import { toast } from 'sonner';
 export const currentUserQueryKey = ['users', 'me'] as const;
 
 type UpdatePreferencesContext = {
-  previousUser?: UserPublic;
+  previousUser?: CurrentUser;
   previousPreferences?: NotificationPreferencesMap;
 };
 
@@ -38,14 +43,14 @@ export function useUpdateNotificationPreferences() {
     onMutate: async (payload: UpdateNotificationPreferencesPayload) => {
       await queryClient.cancelQueries({ queryKey: currentUserQueryKey });
 
-      const previousUser = queryClient.getQueryData<UserPublic>(
+      const previousUser = queryClient.getQueryData<CurrentUser>(
         currentUserQueryKey,
       );
       const previousPreferences =
         previousUser?.notificationPreferences ?? DEFAULT_NOTIFICATION_PREFERENCES;
 
       if (previousUser) {
-        queryClient.setQueryData<UserPublic>(currentUserQueryKey, {
+        queryClient.setQueryData<CurrentUser>(currentUserQueryKey, {
           ...previousUser,
           notificationPreferences: mergeNotificationPreferences(
             previousPreferences,
@@ -61,7 +66,7 @@ export function useUpdateNotificationPreferences() {
     },
     onError: (_error, _payload, context) => {
       if (context?.previousUser && context.previousPreferences) {
-        queryClient.setQueryData<UserPublic>(currentUserQueryKey, {
+        queryClient.setQueryData<CurrentUser>(currentUserQueryKey, {
           ...context.previousUser,
           notificationPreferences: context.previousPreferences,
         });

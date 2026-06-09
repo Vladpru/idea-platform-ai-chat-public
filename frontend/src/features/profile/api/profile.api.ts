@@ -30,6 +30,11 @@ export type UserPublic = {
   updatedAt: string;
 };
 
+/** Matches backend `CurrentUserPublic` from `GET /users/me`. */
+export type CurrentUser = UserPublic & {
+  hasPassword: boolean;
+};
+
 export type UpdateThemePayload = {
   theme: ThemePreference;
 };
@@ -39,9 +44,20 @@ export type PatchUserPayload = {
   lastName: string;
 };
 
-export async function fetchCurrentUser(): Promise<UserPublic> {
-  const { data } = await api.get<UserPublic>('/users/me');
+export async function fetchCurrentUser(): Promise<CurrentUser> {
+  const { data } = await api.get<CurrentUser>('/users/me');
   return data;
+}
+
+export function mergeCurrentUser(
+  previous: CurrentUser | undefined,
+  next: UserPublic,
+): CurrentUser {
+  return {
+    ...previous,
+    ...next,
+    hasPassword: previous?.hasPassword ?? false,
+  };
 }
 
 export async function patchTheme(
@@ -71,15 +87,6 @@ export async function uploadMyAvatar(file: File): Promise<UserPublic> {
 export async function removeMyAvatar(): Promise<UserPublic> {
   const { data } = await api.delete<UserPublic>('/users/me/avatar');
   return data;
-}
-
-export type HasPasswordResponse = {
-  hasPassword: boolean;
-};
-
-export async function fetchHasPassword(): Promise<boolean> {
-  const { data } = await api.get<HasPasswordResponse>('/users/me/has-password');
-  return data.hasPassword;
 }
 
 export type ChangePasswordPayload = {

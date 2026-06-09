@@ -1,7 +1,7 @@
 import { formatIdeaDate } from '@/features/idea-details/lib/format-idea-date';
 import type { IdeaDetailsStats } from '@/features/idea-details/model/idea-details.types';
-import { DashboardCardStats } from '@/shared/dashboard';
 
+import { DashboardCardStats } from '@/shared/dashboard';
 import { cn } from '@/shared/lib/utils';
 
 type IdeaStatsFooterProps = {
@@ -46,7 +46,7 @@ export function IdeaStatsFooter({
         entityType={entityType}
         isLiked={isLiked}
         iconClassName="size-4"
-        className="text-brand-gray-600 gap-4 sm:gap-6"
+        className="text-brand-gray-600 gap-4"
       />
     </footer>
   );

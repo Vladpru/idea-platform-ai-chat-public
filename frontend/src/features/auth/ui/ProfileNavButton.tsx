@@ -21,6 +21,10 @@ import { LogoutConfirmDialog } from './LogoutConfirmDialog';
 const linkRowClassName =
   'flex w-full cursor-pointer items-center py-3 px-4 text-base';
 
+const activeLinkProps = {
+  className: 'bg-accent text-primary font-semibold',
+};
+
 export interface UserNavProps {
   triggerClassName: string;
 }
@@ -56,7 +60,12 @@ export function UserNav({ triggerClassName }: UserNavProps) {
           className="border-brand-gray-200 w-62 rounded-sm text-base shadow-lg"
         >
           <DropdownMenuItem asChild className="cursor-pointer p-0 text-sm">
-            <Link to="/profile" className={linkRowClassName}>
+            <Link
+              to="/profile"
+              className={linkRowClassName}
+              activeOptions={{ exact: true }}
+              activeProps={activeLinkProps}
+            >
               <span>Profile</span>
             </Link>
           </DropdownMenuItem>
@@ -65,6 +74,7 @@ export function UserNav({ triggerClassName }: UserNavProps) {
               to={ROUTES.profileProblems}
               search={{ tab: 'published' }}
               className={linkRowClassName}
+              activeProps={activeLinkProps}
             >
               My Problems, Joins & Drafts
             </Link>
@@ -74,19 +84,28 @@ export function UserNav({ triggerClassName }: UserNavProps) {
               to={ROUTES.profileIdeas}
               search={{ tab: 'published' }}
               className={linkRowClassName}
+              activeProps={activeLinkProps}
             >
               My Ideas, Joins & Drafts
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild className="cursor-pointer p-0 text-sm">
-            <Link to={ROUTES.liveChats} className={linkRowClassName}>
+            <Link
+              to={ROUTES.liveChats}
+              className={linkRowClassName}
+              activeProps={activeLinkProps}
+            >
               <span>Live Chats</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator className="mx-1" />
 
           <DropdownMenuItem asChild className="cursor-pointer p-0 text-sm">
-            <Link to={ROUTES.settings} className={linkRowClassName}>
+            <Link
+              to={ROUTES.settings}
+              className={linkRowClassName}
+              activeProps={activeLinkProps}
+            >
               <span>Settings</span>
             </Link>
           </DropdownMenuItem>
