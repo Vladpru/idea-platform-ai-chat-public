@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "routes:generate": "tsr generate",
     "build": "tsc -b && vite build",
     "format": "prettier --write .",
     "lint": "eslint .",
@@ -47,6 +48,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@tanstack/react-query-devtools": "^5.100.9",
+    "@tanstack/router-cli": "^1.167.17",
     "@tanstack/router-plugin": "^1.167.35",
     "@types/node": "^25.6.2",
     "@types/react": "^19.2.14",

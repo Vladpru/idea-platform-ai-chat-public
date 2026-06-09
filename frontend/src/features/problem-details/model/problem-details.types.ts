@@ -8,6 +8,7 @@ export type ProblemTabId =
   | 'description'
   | 'attachments'
   | 'discussion'
+  | 'live-chat'
   | 'linked-ideas';
 
 export type ProblemDetailsCounts = {
