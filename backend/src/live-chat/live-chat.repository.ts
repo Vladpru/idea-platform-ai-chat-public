@@ -1,16 +1,18 @@
 import { Injectable } from '@nestjs/common';
 
-import { IdeaStatus, ProblemStatus } from '../../generated/prisma/client';
 import { EntityTarget } from '../entity-visibility/entity-target.enum';
 import { PrismaService } from '../prisma/prisma.service';
 import {
+  LIVE_CHAT_AUTHOR_SELECT,
   liveChatMessageInclude,
   liveChatRoomInclude,
 } from './live-chat.constants';
+import { toLiveChatAuthorResponse } from './live-chat.mapper';
 import type {
   LiveChatMessageRecord,
   LiveChatRoomRecord,
 } from './live-chat.records';
+import type { LiveChatTeamMemberDto } from './types/live-chat.types';
 
 type LastMessageRow = {
   id: string;
@@ -34,12 +36,12 @@ export class LiveChatRepository {
         OR: [
           {
             idea: {
-              OR: [{ status: IdeaStatus.PUBLISHED }, { authorId: userId }],
+              OR: [{ authorId: userId }, { members: { some: { userId } } }],
             },
           },
           {
             problem: {
-              OR: [{ status: ProblemStatus.PUBLISHED }, { authorId: userId }],
+              OR: [{ authorId: userId }, { members: { some: { userId } } }],
             },
           },
         ],
@@ -106,7 +108,7 @@ export class LiveChatRepository {
         u.avatar_url AS "authorAvatarUrl"
       FROM live_chat_message m
       INNER JOIN "user" u ON u.id = m.author_id
-      WHERE m.room_id = ANY(${roomIds}::uuid[])
+      WHERE m.room_id::text = ANY(${roomIds}::text[])
       ORDER BY m.room_id, m.created_at DESC, m.id DESC
     `;
 
@@ -168,5 +170,62 @@ export class LiveChatRepository {
 
       return created;
     });
+  }
+
+  async findEntityTeam(
+    entityType: EntityTarget,
+    entityId: string,
+  ): Promise<LiveChatTeamMemberDto[]> {
+    if (entityType === EntityTarget.IDEA) {
+      const idea = await this.prisma.idea.findUnique({
+        where: { id: entityId },
+        select: {
+          author: { select: LIVE_CHAT_AUTHOR_SELECT },
+          members: {
+            select: {
+              user: { select: LIVE_CHAT_AUTHOR_SELECT },
+            },
+            orderBy: { joinedAt: 'asc' },
+          },
+        },
+      });
+
+      if (!idea) {
+        return [];
+      }
+
+      return [
+        { ...toLiveChatAuthorResponse(idea.author), isAuthor: true },
+        ...idea.members.map(member => ({
+          ...toLiveChatAuthorResponse(member.user),
+          isAuthor: false,
+        })),
+      ];
+    }
+
+    const problem = await this.prisma.problem.findUnique({
+      where: { id: entityId },
+      select: {
+        author: { select: LIVE_CHAT_AUTHOR_SELECT },
+        members: {
+          select: {
+            user: { select: LIVE_CHAT_AUTHOR_SELECT },
+          },
+          orderBy: { joinedAt: 'asc' },
+        },
+      },
+    });
+
+    if (!problem) {
+      return [];
+    }
+
+    return [
+      { ...toLiveChatAuthorResponse(problem.author), isAuthor: true },
+      ...problem.members.map(member => ({
+        ...toLiveChatAuthorResponse(member.user),
+        isAuthor: false,
+      })),
+    ];
   }
 }

@@ -1,6 +1,7 @@
 import { getInitials } from '@/features/idea-details/lib/get-initials';
 import type { IdeaDetails } from '@/features/idea-details/model/idea-details.types';
 import { IdeaProjectActions } from '@/features/idea-details/ui/IdeaProjectActions';
+import { EntityLiveChatAction } from '@/features/live-chat/ui/EntityLiveChatAction';
 import { useDeleteIdea } from '@/features/ideas/hooks/use-delete-idea';
 import {
   IDEA_DELETE_CONFIRM_DESCRIPTION,
@@ -243,8 +244,17 @@ export function IdeaHeader({
                 </div>
               ) : null}
 
-              {showProjectActions && !isEditing ? (
-                <IdeaProjectActions ideaId={idea.id} viewer={idea.viewer} />
+              {!isEditing ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  {showProjectActions ? (
+                    <IdeaProjectActions ideaId={idea.id} viewer={idea.viewer} />
+                  ) : null}
+                  <EntityLiveChatAction
+                    entityKind="IDEA"
+                    entityId={idea.id}
+                    viewer={idea.viewer}
+                  />
+                </div>
               ) : null}
             </div>
           </div>

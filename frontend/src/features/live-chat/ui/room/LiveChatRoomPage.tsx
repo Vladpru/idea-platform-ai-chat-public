@@ -1,5 +1,6 @@
 import { useLiveChatRoomQuery } from '@/features/live-chat/hooks/queries/use-live-chat-room-query';
 import { LiveChatRoomPanel } from '@/features/live-chat/ui/room/LiveChatRoomPanel';
+import { LiveChatTeamAvatars } from '@/features/live-chat/ui/room/LiveChatTeamAvatars';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
 
@@ -32,28 +33,32 @@ export function LiveChatRoomPage({ roomId }: LiveChatRoomPageProps) {
         </p>
       ) : (
         <>
-          <header className="mb-6">
-            <p className="text-brand-gray-500 text-sm tracking-wide uppercase">
-              Live chat
-            </p>
-            <h1 className="text-brand-dark-blue text-2xl font-bold">
-              {room.entity.title ?? 'Untitled'}
-            </h1>
-            <Link
-              to={
-                room.entity.type === 'ideas'
-                  ? '/ideas/$ideaId'
-                  : '/problems/$problemId'
-              }
-              params={
-                room.entity.type === 'ideas'
-                  ? { ideaId: room.entity.id }
-                  : { problemId: room.entity.id }
-              }
-              className="text-brand-orange mt-2 inline-block text-sm hover:underline"
-            >
-              View {room.entity.type === 'ideas' ? 'idea' : 'problem'}
-            </Link>
+          <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <p className="text-brand-gray-500 text-sm tracking-wide uppercase">
+                Live chat
+              </p>
+              <h1 className="text-brand-dark-blue text-2xl font-bold">
+                {room.entity.title ?? 'Untitled'}
+              </h1>
+              <Link
+                to={
+                  room.entity.type === 'ideas'
+                    ? '/ideas/$ideaId'
+                    : '/problems/$problemId'
+                }
+                params={
+                  room.entity.type === 'ideas'
+                    ? { ideaId: room.entity.id }
+                    : { problemId: room.entity.id }
+                }
+                className="text-brand-orange mt-2 inline-block text-sm hover:underline"
+              >
+                View {room.entity.type === 'ideas' ? 'idea' : 'problem'}
+              </Link>
+            </div>
+
+            <LiveChatTeamAvatars team={room.team ?? []} className="self-start" />
           </header>
 
           <LiveChatRoomPanel roomId={room.id} />

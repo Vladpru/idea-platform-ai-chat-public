@@ -2,7 +2,6 @@ import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import { scheduleHighlightDirtyComment } from '@/features/discussion/lib/highlight-dirty-comment';
 import { useDiscussionUiStore } from '@/features/discussion/model/discussion-ui-store';
 import { DiscussionTab } from '@/features/discussion/ui/DiscussionTab';
-import { LiveChatTab } from '@/features/live-chat';
 import { EntityAiSummaryBlock } from '@/features/entity-ai-summary/EntityAiSummaryBlock';
 import {
   useIdeaDetailsQuery,
@@ -85,17 +84,10 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
     if (replyToCommentId || searchTab === 'discussion') {
       return 'discussion';
     }
-    if (searchTab === 'live-chat') {
-      return 'live-chat';
-    }
     return 'description';
   });
   const searchTabOverride: IdeaTabId | null =
-    replyToCommentId || searchTab === 'discussion'
-      ? 'discussion'
-      : searchTab === 'live-chat'
-        ? 'live-chat'
-        : null;
+    replyToCommentId || searchTab === 'discussion' ? 'discussion' : null;
   const visibleTab = searchTabOverride ?? activeTab;
   const [isEditing, setIsEditing] = useState(false);
   const [editFormSnapshot, setEditFormSnapshot] =
@@ -563,16 +555,6 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
                     enabled={visibleTab === 'discussion'}
                     replyToCommentId={replyToCommentId}
                     onReplyToConsumed={handleReplyToConsumed}
-                  />
-                </AnimatedPanel>
-              )}
-
-              {visibleTab === 'live-chat' && (
-                <AnimatedPanel panelKey="live-chat">
-                  <LiveChatTab
-                    entityType="ideas"
-                    entityId={ideaId}
-                    enabled={visibleTab === 'live-chat'}
                   />
                 </AnimatedPanel>
               )}

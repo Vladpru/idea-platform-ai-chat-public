@@ -5,7 +5,6 @@ export type IdeaTabId =
   | 'description'
   | 'attachments'
   | 'discussion'
-  | 'live-chat'
   | 'linked-problems';
 
 export type IdeaDetailsCounts = {

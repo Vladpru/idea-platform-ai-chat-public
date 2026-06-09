@@ -9,6 +9,7 @@ import type {
   LiveChatMessageDto,
   LiveChatRoomDto,
   LiveChatRoomEntityDto,
+  LiveChatTeamMemberDto,
 } from './types/live-chat.types';
 
 function toIsoString(date: Date): string {
@@ -63,6 +64,7 @@ function toLiveChatRoomEntityResponse(
 export function toLiveChatRoomResponse(
   room: LiveChatRoomRecord,
   lastMessage: LiveChatMessageRecord | null = null,
+  team: LiveChatTeamMemberDto[] = [],
 ): LiveChatRoomDto {
   return {
     id: room.id,
@@ -71,5 +73,6 @@ export function toLiveChatRoomResponse(
     createdAt: toIsoString(room.createdAt),
     updatedAt: toIsoString(room.updatedAt),
     lastMessage: lastMessage ? toLiveChatMessageResponse(lastMessage) : null,
+    team,
   };
 }

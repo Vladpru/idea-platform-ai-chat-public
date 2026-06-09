@@ -44,8 +44,15 @@ export class LiveChatService {
       lastMessages.map(message => [message.roomId, message]),
     );
 
-    const data = rooms.map(room =>
-      toLiveChatRoomResponse(room, lastMessageByRoomId.get(room.id) ?? null),
+    const data = await Promise.all(
+      rooms.map(async room => {
+        const team = await this.getRoomTeam(room);
+        return toLiveChatRoomResponse(
+          room,
+          lastMessageByRoomId.get(room.id) ?? null,
+          team,
+        );
+      }),
     );
 
     return { data };
@@ -56,7 +63,11 @@ export class LiveChatService {
     entityId: string,
     userId: string,
   ): Promise<LiveChatRoomDto> {
-    await this.entityVisibility.getVisibleEntity(entityType, entityId, userId);
+    await this.entityVisibility.assertEntityParticipant(
+      entityType,
+      entityId,
+      userId,
+    );
 
     const existingRoom = await this.liveChatRepository.findRoomByEntity(
       entityType,
@@ -81,7 +92,11 @@ export class LiveChatService {
     entityId: string,
     userId: string,
   ): Promise<LiveChatRoomDto> {
-    await this.entityVisibility.getVisibleEntity(entityType, entityId, userId);
+    await this.entityVisibility.assertEntityParticipant(
+      entityType,
+      entityId,
+      userId,
+    );
 
     const room = await this.liveChatRepository.findRoomByEntity(
       entityType,
@@ -181,7 +196,26 @@ export class LiveChatService {
 
   private async toRoomDto(room: LiveChatRoomRecord): Promise<LiveChatRoomDto> {
     const lastMessage = await this.liveChatRepository.findLastMessage(room.id);
-    return toLiveChatRoomResponse(room, lastMessage);
+    const team = await this.getRoomTeam(room);
+    return toLiveChatRoomResponse(room, lastMessage, team);
+  }
+
+  private async getRoomTeam(room: LiveChatRoomRecord) {
+    if (room.ideaId) {
+      return this.liveChatRepository.findEntityTeam(
+        EntityTarget.IDEA,
+        room.ideaId,
+      );
+    }
+
+    if (room.problemId) {
+      return this.liveChatRepository.findEntityTeam(
+        EntityTarget.PROBLEM,
+        room.problemId,
+      );
+    }
+
+    return [];
   }
 
   private async getAccessibleRoom(
@@ -195,12 +229,20 @@ export class LiveChatService {
     }
 
     if (room.ideaId) {
-      await this.entityVisibility.getVisibleIdea(room.ideaId, userId);
+      await this.entityVisibility.assertEntityParticipant(
+        EntityTarget.IDEA,
+        room.ideaId,
+        userId,
+      );
       return room;
     }
 
     if (room.problemId) {
-      await this.entityVisibility.getVisibleProblem(room.problemId, userId);
+      await this.entityVisibility.assertEntityParticipant(
+        EntityTarget.PROBLEM,
+        room.problemId,
+        userId,
+      );
       return room;
     }
 

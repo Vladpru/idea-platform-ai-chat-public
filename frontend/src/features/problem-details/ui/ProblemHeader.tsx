@@ -1,5 +1,6 @@
 import { getInitials } from '@/features/idea-details/lib/get-initials';
 import { outlineBtnClass, pageTitleClass } from '@/features/ideas/lib/styles';
+import { EntityLiveChatAction } from '@/features/live-chat/ui/EntityLiveChatAction';
 import type { ProblemDetails } from '@/features/problem-details/model/problem-details.types';
 import { useDeleteProblemMutation } from '@/features/problems/hooks/use-problem-mutations';
 import { useNavigate } from '@tanstack/react-router';
@@ -213,6 +214,14 @@ export function ProblemHeader({
               ) : null}
 
               <StageChevronBadge stage={problem.stage} />
+
+              {!isCompact ? (
+                <EntityLiveChatAction
+                  entityKind="PROBLEM"
+                  entityId={problem.id}
+                  viewer={problem.viewer}
+                />
+              ) : null}
             </div>
           </div>
 

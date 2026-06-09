@@ -1,6 +1,5 @@
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import { DiscussionTab } from '@/features/discussion/ui/DiscussionTab';
-import { LiveChatTab } from '@/features/live-chat';
 import { EntityAiSummaryBlock } from '@/features/entity-ai-summary/EntityAiSummaryBlock';
 import { IdeaStatsFooter } from '@/features/idea-details/ui/IdeaStatsFooter';
 import { IdeaTagCloud } from '@/features/idea-details/ui/IdeaTagCloud';
@@ -53,17 +52,10 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
     if (replyToCommentId || searchTab === 'discussion') {
       return 'discussion';
     }
-    if (searchTab === 'live-chat') {
-      return 'live-chat';
-    }
     return 'description';
   });
   const searchTabOverride: ProblemTabId | null =
-    replyToCommentId || searchTab === 'discussion'
-      ? 'discussion'
-      : searchTab === 'live-chat'
-        ? 'live-chat'
-        : null;
+    replyToCommentId || searchTab === 'discussion' ? 'discussion' : null;
   const visibleTab = searchTabOverride ?? activeTab;
   const [isScrolled, setIsScrolled] = useState(false);
   const [updatedSuccessOpen, setUpdatedSuccessOpen] = useState(false);
@@ -265,16 +257,6 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
                   enabled={visibleTab === 'discussion'}
                   replyToCommentId={replyToCommentId}
                   onReplyToConsumed={handleReplyToConsumed}
-                />
-              </AnimatedPanel>
-            )}
-
-            {visibleTab === 'live-chat' && (
-              <AnimatedPanel panelKey="live-chat">
-                <LiveChatTab
-                  entityType="problems"
-                  entityId={problemId}
-                  enabled={visibleTab === 'live-chat'}
                 />
               </AnimatedPanel>
             )}

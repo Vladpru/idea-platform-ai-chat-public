@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
 
 import { IdeaStatus, ProblemStatus } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { EntityTarget } from './entity-target.enum';
 import {
+  ENTITY_LIVE_CHAT_FORBIDDEN,
   IDEA_NOT_FOUND,
   PROBLEM_NOT_FOUND,
 } from './entity-visibility.constants';
@@ -63,5 +64,34 @@ export class EntityVisibilityService {
     }
 
     return problem;
+  }
+
+  async assertEntityParticipant(
+    entityType: EntityTarget,
+    entityId: string,
+    userId: string,
+  ): Promise<VisibleEntity> {
+    const entity = await this.getVisibleEntity(entityType, entityId, userId);
+
+    if (entity.authorId === userId) {
+      return entity;
+    }
+
+    const isMember =
+      entityType === EntityTarget.IDEA
+        ? await this.prisma.ideaMember.findFirst({
+            where: { ideaId: entityId, userId },
+            select: { userId: true },
+          })
+        : await this.prisma.problemMember.findFirst({
+            where: { problemId: entityId, userId },
+            select: { userId: true },
+          });
+
+    if (!isMember) {
+      throw new ForbiddenException(ENTITY_LIVE_CHAT_FORBIDDEN);
+    }
+
+    return entity;
   }
 }

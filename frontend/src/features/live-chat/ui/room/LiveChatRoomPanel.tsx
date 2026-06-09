@@ -2,6 +2,7 @@ import { useLiveChatMessagesQuery } from '@/features/live-chat/hooks/queries/use
 import { useLiveChatSocket } from '@/features/live-chat/hooks/socket/use-live-chat-socket';
 import { LiveChatInput } from '@/features/live-chat/ui/messages/LiveChatInput';
 import { LiveChatMessageList } from '@/features/live-chat/ui/messages/LiveChatMessageList';
+import { useCallback, useState } from 'react';
 
 import { cn } from '@/shared/lib/utils';
 
@@ -28,10 +29,30 @@ export function LiveChatRoomPanel({
   } = useLiveChatMessagesQuery(roomId, { enabled: isActive });
 
   const { sendMessage } = useLiveChatSocket(roomId, isActive);
+  const [scrollToMessageId, setScrollToMessageId] = useState<string | null>(
+    null,
+  );
+
+  const handleSend = useCallback(
+    async (content: string) => {
+      const message = await sendMessage(content);
+      if (message) {
+        setScrollToMessageId(message.id);
+        return true;
+      }
+      return false;
+    },
+    [sendMessage],
+  );
 
   if (isLoading) {
     return (
-      <div className={cn('text-brand-gray-500 py-12 text-center text-sm', className)}>
+      <div
+        className={cn(
+          'text-brand-gray-500 py-12 text-center text-sm',
+          className,
+        )}
+      >
         Loading chat...
       </div>
     );
@@ -39,7 +60,9 @@ export function LiveChatRoomPanel({
 
   if (isError) {
     return (
-      <div className={cn('text-brand-orange py-12 text-center text-sm', className)}>
+      <div
+        className={cn('text-brand-orange py-12 text-center text-sm', className)}
+      >
         Could not load chat messages.
       </div>
     );
@@ -48,7 +71,7 @@ export function LiveChatRoomPanel({
   return (
     <section
       className={cn(
-        'bg-brand-gray-100 flex min-h-[24rem] w-full flex-col rounded-sm p-2',
+        'bg-brand-gray-100 flex min-h-[24rem] w-full flex-col rounded-sm p-4',
         className,
       )}
       aria-label="Live chat"
@@ -58,10 +81,12 @@ export function LiveChatRoomPanel({
         hasOlder={hasOlder}
         isLoadingOlder={isLoadingOlder}
         onLoadOlder={() => void loadOlderMessages()}
-        className="max-h-[32rem] flex-1 px-2 sm:px-4"
+        scrollToMessageId={scrollToMessageId}
+        onScrolledToMessage={() => setScrollToMessageId(null)}
+        className="max-h-[32rem] flex-1"
       />
       <LiveChatInput
-        onSend={sendMessage}
+        onSend={handleSend}
         disabled={!isActive}
         className="px-2 sm:px-4"
       />
