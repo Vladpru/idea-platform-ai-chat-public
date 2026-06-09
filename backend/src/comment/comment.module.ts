@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ThrottlerModule } from '@nestjs/throttler';
 
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
+import { EntityVisibilityModule } from '../entity-visibility/entity-visibility.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import {
   CommentActionsController,
@@ -11,7 +12,12 @@ import { CommentService } from './comment.service';
 import { CommentCreateThrottlerGuard } from './guards/comment-create-throttler.guard';
 
 @Module({
-  imports: [PrismaModule, CloudinaryModule, ThrottlerModule],
+  imports: [
+    PrismaModule,
+    CloudinaryModule,
+    EntityVisibilityModule,
+    ThrottlerModule,
+  ],
   controllers: [EntityCommentsController, CommentActionsController],
   providers: [CommentService, CommentCreateThrottlerGuard],
   exports: [CommentService],

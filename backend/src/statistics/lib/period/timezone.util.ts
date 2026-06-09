@@ -1,12 +1,21 @@
-import { BadRequestException } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
+
+import { isValidIanaTimeZone } from '../../../shared/utils/iana-timezone.util';
+
+const logger = new Logger('StatisticsTimeZone');
 
 export function resolveStatisticsTimeZone(timeZoneRaw?: string): string {
   const timeZone = timeZoneRaw?.trim() || 'UTC';
 
-  try {
-    Intl.DateTimeFormat('en-US', { timeZone });
+  if (isValidIanaTimeZone(timeZone)) {
     return timeZone;
-  } catch {
-    throw new BadRequestException('Invalid IANA timezone');
   }
+
+  if (timeZoneRaw?.trim()) {
+    logger.warn(
+      `Invalid IANA timezone "${timeZoneRaw.trim()}", falling back to UTC`,
+    );
+  }
+
+  return 'UTC';
 }

@@ -1,7 +1,21 @@
+function isValidIanaTimeZone(timeZone: string): boolean {
+  try {
+    Intl.DateTimeFormat('en-US', { timeZone });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function getClientTimeZone(): string {
   try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (timeZone && isValidIanaTimeZone(timeZone)) {
+      return timeZone;
+    }
   } catch {
-    return 'UTC';
+    // ignore
   }
+
+  return 'UTC';
 }

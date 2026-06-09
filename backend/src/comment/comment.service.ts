@@ -15,6 +15,8 @@ import {
   ProblemStatus,
 } from '../../generated/prisma/client';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { EntityTarget } from '../entity-visibility/entity-target.enum';
+import { EntityVisibilityService } from '../entity-visibility/entity-visibility.service';
 import { NOTIFICATION_EVENTS } from '../notification/events/notification-event-names';
 import type { CommentCreatedNotificationEvent } from '../notification/events/notification.events';
 import { resolveActorDisplayName } from '../notification/lib/notification-integration.util';
@@ -42,11 +44,6 @@ import type {
   PaginatedCommentsResponse,
 } from './types/comment.types';
 
-export enum CommentTargetEntity {
-  IDEA = 'ideas',
-  PROBLEM = 'problems',
-}
-
 @Injectable()
 export class CommentService {
   private readonly logger = new Logger(CommentService.name);
@@ -55,6 +52,7 @@ export class CommentService {
     private readonly prisma: PrismaService,
     private readonly cloudinary: CloudinaryService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly entityVisibility: EntityVisibilityService,
   ) {}
 
   async findIdeaComments(
@@ -62,9 +60,13 @@ export class CommentService {
     query: GetCommentsQueryDto,
     userId: string,
   ): Promise<PaginatedCommentsResponse> {
-    await this.getVisibleEntity(CommentTargetEntity.IDEA, ideaId, userId);
+    await this.entityVisibility.getVisibleEntity(
+      EntityTarget.IDEA,
+      ideaId,
+      userId,
+    );
     return this.findCommentsForEntity(
-      CommentTargetEntity.IDEA,
+      EntityTarget.IDEA,
       ideaId,
       query,
       userId,
@@ -76,9 +78,13 @@ export class CommentService {
     query: GetCommentsQueryDto,
     userId: string,
   ): Promise<PaginatedCommentsResponse> {
-    await this.getVisibleEntity(CommentTargetEntity.PROBLEM, problemId, userId);
+    await this.entityVisibility.getVisibleEntity(
+      EntityTarget.PROBLEM,
+      problemId,
+      userId,
+    );
     return this.findCommentsForEntity(
-      CommentTargetEntity.PROBLEM,
+      EntityTarget.PROBLEM,
       problemId,
       query,
       userId,
@@ -91,13 +97,13 @@ export class CommentService {
     userId: string,
     files: Express.Multer.File[] = [],
   ): Promise<CommentDto> {
-    const entity = await this.getVisibleEntity(
-      CommentTargetEntity.IDEA,
+    const entity = await this.entityVisibility.getVisibleEntity(
+      EntityTarget.IDEA,
       ideaId,
       userId,
     );
     return this.createCommentForEntity(
-      CommentTargetEntity.IDEA,
+      EntityTarget.IDEA,
       ideaId,
       entity,
       dto,
@@ -112,13 +118,13 @@ export class CommentService {
     userId: string,
     files: Express.Multer.File[] = [],
   ): Promise<CommentDto> {
-    const entity = await this.getVisibleEntity(
-      CommentTargetEntity.PROBLEM,
+    const entity = await this.entityVisibility.getVisibleEntity(
+      EntityTarget.PROBLEM,
       problemId,
       userId,
     );
     return this.createCommentForEntity(
-      CommentTargetEntity.PROBLEM,
+      EntityTarget.PROBLEM,
       problemId,
       entity,
       dto,
@@ -317,7 +323,7 @@ export class CommentService {
   }
 
   private async findCommentsForEntity(
-    entityType: CommentTargetEntity,
+    entityType: EntityTarget,
     entityId: string,
     query: GetCommentsQueryDto,
     userId: string,
@@ -328,7 +334,7 @@ export class CommentService {
     const createdAtOrder = query.sort === 'oldest' ? 'asc' : 'desc';
 
     const where: Prisma.CommentWhereInput =
-      entityType === CommentTargetEntity.IDEA
+      entityType === EntityTarget.IDEA
         ? { ideaId: entityId }
         : { problemId: entityId };
 
@@ -358,7 +364,7 @@ export class CommentService {
   }
 
   private async createCommentForEntity(
-    entityType: CommentTargetEntity,
+    entityType: EntityTarget,
     entityId: string,
     entityMeta: { authorId: string; title: string | null },
     dto: CreateCommentDto,
@@ -418,9 +424,9 @@ export class CommentService {
             id: newCommentId,
             content,
             authorId: userId,
-            ideaId: entityType === CommentTargetEntity.IDEA ? entityId : null,
+            ideaId: entityType === EntityTarget.IDEA ? entityId : null,
             problemId:
-              entityType === CommentTargetEntity.PROBLEM ? entityId : null,
+              entityType === EntityTarget.PROBLEM ? entityId : null,
             parentId: dto.parentId ?? null,
             media: {
               createMany: {
@@ -461,7 +467,7 @@ export class CommentService {
 
   private async emitCommentCreatedNotification(params: {
     commentId: string;
-    entityType: CommentTargetEntity;
+    entityType: EntityTarget;
     entityId: string;
     actorId: string;
     content: string;
@@ -479,7 +485,7 @@ export class CommentService {
       recipientUserId: params.entityAuthorId,
       commentId: params.commentId,
       entityType:
-        params.entityType === CommentTargetEntity.IDEA ? 'idea' : 'problem',
+        params.entityType === EntityTarget.IDEA ? 'idea' : 'problem',
       entityId: params.entityId,
       entityTitle: params.entityTitle ?? 'Untitled',
       actorId: params.actorId,
@@ -546,39 +552,6 @@ export class CommentService {
     }
   }
 
-  private async getVisibleEntity(
-    entityType: CommentTargetEntity,
-    entityId: string,
-    userId: string,
-  ): Promise<{ authorId: string; title: string | null }> {
-    if (entityType === CommentTargetEntity.IDEA) {
-      const idea = await this.prisma.idea.findUnique({
-        where: { id: entityId },
-        select: { status: true, authorId: true, title: true },
-      });
-      if (
-        !idea ||
-        (idea.authorId !== userId && idea.status !== IdeaStatus.PUBLISHED)
-      ) {
-        throw new NotFoundException(IDEA_NOT_FOUND);
-      }
-      return idea;
-    } else {
-      const problem = await this.prisma.problem.findUnique({
-        where: { id: entityId },
-        select: { status: true, authorId: true, title: true },
-      });
-      if (
-        !problem ||
-        (problem.authorId !== userId &&
-          problem.status !== ProblemStatus.PUBLISHED)
-      ) {
-        throw new NotFoundException(PROBLEM_NOT_FOUND);
-      }
-      return problem;
-    }
-  }
-
   private async assertCommentMutable(
     tx: Prisma.TransactionClient,
     commentId: string,
@@ -624,7 +597,7 @@ export class CommentService {
   private async validateParentComment(
     tx: Prisma.TransactionClient,
     parentId: string,
-    entityType: CommentTargetEntity,
+    entityType: EntityTarget,
     entityId: string,
   ): Promise<void> {
     const parent = await tx.comment.findUnique({
@@ -634,11 +607,11 @@ export class CommentService {
 
     if (!parent) throw new BadRequestException(PARENT_COMMENT_NOT_FOUND);
 
-    if (entityType === CommentTargetEntity.IDEA && parent.ideaId !== entityId) {
+    if (entityType === EntityTarget.IDEA && parent.ideaId !== entityId) {
       throw new BadRequestException(PARENT_COMMENT_ENTITY_MISMATCH);
     }
     if (
-      entityType === CommentTargetEntity.PROBLEM &&
+      entityType === EntityTarget.PROBLEM &&
       parent.problemId !== entityId
     ) {
       throw new BadRequestException(PARENT_COMMENT_ENTITY_MISMATCH);

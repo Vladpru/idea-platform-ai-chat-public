@@ -1,7 +1,9 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
 
 import type { StatisticsPeriod } from '../types/statistics.types';
+import { isValidIanaTimeZone } from '../utils/iana-timezone.util';
 
 const STATISTICS_PERIODS = [
   'day',
@@ -27,6 +29,18 @@ export class GetStatisticsQueryDto {
     description: 'IANA timezone for chart aggregations (defaults to UTC)',
   })
   @IsOptional()
+  @Transform(({ value }: { value: unknown }) => {
+    if (typeof value !== 'string') {
+      return undefined;
+    }
+
+    const trimmed = value.trim();
+    if (!trimmed || !isValidIanaTimeZone(trimmed)) {
+      return undefined;
+    }
+
+    return trimmed;
+  })
   @IsString()
   @MaxLength(100)
   timeZone?: string;

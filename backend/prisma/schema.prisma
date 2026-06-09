@@ -80,6 +80,8 @@ model User {
   comments                Comment[]            @relation("CommentAuthor")
   commentLikes            CommentLike[]
   notifications           Notification[]
+  liveChatRoomsCreated    LiveChatRoom[]       @relation("LiveChatRoomCreator")
+  liveChatMessages        LiveChatMessage[]    @relation("LiveChatMessageAuthor")
 
   @@map("user")
 }
@@ -114,33 +116,34 @@ model PasswordResetToken {
 }
 
 model Idea {
-  id            String                    @id @default(uuid())
-  authorId      String                    @map("author_id")
-  status        IdeaStatus                @default(DRAFT)
-  stage         Stage?
-  title         String?
-  description   String?                   @db.Text
-  viewCount     Int                       @default(0) @map("view_count")
-  likeCount     Int                       @default(0) @map("like_count")
-  commentCount  Int                       @default(0) @map("comment_count")
-  publishedAt   DateTime?                 @map("published_at")
-  createdAt     DateTime                  @default(now()) @map("created_at")
-  updatedAt     DateTime                  @updatedAt @map("updated_at")
-  searchVector  Unsupported("tsvector")?    @map("search_vector")
-  aiEmbedding   Unsupported("vector(768)")? @map("ai_embedding")
-  embeddingHash String?                   @map("embedding_hash")
-  aiSummary     String?                   @map("ai_summary") @db.Text
-  summaryStatus SummaryStatus             @default(SKIPPED) @map("summary_status")
-  summaryRequestedAt DateTime?            @map("summary_requested_at")
+  id                 String                      @id @default(uuid())
+  authorId           String                      @map("author_id")
+  status             IdeaStatus                  @default(DRAFT)
+  stage              Stage?
+  title              String?
+  description        String?                     @db.Text
+  viewCount          Int                         @default(0) @map("view_count")
+  likeCount          Int                         @default(0) @map("like_count")
+  commentCount       Int                         @default(0) @map("comment_count")
+  publishedAt        DateTime?                   @map("published_at")
+  createdAt          DateTime                    @default(now()) @map("created_at")
+  updatedAt          DateTime                    @updatedAt @map("updated_at")
+  searchVector       Unsupported("tsvector")?    @map("search_vector")
+  aiEmbedding        Unsupported("vector(768)")? @map("ai_embedding")
+  embeddingHash      String?                     @map("embedding_hash")
+  aiSummary          String?                     @map("ai_summary") @db.Text
+  summaryStatus      SummaryStatus               @default(SKIPPED) @map("summary_status")
+  summaryRequestedAt DateTime?                   @map("summary_requested_at")
 
-  author   User         @relation("IdeaAuthor", fields: [authorId], references: [id], onDelete: Cascade)
-  problems IdeaProblem[]
-  tags     IdeaTag[]
-  media    IdeaMedia[]
-  members  IdeaMember[]
-  likes    IdeaLike[]
-  views    IdeaView[]
-  comments Comment[]
+  author       User          @relation("IdeaAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  problems     IdeaProblem[]
+  tags         IdeaTag[]
+  media        IdeaMedia[]
+  members      IdeaMember[]
+  likes        IdeaLike[]
+  views        IdeaView[]
+  comments     Comment[]
+  liveChatRoom LiveChatRoom?
 
   @@index([authorId, status])
   @@index([status, publishedAt])
@@ -190,37 +193,38 @@ model IdeaLike {
 }
 
 model Problem {
-  id               String                    @id @default(uuid())
-  authorId         String                    @map("author_id")
-  title            String
-  description      String                    @db.Text
-  status           ProblemStatus             @default(DRAFT)
-  stage            ProblemStage?
-  valueProposition String?                   @map("value_proposition")
-  costBenefit      Decimal?                  @map("cost_benefit") @db.Decimal(12, 2)
-  category         String?
-  impact           String?
-  viewCount        Int                       @default(0) @map("view_count")
-  likeCount        Int                       @default(0) @map("like_count")
-  commentCount     Int                       @default(0) @map("comment_count")
-  publishedAt      DateTime?                 @map("published_at")
-  createdAt        DateTime                  @default(now()) @map("created_at")
-  updatedAt        DateTime                  @updatedAt @map("updated_at")
-  searchVector     Unsupported("tsvector")?    @map("search_vector")
-  aiEmbedding      Unsupported("vector(768)")? @map("ai_embedding")
-  embeddingHash    String?                   @map("embedding_hash")
-  aiSummary        String?                   @map("ai_summary") @db.Text
-  summaryStatus    SummaryStatus             @default(SKIPPED) @map("summary_status")
-  summaryRequestedAt DateTime?               @map("summary_requested_at")
+  id                 String                      @id @default(uuid())
+  authorId           String                      @map("author_id")
+  title              String
+  description        String                      @db.Text
+  status             ProblemStatus               @default(DRAFT)
+  stage              ProblemStage?
+  valueProposition   String?                     @map("value_proposition")
+  costBenefit        Decimal?                    @map("cost_benefit") @db.Decimal(12, 2)
+  category           String?
+  impact             String?
+  viewCount          Int                         @default(0) @map("view_count")
+  likeCount          Int                         @default(0) @map("like_count")
+  commentCount       Int                         @default(0) @map("comment_count")
+  publishedAt        DateTime?                   @map("published_at")
+  createdAt          DateTime                    @default(now()) @map("created_at")
+  updatedAt          DateTime                    @updatedAt @map("updated_at")
+  searchVector       Unsupported("tsvector")?    @map("search_vector")
+  aiEmbedding        Unsupported("vector(768)")? @map("ai_embedding")
+  embeddingHash      String?                     @map("embedding_hash")
+  aiSummary          String?                     @map("ai_summary") @db.Text
+  summaryStatus      SummaryStatus               @default(SKIPPED) @map("summary_status")
+  summaryRequestedAt DateTime?                   @map("summary_requested_at")
 
-  author   User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  members  ProblemMember[]
-  ideas    IdeaProblem[]
-  media    ProblemMedia[]
-  tags     ProblemTag[]
-  likes    ProblemLike[]
-  views    ProblemView[]
-  comments Comment[]
+  author       User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  members      ProblemMember[]
+  ideas        IdeaProblem[]
+  media        ProblemMedia[]
+  tags         ProblemTag[]
+  likes        ProblemLike[]
+  views        ProblemView[]
+  comments     Comment[]
+  liveChatRoom LiveChatRoom?
 
   @@index([authorId, status])
   @@index([status])
@@ -257,12 +261,12 @@ model ProblemLike {
 }
 
 model Tag {
-  id            String                    @id @default(uuid())
-  name          String                    @unique
+  id            String                      @id @default(uuid())
+  name          String                      @unique
   label         String?
   aiEmbedding   Unsupported("vector(768)")? @map("ai_embedding")
-  embeddingHash String?                   @map("embedding_hash")
-  createdAt     DateTime                  @default(now()) @map("created_at")
+  embeddingHash String?                     @map("embedding_hash")
+  createdAt     DateTime                    @default(now()) @map("created_at")
 
   ideas       IdeaTag[]
   problemTags ProblemTag[]
@@ -408,4 +412,34 @@ model CommentMedia {
 
   @@index([commentId])
   @@map("comment_media")
+}
+
+model LiveChatRoom {
+  id          String   @id @default(uuid())
+  ideaId      String?  @unique @map("idea_id")
+  problemId   String?  @unique @map("problem_id")
+  createdById String   @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  idea      Idea?             @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  problem   Problem?          @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  createdBy User              @relation("LiveChatRoomCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  messages  LiveChatMessage[]
+
+  @@map("live_chat_room")
+}
+
+model LiveChatMessage {
+  id        String   @id @default(uuid())
+  roomId    String   @map("room_id")
+  authorId  String   @map("author_id")
+  content   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  room   LiveChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  author User         @relation("LiveChatMessageAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, createdAt])
+  @@map("live_chat_message")
 }

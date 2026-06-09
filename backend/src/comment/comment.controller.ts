@@ -40,6 +40,7 @@ import {
   ALLOWED_COMMENT_ATTACHMENT_TYPES,
   MAX_COMMENT_ATTACHMENTS,
 } from './comment.constants';
+import { EntityTarget } from '../entity-visibility/entity-target.enum';
 import { CommentService } from './comment.service';
 import { CreateCommentDto, GetCommentsQueryDto, UpdateCommentDto } from './dto';
 import { CommentCreateThrottlerGuard } from './guards/comment-create-throttler.guard';
@@ -47,11 +48,6 @@ import type {
   CommentDto,
   PaginatedCommentsResponse,
 } from './types/comment.types';
-
-export enum CommentTargetEntity {
-  IDEA = 'ideas',
-  PROBLEM = 'problems',
-}
 
 type AuthenticatedRequest = Request & { user: { id: string } };
 
@@ -143,13 +139,13 @@ export class EntityCommentsController {
   @ApiNotFoundResponse({ description: 'Entity not found' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   findAll(
-    @Param('entityType', new ParseEnumPipe(CommentTargetEntity))
-    entityType: CommentTargetEntity,
+    @Param('entityType', new ParseEnumPipe(EntityTarget))
+    entityType: EntityTarget,
     @Param('entityId', ParseUUIDPipe) entityId: string,
     @Query() query: GetCommentsQueryDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<PaginatedCommentsResponse> {
-    if (entityType === CommentTargetEntity.IDEA) {
+    if (entityType === EntityTarget.IDEA) {
       return this.commentService.findIdeaComments(entityId, query, req.user.id);
     }
     return this.commentService.findProblemComments(
@@ -171,8 +167,8 @@ export class EntityCommentsController {
   @ApiUnprocessableEntityResponse({ description: 'Validation failed' })
   @UseInterceptors(COMMENT_FILES_INTERCEPTOR)
   create(
-    @Param('entityType', new ParseEnumPipe(CommentTargetEntity))
-    entityType: CommentTargetEntity,
+    @Param('entityType', new ParseEnumPipe(EntityTarget))
+    entityType: EntityTarget,
     @Param('entityId', ParseUUIDPipe) entityId: string,
     @Body() dto: CreateCommentDto,
     @Req() req: AuthenticatedRequest,
@@ -180,7 +176,7 @@ export class EntityCommentsController {
   ): Promise<CommentDto> {
     const payloadFiles = files ?? [];
 
-    if (entityType === CommentTargetEntity.IDEA) {
+    if (entityType === EntityTarget.IDEA) {
       return this.commentService.createIdeaComment(
         entityId,
         dto,
