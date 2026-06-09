@@ -5,6 +5,7 @@ export const LIVE_CHAT_MESSAGE_CONTENT_MAX_LENGTH = 2000;
 export const LIVE_CHAT_MESSAGE_LIST_MAX = 50;
 export const LIVE_CHAT_MESSAGE_RATE_LIMIT = 10;
 export const LIVE_CHAT_MESSAGE_RATE_WINDOW_MS = 10_000;
+export const LIVE_CHAT_RATE_LIMIT_KEY_PREFIX = 'live-chat:rate:';
 export const LIVE_CHAT_INVALID_ENTITY =
   'A live chat room must be linked to exactly one idea or problem';
 

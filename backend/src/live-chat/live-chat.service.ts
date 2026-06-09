@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -8,12 +7,11 @@ import {
 import { EntityTarget } from '../entity-visibility/entity-target.enum';
 import { EntityVisibilityService } from '../entity-visibility/entity-visibility.service';
 import { GetLiveChatMessagesQueryDto } from './dto/get-live-chat-messages-query.dto';
+import { LiveChatRateLimitService } from './live-chat-rate-limit.service';
 import {
   LIVE_CHAT_INVALID_ENTITY,
   LIVE_CHAT_MESSAGE_CONTENT_MAX_LENGTH,
   LIVE_CHAT_MESSAGE_LIST_MAX,
-  LIVE_CHAT_MESSAGE_RATE_LIMIT,
-  LIVE_CHAT_MESSAGE_RATE_WINDOW_MS,
   LIVE_CHAT_ROOM_NOT_FOUND,
 } from './live-chat.constants';
 import {
@@ -29,24 +27,26 @@ import type {
   PaginatedLiveChatMessagesResponse,
 } from './types/live-chat.types';
 
-type MessageRateState = {
-  count: number;
-  windowStartedAt: number;
-};
-
 @Injectable()
 export class LiveChatService {
-  private readonly messageRateByUser = new Map<string, MessageRateState>();
-
   constructor(
     private readonly liveChatRepository: LiveChatRepository,
     private readonly entityVisibility: EntityVisibilityService,
+    private readonly rateLimit: LiveChatRateLimitService,
   ) {}
 
   async listRooms(userId: string): Promise<LiveChatRoomListResponse> {
     const rooms = await this.liveChatRepository.findVisibleRooms(userId);
+    const lastMessages = await this.liveChatRepository.findLastMessages(
+      rooms.map(room => room.id),
+    );
+    const lastMessageByRoomId = new Map(
+      lastMessages.map(message => [message.roomId, message]),
+    );
 
-    const data = await Promise.all(rooms.map(room => this.toRoomDto(room)));
+    const data = rooms.map(room =>
+      toLiveChatRoomResponse(room, lastMessageByRoomId.get(room.id) ?? null),
+    );
 
     return { data };
   }
@@ -151,7 +151,7 @@ export class LiveChatService {
     userId: string,
     content: string,
   ): Promise<LiveChatMessageDto> {
-    this.assertMessageRateLimit(userId);
+    await this.rateLimit.assertRateLimit(userId);
 
     const trimmedContent = content.trim();
     if (trimmedContent.length === 0) {
@@ -205,28 +205,5 @@ export class LiveChatService {
     }
 
     throw new BadRequestException(LIVE_CHAT_INVALID_ENTITY);
-  }
-
-  private assertMessageRateLimit(userId: string): void {
-    const now = Date.now();
-    const current = this.messageRateByUser.get(userId);
-
-    if (
-      !current ||
-      now - current.windowStartedAt >= LIVE_CHAT_MESSAGE_RATE_WINDOW_MS
-    ) {
-      this.messageRateByUser.set(userId, {
-        count: 1,
-        windowStartedAt: now,
-      });
-      return;
-    }
-
-    if (current.count >= LIVE_CHAT_MESSAGE_RATE_LIMIT) {
-      throw new ForbiddenException('Too many live chat messages. Please wait.');
-    }
-
-    current.count += 1;
-    this.messageRateByUser.set(userId, current);
   }
 }

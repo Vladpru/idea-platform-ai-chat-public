@@ -101,7 +101,7 @@ export class ProblemSuggestedIdeasService {
           + CASE WHEN i.status::text = 'PUBLISHED' THEN 0.5 ELSE 0 END
         ) AS relevance_score
       FROM idea i
-      WHERE i.author_id = ${userId}
+      WHERE (i.status::text = 'PUBLISHED' OR (i.status::text = 'DRAFT' AND i.author_id = ${userId}))
         AND (i.stage IS NULL OR i.stage::text <> 'ARCHIVED')
         ${hasExclude ? Prisma.sql`AND NOT (i.id = ANY(${excludeIds}::text[]))` : Prisma.empty}
       ORDER BY relevance_score DESC, i.created_at DESC

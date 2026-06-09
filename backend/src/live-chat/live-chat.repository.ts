@@ -12,6 +12,18 @@ import type {
   LiveChatRoomRecord,
 } from './live-chat.records';
 
+type LastMessageRow = {
+  id: string;
+  roomId: string;
+  authorId: string;
+  content: string;
+  createdAt: Date;
+  authorUserId: string;
+  authorFirstName: string | null;
+  authorLastName: string | null;
+  authorAvatarUrl: string | null;
+};
+
 @Injectable()
 export class LiveChatRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -74,6 +86,43 @@ export class LiveChatRepository {
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       include: liveChatMessageInclude,
     });
+  }
+
+  async findLastMessages(roomIds: string[]): Promise<LiveChatMessageRecord[]> {
+    if (roomIds.length === 0) {
+      return [];
+    }
+
+    const rows = await this.prisma.$queryRaw<LastMessageRow[]>`
+      SELECT DISTINCT ON (m.room_id)
+        m.id,
+        m.room_id AS "roomId",
+        m.author_id AS "authorId",
+        m.content,
+        m.created_at AS "createdAt",
+        u.id AS "authorUserId",
+        u.first_name AS "authorFirstName",
+        u.last_name AS "authorLastName",
+        u.avatar_url AS "authorAvatarUrl"
+      FROM live_chat_message m
+      INNER JOIN "user" u ON u.id = m.author_id
+      WHERE m.room_id = ANY(${roomIds}::uuid[])
+      ORDER BY m.room_id, m.created_at DESC, m.id DESC
+    `;
+
+    return rows.map(row => ({
+      id: row.id,
+      roomId: row.roomId,
+      authorId: row.authorId,
+      content: row.content,
+      createdAt: row.createdAt,
+      author: {
+        id: row.authorUserId,
+        firstName: row.authorFirstName,
+        lastName: row.authorLastName,
+        avatarUrl: row.authorAvatarUrl,
+      },
+    }));
   }
 
   findMessageCursor(
