@@ -23,6 +23,7 @@ const TABS: TabConfig[] = [
   { id: 'description', label: 'Description' },
   { id: 'attachments', label: 'Attachments', countKey: 'attachments' },
   { id: 'discussion', label: 'Discussion' },
+  { id: 'live-chat', label: 'Live Chat' },
   {
     id: 'linked-ideas',
     label: 'Linked Ideas',

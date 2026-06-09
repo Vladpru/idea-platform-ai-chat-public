@@ -153,6 +153,15 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
                   My Ideas, Joins & Drafts
                 </Link>
                 <Link
+                  to={ROUTES.liveChats}
+                  className={navLinkClass}
+                  activeProps={{
+                    className: 'bg-accent text-primary font-semibold',
+                  }}
+                >
+                  Live Chats
+                </Link>
+                <Link
                   to="/profile"
                   className={navLinkClass}
                   activeOptions={{ exact: true }}

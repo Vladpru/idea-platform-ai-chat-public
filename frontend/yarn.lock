@@ -1499,6 +1499,11 @@
   resolved "https://registry.npmjs.org/@tanstack/history/-/history-1.161.6.tgz"
   integrity sha512-NaOGLRrddszbQj9upGat6HG/4TKvXLvu+osAIgfxPYA+eIvYKv8GKDJOrY2D3/U9MRnKfMWD7bU4jeD4xmqyIg==
 
+"@tanstack/history@1.162.0":
+  version "1.162.0"
+  resolved "https://registry.yarnpkg.com/@tanstack/history/-/history-1.162.0.tgz#5e12a52edd82a5d6d3b081255ec899ccca335443"
+  integrity sha512-79pf/RkhteYZTRgcR4F9kbk84P2N8rugQJswxfIqovlbRiT3yI7eBE+5QorIrZaOKktsgzRlXh1l/du/xpl4iA==
+
 "@tanstack/query-core@5.100.10":
   version "5.100.10"
   resolved "https://registry.npmjs.org/@tanstack/query-core/-/query-core-5.100.10.tgz"
@@ -1555,12 +1560,31 @@
   dependencies:
     "@tanstack/virtual-core" "3.15.0"
 
+"@tanstack/router-cli@^1.167.17":
+  version "1.167.17"
+  resolved "https://registry.yarnpkg.com/@tanstack/router-cli/-/router-cli-1.167.17.tgz#b2b9522739ee6c3265abed2c5314c9b67f6feb76"
+  integrity sha512-kws9PNdspkHbeZG6aLDjjpgH/hg7Q565BdSW9hHrjKmXPq/at7OKxQnA76aw9dJiJqy9OmST2RdOKlMEog43+g==
+  dependencies:
+    "@tanstack/router-generator" "1.167.17"
+    chokidar "^5.0.0"
+    yargs "^17.7.2"
+
 "@tanstack/router-core@1.169.2":
   version "1.169.2"
   resolved "https://registry.npmjs.org/@tanstack/router-core/-/router-core-1.169.2.tgz"
   integrity sha512-5sm0DJF1A7Mz+9gy4Gz/lLovNailK3yot4vYvz9MkBUPw26uLnhQiR8hSCYxucjE0wD6Mdlc5l+Z0/XTlZ7xHw==
   dependencies:
     "@tanstack/history" "1.161.6"
+    cookie-es "^3.0.0"
+    seroval "^1.5.4"
+    seroval-plugins "^1.5.4"
+
+"@tanstack/router-core@1.171.13":
+  version "1.171.13"
+  resolved "https://registry.yarnpkg.com/@tanstack/router-core/-/router-core-1.171.13.tgz#49bee672c8401693d7bf902389b3dcb799de1429"
+  integrity sha512-+NOwEj1kO/6IGmpHRIZHasYxYWpyBQGNIZAST9aNrk9Q3YlU9SgqVnl1pbLa9qAKfeNdXQIRve0RQb/0kyDeDA==
+  dependencies:
+    "@tanstack/history" "1.162.0"
     cookie-es "^3.0.0"
     seroval "^1.5.4"
     seroval-plugins "^1.5.4"
@@ -1596,6 +1620,20 @@
     prettier "^3.5.0"
     zod "^3.24.2"
 
+"@tanstack/router-generator@1.167.17":
+  version "1.167.17"
+  resolved "https://registry.yarnpkg.com/@tanstack/router-generator/-/router-generator-1.167.17.tgz#84e8aa1de930196ea6a800857022481cf6f3a9cb"
+  integrity sha512-xtB9tB2Ws0tWR6Pi7nc3Qk9IYgoh1mQCKWjHqIl9tf6BNUpKoqniJoPAQ4+LGrK8FeZYU0o0p/qlZEyj9FAulA==
+  dependencies:
+    "@babel/types" "^7.28.5"
+    "@tanstack/router-core" "1.171.13"
+    "@tanstack/router-utils" "1.162.2"
+    "@tanstack/virtual-file-routes" "1.162.0"
+    jiti "^2.7.0"
+    magic-string "^0.30.21"
+    prettier "^3.5.0"
+    zod "^4.4.3"
+
 "@tanstack/router-plugin@^1.167.35":
   version "1.167.35"
   resolved "https://registry.npmjs.org/@tanstack/router-plugin/-/router-plugin-1.167.35.tgz"
@@ -1630,6 +1668,20 @@
     pathe "^2.0.3"
     tinyglobby "^0.2.15"
 
+"@tanstack/router-utils@1.162.2":
+  version "1.162.2"
+  resolved "https://registry.yarnpkg.com/@tanstack/router-utils/-/router-utils-1.162.2.tgz#8d37c5d233758ee0ae97bedd9556e35e3812a2a0"
+  integrity sha512-hTWqJtqIFFdvuCl8WXNyrodp2L9zo2G37xKRrcVmVRWpAB2h+U1LuRAfS4tsFTiWOIoE/B+WDVFB8JpoEdw6jQ==
+  dependencies:
+    "@babel/generator" "^7.28.5"
+    "@babel/parser" "^7.28.5"
+    "@babel/types" "^7.28.5"
+    ansis "^4.1.0"
+    babel-dead-code-elimination "^1.0.12"
+    diff "^8.0.2"
+    pathe "^2.0.3"
+    tinyglobby "^0.2.15"
+
 "@tanstack/store@0.9.3":
   version "0.9.3"
   resolved "https://registry.npmjs.org/@tanstack/store/-/store-0.9.3.tgz"
@@ -1644,6 +1696,11 @@
   version "1.161.7"
   resolved "https://registry.npmjs.org/@tanstack/virtual-file-routes/-/virtual-file-routes-1.161.7.tgz"
   integrity sha512-olW33+Cn+bsCsZKPwEGhlkqS6w3M2slFv11JIobdnCFKMLG97oAI2kWKdx5/zsywTL8flpnoIgaZZPlQTFYhdQ==
+
+"@tanstack/virtual-file-routes@1.162.0":
+  version "1.162.0"
+  resolved "https://registry.yarnpkg.com/@tanstack/virtual-file-routes/-/virtual-file-routes-1.162.0.tgz#d2dfa1c98aab0236d2cef25b3938b59a247a8acd"
+  integrity sha512-uhOeFyxLcU41HzvrxsGpiWdcMbScY1EDgbZ5K7DVRMYInbLYWAC0EA/kx9wXAoSM8q82bUG2hRl8+EAjE6XAbA==
 
 "@trivago/prettier-plugin-sort-imports@^6.0.2":
   version "6.0.2"
@@ -2173,6 +2230,13 @@ chokidar@^3.6.0:
     readdirp "~3.6.0"
   optionalDependencies:
     fsevents "~2.3.2"
+
+chokidar@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/chokidar/-/chokidar-5.0.0.tgz#949c126a9238a80792be9a0265934f098af369a5"
+  integrity sha512-TQMmc3w+5AxjpL8iIiwebF73dRDF4fBIieAqGn9RGCWaEVwQ6Fb2cGe31Yns0RRIzii5goJ1Y7xbMwo1TxMplw==
+  dependencies:
+    readdirp "^5.0.0"
 
 class-variance-authority@^0.7.1:
   version "0.7.1"
@@ -4296,6 +4360,11 @@ react@^19.2.6:
   version "19.2.6"
   resolved "https://registry.npmjs.org/react/-/react-19.2.6.tgz"
   integrity sha512-sfWGGfavi0xr8Pg0sVsyHMAOziVYKgPLNrS7ig+ivMNb3wbCBw3KxtflsGBAwD3gYQlE/AEZsTLgToRrSCjb0Q==
+
+readdirp@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/readdirp/-/readdirp-5.0.0.tgz#fbf1f71a727891d685bb1786f9ba74084f6e2f91"
+  integrity sha512-9u/XQ1pvrQtYyMpZe7DXKv2p5CNvyVwzUB6uhLAnQwHMSgKMBR62lc7AHljaeteeHXn11XTAaLLUVZYVZyuRBQ==
 
 readdirp@~3.6.0:
   version "3.6.0"

@@ -12,6 +12,7 @@ import { AiModule } from './ai/ai.module';
 import { AuthModule } from './auth/auth.module';
 import { CommentModule } from './comment/comment.module';
 import { IdeaModule } from './idea/idea.module';
+import { LiveChatModule } from './live-chat/live-chat.module';
 import { MailModule } from './mail/mail.module';
 import { NotificationModule } from './notification/notification.module';
 import { PasswordResetModule } from './password-reset/password-reset.module';
@@ -54,6 +55,7 @@ import { UserModule } from './user/user.module';
     IdeaModule,
     ProblemModule,
     CommentModule,
+    LiveChatModule,
     PrismaModule,
     AuthModule,
     PasswordResetModule,

@@ -78,6 +78,11 @@ export function UserNav({ triggerClassName }: UserNavProps) {
               My Ideas, Joins & Drafts
             </Link>
           </DropdownMenuItem>
+          <DropdownMenuItem asChild className="cursor-pointer p-0 text-sm">
+            <Link to={ROUTES.liveChats} className={linkRowClassName}>
+              <span>Live Chats</span>
+            </Link>
+          </DropdownMenuItem>
           <DropdownMenuSeparator className="mx-1" />
 
           <DropdownMenuItem asChild className="cursor-pointer p-0 text-sm">

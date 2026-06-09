@@ -193,60 +193,59 @@ export function IdeaHeader({
               </h1>
             )}
 
-            <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-6 md:gap-8">
+            <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-6 md:gap-8">
               {idea.team.length > 0 ? (
-                <button
-                  type="button"
-                  className="hover:bg-brand-gray-100/80 focus-visible:ring-brand-dark-blue -m-1 flex cursor-pointer items-center gap-1.5 rounded-md p-1 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-                  aria-label="View team members"
-                  onClick={onTeamClick}
-                >
-                  <span className={metadataLabelClass}>Team</span>
+                <div className="flex gap-4">
+                  <button
+                    type="button"
+                    className="hover:bg-brand-gray-100/80 focus-visible:ring-brand-dark-blue -m-1 flex cursor-pointer items-center gap-1.5 rounded-md p-1 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                    aria-label="View team members"
+                    onClick={onTeamClick}
+                  >
+                    <span className={metadataLabelClass}>Team</span>
 
-                  <AvatarGroup aria-label="Team members">
-                    {idea.team.slice(0, 4).map(member => (
-                      <Avatar
-                        key={member.id}
-                        size="sm"
-                        className="ring-card dark:ring-none ring-2"
-                        title={member.name}
-                      >
-                        {member.avatarUrl ? (
-                          <AvatarImage
-                            src={member.avatarUrl}
-                            alt={member.name}
-                          />
-                        ) : null}
+                    <AvatarGroup aria-label="Team members">
+                      {idea.team.slice(0, 4).map(member => (
+                        <Avatar
+                          key={member.id}
+                          size="sm"
+                          className="ring-card dark:ring-none ring-2"
+                          title={member.name}
+                        >
+                          {member.avatarUrl ? (
+                            <AvatarImage
+                              src={member.avatarUrl}
+                              alt={member.name}
+                            />
+                          ) : null}
 
-                        <AvatarFallback className="bg-brand-gray-200 text-brand-gray-800 text-[10px] font-semibold">
-                          {getInitials(member.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                    ))}
+                          <AvatarFallback className="bg-brand-gray-200 text-brand-gray-800 text-[10px] font-semibold">
+                            {getInitials(member.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                      ))}
 
-                    {idea.team.length > 4 && (
-                      <Avatar
-                        size="sm"
-                        className="flex items-center justify-center bg-slate-700 ring-2 ring-white"
-                      >
-                        <span className="text-[11px] font-bold tracking-tight text-white">
-                          +{idea.team.length - 4}
-                        </span>
-                      </Avatar>
-                    )}
-                  </AvatarGroup>
-                </button>
+                      {idea.team.length > 4 && (
+                        <Avatar
+                          size="sm"
+                          className="flex items-center justify-center bg-slate-700 ring-2 ring-white"
+                        >
+                          <span className="text-[11px] font-bold tracking-tight text-white">
+                            +{idea.team.length - 4}
+                          </span>
+                        </Avatar>
+                      )}
+                    </AvatarGroup>
+                  </button>
+                  <div className="flex flex-col gap-1.5">
+                    <StageChevronBadge stage={idea.stage} />
+                  </div>
+                </div>
               ) : null}
 
-              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <StageChevronBadge stage={idea.stage} />
-                </div>
-
-                {showProjectActions && !isEditing ? (
-                  <IdeaProjectActions ideaId={idea.id} viewer={idea.viewer} />
-                ) : null}
-              </div>
+              {showProjectActions && !isEditing ? (
+                <IdeaProjectActions ideaId={idea.id} viewer={idea.viewer} />
+              ) : null}
             </div>
           </div>
 
