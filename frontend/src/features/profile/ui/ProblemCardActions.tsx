@@ -26,20 +26,19 @@ export function ProblemCardActions({
     {
       label: isDraft ? 'Continue editing' : 'Edit problem',
       icon: <Edit2 className="size-4" />,
-      onSelect: () =>
+      onSelect: () => {
         void navigate({
           to: ROUTES.problemsNew,
           search: { problemId: card.id },
-        }),
+        });
+      },
     },
     {
       label: isDeleting ? 'Deleting...' : 'Delete problem',
       icon: <Trash2 className="size-4" />,
       variant: 'danger',
       disabled: isDeleting,
-      onSelect: () => {
-        setTimeout(() => onDelete?.(card.id), 0);
-      },
+      onSelect: () => onDelete?.(card.id),
     },
   ];
 

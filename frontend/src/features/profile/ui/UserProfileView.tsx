@@ -1,0 +1,157 @@
+import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
+import type { ProfileContributionsTab } from '@/features/profile/model/profile-contributions.types';
+import { useProfileContributions } from '@/features/profile/hooks/use-profile-contributions';
+import {
+  useSubscribeMutation,
+  useUnsubscribeMutation,
+} from '@/features/profile/hooks/use-subscription-mutations';
+import { useUserProfile } from '@/features/profile/hooks/use-user-profile';
+import {
+  toContributionsApiTab,
+  toContributionsSearchTab,
+} from '@/features/profile/lib/profile-contributions-tab';
+import { EntityGrid } from '@/features/profile/ui/EntityGrid';
+import { ProfileHeader } from '@/features/profile/ui/ProfileHeader';
+import { TabsLayout } from '@/features/profile/ui/TabsLayout';
+import { getApiErrorMessage } from '@/shared/api/api-error';
+import { Button } from '@/shared/ui/button';
+import { Skeleton } from '@/shared/ui/skeleton';
+import { useNavigate, useSearch } from '@tanstack/react-router';
+import { useCallback, useMemo } from 'react';
+
+type UserProfileViewProps = {
+  profileId: string;
+};
+
+export function UserProfileView({ profileId }: UserProfileViewProps) {
+  const currentUserId = useAuthSessionStore(state => state.user?.id);
+  const isOwner = Boolean(currentUserId && currentUserId === profileId);
+  const navigate = useNavigate();
+  const { tab: searchTab } = useSearch({ from: '/_auth/profile/$profileId' });
+
+  const profileQuery = useUserProfile(profileId);
+  const subscribeMutation = useSubscribeMutation(profileId);
+  const unsubscribeMutation = useUnsubscribeMutation(profileId);
+
+  const activeTab = useMemo(
+    () => toContributionsApiTab(searchTab),
+    [searchTab],
+  );
+
+  const setActiveTab = useCallback(
+    (tab: ProfileContributionsTab) => {
+      void navigate({
+        to: '/profile/$profileId',
+        params: { profileId },
+        search: { tab: toContributionsSearchTab(tab) },
+      });
+    },
+    [navigate, profileId],
+  );
+
+  const {
+    items,
+    isLoading: isContributionsLoading,
+    isError: isContributionsError,
+    error: contributionsError,
+    refetch: refetchContributions,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useProfileContributions(profileId, activeTab);
+
+  const handleLoadMore = useCallback(() => {
+    void fetchNextPage();
+  }, [fetchNextPage]);
+
+  const handleSubscribe = useCallback(() => {
+    subscribeMutation.mutate();
+  }, [subscribeMutation]);
+
+  const handleUnsubscribe = useCallback(() => {
+    unsubscribeMutation.mutate();
+  }, [unsubscribeMutation]);
+
+  const isSubscriptionPending =
+    subscribeMutation.isPending || unsubscribeMutation.isPending;
+
+  if (profileQuery.isLoading) {
+    return (
+      <main className="bg-brand-neutral min-h-[calc(100vh-56px)]">
+        <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-8 sm:py-8 lg:px-12">
+          <Skeleton className="mb-6 h-16 w-full max-w-xl" />
+          <Skeleton className="mb-6 h-10 w-full max-w-lg" />
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <Skeleton key={index} className="h-56 rounded-lg" />
+            ))}
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (profileQuery.isError || !profileQuery.data) {
+    return (
+      <main className="bg-brand-neutral min-h-[calc(100vh-56px)]">
+        <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-8 sm:py-8 lg:px-12">
+          <div className="border-brand-gray-200 bg-card rounded-lg border px-6 py-10 text-center">
+            <p className="text-brand-gray-700 mb-4 text-sm">
+              {getApiErrorMessage(profileQuery.error, {
+                invalidCredentialsMessage: 'Failed to load profile.',
+              })}
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => profileQuery.refetch()}
+            >
+              Try again
+            </Button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="bg-brand-neutral min-h-[calc(100vh-56px)]">
+      <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-8 sm:py-8 lg:px-12">
+        <ProfileHeader
+          profile={profileQuery.data}
+          isOwner={isOwner}
+          isSubscriptionPending={isSubscriptionPending}
+          onSubscribe={handleSubscribe}
+          onUnsubscribe={handleUnsubscribe}
+        />
+
+        <TabsLayout activeTab={activeTab} onTabChange={setActiveTab}>
+          {isContributionsError ? (
+            <div className="border-brand-gray-200 bg-card rounded-lg border px-6 py-10 text-center">
+              <p className="text-brand-gray-700 mb-4 text-sm">
+                {getApiErrorMessage(contributionsError, {
+                  invalidCredentialsMessage: 'Failed to load contributions.',
+                })}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => refetchContributions()}
+              >
+                Try again
+              </Button>
+            </div>
+          ) : (
+            <EntityGrid
+              items={items}
+              isLoading={isContributionsLoading}
+              hasNextPage={hasNextPage}
+              isFetchingNextPage={isFetchingNextPage}
+              loadMore={handleLoadMore}
+            />
+          )}
+        </TabsLayout>
+      </div>
+    </main>
+  );
+}
