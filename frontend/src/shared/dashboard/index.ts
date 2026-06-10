@@ -5,6 +5,7 @@ export type { DashboardGridSkeletonProps } from './ui/grid/DashboardGridSkeleton
 export { LoadMoreFooter } from './ui/grid/LoadMoreFooter';
 export { DashboardControls } from './ui/header/DashboardControls';
 export { DashboardFilter } from './ui/header/DashboardFilter';
+export { DashboardFeedToggle } from './ui/header/DashboardFeedToggle';
 export { DashboardCardStats } from './ui/cards/DashboardCardStats';
 export { LinkedItemsSection } from './ui/linked-items/LinkedItemsSection';
 export { LinkedItemMiniCard } from './ui/linked-items/LinkedItemMiniCard';
