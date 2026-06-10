@@ -1,6 +1,7 @@
-import { queryClient } from '@/shared/lib/query-client';
-import { QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
+
+import { getApiErrorStatus } from '@/shared/api/api-error';
 
 import { SonnerProvider } from './sonner-provider';
 import { ThemeProvider } from './theme-provider';

@@ -1,6 +1,5 @@
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import { fetchCurrentUser } from '@/features/profile/api/profile.api';
-import { currentUserQueryKey } from '@/features/settings/hooks/use-notification-preferences';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
@@ -10,7 +9,6 @@ import { useEffect } from 'react';
  */
 export function AuthSessionSync() {
   const accessToken = useAuthSessionStore(s => s.accessToken);
-  const sessionUserId = useAuthSessionStore(s => s.user?.id);
 
   const { data: remoteUser } = useQuery({
     queryKey: ['users', 'me'],
