@@ -1,45 +1,76 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
+import {
+  applyThemeToDocument,
+  clearGuestStoredTheme,
+  readAuthSessionFromStorage,
+  resolveActiveTheme,
+  writeStoredTheme,
+} from '@/shared/lib/theme-storage';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
+
 import { ThemeProviderContext, type Theme } from './theme-context';
 
 type ThemeProviderProps = {
   children: ReactNode;
   defaultTheme?: Theme;
-  storageKey?: string;
 };
 
 export function ThemeProvider({
   children,
-  defaultTheme = 'light',
-  storageKey = 'vite-ui-theme',
+  defaultTheme = 'system',
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    const stored = localStorage.getItem(storageKey) as Theme | null;
-    if (stored === 'system') return 'light';
-    return stored || defaultTheme;
+  const userId = useAuthSessionStore(s => s.user?.id ?? null);
+  const themePreference = useAuthSessionStore(
+    s => s.user?.themePreference ?? null,
+  );
+  const previousUserIdRef = useRef<string | null>(userId);
+
+  const [theme, setThemeState] = useState<Theme>(() => {
+    const restored = readAuthSessionFromStorage();
+    return (
+      resolveActiveTheme(restored.userId, restored.themePreference) ??
+      defaultTheme
+    );
   });
 
   useEffect(() => {
-    const root = window.document.documentElement;
-    root.classList.remove('light', 'dark');
+    const wasAuthenticated = previousUserIdRef.current !== null;
+    const isAuthenticated = userId !== null;
 
-    if (theme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
-        .matches
-        ? 'dark'
-        : 'light';
-      root.classList.add(systemTheme);
-    } else {
-      root.classList.add(theme);
+    if (wasAuthenticated && !isAuthenticated) {
+      clearGuestStoredTheme();
     }
-  }, [theme]);
+
+    previousUserIdRef.current = userId;
+
+    const resolved = resolveActiveTheme(userId, themePreference);
+    setThemeState(resolved);
+    applyThemeToDocument(resolved);
+  }, [userId, themePreference]);
+
+  useEffect(() => {
+    applyThemeToDocument(theme);
+  }, [theme, userId]);
+
+  const setTheme = useCallback(
+    (nextTheme: Theme) => {
+      writeStoredTheme(nextTheme, userId);
+      setThemeState(nextTheme);
+      applyThemeToDocument(nextTheme);
+    },
+    [userId],
+  );
 
   const value = {
     theme,
-    setTheme: (newTheme: Theme) => {
-      localStorage.setItem(storageKey, newTheme);
-      setTheme(newTheme);
-    },
+    setTheme,
   };
 
   return (

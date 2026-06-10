@@ -372,10 +372,63 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+
   html {
     @apply font-sans;
+
+    /* Головний вертикальний скролбар (Firefox) */
+    scrollbar-width: thin;
+    scrollbar-color: var(--brand-gray-400) transparent;
+
+    /* Головний вертикальний скролбар (Webkit: Chrome, Safari, Edge) */
+    &::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: var(--background);
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: var(--brand-gray-400);
+      border-radius: 100px;
+      border: 2px solid var(--background);
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background-color: var(--brand-gray-500);
+    }
+
+    /* Адаптація скролбару під темну тему */
+    &:is(.dark *) {
+      scrollbar-color: var(--brand-gray-600) transparent;
+
+      &::-webkit-scrollbar-track {
+        background: #12161c;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background-color: var(--brand-gray-600);
+        border: 2px solid #12161c;
+      }
+
+      &::-webkit-scrollbar-thumb:hover {
+        background-color: var(--brand-gray-500);
+      }
+    }
+  }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px var(--background) inset !important;
+    -webkit-text-fill-color: var(--foreground) !important;
+    caret-color: var(--foreground);
+    transition: background-color 9999s ease-out 0s;
   }
 }
