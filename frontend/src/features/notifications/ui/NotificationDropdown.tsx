@@ -32,6 +32,7 @@ const NOTIFICATION_TAB_UNDERLINE_LAYOUT_ID = 'notification-dropdown-tabs';
 type NotificationDropdownProps = {
   onClose?: () => void;
   variant?: 'popover' | 'sheet';
+  enabled?: boolean;
 };
 
 type NotificationTabButtonProps = {
@@ -85,6 +86,7 @@ function NotificationTabButton({
 export function NotificationDropdown({
   onClose,
   variant = 'popover',
+  enabled = true,
 }: NotificationDropdownProps) {
   const [activeTab, setActiveTab] = useState<NotificationTab>('all');
   const {
@@ -94,7 +96,7 @@ export function NotificationDropdown({
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
-  } = useNotifications();
+  } = useNotifications({ enabled });
   const { data: unreadData } = useUnreadNotificationCount();
   const markAllAsRead = useMarkAllNotificationsReadMutation();
   const deleteAll = useDeleteAllNotificationsMutation();

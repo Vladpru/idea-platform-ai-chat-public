@@ -115,6 +115,10 @@ function DiscussionTabLayout({
     [data],
   );
 
+  const handleLoadMore = useCallback(() => {
+    void fetchNextPage();
+  }, [fetchNextPage]);
+
   return (
     <section
       className={cn('bg-brand-gray-100 w-full rounded-sm p-2', className)}
@@ -149,9 +153,7 @@ function DiscussionTabLayout({
         isError={isError}
         hasNextPage={hasNextPage ?? false}
         isFetchingNextPage={isFetchingNextPage}
-        onLoadMore={() => {
-          void fetchNextPage();
-        }}
+        onLoadMore={handleLoadMore}
         onRetry={() => {
           void refetch();
         }}
