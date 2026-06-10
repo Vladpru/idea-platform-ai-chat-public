@@ -7,6 +7,7 @@ import { IdeaProjectActions } from '@/features/idea-details/ui/IdeaProjectAction
 import { formatPersonName } from '@/features/idea-details/lib/format-person-name';
 import { getInitials } from '@/features/idea-details/lib/get-initials';
 import { useMemo } from 'react';
+import { Link } from '@tanstack/react-router';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import {
@@ -58,7 +59,6 @@ export function TeamModal({
         side={isMobile ? 'bottom' : 'right'}
         className={cn(
           'bg-card flex flex-col p-0',
-
           isMobile
             ? 'data-[side=bottom]:data-closed:slide-out-to-bottom-full w-full max-w-full border-none transition duration-300 ease-in-out data-[side=bottom]:h-full data-[side=bottom]:rounded-none'
             : 'sm:border-brand-gray-200 h-[100dvh] max-w-full rounded-none border-none data-[side=right]:w-full sm:max-w-[400px] sm:border-l',
@@ -86,27 +86,35 @@ export function TeamModal({
               const isAuthorRow = index === 0;
 
               return (
-                <li
-                  key={`${person.id}-${index}`}
-                  className="flex items-center gap-3"
-                >
-                  <Avatar size="default" className="shrink-0">
-                    {person.avatarUrl ? (
-                      <AvatarImage src={person.avatarUrl} alt={fullName} />
-                    ) : null}
-                    <AvatarFallback className="bg-brand-gray-200 text-brand-gray-800 text-xs font-semibold">
-                      {getInitials(fullName)}
-                    </AvatarFallback>
-                  </Avatar>
+                <li key={`${person.id}-${index}`}>
+                  <Link
+                    to="/profile/$profileId"
+                    params={{ profileId: person.id }}
+                    search={{ tab: 'all' }}
+                    onClick={() => onClose()}
+                    className="focus-visible:ring-brand-dark-blue hover:bg-brand-gray-100 group flex w-full items-center gap-3 rounded-lg p-2 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                  >
+                    <Avatar
+                      size="default"
+                      className="shrink-0 transition-transform group-hover:scale-105"
+                    >
+                      {person.avatarUrl ? (
+                        <AvatarImage src={person.avatarUrl} alt={fullName} />
+                      ) : null}
+                      <AvatarFallback className="bg-brand-gray-200 text-brand-gray-800 text-xs font-semibold">
+                        {getInitials(fullName)}
+                      </AvatarFallback>
+                    </Avatar>
 
-                  <div className="min-w-0">
-                    <p className="text-brand-gray-900 truncate text-sm font-semibold">
-                      {fullName}
-                    </p>
-                    {isAuthorRow ? (
-                      <p className="text-brand-gray-500 text-xs">Author</p>
-                    ) : null}
-                  </div>
+                    <div className="min-w-0">
+                      <p className="text-brand-gray-900 group-hover:text-brand-dark-blue truncate text-sm font-semibold transition-colors">
+                        {fullName}
+                      </p>
+                      {isAuthorRow ? (
+                        <p className="text-brand-gray-500 text-xs">Author</p>
+                      ) : null}
+                    </div>
+                  </Link>
                 </li>
               );
             })}

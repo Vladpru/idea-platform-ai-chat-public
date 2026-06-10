@@ -30,26 +30,36 @@ function ContributorEntry({
   contributor: TopContributor;
 }) {
   return (
-    <li className="flex items-center gap-3">
-      <span className="text-brand-gray-500 w-5 shrink-0 text-sm font-semibold tabular-nums">
-        {rank}.
-      </span>
-      <Avatar size="lg" className="size-11">
-        {contributor.avatarUrl ? (
-          <AvatarImage src={contributor.avatarUrl} alt={contributor.name} />
-        ) : null}
-        <AvatarFallback className="bg-brand-light-blue text-brand-dark-blue text-sm font-semibold">
-          {getInitials(contributor.name)}
-        </AvatarFallback>
-      </Avatar>
-      <div className="min-w-0">
-        <p className="text-brand-black truncate text-sm font-bold">
-          {contributor.name}
-        </p>
-        <span className="bg-brand-light-blue text-brand-dark-blue mt-1 inline-flex rounded px-2 py-0.5 text-xs font-bold tabular-nums">
-          {formatContributorPoints(contributor.points)}
+    <li>
+      <Link
+        to="/profile/$profileId"
+        params={{ profileId: contributor.id }}
+        search={{ tab: 'all' }}
+        className="hover:bg-brand-gray-100 group flex items-center gap-3 rounded-lg p-1 transition-colors"
+      >
+        <span className="text-brand-gray-500 w-5 shrink-0 text-sm font-semibold tabular-nums">
+          {rank}.
         </span>
-      </div>
+        <Avatar
+          size="lg"
+          className="size-11 shrink-0 transition-transform group-hover:scale-105"
+        >
+          {contributor.avatarUrl ? (
+            <AvatarImage src={contributor.avatarUrl} alt={contributor.name} />
+          ) : null}
+          <AvatarFallback className="bg-brand-light-blue text-brand-dark-blue text-sm font-semibold">
+            {getInitials(contributor.name)}
+          </AvatarFallback>
+        </Avatar>
+        <div className="min-w-0">
+          <p className="text-brand-black group-hover:text-brand-dark-blue truncate text-sm font-bold transition-colors">
+            {contributor.name}
+          </p>
+          <span className="bg-brand-light-blue text-brand-dark-blue mt-1 inline-flex rounded px-2 py-0.5 text-xs font-bold tabular-nums">
+            {formatContributorPoints(contributor.points)}
+          </span>
+        </div>
+      </Link>
     </li>
   );
 }

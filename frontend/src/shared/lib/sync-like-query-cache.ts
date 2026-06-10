@@ -8,6 +8,7 @@ import type { IdeaDetails } from '@/features/idea-details/model/idea-details.typ
 import type { SimilarIdeaCard } from '@/features/idea-details/model/idea-details.types';
 import { ideaMutationKeys } from '@/features/ideas/hooks/use-idea-mutations';
 import { problemMutationKeys } from '@/features/problems/hooks/use-problem-mutations';
+import { profileContributionsKeys } from '@/features/profile/hooks/use-profile-contributions';
 import { myIdeasDashboardKeys } from '@/features/profile/hooks/use-my-ideas-dashboard';
 import { myProblemsDashboardKeys } from '@/features/profile/hooks/use-my-problems-dashboard';
 
@@ -30,6 +31,18 @@ type WithStatsLikes = {
   id: string;
   isLiked: boolean;
   stats: { likes: number };
+};
+
+type ProfileContributionLikeFields = {
+  id: string;
+  kind: 'idea' | 'problem';
+  isLiked: boolean;
+  likeCount: number;
+};
+
+type ProfileContributionsPage<T> = {
+  data: T[];
+  meta: unknown;
 };
 
 type FeedResponse<T> = {
@@ -57,6 +70,7 @@ export function getLikeEntityQueryKeys(entityType: 'IDEA' | 'PROBLEM') {
     allKey: keys.allKey,
     dashboardKey: keys.dashboardKey,
     ideaDetailsKey: ideaMutationKeys.details(),
+    profileContributionsKey: profileContributionsKeys.all,
   };
 }
 
@@ -94,6 +108,55 @@ function patchInfiniteFeed<T extends WithLikeCount>(
   return {
     ...data,
     pages: data.pages.map(page => patchFeed(page, entityId, patch)),
+  };
+}
+
+function patchProfileContributionItem<T extends ProfileContributionLikeFields>(
+  item: T,
+  entityId: string,
+  entityType: 'IDEA' | 'PROBLEM',
+  patch: LikeCachePatch,
+): T {
+  const expectedKind = entityType === 'IDEA' ? 'idea' : 'problem';
+
+  if (item.id !== entityId || item.kind !== expectedKind) {
+    return item;
+  }
+
+  return {
+    ...item,
+    isLiked: patch.isLiked,
+    likeCount: patch.likeCount,
+  };
+}
+
+function patchProfileContributionsPage<T extends ProfileContributionLikeFields>(
+  page: ProfileContributionsPage<T>,
+  entityId: string,
+  entityType: 'IDEA' | 'PROBLEM',
+  patch: LikeCachePatch,
+): ProfileContributionsPage<T> {
+  return {
+    ...page,
+    data: page.data.map(item =>
+      patchProfileContributionItem(item, entityId, entityType, patch),
+    ),
+  };
+}
+
+function patchProfileContributionsInfinite<
+  T extends ProfileContributionLikeFields,
+>(
+  data: InfiniteData<ProfileContributionsPage<T>>,
+  entityId: string,
+  entityType: 'IDEA' | 'PROBLEM',
+  patch: LikeCachePatch,
+): InfiniteData<ProfileContributionsPage<T>> {
+  return {
+    ...data,
+    pages: data.pages.map(page =>
+      patchProfileContributionsPage(page, entityId, entityType, patch),
+    ),
   };
 }
 
@@ -162,6 +225,7 @@ export function snapshotLikeQueryCache(
   addQueries(keys.allKey);
   addQueries(keys.listsKey);
   addQueries(keys.dashboardKey);
+  addQueries(profileContributionsKeys.all);
   addQueries(
     entityType === 'IDEA'
       ? ideaMutationKeys.details()
@@ -221,6 +285,14 @@ export function syncLikeQueryCache(
     { queryKey: keys.dashboardKey },
     current =>
       current?.pages ? patchInfiniteFeed(current, entityId, patch) : current,
+  );
+
+  queryClient.setQueriesData<
+    InfiniteData<ProfileContributionsPage<ProfileContributionLikeFields>>
+  >({ queryKey: profileContributionsKeys.all }, current =>
+    current?.pages
+      ? patchProfileContributionsInfinite(current, entityId, entityType, patch)
+      : current,
   );
 
   if (entityType === 'IDEA') {

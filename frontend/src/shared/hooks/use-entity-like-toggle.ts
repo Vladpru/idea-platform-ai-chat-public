@@ -29,6 +29,9 @@ export function useEntityLikeToggle(entityType: 'IDEA' | 'PROBLEM') {
         queryClient.cancelQueries({ queryKey: queryKeys.allKey }),
         queryClient.cancelQueries({ queryKey: queryKeys.dashboardKey }),
         queryClient.cancelQueries({ queryKey: queryKeys.ideaDetailsKey }),
+        queryClient.cancelQueries({
+          queryKey: queryKeys.profileContributionsKey,
+        }),
       ]);
 
       const previousData = snapshotLikeQueryCache(queryClient, entityType);
@@ -46,6 +49,9 @@ export function useEntityLikeToggle(entityType: 'IDEA' | 'PROBLEM') {
         queryClient.invalidateQueries({ queryKey: queryKeys.allKey }),
         queryClient.invalidateQueries({ queryKey: queryKeys.dashboardKey }),
         queryClient.invalidateQueries({ queryKey: queryKeys.ideaDetailsKey }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.profileContributionsKey,
+        }),
       ]);
     },
   });
