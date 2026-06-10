@@ -34,6 +34,7 @@ export type DashboardCardStandardProps<
   linkedItemEmptyImageText?: string;
   actionMenu?: ReactNode;
   likeButton?: ReactNode;
+  entityType?: 'IDEA' | 'PROBLEM';
   hideLinkedItems?: boolean;
 };
 
@@ -55,6 +56,7 @@ function DashboardCardStandardInner<
   linkedItemEmptyImageText,
   actionMenu,
   likeButton,
+  entityType = 'IDEA',
   hideLinkedItems = false,
 }: DashboardCardStandardProps<TCard>) {
   const isHorizontal = layout === 'horizontal';
@@ -197,7 +199,7 @@ function DashboardCardStandardInner<
               <DashboardCardStats
                 stats={card.stats}
                 entityId={card.id}
-                entityType="IDEA"
+                entityType={entityType}
                 isLiked={resolvedIsLiked}
                 likeButton={likeButton}
               />
@@ -251,6 +253,7 @@ function areDashboardCardStandardPropsEqual<
     prev.isMobile === next.isMobile &&
     prev.columnCount === next.columnCount &&
     prev.hideLinkedItems === next.hideLinkedItems &&
+    prev.entityType === next.entityType &&
     prev.likeButton === next.likeButton &&
     prev.actionMenu === next.actionMenu
   );

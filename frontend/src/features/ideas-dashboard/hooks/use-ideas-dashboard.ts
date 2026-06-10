@@ -37,6 +37,7 @@ export function useIdeasDashboardPreferences() {
 
   const sort: IdeaDashboardSort = search.sort ?? 'newest';
   const stage: ApiStage | undefined = search.stage as ApiStage | undefined;
+  const feedOnly = search.feedOnly ?? false;
 
   const activeFilter: IdeaDashboardFilter = stage
     ? API_STAGE_TO_FILTER[stage]
@@ -47,11 +48,11 @@ export function useIdeasDashboardPreferences() {
     if (!raw.has('sort')) {
       void navigate({
         to: '.',
-        search: { sort, stage },
+        search: { sort, stage, feedOnly: feedOnly || undefined },
         replace: true,
       });
     }
-  }, [navigate, sort, stage]);
+  }, [navigate, sort, stage, feedOnly]);
 
   const columnCount = useDashboardGridPreferencesStore(s => s.columnCount);
   const setColumnCount = useDashboardGridPreferencesStore(
@@ -91,6 +92,20 @@ export function useIdeasDashboardPreferences() {
     [navigate],
   );
 
+  const setFeedOnly = useCallback(
+    (nextFeedOnly: boolean) => {
+      scrollDashboardToTop();
+      void navigate({
+        to: '.',
+        search: prev => ({
+          ...prev,
+          feedOnly: nextFeedOnly ? true : undefined,
+        }),
+      });
+    },
+    [navigate],
+  );
+
   const isMobile = useMediaQuery('(max-width: 767px)');
   const isTablet = useMediaQuery('(min-width: 768px) and (max-width: 1023px)');
   const viewport = resolveDashboardViewport(isMobile, isTablet);
@@ -119,6 +134,8 @@ export function useIdeasDashboardPreferences() {
     setActiveFilter,
     sort,
     setSort,
+    feedOnly,
+    setFeedOnly,
     stage,
     columnCount,
     setColumnCount,
@@ -135,6 +152,7 @@ export function useIdeasDashboardPreferences() {
 export function useIdeasDashboardQuery(
   stage: ApiStage | undefined,
   sort: IdeaDashboardSort,
+  feedOnly: boolean,
 ) {
   const selectCards = useCallback(
     (data: InfiniteData<IdeasFeedResponse>) => selectIdeasDashboardCards(data),
@@ -153,11 +171,12 @@ export function useIdeasDashboardQuery(
   } = useInfiniteQuery({
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    queryKey: ideaMutationKeys.infinite({ stage, sort }),
+    queryKey: ideaMutationKeys.infinite({ stage, sort, feedOnly }),
     queryFn: ({ pageParam }) =>
       fetchIdeas({
         stage,
         sort,
+        feedOnly: feedOnly || undefined,
         limit: IDEAS_PAGE_SIZE,
         page: pageParam as number,
       }),
@@ -184,7 +203,11 @@ export function useIdeasDashboardQuery(
 
 export function useIdeasDashboard() {
   const preferences = useIdeasDashboardPreferences();
-  const query = useIdeasDashboardQuery(preferences.stage, preferences.sort);
+  const query = useIdeasDashboardQuery(
+    preferences.stage,
+    preferences.sort,
+    preferences.feedOnly,
+  );
 
   return {
     ...preferences,

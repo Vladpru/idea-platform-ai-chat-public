@@ -74,6 +74,7 @@ function renderIdeaStandardCard(
 type IdeasDashboardBodyProps = {
   stage: ApiStage | undefined;
   sort: IdeaDashboardSort;
+  feedOnly: boolean;
   columnCount: number;
   viewport: DashboardViewport;
   linkedProblemsExpanded: boolean;
@@ -82,6 +83,7 @@ type IdeasDashboardBodyProps = {
 const IdeasDashboardBody = memo(function IdeasDashboardBody({
   stage,
   sort,
+  feedOnly,
   columnCount,
   viewport,
   linkedProblemsExpanded,
@@ -95,7 +97,7 @@ const IdeasDashboardBody = memo(function IdeasDashboardBody({
     onLoadMore,
     hasNextPage,
     isFetchingNextPage,
-  } = useIdeasDashboardQuery(stage, sort);
+  } = useIdeasDashboardQuery(stage, sort, feedOnly);
 
   const isFetchingNextPageRef = useRef(isFetchingNextPage);
 
@@ -157,6 +159,8 @@ export function IdeasDashboardPage() {
     setActiveFilter,
     sort,
     setSort,
+    feedOnly,
+    setFeedOnly,
     stage,
     columnCount,
     setColumnCount,
@@ -183,12 +187,15 @@ export function IdeasDashboardPage() {
           showColumnSelect={showColumnSelect}
           onExpandAll={expandAllLinkedProblems}
           onCollapseAll={collapseAllLinkedProblems}
+          feedOnly={feedOnly}
+          onFeedOnlyChange={setFeedOnly}
         />
 
         <div className="pb-8">
           <IdeasDashboardBody
             stage={stage as ApiStage | undefined}
             sort={sort}
+            feedOnly={feedOnly}
             columnCount={columnCount}
             viewport={viewport}
             linkedProblemsExpanded={linkedProblemsExpanded}
