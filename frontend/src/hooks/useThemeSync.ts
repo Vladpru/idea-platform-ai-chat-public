@@ -1,8 +1,11 @@
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import {
+  type CurrentUser,
   type ThemePreference,
+  mergeCurrentUser,
   patchTheme,
 } from '@/features/profile/api/profile.api';
+import { currentUserQueryKey } from '@/features/settings/hooks/use-notification-preferences';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef } from 'react';
 import { useTheme } from '@/app/providers/theme-context';
@@ -55,7 +58,13 @@ export function useThemeSync(themePreference: ThemePreference | undefined) {
 
       void patchTheme({ theme: pref })
         .then(user => {
-          queryClient.setQueryData(['users', 'me'], user);
+          const userId = useAuthSessionStore.getState().user?.id;
+          if (userId) {
+            queryClient.setQueryData<CurrentUser>(
+              currentUserQueryKey(userId),
+              previous => mergeCurrentUser(previous, user),
+            );
+          }
           const token = useAuthSessionStore.getState().accessToken;
           if (token) {
             useAuthSessionStore.getState().setSession(user, token);

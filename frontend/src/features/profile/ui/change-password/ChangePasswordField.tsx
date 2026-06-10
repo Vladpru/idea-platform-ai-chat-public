@@ -1,5 +1,5 @@
 import { PASSWORD_MAX_LENGTH } from '@/shared/lib/password-rules';
-import { labelClass } from '@/features/profile/ui/profile-view-classes';
+import { labelClass } from '@/features/profile/ui/shared/profile-view-classes';
 import { Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import type { UseFormRegisterReturn } from 'react-hook-form';

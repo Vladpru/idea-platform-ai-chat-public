@@ -5,6 +5,7 @@ import {
   clearStoredAuthToken,
   setStoredAuthToken,
 } from '@/shared/lib/auth-token';
+import { clearAuthenticatedQueryCache } from '@/shared/lib/query-client';
 import { formatUserDisplayName } from '@/shared/lib/user-display';
 
 export type SessionUser = {
@@ -71,6 +72,7 @@ export const useAuthSessionStore = create<AuthSessionState>()(
       },
       clearSession: () => {
         clearStoredAuthToken();
+        clearAuthenticatedQueryCache();
         set({ user: null, accessToken: null });
         void useAuthSessionStore.persist.clearStorage();
       },

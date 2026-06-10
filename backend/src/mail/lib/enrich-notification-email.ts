@@ -2,6 +2,7 @@ import { MediaKind } from '../../../generated/prisma/client';
 import type { PrismaService } from '../../prisma/prisma.service';
 import type {
   EnrichedCommentContext,
+  EnrichedDirectMessageContext,
   EnrichedEmailContext,
   EnrichedEntityCard,
 } from '../types/enriched-email.types';
@@ -87,6 +88,7 @@ function buildFrontendPaths(frontendUrl: string) {
     problemEdit: (id: string) =>
       `${base}/problems/new?problemId=${encodeURIComponent(id)}`,
     settings: `${base}/settings/notifications`,
+    liveChatRoom: (roomId: string) => `${base}/live-chats/${roomId}`,
   };
 }
 
@@ -346,6 +348,38 @@ async function enrichCommentContext(
   };
 }
 
+async function enrichDirectMessageContext(
+  prisma: PrismaService,
+  payload: Record<string, unknown>,
+  paths: ReturnType<typeof buildFrontendPaths>,
+): Promise<EnrichedDirectMessageContext | null> {
+  const roomId = readString(payload, 'roomId');
+  const actorName = readString(payload, 'actorName') || 'Someone';
+  const contentSnippet = readString(payload, 'contentSnippet');
+  const actorId = readString(payload, 'actorId');
+
+  if (!roomId) {
+    return null;
+  }
+
+  let actorAvatarUrl: string | null = null;
+  if (actorId) {
+    const actor = await prisma.user.findUnique({
+      where: { id: actorId },
+      select: { avatarUrl: true },
+    });
+    actorAvatarUrl = actor?.avatarUrl ?? null;
+  }
+
+  return {
+    actorName,
+    actorAvatarUrl,
+    timestamp: formatCommentTimestamp(new Date()),
+    contentSnippet,
+    chatUrl: paths.liveChatRoom(roomId),
+  };
+}
+
 export async function enrichNotificationEmail(
   prisma: PrismaService,
   data: NotificationEmailJobData,
@@ -356,6 +390,18 @@ export async function enrichNotificationEmail(
     frontendUrl: frontendUrl.replace(/\/$/, ''),
     settingsUrl: paths.settings,
   };
+
+  if (data.notificationType === 'direct.message.received') {
+    const directMessage = await enrichDirectMessageContext(
+      prisma,
+      data.payload,
+      paths,
+    );
+    if (directMessage) {
+      context.directMessage = directMessage;
+    }
+    return context;
+  }
 
   if (data.notificationType === 'comment.created') {
     const comment = await enrichCommentContext(prisma, data.payload, paths);

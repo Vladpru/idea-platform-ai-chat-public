@@ -210,7 +210,7 @@ export function IdeaCreateForm({
     void navigate({
       to: '/ideas/$ideaId',
       params: { ideaId },
-      search,
+      search: search ?? {},
       replace: true,
     });
   };

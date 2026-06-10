@@ -103,6 +103,14 @@ export function NotificationMessage({ type, payload }: NotificationMessageProps)
           inactive. Consider updating or publishing it.
         </>
       );
+    case 'direct.message.received':
+      return renderWithActor(
+        actorName,
+        <>
+          {' '}
+          sent you a message: &quot;{contentSnippet}&quot;
+        </>,
+      );
     case 'NEW_IDEA':
       return renderWithActor(
         actorName,

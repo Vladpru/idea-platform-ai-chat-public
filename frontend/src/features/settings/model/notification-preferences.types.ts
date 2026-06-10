@@ -5,7 +5,8 @@ export type NotificationPreferenceKey =
   | 'newSupporters'
   | 'newComments'
   | 'assignedIdeasAndProblems'
-  | 'followUps';
+  | 'followUps'
+  | 'directMessages';
 
 export type NotificationChannelPreferences = {
   inApp: boolean;
@@ -25,6 +26,7 @@ export const NOTIFICATION_PREFERENCE_KEYS: NotificationPreferenceKey[] = [
   'newComments',
   'assignedIdeasAndProblems',
   'followUps',
+  'directMessages',
 ];
 
 export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferencesMap = {
@@ -35,6 +37,7 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferencesMap = {
   newComments: { inApp: true, email: true },
   assignedIdeasAndProblems: { inApp: false, email: false },
   followUps: { inApp: true, email: true },
+  directMessages: { inApp: true, email: true },
 };
 
 export type UpdateNotificationPreferencesPayload =

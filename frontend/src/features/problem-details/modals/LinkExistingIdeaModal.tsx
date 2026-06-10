@@ -7,7 +7,7 @@ import {
 } from '@/features/ideas/lib/styles';
 import { ArrowLink } from '@/features/ideas/ui/icons/ArrowLink';
 import { useLinkIdeasToProblemMutation } from '@/features/problem-details/lib/use-problem-idea-link-mutations';
-import { cancelOutlineBtn } from '@/features/profile/ui/profile-view-classes';
+import { cancelOutlineBtn } from '@/features/profile/ui/shared/profile-view-classes';
 import { Link } from '@tanstack/react-router';
 import { Check, ChevronDown, Search, X } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';

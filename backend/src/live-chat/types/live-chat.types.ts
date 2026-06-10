@@ -27,6 +27,10 @@ export type LiveChatRoomEntityDto = {
   title: string | null;
 };
 
+export type LiveChatTeamMemberDto = LiveChatAuthorDto & {
+  isAuthor: boolean;
+};
+
 export type LiveChatRoomDto = {
   id: string;
   entity: LiveChatRoomEntityDto;
@@ -34,6 +38,7 @@ export type LiveChatRoomDto = {
   createdAt: string;
   updatedAt: string;
   lastMessage: LiveChatMessageDto | null;
+  team: LiveChatTeamMemberDto[];
 };
 
 export type PaginatedLiveChatMessagesResponse = {

@@ -1,6 +1,5 @@
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import { DiscussionTab } from '@/features/discussion/ui/DiscussionTab';
-import { LiveChatTab } from '@/features/live-chat';
 import { EntityAiSummaryBlock } from '@/features/entity-ai-summary/EntityAiSummaryBlock';
 import { IdeaStatsFooter } from '@/features/idea-details/ui/IdeaStatsFooter';
 import { IdeaTagCloud } from '@/features/idea-details/ui/IdeaTagCloud';
@@ -25,6 +24,8 @@ import { entityDescriptionDetailClass } from '@/shared/lib/entity-description-cl
 import { cn } from '@/shared/lib/utils';
 import { AnimatedPanel, AnimatedPanelSwitch } from '@/shared/ui/motion';
 import { SuccessModal } from '@/shared/ui/success-modal';
+
+import { ProblemTeamModal } from '@/features/problem-details/modals/ProblemTeamModal';
 
 import { ProblemHeader } from './ProblemHeader';
 import { ProblemInfoCards } from './ProblemInfoCards';
@@ -53,19 +54,13 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
     if (replyToCommentId || searchTab === 'discussion') {
       return 'discussion';
     }
-    if (searchTab === 'live-chat') {
-      return 'live-chat';
-    }
     return 'description';
   });
   const searchTabOverride: ProblemTabId | null =
-    replyToCommentId || searchTab === 'discussion'
-      ? 'discussion'
-      : searchTab === 'live-chat'
-        ? 'live-chat'
-        : null;
+    replyToCommentId || searchTab === 'discussion' ? 'discussion' : null;
   const visibleTab = searchTabOverride ?? activeTab;
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [updatedSuccessOpen, setUpdatedSuccessOpen] = useState(false);
   const [prevShowUpdatedSuccess, setPrevShowUpdatedSuccess] =
     useState(showUpdatedSuccess);
@@ -101,6 +96,7 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
       to: '/problems/$problemId',
       params: { problemId },
       search: {
+        tab: 'discussion',
         ...(discussionSort ? { sort: discussionSort } : {}),
         ...(showUpdatedSuccess ? { updated: showUpdatedSuccess } : {}),
       },
@@ -197,6 +193,7 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
               });
             }}
             onBackClick={handleBackClick}
+            onTeamClick={() => setIsTeamModalOpen(true)}
           />
 
           <div className="pt-1">
@@ -269,16 +266,6 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
               </AnimatedPanel>
             )}
 
-            {visibleTab === 'live-chat' && (
-              <AnimatedPanel panelKey="live-chat">
-                <LiveChatTab
-                  entityType="problems"
-                  entityId={problemId}
-                  enabled={visibleTab === 'live-chat'}
-                />
-              </AnimatedPanel>
-            )}
-
             {visibleTab === 'linked-ideas' && (
               <AnimatedPanel panelKey="linked-ideas">
                 <ProblemLinkedIdeasTab
@@ -299,6 +286,14 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
           />
         ) : null}
       </div>
+
+      {isTeamModalOpen ? (
+        <ProblemTeamModal
+          authorId={problem.authorId}
+          team={problem.team}
+          onClose={() => setIsTeamModalOpen(false)}
+        />
+      ) : null}
 
       <SuccessModal
         open={updatedSuccessOpen}

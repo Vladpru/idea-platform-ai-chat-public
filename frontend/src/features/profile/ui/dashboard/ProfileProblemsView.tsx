@@ -1,22 +1,21 @@
-import type { IdeasDashboardTab } from '@/features/ideas/api/ideas-api.types';
-import { getApiErrorMessage } from '@/shared/api/api-error';
-import { ROUTES } from '@/shared/config/paths';
-import {
-  DashboardCardStandard,
-  IDEAS_DASHBOARD_LABELS,
-} from '@/features/ideas-dashboard';
-import { useDeleteIdeaMutation } from '@/features/ideas/hooks/use-idea-mutations';
-import type { TabDefinition } from '@/shared/ui/TabLabelWithBadge';
-import { Button } from '@/shared/ui/button';
-import { SkeletonCard } from '@/shared/ui/skeleton';
+import { DashboardCardStandard } from '@/features/ideas-dashboard';
+import { PROBLEMS_DASHBOARD_LABELS } from '@/features/problems-dashboard/lib/problems-dashboard-labels';
+import type { ProblemsDashboardTab } from '@/features/problems/api/problems-api.types';
+import { useDeleteProblemMutation } from '@/features/problems/hooks/use-problem-mutations';
 import { Link } from '@tanstack/react-router';
 import { useMemo } from 'react';
 
-import { useMyIdeasDashboard } from '../hooks/use-my-ideas-dashboard';
-import { IdeaCardActions } from './IdeaCardActions';
+import { getApiErrorMessage } from '@/shared/api/api-error';
+import { ROUTES } from '@/shared/config/paths';
+import type { TabDefinition } from '@/shared/ui/TabLabelWithBadge';
+import { Button } from '@/shared/ui/button';
+import { SkeletonCard } from '@/shared/ui/skeleton';
+
+import { useMyProblemsDashboard } from '../../hooks/use-my-problems-dashboard';
+import { ProblemCardActions } from './ProblemCardActions';
 import { ProfileDashboardView } from './ProfileDashboardView';
 
-export function ProfileIdeasView() {
+export function ProfileProblemsView() {
   const {
     tab,
     setTab,
@@ -29,13 +28,13 @@ export function ProfileIdeasView() {
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
-  } = useMyIdeasDashboard();
+  } = useMyProblemsDashboard();
 
-  const deleteMutation = useDeleteIdeaMutation();
+  const deleteMutation = useDeleteProblemMutation();
 
-  const tabs = useMemo<TabDefinition<IdeasDashboardTab>[]>(
+  const tabs = useMemo<TabDefinition<ProblemsDashboardTab>[]>(
     () => [
-      { id: 'published', label: 'My Ideas', count: totals?.published },
+      { id: 'published', label: 'My Problems', count: totals?.published },
       { id: 'joined', label: 'Joined', count: totals?.joined },
       { id: 'drafts', label: 'Drafts', count: totals?.drafts },
     ],
@@ -46,30 +45,35 @@ export function ProfileIdeasView() {
     switch (tab) {
       case 'drafts':
         return {
-          ...IDEAS_DASHBOARD_LABELS.emptyStates.drafts,
-          href: ROUTES.ideasNew,
+          ...PROBLEMS_DASHBOARD_LABELS.emptyStates.drafts,
+          href: ROUTES.problemsNew,
         };
       case 'joined':
         return {
-          ...IDEAS_DASHBOARD_LABELS.emptyStates.joined,
-          href: ROUTES.ideas,
+          ...PROBLEMS_DASHBOARD_LABELS.emptyStates.joined,
+          href: ROUTES.problems,
         };
       case 'published':
       default:
         return {
-          ...IDEAS_DASHBOARD_LABELS.emptyStates.published,
-          href: ROUTES.ideasNew,
+          ...PROBLEMS_DASHBOARD_LABELS.emptyStates.published,
+          href: ROUTES.problemsNew,
         };
     }
   };
 
   const emptyContent = getEmptyStateContent();
 
-  type IdeaCard = (typeof items)[number];
+  type ProblemCard = (typeof items)[number];
+
+  const getProblemDetailHref = (card: ProblemCard) =>
+    card.status === 'DRAFT'
+      ? ROUTES.problemCreation(card.id)
+      : ROUTES.problemDetail(card.id);
 
   return (
-    <ProfileDashboardView<IdeasDashboardTab, IdeaCard>
-      title="My Ideas"
+    <ProfileDashboardView<ProblemsDashboardTab, ProblemCard>
+      title="My Problems"
       tabs={tabs}
       data={{
         tab,
@@ -93,7 +97,7 @@ export function ProfileIdeasView() {
             {emptyContent.description}
           </p>
           <Link to={emptyContent.href}>
-            <Button className="bg-brand-orange hover:bg-brand-orange/90 text-white">
+            <Button className="bg-brand-dark-blue hover:bg-brand-dark-blue/90 text-white">
               {emptyContent.buttonText}
             </Button>
           </Link>
@@ -101,32 +105,34 @@ export function ProfileIdeasView() {
       }
       renderErrorMessage={err =>
         getApiErrorMessage(err, {
-          invalidCredentialsMessage: IDEAS_DASHBOARD_LABELS.loadErrorFallback,
+          invalidCredentialsMessage:
+            PROBLEMS_DASHBOARD_LABELS.loadErrorFallback,
         })
       }
-      loadingMoreLabel={IDEAS_DASHBOARD_LABELS.loadingMore}
-      layoutId="profile-ideas-dashboard-tabs-underline"
       tabsMobileMode="row"
+      loadingMoreLabel={PROBLEMS_DASHBOARD_LABELS.loadingMore}
+      layoutId="profile-problems-dashboard-tabs-underline"
       deleteMutation={deleteMutation}
       renderSkeletonCard={i => <SkeletonCard key={i} className="h-64" />}
       renderCard={({ item: card, isMobile, isDeleting, onDelete }) => (
         <DashboardCardStandard
           key={card.id}
           card={card}
-          detailHref={ROUTES.ideaDetail(card.id)}
+          detailHref={getProblemDetailHref(card)}
           layout="horizontal"
-          emptyDescriptionText={IDEAS_DASHBOARD_LABELS.emptyDescription}
-          emptyImageText={IDEAS_DASHBOARD_LABELS.emptyImage}
-          linkedSectionLabel={IDEAS_DASHBOARD_LABELS.linkedSectionLabel}
-          getLinkedItemDetailHref={ROUTES.problemDetail}
+          emptyDescriptionText={PROBLEMS_DASHBOARD_LABELS.emptyDescription}
+          emptyImageText={PROBLEMS_DASHBOARD_LABELS.emptyImage}
+          linkedSectionLabel={PROBLEMS_DASHBOARD_LABELS.linkedSectionLabel}
+          getLinkedItemDetailHref={ROUTES.ideaDetail}
           linkedItemsScrollLeftAriaLabel={
-            IDEAS_DASHBOARD_LABELS.linkedItemsScrollLeftAriaLabel
+            PROBLEMS_DASHBOARD_LABELS.linkedItemsScrollLeftAriaLabel
           }
           linkedItemsExpanded={false}
           isMobile={isMobile}
           hideLinkedItems
+          entityType="PROBLEM"
           actionMenu={
-            <IdeaCardActions
+            <ProblemCardActions
               card={card}
               onDelete={onDelete}
               isDeleting={isDeleting}

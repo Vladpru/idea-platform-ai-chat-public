@@ -135,12 +135,12 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
       const socket = socketRef.current;
       if (!socket || !roomId) {
         toast.error('Live chat connection is not ready');
-        return false;
+        return null;
       }
 
       if (!socket.connected) {
         toast.error('Live chat connection is not ready');
-        return false;
+        return null;
       }
 
       const response = await emitWithAck<
@@ -150,7 +150,7 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
 
       if (!response?.ok) {
         toast.error(response?.error ?? 'Could not send message');
-        return false;
+        return null;
       }
 
       queryClient.setQueryData<LiveChatMessagesCache>(
@@ -158,7 +158,7 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
         cache => appendLiveChatMessage(cache, response.message),
       );
 
-      return true;
+      return response.message;
     },
     [queryClient, roomId],
   );

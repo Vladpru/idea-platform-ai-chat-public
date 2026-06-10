@@ -14,7 +14,7 @@ import {
   publishBtnClass,
   textareaClass,
 } from '@/features/ideas/lib/styles';
-import { cancelOutlineBtn } from '@/features/profile/ui/profile-view-classes';
+import { cancelOutlineBtn } from '@/features/profile/ui/shared/profile-view-classes';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { X } from 'lucide-react';
 import { useEffect } from 'react';

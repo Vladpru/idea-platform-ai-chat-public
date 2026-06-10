@@ -15,7 +15,11 @@ import {
   parseNotificationPreferences,
 } from '../notification/lib/notification-preferences.util';
 import { PrismaService } from '../prisma/prisma.service';
-import type { UserPublic, UserPublicProfile } from '../shared/types/user.types';
+import type {
+  CurrentUserPublic,
+  UserPublic,
+  UserPublicProfile,
+} from '../shared/types/user.types';
 import { isUniqueConstraintError } from '../shared/utils/is-unique-error.util';
 import {
   PASSWORD_MAX_LENGTH,
@@ -177,7 +181,7 @@ export class UserService {
     return users.map(toUserPublic);
   }
 
-  async findOne(id: string): Promise<UserPublic> {
+  private async findOne(id: string): Promise<UserPublic> {
     const user = await this.prisma.user.findUnique({
       where: { id },
       select: USER_PUBLIC_SELECT,
@@ -202,6 +206,23 @@ export class UserService {
       ...user,
       subscriberCount,
       isSubscribed,
+    };
+  }
+
+  async getMe(id: string): Promise<CurrentUserPublic> {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        ...USER_PUBLIC_SELECT,
+        password: true,
+      },
+    });
+    if (!user) throw new NotFoundException(`User not found`);
+
+    const { password, ...publicFields } = user;
+    return {
+      ...toUserPublic(publicFields),
+      hasPassword: Boolean(password),
     };
   }
 
@@ -387,18 +408,5 @@ export class UserService {
       }
       throw error;
     }
-  }
-
-  async checkUserPassword(userId: string) {
-    const user = await this.findOneWithPassword(userId);
-    return !!user.password;
-  }
-
-  private async findOneWithPassword(id: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
-    });
-    if (!user) throw new NotFoundException(`User not found`);
-    return user;
   }
 }

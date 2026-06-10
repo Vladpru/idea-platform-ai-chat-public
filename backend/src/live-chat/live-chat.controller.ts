@@ -23,7 +23,10 @@ import {
 } from '@nestjs/swagger';
 import type { Request } from 'express';
 
-import { EntityTarget } from '../entity-visibility/entity-target.enum';
+import {
+  ENTITY_LINK_TARGETS,
+  type EntityLinkTarget,
+} from '../entity-visibility/entity-target.enum';
 import { JwtAuth } from '../shared/decorators/jwt-auth.decorator';
 import { CreateLiveChatRoomDto, GetLiveChatMessagesQueryDto } from './dto';
 import { LiveChatService } from './live-chat.service';
@@ -70,14 +73,30 @@ export class LiveChatController {
     );
   }
 
+  @Post('direct/:userId')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create or return a direct live chat with a user' })
+  @ApiCreatedResponse({ description: 'Direct live chat room' })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  createDirectRoom(
+    @Param('userId', ParseUUIDPipe) targetUserId: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<LiveChatRoomDto> {
+    return this.liveChatService.createOrGetDirectRoom(
+      targetUserId,
+      req.user.id,
+    );
+  }
+
   @Get('by-entity/:entityType/:entityId')
   @ApiOperation({ summary: 'Get live chat room for an idea or problem' })
   @ApiOkResponse({ description: 'Live chat room' })
   @ApiNotFoundResponse({ description: 'Entity or room not found' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   findByEntity(
-    @Param('entityType', new ParseEnumPipe(EntityTarget))
-    entityType: EntityTarget,
+    @Param('entityType', new ParseEnumPipe(ENTITY_LINK_TARGETS))
+    entityType: EntityLinkTarget,
     @Param('entityId', ParseUUIDPipe) entityId: string,
     @Req() req: AuthenticatedRequest,
   ): Promise<LiveChatRoomDto> {

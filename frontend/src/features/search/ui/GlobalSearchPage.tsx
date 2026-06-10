@@ -349,7 +349,7 @@ export function GlobalSearchPage() {
               />
               <TabButton
                 active={activeTab === 'problems'}
-                label="UPDATE"
+                label="PROBLEMS"
                 count={problemsTotal}
                 onClick={() => updateTab('problems')}
               />
@@ -380,6 +380,9 @@ export function GlobalSearchPage() {
                     linkedItemsExpanded={false}
                     onToggleLinkedItems={handleToggleLinkedItems}
                     isMobile={isMobile}
+                    entityType={
+                      item.entityType === 'IDEA' ? 'IDEA' : 'PROBLEM'
+                    }
                   />
                 ))}
 

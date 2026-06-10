@@ -1,9 +1,10 @@
 import type { UserPublicProfile } from '@/features/profile/api/profile.api';
-import { ProfileStats } from '@/features/profile/ui/ProfileStats';
+import { ProfileStartChatButton } from '@/features/profile/ui/ProfileStartChatButton';
+import { ProfileStats } from '@/features/profile/ui/user-profile/ProfileStats';
 import {
   outlineBtn,
   primaryBtn,
-} from '@/features/profile/ui/profile-view-classes';
+} from '@/features/profile/ui/shared/profile-view-classes';
 import { formatUserDisplayName } from '@/shared/lib/user-display';
 import { ROUTES } from '@/shared/config/paths';
 import { cn } from '@/shared/lib/utils';
@@ -97,7 +98,8 @@ function ActionButton({
   onUnsubscribe,
   className,
   navigate,
-}: ActionButtonProps) {
+  profileUserId,
+}: ActionButtonProps & { profileUserId: string }) {
   if (isOwner) {
     return (
       <Button
@@ -114,22 +116,27 @@ function ActionButton({
   }
 
   return (
-    <Button
-      type="button"
-      className={cn(
-        isSubscribed ? outlineBtn : primaryBtn,
-        'cursor-pointer',
-        className,
-      )}
-      disabled={isSubscriptionPending}
-      onClick={isSubscribed ? onUnsubscribe : onSubscribe}
-    >
-      {isSubscriptionPending
-        ? 'Updating...'
-        : isSubscribed
-          ? 'Unsubscribe'
-          : 'Subscribe'}
-    </Button>
+    <div className={cn('flex flex-col gap-2 sm:flex-row', className)}>
+      <Button
+        type="button"
+        className={cn(
+          isSubscribed ? outlineBtn : primaryBtn,
+          'cursor-pointer sm:min-w-[120px]',
+        )}
+        disabled={isSubscriptionPending}
+        onClick={isSubscribed ? onUnsubscribe : onSubscribe}
+      >
+        {isSubscriptionPending
+          ? 'Updating...'
+          : isSubscribed
+            ? 'Unsubscribe'
+            : 'Subscribe'}
+      </Button>
+      <ProfileStartChatButton
+        userId={profileUserId}
+        className="w-full sm:w-auto"
+      />
+    </div>
   );
 }
 
@@ -184,6 +191,7 @@ export function ProfileHeader({
               onSubscribe={onSubscribe}
               onUnsubscribe={onUnsubscribe}
               navigate={navigate}
+              profileUserId={profile.id}
             />
           </div>
         </div>
@@ -268,6 +276,7 @@ export function ProfileHeader({
             onUnsubscribe={onUnsubscribe}
             className="w-full"
             navigate={navigate}
+            profileUserId={profile.id}
           />
         </div>
       </div>

@@ -2,6 +2,7 @@ import {
   nameInitial,
   useAuthSessionStore,
 } from '@/features/auth/model/auth-session-store';
+import { Route as ProfileRoute } from '@/routes/_auth/profile/$profileId';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 
@@ -20,6 +21,11 @@ import { LogoutConfirmDialog } from './LogoutConfirmDialog';
 
 const linkRowClassName =
   'flex w-full cursor-pointer items-center py-3 px-4 text-base';
+
+const activeLinkProps = {
+  className: 'bg-accent text-primary font-semibold',
+  'data-status': 'active',
+};
 
 export interface UserNavProps {
   triggerClassName: string;
@@ -57,10 +63,11 @@ export function UserNav({ triggerClassName }: UserNavProps) {
         >
           <DropdownMenuItem asChild className="cursor-pointer p-0 text-sm">
             <Link
-              to="/profile/$profileId"
+              to={ProfileRoute.to}
               params={{ profileId: user?.id ?? '' }}
               search={{ tab: 'all' }}
               className={linkRowClassName}
+              activeProps={activeLinkProps}
             >
               <span>Profile</span>
             </Link>
@@ -70,6 +77,7 @@ export function UserNav({ triggerClassName }: UserNavProps) {
               to={ROUTES.profileProblems}
               search={{ tab: 'published' }}
               className={linkRowClassName}
+              activeProps={activeLinkProps}
             >
               My Problems, Joins & Drafts
             </Link>
@@ -79,12 +87,17 @@ export function UserNav({ triggerClassName }: UserNavProps) {
               to={ROUTES.profileIdeas}
               search={{ tab: 'published' }}
               className={linkRowClassName}
+              activeProps={activeLinkProps}
             >
               My Ideas, Joins & Drafts
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild className="cursor-pointer p-0 text-sm">
-            <Link to={ROUTES.liveChats} className={linkRowClassName}>
+            <Link
+              to={ROUTES.liveChats}
+              className={linkRowClassName}
+              activeProps={activeLinkProps}
+            >
               <span>Live Chats</span>
             </Link>
           </DropdownMenuItem>
@@ -95,6 +108,7 @@ export function UserNav({ triggerClassName }: UserNavProps) {
               to={ROUTES.settings}
               search={{ tab: 'appearance' }}
               className={linkRowClassName}
+              activeProps={activeLinkProps}
             >
               <span>Settings</span>
             </Link>

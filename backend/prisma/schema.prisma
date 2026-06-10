@@ -58,18 +58,18 @@ enum SummaryStatus {
 }
 
 model User {
-  id                      String               @id @default(uuid())
-  email                   String               @unique
-  firstName               String?              @map("first_name")
-  lastName                String?              @map("last_name")
+  id                      String                @id @default(uuid())
+  email                   String                @unique
+  firstName               String?               @map("first_name")
+  lastName                String?               @map("last_name")
   password                String?
-  createdAt               DateTime             @default(now()) @map("created_at")
-  updatedAt               DateTime             @updatedAt @map("updated_at")
-  avatarUrl               String?              @map("avatar_url")
-  themePreference         ThemePreference      @default(SYSTEM) @map("theme_preference")
-  notificationPreferences Json                 @default("{}") @map("notification_preferences")
+  createdAt               DateTime              @default(now()) @map("created_at")
+  updatedAt               DateTime              @updatedAt @map("updated_at")
+  avatarUrl               String?               @map("avatar_url")
+  themePreference         ThemePreference       @default(SYSTEM) @map("theme_preference")
+  notificationPreferences Json                  @default("{}") @map("notification_preferences")
   passwordResetTokens     PasswordResetToken[]
-  ideas                   Idea[]               @relation("IdeaAuthor")
+  ideas                   Idea[]                @relation("IdeaAuthor")
   problems                Problem[]
   joinedIdeas             IdeaMember[]
   joinedProblems          ProblemMember[]
@@ -77,15 +77,16 @@ model User {
   problemLikes            ProblemLike[]
   ideaViews               IdeaView[]
   problemViews            ProblemView[]
-  comments                Comment[]            @relation("CommentAuthor")
+  comments                Comment[]             @relation("CommentAuthor")
   commentLikes            CommentLike[]
   notifications           Notification[]
-  subscriptionsGiven      Subscription[]       @relation("SubscriptionFollower")
-  subscriptionsReceived   Subscription[]       @relation("SubscriptionFollowing")
+  subscriptionsGiven      Subscription[]        @relation("SubscriptionFollower")
+  subscriptionsReceived   Subscription[]        @relation("SubscriptionFollowing")
   bio                     String?
-  socialLinks             Json?                @default("[]") @map("social_links")
-  liveChatRoomsCreated    LiveChatRoom[]       @relation("LiveChatRoomCreator")
-  liveChatMessages        LiveChatMessage[]    @relation("LiveChatMessageAuthor")
+  socialLinks             Json?                 @default("[]") @map("social_links")
+  liveChatRoomsCreated    LiveChatRoom[]        @relation("LiveChatRoomCreator")
+  liveChatParticipations  LiveChatParticipant[]
+  liveChatMessages        LiveChatMessage[]     @relation("LiveChatMessageAuthor")
 
   @@map("user")
 }
@@ -433,19 +434,35 @@ model CommentMedia {
 }
 
 model LiveChatRoom {
-  id          String   @id @default(uuid())
-  ideaId      String?  @unique @map("idea_id")
-  problemId   String?  @unique @map("problem_id")
-  createdById String   @map("created_by_id")
+  id             String   @id @default(uuid())
+  ideaId         String?  @unique @map("idea_id")
+  problemId      String?  @unique @map("problem_id")
+  directPairKey  String?  @unique @map("direct_pair_key")
+  createdById    String   @map("created_by_id")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  idea      Idea?             @relation(fields: [ideaId], references: [id], onDelete: Cascade)
-  problem   Problem?          @relation(fields: [problemId], references: [id], onDelete: Cascade)
-  createdBy User              @relation("LiveChatRoomCreator", fields: [createdById], references: [id], onDelete: Cascade)
-  messages  LiveChatMessage[]
+  idea         Idea?                 @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  problem      Problem?              @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  createdBy    User                  @relation("LiveChatRoomCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  participants LiveChatParticipant[]
+  messages     LiveChatMessage[]
 
   @@map("live_chat_room")
+}
+
+model LiveChatParticipant {
+  id       String   @id @default(uuid())
+  roomId   String   @map("room_id")
+  userId   String   @map("user_id")
+  joinedAt DateTime @default(now()) @map("joined_at")
+
+  room LiveChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@index([userId])
+  @@map("live_chat_participant")
 }
 
 model LiveChatMessage {

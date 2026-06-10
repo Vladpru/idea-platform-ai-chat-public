@@ -1,4 +1,4 @@
-import { outlineBtn } from '@/features/profile/ui/profile-view-classes';
+import { outlineBtn } from '@/features/profile/ui/shared/profile-view-classes';
 
 import {
   SAVE_PROGRESS_BEFORE_LEAVING_TITLE,

@@ -1,5 +1,6 @@
 import { getInitials } from '@/features/idea-details/lib/get-initials';
 import { outlineBtnClass, pageTitleClass } from '@/features/ideas/lib/styles';
+import { EntityLiveChatAction } from '@/features/live-chat/ui/EntityLiveChatAction';
 import type { ProblemDetails } from '@/features/problem-details/model/problem-details.types';
 import { useDeleteProblemMutation } from '@/features/problems/hooks/use-problem-mutations';
 import { useNavigate } from '@tanstack/react-router';
@@ -32,6 +33,7 @@ type ProblemHeaderProps = {
   isCompact?: boolean;
   onDeleteSuccess?: () => void;
   onBackClick?: (event: MouseEvent<HTMLButtonElement>) => void;
+  onTeamClick?: () => void;
 };
 
 const metadataLabelClass =
@@ -112,6 +114,7 @@ export function ProblemHeader({
   isCompact = false,
   onDeleteSuccess,
   onBackClick,
+  onTeamClick,
 }: ProblemHeaderProps) {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const deleteMutation = useDeleteProblemMutation();
@@ -175,16 +178,22 @@ export function ProblemHeader({
               {title}
             </h1>
 
-            <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-6 md:gap-8">
+            <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-6 md:gap-8">
+              <div className="flex flex-wrap items-center gap-4 sm:gap-6 md:gap-8">
               {problem.team.length > 0 ? (
-                <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  className="hover:bg-brand-gray-100/80 -m-1 flex cursor-pointer items-center gap-1.5 rounded-md p-1 transition-colors outline-none"
+                  aria-label="View team members"
+                  onClick={onTeamClick}
+                >
                   <span className={metadataLabelClass}>Team</span>
                   <AvatarGroup aria-label="Team members">
                     {problem.team.slice(0, 4).map(member => (
                       <Avatar
                         key={member.id}
                         size="sm"
-                        className="ring-2 ring-white"
+                        className="ring-card dark:ring-none ring-2"
                         title={member.name}
                       >
                         {member.avatarUrl ? (
@@ -209,10 +218,19 @@ export function ProblemHeader({
                       </Avatar>
                     ) : null}
                   </AvatarGroup>
-                </div>
+                </button>
               ) : null}
 
               <StageChevronBadge stage={problem.stage} />
+              </div>
+
+              {!isCompact ? (
+                <EntityLiveChatAction
+                  entityKind="PROBLEM"
+                  entityId={problem.id}
+                  viewer={problem.viewer}
+                />
+              ) : null}
             </div>
           </div>
 

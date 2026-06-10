@@ -5,6 +5,10 @@ import type {
   NotificationEmailContent,
   NotificationEmailJobData,
 } from '../types/notification-email.types';
+import { EmailActorRow } from './components/EmailActorRow';
+import { EmailOutlineButton } from './components/EmailOutlineButton';
+import { EmailSerifText } from './components/EmailSerifText';
+import { TransactionalEmail } from './components/TransactionalEmail';
 import {
   ActionEmailArchetype,
   CommentEmailArchetype,
@@ -77,6 +81,18 @@ function buildSimilarDetectedContent(
   return { subject, text, html: '' };
 }
 
+function buildDirectMessageContent(
+  payload: Record<string, unknown>,
+): NotificationEmailContent {
+  const actorName = readString(payload, 'actorName') || 'Someone';
+  const contentSnippet = readString(payload, 'contentSnippet');
+
+  const subject = `New message from ${actorName}`;
+  const text = `${actorName} sent you a direct message: "${contentSnippet}"`;
+
+  return { subject, text, html: '' };
+}
+
 function buildFollowUpContent(
   payload: Record<string, unknown>,
 ): NotificationEmailContent {
@@ -117,6 +133,8 @@ export function resolveNotificationEmailContent(
       return buildSimilarDetectedContent(data.payload, 'problem');
     case 'followup.required':
       return buildFollowUpContent(data.payload);
+    case 'direct.message.received':
+      return buildDirectMessageContent(data.payload);
     default:
       return buildGenericContent(data.notificationType);
   }
@@ -283,6 +301,41 @@ export function renderNotificationEmail(
             },
           }}
         />
+      );
+    }
+    case 'direct.message.received': {
+      const directMessage = enriched?.directMessage;
+      const actorName = readString(payload, 'actorName') || 'Someone';
+      const contentSnippet = readString(payload, 'contentSnippet');
+      const roomId = readString(payload, 'roomId');
+      const chatUrl =
+        directMessage?.chatUrl ?? `${baseUrl}/live-chats/${roomId}`;
+
+      return (
+        <TransactionalEmail
+          preview={preview}
+          splitHeadline={{
+            prefix: `${(directMessage?.actorName ?? actorName).toUpperCase()} SENT YOU A`,
+            accent: 'DIRECT MESSAGE',
+          }}
+        >
+          {directMessage ? (
+            <>
+              <EmailActorRow
+                name={directMessage.actorName}
+                avatarUrl={directMessage.actorAvatarUrl}
+                timestamp={directMessage.timestamp || undefined}
+              />
+              <EmailSerifText>{directMessage.contentSnippet}</EmailSerifText>
+            </>
+          ) : (
+            <FallbackBodyText>
+              <strong>{actorName}</strong> sent you a message: &quot;
+              {contentSnippet}&quot;
+            </FallbackBodyText>
+          )}
+          <EmailOutlineButton href={chatUrl} label="Open chat" />
+        </TransactionalEmail>
       );
     }
     default:

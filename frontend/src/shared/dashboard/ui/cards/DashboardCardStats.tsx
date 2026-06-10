@@ -3,13 +3,24 @@
 import commentsIcon from '@/assets/svg/comments.svg';
 import likeIcon from '@/assets/svg/like.svg';
 import viewsIcon from '@/assets/svg/views.svg';
+import { Link } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 
+import { ROUTES } from '@/shared/config/paths';
 import { cn } from '@/shared/lib/utils';
 import { StatIcon } from '@/shared/ui/icons/stat-icon';
 import { LikeButton } from '@/shared/ui/LikeButton';
 
 import type { DashboardEngagementStats } from '@/shared/dashboard/model/dashboard.types';
+
+function getDiscussionHref(
+  entityId: string,
+  entityType: 'IDEA' | 'PROBLEM',
+): string {
+  return entityType === 'IDEA'
+    ? ROUTES.ideaDetail(entityId)
+    : ROUTES.problemDetail(entityId);
+}
 
 type DashboardCardStatsProps = {
   stats: DashboardEngagementStats;
@@ -42,10 +53,25 @@ export function DashboardCardStats({
         <span className="tabular-nums">{stats.views}</span>
       </span>
 
-      <span className="inline-flex items-center gap-1">
-        <StatIcon src={commentsIcon} className={iconClassName} />
-        <span className="tabular-nums">{stats.comments}</span>
-      </span>
+      {entityId && entityType ? (
+        <Link
+          to={getDiscussionHref(entityId, entityType)}
+          search={{ tab: 'discussion' }}
+          className="hover:text-brand-dark-blue/80 inline-flex items-center gap-1 transition-colors"
+          aria-label={`View discussion (${stats.comments} comments)`}
+          onClick={event => {
+            event.stopPropagation();
+          }}
+        >
+          <StatIcon src={commentsIcon} className={iconClassName} />
+          <span className="tabular-nums">{stats.comments}</span>
+        </Link>
+      ) : (
+        <span className="inline-flex items-center gap-1">
+          <StatIcon src={commentsIcon} className={iconClassName} />
+          <span className="tabular-nums">{stats.comments}</span>
+        </span>
+      )}
 
       {likeButton ??
         (entityId && entityType ? (

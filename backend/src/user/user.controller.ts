@@ -53,7 +53,7 @@ export class UserController {
   @ApiBearerAuth()
   @ApiOkResponse({ description: 'Current user profile' })
   getMe(@Req() req: AuthenticatedRequest) {
-    return this.userService.findOne(req.user.id);
+    return this.userService.getMe(req.user.id);
   }
 
   @Patch('me')
@@ -65,18 +65,6 @@ export class UserController {
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   updateMe(@Body() dto: UpdateUserDto, @Req() req: AuthenticatedRequest) {
     return this.userService.update(req.user.id, dto);
-  }
-
-  @Get('me/has-password')
-  @JwtAuth()
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Check if current user has a password set' })
-  @ApiOkResponse({
-    description: 'Whether the user can sign in with email/password',
-  })
-  async hasPassword(@Req() req: AuthenticatedRequest) {
-    const hasPassword = await this.userService.checkUserPassword(req.user.id);
-    return { hasPassword };
   }
 
   @Post('me/avatar')

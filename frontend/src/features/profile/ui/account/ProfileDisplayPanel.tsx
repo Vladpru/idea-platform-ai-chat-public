@@ -1,12 +1,11 @@
 import { nameInitial } from '@/features/auth';
 import type { UserPublic } from '@/features/profile/api/profile.api';
-import { fetchHasPassword } from '@/features/profile/api/profile.api';
-import { ChangePasswordModal } from '@/features/profile/ui/ChangePasswordModal';
+import { ChangePasswordModal } from '@/features/profile/ui/change-password/ChangePasswordModal';
 import {
   outlineBtn,
   primaryBtn,
-} from '@/features/profile/ui/profile-view-classes';
-import { useQuery } from '@tanstack/react-query';
+} from '@/features/profile/ui/shared/profile-view-classes';
+import { useCurrentUserQuery } from '@/features/settings/hooks/use-notification-preferences';
 import { useState } from 'react';
 
 import { cn } from '@/shared/lib/utils';
@@ -25,10 +24,8 @@ export function ProfileDisplayPanel({
   onEdit,
 }: ProfileDisplayPanelProps) {
   const [passwordOpen, setPasswordOpen] = useState(false);
-  const { data: hasPassword } = useQuery({
-    queryKey: ['users', 'me', 'has-password'],
-    queryFn: fetchHasPassword,
-  });
+  const { data: currentUser } = useCurrentUserQuery();
+  const hasPassword = currentUser?.hasPassword ?? false;
 
   const safeSocialLinks = Array.isArray(user?.socialLinks)
     ? user.socialLinks

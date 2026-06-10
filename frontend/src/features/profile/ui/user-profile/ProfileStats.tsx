@@ -1,5 +1,6 @@
 import { Skeleton } from '@/shared/ui/skeleton';
-import { useUserStatistics } from '../hooks/use-user-profile';
+
+import { useUserStatistics } from '../../hooks/use-user-profile';
 
 export function ProfileStats({ profileId }: { profileId: string }) {
   const { data, isLoading } = useUserStatistics(profileId);

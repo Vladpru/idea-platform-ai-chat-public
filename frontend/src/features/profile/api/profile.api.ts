@@ -21,6 +21,7 @@ export type NotificationPreferencesMap = {
   newComments: NotificationChannelPreferences;
   assignedIdeasAndProblems: NotificationChannelPreferences;
   followUps: NotificationChannelPreferences;
+  directMessages: NotificationChannelPreferences;
 };
 
 /** Matches backend `UserPublic` (JSON dates). */
@@ -38,6 +39,10 @@ export type UserPublic = {
   updatedAt: string;
 };
 
+/** Matches backend `CurrentUserPublic` from `GET /users/me`. */
+export type CurrentUser = UserPublic & {
+  hasPassword: boolean;
+};
 export type UserPublicProfile = UserPublic & {
   subscriberCount: number;
   isSubscribed: boolean;
@@ -54,9 +59,20 @@ export type PatchUserPayload = {
   socialLinks?: string[] | null;
 };
 
-export async function fetchCurrentUser(): Promise<UserPublic> {
-  const { data } = await api.get<UserPublic>('/users/me');
+export async function fetchCurrentUser(): Promise<CurrentUser> {
+  const { data } = await api.get<CurrentUser>('/users/me');
   return data;
+}
+
+export function mergeCurrentUser(
+  previous: CurrentUser | undefined,
+  next: UserPublic,
+): CurrentUser {
+  return {
+    ...previous,
+    ...next,
+    hasPassword: previous?.hasPassword ?? false,
+  };
 }
 
 export async function patchTheme(
@@ -66,11 +82,8 @@ export async function patchTheme(
   return data;
 }
 
-export async function patchUser(
-  userId: string,
-  payload: PatchUserPayload,
-): Promise<UserPublic> {
-  const { data } = await api.patch<UserPublic>(`/users/${userId}`, payload);
+export async function patchUser(payload: PatchUserPayload): Promise<UserPublic> {
+  const { data } = await api.patch<UserPublic>('/users/me', payload);
   return data;
 }
 
@@ -86,15 +99,6 @@ export async function uploadMyAvatar(file: File): Promise<UserPublic> {
 export async function removeMyAvatar(): Promise<UserPublic> {
   const { data } = await api.delete<UserPublic>('/users/me/avatar');
   return data;
-}
-
-export type HasPasswordResponse = {
-  hasPassword: boolean;
-};
-
-export async function fetchHasPassword(): Promise<boolean> {
-  const { data } = await api.get<HasPasswordResponse>('/users/me/has-password');
-  return data.hasPassword;
 }
 
 export type ChangePasswordPayload = {

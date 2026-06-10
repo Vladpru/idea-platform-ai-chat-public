@@ -1,16 +1,19 @@
 import { Injectable } from '@nestjs/common';
 
-import { IdeaStatus, ProblemStatus } from '../../generated/prisma/client';
 import { EntityTarget } from '../entity-visibility/entity-target.enum';
 import { PrismaService } from '../prisma/prisma.service';
 import {
+  LIVE_CHAT_AUTHOR_SELECT,
   liveChatMessageInclude,
   liveChatRoomInclude,
 } from './live-chat.constants';
+import { buildDirectPairKey } from './live-chat-direct.util';
+import { toEntityTeam } from './live-chat.mapper';
 import type {
   LiveChatMessageRecord,
   LiveChatRoomRecord,
 } from './live-chat.records';
+import type { LiveChatTeamMemberDto } from './types/live-chat.types';
 
 type LastMessageRow = {
   id: string;
@@ -34,17 +37,36 @@ export class LiveChatRepository {
         OR: [
           {
             idea: {
-              OR: [{ status: IdeaStatus.PUBLISHED }, { authorId: userId }],
+              OR: [{ authorId: userId }, { members: { some: { userId } } }],
             },
           },
           {
             problem: {
-              OR: [{ status: ProblemStatus.PUBLISHED }, { authorId: userId }],
+              OR: [{ authorId: userId }, { members: { some: { userId } } }],
             },
+          },
+          {
+            problemId: { not: null },
+            messages: { some: { authorId: userId } },
+          },
+          {
+            ideaId: null,
+            problemId: null,
+            participants: { some: { userId } },
           },
         ],
       },
       orderBy: { updatedAt: 'desc' },
+      include: liveChatRoomInclude,
+    });
+  }
+
+  findDirectRoom(
+    userAId: string,
+    userBId: string,
+  ): Promise<LiveChatRoomRecord | null> {
+    return this.prisma.liveChatRoom.findUnique({
+      where: { directPairKey: buildDirectPairKey(userAId, userBId) },
       include: liveChatRoomInclude,
     });
   }
@@ -72,11 +94,42 @@ export class LiveChatRepository {
   createRoom(data: {
     ideaId: string | null;
     problemId: string | null;
+    directPairKey?: string | null;
     createdById: string;
+    participantUserIds?: string[];
   }): Promise<LiveChatRoomRecord> {
+    const { participantUserIds, ...roomData } = data;
+
     return this.prisma.liveChatRoom.create({
-      data,
+      data: {
+        ...roomData,
+        ...(participantUserIds?.length
+          ? {
+              participants: {
+                create: participantUserIds.map(userId => ({ userId })),
+              },
+            }
+          : {}),
+      },
       include: liveChatRoomInclude,
+    });
+  }
+
+  isRoomParticipant(roomId: string, userId: string): Promise<boolean> {
+    return this.prisma.liveChatParticipant
+      .findUnique({
+        where: {
+          roomId_userId: { roomId, userId },
+        },
+        select: { id: true },
+      })
+      .then(row => row !== null);
+  }
+
+  findUserById(userId: string): Promise<{ id: string } | null> {
+    return this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
     });
   }
 
@@ -106,7 +159,7 @@ export class LiveChatRepository {
         u.avatar_url AS "authorAvatarUrl"
       FROM live_chat_message m
       INNER JOIN "user" u ON u.id = m.author_id
-      WHERE m.room_id = ANY(${roomIds}::uuid[])
+      WHERE m.room_id::text = ANY(${roomIds}::text[])
       ORDER BY m.room_id, m.created_at DESC, m.id DESC
     `;
 
@@ -168,5 +221,66 @@ export class LiveChatRepository {
 
       return created;
     });
+  }
+
+  private static readonly entityTeamSelect = {
+    id: true,
+    author: { select: LIVE_CHAT_AUTHOR_SELECT },
+    members: {
+      select: {
+        user: { select: LIVE_CHAT_AUTHOR_SELECT },
+      },
+      orderBy: { joinedAt: 'asc' as const },
+    },
+  };
+
+  async findIdeaTeamsByIds(
+    ideaIds: string[],
+  ): Promise<Map<string, LiveChatTeamMemberDto[]>> {
+    if (ideaIds.length === 0) {
+      return new Map();
+    }
+
+    const ideas = await this.prisma.idea.findMany({
+      where: { id: { in: ideaIds } },
+      select: LiveChatRepository.entityTeamSelect,
+    });
+
+    return new Map(
+      ideas.map(idea => [idea.id, toEntityTeam(idea.author, idea.members)]),
+    );
+  }
+
+  async findProblemTeamsByIds(
+    problemIds: string[],
+  ): Promise<Map<string, LiveChatTeamMemberDto[]>> {
+    if (problemIds.length === 0) {
+      return new Map();
+    }
+
+    const problems = await this.prisma.problem.findMany({
+      where: { id: { in: problemIds } },
+      select: LiveChatRepository.entityTeamSelect,
+    });
+
+    return new Map(
+      problems.map(problem => [
+        problem.id,
+        toEntityTeam(problem.author, problem.members),
+      ]),
+    );
+  }
+
+  async findEntityTeam(
+    entityType: EntityTarget,
+    entityId: string,
+  ): Promise<LiveChatTeamMemberDto[]> {
+    if (entityType === EntityTarget.IDEA) {
+      const teams = await this.findIdeaTeamsByIds([entityId]);
+      return teams.get(entityId) ?? [];
+    }
+
+    const teams = await this.findProblemTeamsByIds([entityId]);
+    return teams.get(entityId) ?? [];
   }
 }

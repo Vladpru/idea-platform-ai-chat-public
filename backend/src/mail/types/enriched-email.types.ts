@@ -28,9 +28,18 @@ export type EnrichedCommentContext = {
   replyUrl: string;
 };
 
+export type EnrichedDirectMessageContext = {
+  actorName: string;
+  actorAvatarUrl: string | null;
+  timestamp: string;
+  contentSnippet: string;
+  chatUrl: string;
+};
+
 export type EnrichedEmailContext = {
   frontendUrl: string;
   settingsUrl: string;
   entity?: EnrichedEntityCard;
   comment?: EnrichedCommentContext;
+  directMessage?: EnrichedDirectMessageContext;
 };

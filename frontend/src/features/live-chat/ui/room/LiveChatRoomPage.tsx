@@ -1,5 +1,6 @@
 import { useLiveChatRoomQuery } from '@/features/live-chat/hooks/queries/use-live-chat-room-query';
 import { LiveChatRoomPanel } from '@/features/live-chat/ui/room/LiveChatRoomPanel';
+import { LiveChatTeamAvatars } from '@/features/live-chat/ui/room/LiveChatTeamAvatars';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
 
@@ -11,7 +12,7 @@ export function LiveChatRoomPage({ roomId }: LiveChatRoomPageProps) {
   const { data: room, isLoading, isError } = useLiveChatRoomQuery(roomId);
 
   return (
-    <div className="container mx-auto max-w-5xl bg-white p-6 md:p-10">
+    <div className="container mx-auto h-[100vh] max-w-5xl bg-white p-6 md:p-10">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <Link
           to=".."
@@ -32,28 +33,47 @@ export function LiveChatRoomPage({ roomId }: LiveChatRoomPageProps) {
         </p>
       ) : (
         <>
-          <header className="mb-6">
-            <p className="text-brand-gray-500 text-sm tracking-wide uppercase">
-              Live chat
-            </p>
-            <h1 className="text-brand-dark-blue text-2xl font-bold">
-              {room.entity.title ?? 'Untitled'}
-            </h1>
-            <Link
-              to={
-                room.entity.type === 'ideas'
-                  ? '/ideas/$ideaId'
-                  : '/problems/$problemId'
-              }
-              params={
-                room.entity.type === 'ideas'
-                  ? { ideaId: room.entity.id }
-                  : { problemId: room.entity.id }
-              }
-              className="text-brand-orange mt-2 inline-block text-sm hover:underline"
-            >
-              View {room.entity.type === 'ideas' ? 'idea' : 'problem'}
-            </Link>
+          <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <p className="text-brand-gray-500 text-sm tracking-wide uppercase">
+                Live chat
+              </p>
+              <h1 className="text-brand-dark-blue text-2xl font-bold">
+                {room.entity.title ?? 'Untitled'}
+              </h1>
+              {room.entity.type === 'users' ? (
+                <Link
+                  to="/profile/$profileId"
+                  params={{ profileId: room.entity.id }}
+                  search={{ tab: 'all' }}
+                  className="text-brand-orange mt-2 inline-block text-sm hover:underline"
+                >
+                  View profile
+                </Link>
+              ) : (
+                <Link
+                  to={
+                    room.entity.type === 'ideas'
+                      ? '/ideas/$ideaId'
+                      : '/problems/$problemId'
+                  }
+                  params={
+                    room.entity.type === 'ideas'
+                      ? { ideaId: room.entity.id }
+                      : { problemId: room.entity.id }
+                  }
+                  search={{}}
+                  className="text-brand-orange mt-2 inline-block text-sm hover:underline"
+                >
+                  View {room.entity.type === 'ideas' ? 'idea' : 'problem'}
+                </Link>
+              )}
+            </div>
+
+            <LiveChatTeamAvatars
+              team={room.team ?? []}
+              className="self-start"
+            />
           </header>
 
           <LiveChatRoomPanel roomId={room.id} />

@@ -10,9 +10,9 @@ import {
   toContributionsApiTab,
   toContributionsSearchTab,
 } from '@/features/profile/lib/profile-contributions-tab';
-import { EntityGrid } from '@/features/profile/ui/EntityGrid';
-import { ProfileHeader } from '@/features/profile/ui/ProfileHeader';
-import { TabsLayout } from '@/features/profile/ui/TabsLayout';
+import { EntityGrid } from '@/features/profile/ui/user-profile/EntityGrid';
+import { ProfileHeader } from '@/features/profile/ui/user-profile/ProfileHeader';
+import { TabsLayout } from '@/features/profile/ui/user-profile/TabsLayout';
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import { Button } from '@/shared/ui/button';
 import { Skeleton } from '@/shared/ui/skeleton';

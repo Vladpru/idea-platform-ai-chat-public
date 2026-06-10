@@ -19,8 +19,9 @@ export function LiveChatMessageItem({ message }: LiveChatMessageItemProps) {
 
   return (
     <div
+      id={`live-chat-message-${message.id}`}
       className={cn(
-        'flex min-w-0 gap-3',
+        'flex min-w-0 gap-3 scroll-mt-4',
         isOwnMessage ? 'flex-row-reverse' : 'flex-row',
       )}
     >

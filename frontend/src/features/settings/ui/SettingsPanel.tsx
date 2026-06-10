@@ -42,6 +42,11 @@ const NOTIFICATION_ITEMS: NotificationItem[] = [
     description:
       'Sending friendly reminders to revisit your inactive ideas, problems and drafts',
   },
+  {
+    key: 'directMessages',
+    title: 'Direct messages',
+    description: 'When someone sends you a private live chat message',
+  },
 ];
 
 const SETTINGS_NAV_TABS: { id: SettingsTab; label: string }[] = [

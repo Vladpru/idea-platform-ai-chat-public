@@ -1,20 +1,23 @@
-import type { ProblemsDashboardTab } from '@/features/problems/api/problems-api.types';
+import {
+  DashboardCardStandard,
+  IDEAS_DASHBOARD_LABELS,
+} from '@/features/ideas-dashboard';
+import type { IdeasDashboardTab } from '@/features/ideas/api/ideas-api.types';
+import { useDeleteIdeaMutation } from '@/features/ideas/hooks/use-idea-mutations';
+import { Link } from '@tanstack/react-router';
+import { useMemo } from 'react';
+
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import { ROUTES } from '@/shared/config/paths';
-import { DashboardCardStandard } from '@/features/ideas-dashboard';
-import { PROBLEMS_DASHBOARD_LABELS } from '@/features/problems-dashboard/lib/problems-dashboard-labels';
-import { useDeleteProblemMutation } from '@/features/problems/hooks/use-problem-mutations';
 import type { TabDefinition } from '@/shared/ui/TabLabelWithBadge';
 import { Button } from '@/shared/ui/button';
 import { SkeletonCard } from '@/shared/ui/skeleton';
 
-import { useMyProblemsDashboard } from '../hooks/use-my-problems-dashboard';
-import { ProblemCardActions } from './ProblemCardActions';
+import { useMyIdeasDashboard } from '../../hooks/use-my-ideas-dashboard';
+import { IdeaCardActions } from './IdeaCardActions';
 import { ProfileDashboardView } from './ProfileDashboardView';
-import { useMemo } from 'react';
-import { Link } from '@tanstack/react-router';
 
-export function ProfileProblemsView() {
+export function ProfileIdeasView() {
   const {
     tab,
     setTab,
@@ -27,13 +30,13 @@ export function ProfileProblemsView() {
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
-  } = useMyProblemsDashboard();
+  } = useMyIdeasDashboard();
 
-  const deleteMutation = useDeleteProblemMutation();
+  const deleteMutation = useDeleteIdeaMutation();
 
-  const tabs = useMemo<TabDefinition<ProblemsDashboardTab>[]>(
+  const tabs = useMemo<TabDefinition<IdeasDashboardTab>[]>(
     () => [
-      { id: 'published', label: 'My Problems', count: totals?.published },
+      { id: 'published', label: 'My Ideas', count: totals?.published },
       { id: 'joined', label: 'Joined', count: totals?.joined },
       { id: 'drafts', label: 'Drafts', count: totals?.drafts },
     ],
@@ -44,35 +47,30 @@ export function ProfileProblemsView() {
     switch (tab) {
       case 'drafts':
         return {
-          ...PROBLEMS_DASHBOARD_LABELS.emptyStates.drafts,
-          href: ROUTES.problemsNew,
+          ...IDEAS_DASHBOARD_LABELS.emptyStates.drafts,
+          href: ROUTES.ideasNew,
         };
       case 'joined':
         return {
-          ...PROBLEMS_DASHBOARD_LABELS.emptyStates.joined,
-          href: ROUTES.problems,
+          ...IDEAS_DASHBOARD_LABELS.emptyStates.joined,
+          href: ROUTES.ideas,
         };
       case 'published':
       default:
         return {
-          ...PROBLEMS_DASHBOARD_LABELS.emptyStates.published,
-          href: ROUTES.problemsNew,
+          ...IDEAS_DASHBOARD_LABELS.emptyStates.published,
+          href: ROUTES.ideasNew,
         };
     }
   };
 
   const emptyContent = getEmptyStateContent();
 
-  type ProblemCard = (typeof items)[number];
-
-  const getProblemDetailHref = (card: ProblemCard) =>
-    card.status === 'DRAFT'
-      ? ROUTES.problemCreation(card.id)
-      : ROUTES.problemDetail(card.id);
+  type IdeaCard = (typeof items)[number];
 
   return (
-    <ProfileDashboardView<ProblemsDashboardTab, ProblemCard>
-      title="My Problems"
+    <ProfileDashboardView<IdeasDashboardTab, IdeaCard>
+      title="My Ideas"
       tabs={tabs}
       data={{
         tab,
@@ -96,7 +94,7 @@ export function ProfileProblemsView() {
             {emptyContent.description}
           </p>
           <Link to={emptyContent.href}>
-            <Button className="bg-brand-dark-blue hover:bg-brand-dark-blue/90 text-white">
+            <Button className="bg-brand-orange hover:bg-brand-orange/90 text-white">
               {emptyContent.buttonText}
             </Button>
           </Link>
@@ -104,33 +102,32 @@ export function ProfileProblemsView() {
       }
       renderErrorMessage={err =>
         getApiErrorMessage(err, {
-          invalidCredentialsMessage:
-            PROBLEMS_DASHBOARD_LABELS.loadErrorFallback,
+          invalidCredentialsMessage: IDEAS_DASHBOARD_LABELS.loadErrorFallback,
         })
       }
+      loadingMoreLabel={IDEAS_DASHBOARD_LABELS.loadingMore}
+      layoutId="profile-ideas-dashboard-tabs-underline"
       tabsMobileMode="row"
-      loadingMoreLabel={PROBLEMS_DASHBOARD_LABELS.loadingMore}
-      layoutId="profile-problems-dashboard-tabs-underline"
       deleteMutation={deleteMutation}
       renderSkeletonCard={i => <SkeletonCard key={i} className="h-64" />}
       renderCard={({ item: card, isMobile, isDeleting, onDelete }) => (
         <DashboardCardStandard
           key={card.id}
           card={card}
-          detailHref={getProblemDetailHref(card)}
+          detailHref={ROUTES.ideaDetail(card.id)}
           layout="horizontal"
-          emptyDescriptionText={PROBLEMS_DASHBOARD_LABELS.emptyDescription}
-          emptyImageText={PROBLEMS_DASHBOARD_LABELS.emptyImage}
-          linkedSectionLabel={PROBLEMS_DASHBOARD_LABELS.linkedSectionLabel}
-          getLinkedItemDetailHref={ROUTES.ideaDetail}
+          emptyDescriptionText={IDEAS_DASHBOARD_LABELS.emptyDescription}
+          emptyImageText={IDEAS_DASHBOARD_LABELS.emptyImage}
+          linkedSectionLabel={IDEAS_DASHBOARD_LABELS.linkedSectionLabel}
+          getLinkedItemDetailHref={ROUTES.problemDetail}
           linkedItemsScrollLeftAriaLabel={
-            PROBLEMS_DASHBOARD_LABELS.linkedItemsScrollLeftAriaLabel
+            IDEAS_DASHBOARD_LABELS.linkedItemsScrollLeftAriaLabel
           }
           linkedItemsExpanded={false}
           isMobile={isMobile}
           hideLinkedItems
           actionMenu={
-            <ProblemCardActions
+            <IdeaCardActions
               card={card}
               onDelete={onDelete}
               isDeleting={isDeleting}
