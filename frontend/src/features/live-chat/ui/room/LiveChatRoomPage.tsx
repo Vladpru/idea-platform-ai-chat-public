@@ -41,21 +41,32 @@ export function LiveChatRoomPage({ roomId }: LiveChatRoomPageProps) {
               <h1 className="text-brand-dark-blue text-2xl font-bold">
                 {room.entity.title ?? 'Untitled'}
               </h1>
-              <Link
-                to={
-                  room.entity.type === 'ideas'
-                    ? '/ideas/$ideaId'
-                    : '/problems/$problemId'
-                }
-                params={
-                  room.entity.type === 'ideas'
-                    ? { ideaId: room.entity.id }
-                    : { problemId: room.entity.id }
-                }
-                className="text-brand-orange mt-2 inline-block text-sm hover:underline"
-              >
-                View {room.entity.type === 'ideas' ? 'idea' : 'problem'}
-              </Link>
+              {room.entity.type === 'users' ? (
+                <Link
+                  to="/profile/$profileId"
+                  params={{ profileId: room.entity.id }}
+                  search={{ tab: 'all' }}
+                  className="text-brand-orange mt-2 inline-block text-sm hover:underline"
+                >
+                  View profile
+                </Link>
+              ) : (
+                <Link
+                  to={
+                    room.entity.type === 'ideas'
+                      ? '/ideas/$ideaId'
+                      : '/problems/$problemId'
+                  }
+                  params={
+                    room.entity.type === 'ideas'
+                      ? { ideaId: room.entity.id }
+                      : { problemId: room.entity.id }
+                  }
+                  className="text-brand-orange mt-2 inline-block text-sm hover:underline"
+                >
+                  View {room.entity.type === 'ideas' ? 'idea' : 'problem'}
+                </Link>
+              )}
             </div>
 
             <LiveChatTeamAvatars

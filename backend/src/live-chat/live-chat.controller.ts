@@ -70,6 +70,22 @@ export class LiveChatController {
     );
   }
 
+  @Post('direct/:userId')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create or return a direct live chat with a user' })
+  @ApiCreatedResponse({ description: 'Direct live chat room' })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  createDirectRoom(
+    @Param('userId', ParseUUIDPipe) targetUserId: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<LiveChatRoomDto> {
+    return this.liveChatService.createOrGetDirectRoom(
+      targetUserId,
+      req.user.id,
+    );
+  }
+
   @Get('by-entity/:entityType/:entityId')
   @ApiOperation({ summary: 'Get live chat room for an idea or problem' })
   @ApiOkResponse({ description: 'Live chat room' })

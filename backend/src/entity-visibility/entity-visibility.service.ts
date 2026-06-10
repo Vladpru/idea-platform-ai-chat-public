@@ -94,4 +94,16 @@ export class EntityVisibilityService {
 
     return entity;
   }
+
+  async assertEntityLiveChatAccess(
+    entityType: EntityTarget,
+    entityId: string,
+    userId: string,
+  ): Promise<VisibleEntity> {
+    if (entityType === EntityTarget.PROBLEM) {
+      return this.getVisibleProblem(entityId, userId);
+    }
+
+    return this.assertEntityParticipant(entityType, entityId, userId);
+  }
 }

@@ -9,7 +9,7 @@ import { ChangePasswordField } from '@/features/profile/ui/change-password/Chang
 import {
   cancelOutlineBtn,
   primaryBtn,
-} from '@/features/profile/ui/profile-view-classes';
+} from '@/features/profile/ui/shared/profile-view-classes';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useId, useState } from 'react';
 import { useForm } from 'react-hook-form';

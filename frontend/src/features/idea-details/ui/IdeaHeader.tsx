@@ -1,13 +1,13 @@
 import { getInitials } from '@/features/idea-details/lib/get-initials';
 import type { IdeaDetails } from '@/features/idea-details/model/idea-details.types';
 import { IdeaProjectActions } from '@/features/idea-details/ui/IdeaProjectActions';
-import { EntityLiveChatAction } from '@/features/live-chat/ui/EntityLiveChatAction';
 import { useDeleteIdea } from '@/features/ideas/hooks/use-delete-idea';
 import {
   IDEA_DELETE_CONFIRM_DESCRIPTION,
   IDEA_DELETE_CONFIRM_TITLE,
 } from '@/features/ideas/lib/modals/copy';
 import { outlineBtnClass, pageTitleClass } from '@/features/ideas/lib/styles';
+import { EntityLiveChatAction } from '@/features/live-chat/ui/EntityLiveChatAction';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ChevronDown } from 'lucide-react';
 import { type MouseEvent, useState } from 'react';
@@ -182,17 +182,26 @@ export function IdeaHeader({
       >
         <div className="flex flex-col gap-4 pb-4 md:flex-row md:items-start md:justify-between">
           <div className="min-w-0 flex-1 space-y-4">
-            {isEditing ? (
-              <p className="text-brand-gray-600 text-xs font-semibold tracking-wide uppercase">
-                Editing idea
-              </p>
-            ) : (
-              <h1
-                className={cn(pageTitleClass, 'text-brand-black normal-case')}
-              >
-                {title}
-              </h1>
-            )}
+            <div className="flex items-center justify-between">
+              {isEditing ? (
+                <p className="text-brand-gray-600 text-xs font-semibold tracking-wide uppercase">
+                  Editing idea
+                </p>
+              ) : (
+                <h1
+                  className={cn(pageTitleClass, 'text-brand-black normal-case')}
+                >
+                  {title}
+                </h1>
+              )}
+              <ManageDropdown
+                isAuthor={isAuthor}
+                isEditing={isEditing}
+                isCompact={false}
+                onStartEdit={onStartEdit}
+                onDeleteClick={() => setDeleteModalOpen(true)}
+              />
+            </div>
 
             <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-6 md:gap-8">
               {idea.team.length > 0 ? (
@@ -258,14 +267,6 @@ export function IdeaHeader({
               ) : null}
             </div>
           </div>
-
-          <ManageDropdown
-            isAuthor={isAuthor}
-            isEditing={isEditing}
-            isCompact={false}
-            onStartEdit={onStartEdit}
-            onDeleteClick={() => setDeleteModalOpen(true)}
-          />
         </div>
       </motion.div>
 

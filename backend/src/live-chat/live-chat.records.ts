@@ -23,6 +23,9 @@ export type LiveChatRoomRecord = {
     status: string;
   } | null;
   createdBy: LiveChatAuthorRecord;
+  participants: Array<{
+    user: LiveChatAuthorRecord;
+  }>;
 };
 
 export type LiveChatMessageRecord = {

@@ -178,7 +178,8 @@ export function ProblemHeader({
               {title}
             </h1>
 
-            <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-6 md:gap-8">
+            <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-6 md:gap-8">
+              <div className="flex flex-wrap items-center gap-4 sm:gap-6 md:gap-8">
               {problem.team.length > 0 ? (
                 <button
                   type="button"
@@ -221,6 +222,7 @@ export function ProblemHeader({
               ) : null}
 
               <StageChevronBadge stage={problem.stage} />
+              </div>
 
               {!isCompact ? (
                 <EntityLiveChatAction

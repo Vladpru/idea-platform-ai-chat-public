@@ -5,7 +5,7 @@ import {
   labelClass,
   outlineBtn,
   primaryBtn,
-} from '@/features/profile/ui/profile-view-classes';
+} from '@/features/profile/ui/shared/profile-view-classes';
 import { textareaClass } from '@/features/ideas/lib/styles/idea-creation';
 import { Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';

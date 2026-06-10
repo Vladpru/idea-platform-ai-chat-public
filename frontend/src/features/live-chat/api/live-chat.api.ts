@@ -28,6 +28,15 @@ export async function createLiveChatRoom(
   return data;
 }
 
+export async function createDirectLiveChatRoom(
+  userId: string,
+): Promise<LiveChatRoomDto> {
+  const { data } = await api.post<LiveChatRoomDto>(
+    LIVE_CHAT_ROUTES.direct(userId),
+  );
+  return data;
+}
+
 export async function fetchLiveChatRoomByEntity(
   entityType: CreateLiveChatRoomPayload['entityType'],
   entityId: string,

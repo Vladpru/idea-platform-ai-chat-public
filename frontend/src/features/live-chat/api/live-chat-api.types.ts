@@ -1,4 +1,4 @@
-export type LiveChatEntityType = 'ideas' | 'problems';
+export type LiveChatEntityType = 'ideas' | 'problems' | 'users';
 
 export type LiveChatAuthorDto = {
   id: string;

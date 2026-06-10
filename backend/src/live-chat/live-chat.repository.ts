@@ -44,11 +44,50 @@ export class LiveChatRepository {
               OR: [{ authorId: userId }, { members: { some: { userId } } }],
             },
           },
+          {
+            problemId: { not: null },
+            messages: { some: { authorId: userId } },
+          },
+          {
+            ideaId: null,
+            problemId: null,
+            participants: { some: { userId } },
+          },
         ],
       },
       orderBy: { updatedAt: 'desc' },
       include: liveChatRoomInclude,
     });
+  }
+
+  async findDirectRoom(
+    userAId: string,
+    userBId: string,
+  ): Promise<LiveChatRoomRecord | null> {
+    const candidates = await this.prisma.liveChatRoom.findMany({
+      where: {
+        ideaId: null,
+        problemId: null,
+        participants: { some: { userId: userAId } },
+      },
+      include: liveChatRoomInclude,
+    });
+
+    return (
+      candidates.find(room => {
+        if (room.participants.length !== 2) {
+          return false;
+        }
+
+        const participantIds = room.participants.map(
+          participant => participant.user.id,
+        );
+
+        return (
+          participantIds.includes(userAId) && participantIds.includes(userBId)
+        );
+      }) ?? null
+    );
   }
 
   findRoomByEntity(
@@ -75,10 +114,40 @@ export class LiveChatRepository {
     ideaId: string | null;
     problemId: string | null;
     createdById: string;
+    participantUserIds?: string[];
   }): Promise<LiveChatRoomRecord> {
+    const { participantUserIds, ...roomData } = data;
+
     return this.prisma.liveChatRoom.create({
-      data,
+      data: {
+        ...roomData,
+        ...(participantUserIds?.length
+          ? {
+              participants: {
+                create: participantUserIds.map(userId => ({ userId })),
+              },
+            }
+          : {}),
+      },
       include: liveChatRoomInclude,
+    });
+  }
+
+  isRoomParticipant(roomId: string, userId: string): Promise<boolean> {
+    return this.prisma.liveChatParticipant
+      .findUnique({
+        where: {
+          roomId_userId: { roomId, userId },
+        },
+        select: { id: true },
+      })
+      .then(row => row !== null);
+  }
+
+  findUserById(userId: string): Promise<{ id: string } | null> {
+    return this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
     });
   }
 

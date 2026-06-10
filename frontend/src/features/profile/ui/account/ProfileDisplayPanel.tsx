@@ -1,10 +1,10 @@
 import { nameInitial } from '@/features/auth';
 import type { UserPublic } from '@/features/profile/api/profile.api';
-import { ChangePasswordModal } from '@/features/profile/ui/ChangePasswordModal';
+import { ChangePasswordModal } from '@/features/profile/ui/change-password/ChangePasswordModal';
 import {
   outlineBtn,
   primaryBtn,
-} from '@/features/profile/ui/profile-view-classes';
+} from '@/features/profile/ui/shared/profile-view-classes';
 import { useCurrentUserQuery } from '@/features/settings/hooks/use-notification-preferences';
 import { useState } from 'react';
 

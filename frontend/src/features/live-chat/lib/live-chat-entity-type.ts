@@ -9,12 +9,28 @@ export function toLiveChatEntityType(
 }
 
 export function liveChatEntityLabel(entityType: LiveChatEntityType): string {
-  return entityType === 'ideas' ? 'Idea' : 'Problem';
+  if (entityType === 'ideas') {
+    return 'Idea';
+  }
+
+  if (entityType === 'problems') {
+    return 'Problem';
+  }
+
+  return 'Direct';
 }
 
 export function liveChatEntityDetailPath(
   entityType: LiveChatEntityType,
   entityId: string,
 ): string {
-  return entityType === 'ideas' ? `/ideas/${entityId}` : `/problems/${entityId}`;
+  if (entityType === 'ideas') {
+    return `/ideas/${entityId}`;
+  }
+
+  if (entityType === 'problems') {
+    return `/problems/${entityId}`;
+  }
+
+  return `/profile/${entityId}`;
 }

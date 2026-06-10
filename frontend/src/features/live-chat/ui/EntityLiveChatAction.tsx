@@ -37,7 +37,8 @@ export function EntityLiveChatAction({
 }: EntityLiveChatActionProps) {
   const navigate = useNavigate();
   const entityType: LiveChatEntityType = toLiveChatEntityType(entityKind);
-  const canAccessChat = viewer.isAuthor || viewer.isMember;
+  const canAccessChat =
+    entityKind === 'PROBLEM' || viewer.isAuthor || viewer.isMember;
 
   const createRoomMutation = useCreateLiveChatRoomMutation();
   const {
