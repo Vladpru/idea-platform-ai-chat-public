@@ -1,23 +1,9 @@
-import { getApiErrorStatus } from '@/shared/api/api-error';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '@/shared/lib/query-client';
+import { QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
 import { SonnerProvider } from './sonner-provider';
 import { ThemeProvider } from './theme-provider';
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry(failureCount, error) {
-        const status = getApiErrorStatus(error);
-        if (status !== undefined && status >= 400 && status < 500) {
-          return false;
-        }
-        return failureCount < 2;
-      },
-    },
-  },
-});
 
 export function AppProviders({ children }: { children: ReactNode }) {
   return (

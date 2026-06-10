@@ -12,6 +12,7 @@ import {
   type NotificationPreferencesMap,
   type UpdateNotificationPreferencesPayload,
 } from '@/features/settings/model/notification-preferences.types';
+import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import {
   useMutation,
   useQuery,
@@ -19,18 +20,34 @@ import {
 } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-export const currentUserQueryKey = ['users', 'me'] as const;
+export const currentUserQueryRootKey = ['users', 'me'] as const;
+
+export function currentUserQueryKey(userId: string) {
+  return [...currentUserQueryRootKey, userId] as const;
+}
+
+function getActiveCurrentUserQueryKey(): ReturnType<
+  typeof currentUserQueryKey
+> | null {
+  const userId = useAuthSessionStore.getState().user?.id;
+  return userId ? currentUserQueryKey(userId) : null;
+}
 
 type UpdatePreferencesContext = {
   previousUser?: CurrentUser;
   previousPreferences?: NotificationPreferencesMap;
+  queryKey?: ReturnType<typeof currentUserQueryKey>;
 };
 
 export function useCurrentUserQuery(options?: { enabled?: boolean }) {
+  const sessionUserId = useAuthSessionStore(s => s.user?.id);
+
   return useQuery({
-    queryKey: currentUserQueryKey,
+    queryKey: sessionUserId
+      ? currentUserQueryKey(sessionUserId)
+      : currentUserQueryRootKey,
     queryFn: fetchCurrentUser,
-    enabled: options?.enabled ?? true,
+    enabled: (options?.enabled ?? true) && Boolean(sessionUserId),
     staleTime: 60_000,
   });
 }
@@ -41,16 +58,19 @@ export function useUpdateNotificationPreferences() {
   return useMutation({
     mutationFn: updateNotificationPreferences,
     onMutate: async (payload: UpdateNotificationPreferencesPayload) => {
-      await queryClient.cancelQueries({ queryKey: currentUserQueryKey });
+      const queryKey = getActiveCurrentUserQueryKey();
+      if (!queryKey) {
+        return {};
+      }
 
-      const previousUser = queryClient.getQueryData<CurrentUser>(
-        currentUserQueryKey,
-      );
+      await queryClient.cancelQueries({ queryKey });
+
+      const previousUser = queryClient.getQueryData<CurrentUser>(queryKey);
       const previousPreferences =
         previousUser?.notificationPreferences ?? DEFAULT_NOTIFICATION_PREFERENCES;
 
       if (previousUser) {
-        queryClient.setQueryData<CurrentUser>(currentUserQueryKey, {
+        queryClient.setQueryData<CurrentUser>(queryKey, {
           ...previousUser,
           notificationPreferences: mergeNotificationPreferences(
             previousPreferences,
@@ -62,11 +82,18 @@ export function useUpdateNotificationPreferences() {
       return {
         previousUser,
         previousPreferences,
-      } satisfies UpdatePreferencesContext;
+        queryKey,
+      } satisfies UpdatePreferencesContext & {
+        queryKey?: ReturnType<typeof currentUserQueryKey>;
+      };
     },
     onError: (_error, _payload, context) => {
-      if (context?.previousUser && context.previousPreferences) {
-        queryClient.setQueryData<CurrentUser>(currentUserQueryKey, {
+      if (
+        context?.previousUser &&
+        context.previousPreferences &&
+        context.queryKey
+      ) {
+        queryClient.setQueryData<CurrentUser>(context.queryKey, {
           ...context.previousUser,
           notificationPreferences: context.previousPreferences,
         });
@@ -75,7 +102,9 @@ export function useUpdateNotificationPreferences() {
       toast.error('Could not update notification settings');
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: currentUserQueryKey });
+      void queryClient.invalidateQueries({
+        queryKey: currentUserQueryRootKey,
+      });
     },
   });
 }

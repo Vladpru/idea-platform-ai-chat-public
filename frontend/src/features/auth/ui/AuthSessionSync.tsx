@@ -1,5 +1,6 @@
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import { fetchCurrentUser } from '@/features/profile/api/profile.api';
+import { currentUserQueryKey } from '@/features/settings/hooks/use-notification-preferences';
 import { useQuery } from '@tanstack/react-query';
 
 /**
@@ -8,9 +9,12 @@ import { useQuery } from '@tanstack/react-query';
  */
 export function AuthSessionSync() {
   const accessToken = useAuthSessionStore(s => s.accessToken);
+  const sessionUserId = useAuthSessionStore(s => s.user?.id);
 
   useQuery({
-    queryKey: ['users', 'me'],
+    queryKey: sessionUserId
+      ? currentUserQueryKey(sessionUserId)
+      : ['users', 'me'],
     queryFn: async () => {
       const user = await fetchCurrentUser();
       const token = useAuthSessionStore.getState().accessToken;
@@ -19,7 +23,7 @@ export function AuthSessionSync() {
       }
       return user;
     },
-    enabled: Boolean(accessToken),
+    enabled: Boolean(accessToken && sessionUserId),
     staleTime: 60_000,
   });
 

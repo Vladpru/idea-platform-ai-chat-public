@@ -44,9 +44,8 @@ export function useProfileView() {
     });
 
   const user = profileUser ?? null;
-  const userId = sessionUser?.id;
 
-  const patchMutation = usePatchUserMutation(userId);
+  const patchMutation = usePatchUserMutation();
   const uploadMutation = useUploadAvatarMutation();
   const removeMutation = useRemoveAvatarMutation();
 

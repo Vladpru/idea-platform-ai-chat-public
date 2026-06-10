@@ -19,17 +19,17 @@ function applyUserToSession(user: UserPublic) {
   useAuthSessionStore.getState().setSession(user, accessToken);
 }
 
-export function usePatchUserMutation(userId: string | undefined) {
+export function usePatchUserMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: PatchUserPayload) => {
-      if (!userId) throw new Error('Missing user id');
-      return patchUser(userId, payload);
-    },
+    mutationFn: (payload: PatchUserPayload) => patchUser(payload),
     onSuccess: user => {
       applyUserToSession(user);
-      queryClient.setQueryData(currentUserQueryKey, user);
+      const userId = useAuthSessionStore.getState().user?.id;
+      if (userId) {
+        queryClient.setQueryData(currentUserQueryKey(userId), user);
+      }
       toast.success('Profile updated');
     },
     onError: () => {
@@ -45,7 +45,10 @@ export function useUploadAvatarMutation() {
     mutationFn: (file: File) => uploadMyAvatar(file),
     onSuccess: user => {
       applyUserToSession(user);
-      queryClient.setQueryData(currentUserQueryKey, user);
+      const userId = useAuthSessionStore.getState().user?.id;
+      if (userId) {
+        queryClient.setQueryData(currentUserQueryKey(userId), user);
+      }
       toast.success('Photo updated');
     },
     onError: () => {
@@ -61,7 +64,10 @@ export function useRemoveAvatarMutation() {
     mutationFn: () => removeMyAvatar(),
     onSuccess: user => {
       applyUserToSession(user);
-      queryClient.setQueryData(currentUserQueryKey, user);
+      const userId = useAuthSessionStore.getState().user?.id;
+      if (userId) {
+        queryClient.setQueryData(currentUserQueryKey(userId), user);
+      }
       toast.success('Photo removed');
     },
     onError: () => {

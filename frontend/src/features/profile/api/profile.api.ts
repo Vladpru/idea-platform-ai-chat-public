@@ -81,11 +81,8 @@ export async function patchTheme(
   return data;
 }
 
-export async function patchUser(
-  userId: string,
-  payload: PatchUserPayload,
-): Promise<UserPublic> {
-  const { data } = await api.patch<UserPublic>(`/users/${userId}`, payload);
+export async function patchUser(payload: PatchUserPayload): Promise<UserPublic> {
+  const { data } = await api.patch<UserPublic>('/users/me', payload);
   return data;
 }
 
