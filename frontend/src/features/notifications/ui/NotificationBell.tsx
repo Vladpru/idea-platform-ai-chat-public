@@ -80,6 +80,7 @@ export function NotificationBell() {
 
               <NotificationDropdown
                 variant="sheet"
+                enabled={open}
                 onClose={() => setOpen(false)}
               />
             </div>
@@ -98,7 +99,7 @@ export function NotificationBell() {
         className="w-auto border-0 bg-transparent p-0 shadow-none"
         onCloseAutoFocus={event => event.preventDefault()}
       >
-        <NotificationDropdown onClose={() => setOpen(false)} />
+        <NotificationDropdown enabled={open} onClose={() => setOpen(false)} />
       </DropdownMenuContent>
     </DropdownMenu>
   );
