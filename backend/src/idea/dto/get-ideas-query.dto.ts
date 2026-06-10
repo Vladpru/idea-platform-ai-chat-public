@@ -1,6 +1,14 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsEnum, IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import {
+  IsBoolean,
+  IsEnum,
+  IsIn,
+  IsInt,
+  IsOptional,
+  Max,
+  Min,
+} from 'class-validator';
 
 import { IdeaStatus } from '../../../generated/prisma/client';
 import { Stage } from '../enum/stage.enum';
@@ -50,4 +58,14 @@ export class GetIdeasQueryDto {
   @IsOptional()
   @IsIn(IDEA_SORT_OPTIONS)
   sort?: IdeaSortOption;
+
+  @ApiPropertyOptional({ type: Boolean })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return undefined;
+  })
+  @IsBoolean()
+  feedOnly?: boolean;
 }

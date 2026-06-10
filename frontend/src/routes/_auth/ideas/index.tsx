@@ -16,6 +16,7 @@ const STAGE_VALUES = [
 export const ideasSearchSchema = z.object({
   sort: z.enum(SORT_VALUES).catch('newest'),
   stage: z.enum(STAGE_VALUES).optional().catch(undefined),
+  feedOnly: z.boolean().optional().catch(undefined),
 });
 
 export type IdeasSearchParams = z.infer<typeof ideasSearchSchema>;

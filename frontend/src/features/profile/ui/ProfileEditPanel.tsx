@@ -1,10 +1,13 @@
-import { type SessionUser, nameInitial } from '@/features/auth';
+import { nameInitial } from '@/features/auth';
+import type { UserPublic } from '@/features/profile/api/profile.api';
 import type { ProfileEditValues } from '@/features/profile/lib/profile-edit-schema';
 import {
   labelClass,
   outlineBtn,
   primaryBtn,
 } from '@/features/profile/ui/profile-view-classes';
+import { textareaClass } from '@/features/ideas/lib/styles/idea-creation';
+import { Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import type { BaseSyntheticEvent, ChangeEventHandler, RefObject } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
@@ -17,7 +20,7 @@ import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 
 type ProfileEditPanelProps = {
-  user: SessionUser;
+  user: UserPublic;
   displayName: string;
   form: UseFormReturn<ProfileEditValues>;
   fileInputRef: RefObject<HTMLInputElement | null>;
@@ -48,13 +51,29 @@ export function ProfileEditPanel({
   removePending,
 }: ProfileEditPanelProps) {
   const [removeAvatarOpen, setRemoveAvatarOpen] = useState(false);
+  const socialLinks = form.watch('socialLinks');
+  const bioValue = form.watch('bio') || '';
+
+  const addSocialLink = () => {
+    if (socialLinks.length >= 10) return;
+    form.setValue('socialLinks', [...socialLinks, ''], { shouldDirty: true });
+  };
+
+  const removeSocialLink = (index: number) => {
+    if (socialLinks.length <= 1) return;
+    form.setValue(
+      'socialLinks',
+      socialLinks.filter((_, currentIndex) => currentIndex !== index),
+      { shouldDirty: true },
+    );
+  };
 
   const handleConfirmRemoveAvatar = async () => {
     try {
       await onRemoveAvatar();
       setRemoveAvatarOpen(false);
     } catch {
-      // Error toast is handled by the mutation; keep the modal open.
+      return;
     }
   };
 
@@ -62,11 +81,11 @@ export function ProfileEditPanel({
     <div className="mt-8 space-y-10">
       <div className="flex flex-col gap-6 md:flex-row md:items-start">
         <Avatar
-          key={user.picture ?? 'no-avatar'}
+          key={user.avatarUrl ?? 'no-avatar'}
           size="xl"
           className="size-24 shrink-0"
         >
-          <AvatarImage src={user.picture ?? undefined} alt="" />
+          <AvatarImage src={user.avatarUrl ?? undefined} alt="" />
           <AvatarFallback className="text-4xl font-semibold">
             {nameInitial(displayName)}
           </AvatarFallback>
@@ -86,7 +105,7 @@ export function ProfileEditPanel({
           <div className="flex flex-wrap gap-3">
             <Button
               type="button"
-              className={primaryBtn}
+              className={cn(primaryBtn, 'cursor-pointer')}
               onClick={openFilePicker}
               disabled={busy}
               isLoading={uploadPending}
@@ -96,9 +115,9 @@ export function ProfileEditPanel({
             <Button
               type="button"
               variant="outline"
-              className={outlineBtn}
+              className={cn(outlineBtn, 'cursor-pointer')}
               onClick={() => setRemoveAvatarOpen(true)}
-              disabled={busy || !user.picture}
+              disabled={busy || !user.avatarUrl}
             >
               Remove
             </Button>
@@ -155,7 +174,7 @@ export function ProfileEditPanel({
           </div>
         </div>
 
-        <div className="flex flex-col gap-1 md:col-span-2">
+        <div className="flex flex-col gap-1">
           <Label htmlFor="profile-email" className={labelClass}>
             Email
           </Label>
@@ -170,11 +189,98 @@ export function ProfileEditPanel({
           />
         </div>
 
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center justify-between gap-3">
+            <Label htmlFor="profile-bio" className={labelClass}>
+              Bio
+            </Label>
+            <span className="text-brand-gray-500 text-xs tabular-nums">
+              {bioValue.length}/300
+            </span>
+          </div>
+          <textarea
+            id="profile-bio"
+            rows={4}
+            maxLength={300}
+            disabled={patchPending}
+            aria-describedby="profile-bio-hint"
+            className={cn(textareaClass, 'min-h-[120px] rounded-sm')}
+            {...form.register('bio')}
+          />
+          <p
+            id="profile-bio-hint"
+            className="text-brand-gray-600 dark:text-muted-foreground text-xs"
+          >
+            A short introduction shown on your public profile.
+          </p>
+          {form.formState.errors.bio && (
+            <p className="text-destructive text-xs font-medium">
+              {form.formState.errors.bio.message}
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <Label className={labelClass}>Social links</Label>
+            <Button
+              type="button"
+              variant="outline"
+              className={cn(outlineBtn, 'h-9 cursor-pointer px-3')}
+              disabled={patchPending || socialLinks.length >= 10}
+              onClick={addSocialLink}
+            >
+              <Plus className="mr-1 size-4" />
+              Add link
+            </Button>
+          </div>
+
+          <div className="space-y-3">
+            {socialLinks.map((_, index) => (
+              <div
+                key={`social-link-${index}`}
+                className="flex items-start gap-2"
+              >
+                <div className="min-w-0 flex-1">
+                  <Input
+                    type="url"
+                    inputMode="url"
+                    autoComplete="url"
+                    placeholder="https://"
+                    className="rounded-sm"
+                    disabled={patchPending}
+                    aria-label={`Social link ${index + 1}`}
+                    {...form.register(`socialLinks.${index}` as const)}
+                  />
+                  {form.formState.errors.socialLinks?.[index] && (
+                    <p className="text-destructive mt-1 text-xs font-medium">
+                      {form.formState.errors.socialLinks[index]?.message}
+                    </p>
+                  )}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={cn(
+                    outlineBtn,
+                    'h-10 shrink-0 cursor-pointer px-3',
+                  )}
+                  disabled={patchPending || socialLinks.length <= 1}
+                  aria-label={`Remove social link ${index + 1}`}
+                  onClick={() => removeSocialLink(index)}
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="flex flex-wrap justify-end gap-3 pt-2">
           <Button
             type="button"
             variant="outline"
-            className={cn(outlineBtn, 'w-40')}
+            className={cn(outlineBtn, 'w-40 cursor-pointer')}
             disabled={patchPending}
             onClick={onCancelEdit}
           >
@@ -182,7 +288,7 @@ export function ProfileEditPanel({
           </Button>
           <Button
             type="submit"
-            className={cn(primaryBtn, 'w-40')}
+            className={cn(primaryBtn, 'w-40 cursor-pointer')}
             disabled={patchPending}
             isLoading={patchPending}
           >

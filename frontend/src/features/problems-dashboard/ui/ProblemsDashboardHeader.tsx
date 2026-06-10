@@ -1,7 +1,4 @@
-import {
-  DashboardControls,
-  DashboardFilter,
-} from '@/shared/dashboard';
+import { DashboardControls, DashboardFilter } from '@/shared/dashboard';
 import type {
   ProblemDashboardFilter,
   ProblemDashboardSort,
@@ -28,6 +25,8 @@ export type ProblemsDashboardHeaderProps = {
   linkedIdeasExpanded: boolean;
   onExpandAll: () => void;
   onCollapseAll: () => void;
+  feedOnly: boolean;
+  onFeedOnlyChange: (feedOnly: boolean) => void;
 };
 
 function ProblemsDashboardHeaderInner({
@@ -42,6 +41,8 @@ function ProblemsDashboardHeaderInner({
   linkedIdeasExpanded,
   onExpandAll,
   onCollapseAll,
+  feedOnly,
+  onFeedOnlyChange,
 }: ProblemsDashboardHeaderProps) {
   const controlsProps = {
     sort,
@@ -60,6 +61,8 @@ function ProblemsDashboardHeaderInner({
     collapseAllLabel: PROBLEMS_DASHBOARD_LABELS.collapseAll,
     onExpandAll,
     onCollapseAll,
+    feedOnly,
+    onFeedOnlyChange,
   };
 
   return (
@@ -113,7 +116,9 @@ function areProblemsDashboardHeaderPropsEqual(
     prev.showColumnSelect === next.showColumnSelect &&
     prev.linkedIdeasExpanded === next.linkedIdeasExpanded &&
     prev.onExpandAll === next.onExpandAll &&
-    prev.onCollapseAll === next.onCollapseAll
+    prev.onCollapseAll === next.onCollapseAll &&
+    prev.feedOnly === next.feedOnly &&
+    prev.onFeedOnlyChange === next.onFeedOnlyChange
   );
 }
 

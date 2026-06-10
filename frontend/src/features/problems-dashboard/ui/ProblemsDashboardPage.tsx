@@ -68,6 +68,7 @@ function renderProblemStandardCard(
 type ProblemsDashboardBodyProps = {
   stage: ProblemStage | undefined;
   sort: ProblemDashboardSort;
+  feedOnly: boolean;
   columnCount: number;
   viewport: DashboardViewport;
   linkedIdeasExpanded: boolean;
@@ -76,6 +77,7 @@ type ProblemsDashboardBodyProps = {
 const ProblemsDashboardBody = memo(function ProblemsDashboardBody({
   stage,
   sort,
+  feedOnly,
   columnCount,
   viewport,
   linkedIdeasExpanded,
@@ -89,7 +91,7 @@ const ProblemsDashboardBody = memo(function ProblemsDashboardBody({
     onLoadMore,
     hasNextPage,
     isFetchingNextPage,
-  } = useProblemsDashboardQuery(stage, sort);
+  } = useProblemsDashboardQuery(stage, sort, feedOnly);
 
   const isFetchingNextPageRef = useRef(isFetchingNextPage);
 
@@ -156,6 +158,8 @@ export function ProblemsDashboardPage() {
     setActiveFilter,
     sort,
     setSort,
+    feedOnly,
+    setFeedOnly,
     stage,
     columnCount,
     setColumnCount,
@@ -182,12 +186,15 @@ export function ProblemsDashboardPage() {
           showColumnSelect={showColumnSelect}
           onExpandAll={expandAllLinkedIdeas}
           onCollapseAll={collapseAllLinkedIdeas}
+          feedOnly={feedOnly}
+          onFeedOnlyChange={setFeedOnly}
         />
 
         <div className="pb-8">
           <ProblemsDashboardBody
             stage={stage}
             sort={sort}
+            feedOnly={feedOnly}
             columnCount={columnCount}
             viewport={viewport}
             linkedIdeasExpanded={linkedIdeasExpanded}

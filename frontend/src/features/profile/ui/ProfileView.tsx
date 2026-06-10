@@ -4,10 +4,12 @@ import { ProfileDisplayPanel } from '@/features/profile/ui/ProfileDisplayPanel';
 import { ProfileEditPanel } from '@/features/profile/ui/ProfileEditPanel';
 
 import { Card } from '@/shared/ui/card';
+import { Skeleton } from '@/shared/ui/skeleton';
 
 export function ProfileView() {
   const {
     user,
+    isProfileLoading,
     isEditing,
     setIsEditing,
     displayName,
@@ -22,6 +24,17 @@ export function ProfileView() {
     removeMutation,
     busy,
   } = useProfileView();
+
+  if (isProfileLoading && !user) {
+    return (
+      <div className="bg-brand-neutral dark:bg-background min-h-[64px] px-4 py-8 md:px-8">
+        <Card className="text-card-foreground dark:bg-card bg-card mx-auto max-w-4xl rounded-sm p-6 md:p-10">
+          <Skeleton className="mb-6 h-10 w-48" />
+          <Skeleton className="h-32 w-full" />
+        </Card>
+      </div>
+    );
+  }
 
   if (!user) {
     return (

@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { COMPACT_CARD_COLUMN_THRESHOLD } from '@/shared/dashboard/lib/config/constants';
 import { cn } from '@/shared/lib/utils';
 
+import { DashboardFeedToggle } from './DashboardFeedToggle';
+
 type DashboardControlsProps<TSort extends string> = {
   sort: TSort;
   onSortChange: (sort: TSort) => void;
@@ -21,6 +23,8 @@ type DashboardControlsProps<TSort extends string> = {
   collapseAllLabel?: string;
   onExpandAll?: () => void;
   onCollapseAll?: () => void;
+  feedOnly?: boolean;
+  onFeedOnlyChange?: (feedOnly: boolean) => void;
   className?: string;
 };
 
@@ -37,6 +41,8 @@ export function DashboardControls<TSort extends string>({
   collapseAllLabel = '',
   onExpandAll,
   onCollapseAll,
+  feedOnly,
+  onFeedOnlyChange,
   className,
 }: DashboardControlsProps<TSort>) {
   const [isDesktopSortOpen, setIsDesktopSortOpen] = useState(false);
@@ -65,6 +71,13 @@ export function DashboardControls<TSort extends string>({
 
   return (
     <div className={cn('flex flex-wrap items-center gap-4', className)}>
+      {onFeedOnlyChange && feedOnly !== undefined && (
+        <DashboardFeedToggle
+          feedOnly={feedOnly}
+          onFeedOnlyChange={onFeedOnlyChange}
+        />
+      )}
+
       {showLinkedItemsToggle && (
         <div className="flex items-center gap-4">
           <button

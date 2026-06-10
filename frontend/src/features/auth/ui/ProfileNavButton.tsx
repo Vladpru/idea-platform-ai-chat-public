@@ -56,7 +56,12 @@ export function UserNav({ triggerClassName }: UserNavProps) {
           className="border-brand-gray-200 w-62 rounded-sm text-base shadow-lg"
         >
           <DropdownMenuItem asChild className="cursor-pointer p-0 text-sm">
-            <Link to="/profile" className={linkRowClassName}>
+            <Link
+              to="/profile/$profileId"
+              params={{ profileId: user?.id ?? '' }}
+              search={{ tab: 'all' }}
+              className={linkRowClassName}
+            >
               <span>Profile</span>
             </Link>
           </DropdownMenuItem>
@@ -86,7 +91,11 @@ export function UserNav({ triggerClassName }: UserNavProps) {
           <DropdownMenuSeparator className="mx-1" />
 
           <DropdownMenuItem asChild className="cursor-pointer p-0 text-sm">
-            <Link to={ROUTES.settings} className={linkRowClassName}>
+            <Link
+              to={ROUTES.settings}
+              search={{ tab: 'appearance' }}
+              className={linkRowClassName}
+            >
               <span>Settings</span>
             </Link>
           </DropdownMenuItem>

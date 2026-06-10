@@ -1,8 +1,16 @@
-import { ProfilePage } from '@/pages/profile';
-import { pageDocumentHead } from '@/shared/lib/document-head';
-import { createFileRoute } from '@tanstack/react-router';
+import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_auth/profile/')({
-  head: () => pageDocumentHead('My Account'),
-  component: ProfilePage,
+  beforeLoad: () => {
+    const userId = useAuthSessionStore.getState().user?.id;
+    if (!userId) {
+      throw redirect({ to: '/login' });
+    }
+    throw redirect({
+      to: '/profile/$profileId',
+      params: { profileId: userId },
+      search: { tab: 'all' },
+    });
+  },
 });

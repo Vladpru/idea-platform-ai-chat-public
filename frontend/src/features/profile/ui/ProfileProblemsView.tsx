@@ -65,6 +65,11 @@ export function ProfileProblemsView() {
 
   type ProblemCard = (typeof items)[number];
 
+  const getProblemDetailHref = (card: ProblemCard) =>
+    card.status === 'DRAFT'
+      ? ROUTES.problemCreation(card.id)
+      : ROUTES.problemDetail(card.id);
+
   return (
     <ProfileDashboardView<ProblemsDashboardTab, ProblemCard>
       title="My Problems"
@@ -112,7 +117,7 @@ export function ProfileProblemsView() {
         <DashboardCardStandard
           key={card.id}
           card={card}
-          detailHref={ROUTES.problemDetail(card.id)}
+          detailHref={getProblemDetailHref(card)}
           layout="horizontal"
           emptyDescriptionText={PROBLEMS_DASHBOARD_LABELS.emptyDescription}
           emptyImageText={PROBLEMS_DASHBOARD_LABELS.emptyImage}

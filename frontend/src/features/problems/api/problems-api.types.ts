@@ -92,6 +92,7 @@ export type ProblemsListParams = {
   limit?: number;
   stage?: ProblemStage;
   sort?: ProblemListSort;
+  feedOnly?: boolean;
 };
 
 export type MyProblemsListParams = ProblemsListParams & {

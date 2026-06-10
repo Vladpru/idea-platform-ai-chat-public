@@ -65,6 +65,14 @@ export function resolveNotificationNavigationTarget(
     return problemTarget(matchedEntityId);
   }
 
+  if (type === 'NEW_IDEA' && ideaId) {
+    return ideaTarget(ideaId);
+  }
+
+  if (type === 'NEW_PROBLEM' && problemId) {
+    return problemTarget(problemId);
+  }
+
   if (type === 'comment.created') {
     const commentId = readString(payload, 'commentId');
     if (entityType === 'idea' && entityId) {

@@ -76,9 +76,25 @@ export class IdeaQueryService {
     const limit = Math.max(1, Math.min(query.limit ?? 10, 50));
     const skip = (page - 1) * limit;
 
+    let authorIdFilter: Prisma.IdeaWhereInput['authorId'];
+    if (query.feedOnly) {
+      if (!currentUserId) {
+        authorIdFilter = { in: [] };
+      } else {
+        const following = await this.prisma.subscription.findMany({
+          where: { followerId: currentUserId },
+          select: { followingId: true },
+        });
+        authorIdFilter = {
+          in: following.map(subscription => subscription.followingId),
+        };
+      }
+    }
+
     const where: Prisma.IdeaWhereInput = {
       status: IdeaStatus.PUBLISHED,
       ...(query.stage !== undefined ? { stage: query.stage } : {}),
+      ...(authorIdFilter !== undefined ? { authorId: authorIdFilter } : {}),
     };
 
     const orderBy = this.resolveOrderBy(query.sort, { publishedAt: 'desc' });
