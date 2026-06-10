@@ -80,8 +80,26 @@ model User {
   comments                Comment[]            @relation("CommentAuthor")
   commentLikes            CommentLike[]
   notifications           Notification[]
+  subscriptionsGiven      Subscription[]       @relation("SubscriptionFollower")
+  subscriptionsReceived   Subscription[]       @relation("SubscriptionFollowing")
+  bio                     String?
+  socialLinks             Json?                @default("[]") @map("social_links")
 
   @@map("user")
+}
+
+model Subscription {
+  id          String   @id @default(uuid())
+  followerId  String   @map("follower_id")
+  followingId String   @map("following_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  follower  User @relation("SubscriptionFollower", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("SubscriptionFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followingId])
+  @@map("subscription")
 }
 
 model Notification {
