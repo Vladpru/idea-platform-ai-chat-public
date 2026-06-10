@@ -3,12 +3,12 @@ import {
   Body,
   Controller,
   Delete,
-  ForbiddenException,
   Get,
   Param,
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   Req,
   UploadedFile,
   UseInterceptors,
@@ -18,7 +18,6 @@ import {
   ApiBody,
   ApiConsumes,
   ApiCreatedResponse,
-  ApiForbiddenResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -31,23 +30,41 @@ import type { Request } from 'express';
 import { JwtAuth } from '../shared/decorators/jwt-auth.decorator';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { CreateUserDto } from './dto/create-user.dto';
+import { GetContributionsQueryDto } from './dto/get-contributions-query.dto';
 import { UpdateNotificationPreferencesDto } from './dto/update-notification-preferences.dto';
 import { UpdateThemeDto } from './dto/update-theme.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AvatarUploadInterceptor } from './interceptors/avatar-upload.interceptor';
+import { UserContributionsService } from './user-contributions.service';
 import { UserService } from './user.service';
+
+type AuthenticatedRequest = Request & { user: { id: string } };
 
 @ApiTags('users')
 @Controller('users')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly userContributionsService: UserContributionsService,
+  ) {}
 
   @Get('me')
   @JwtAuth()
   @ApiBearerAuth()
   @ApiOkResponse({ description: 'Current user profile' })
-  getMe(@Req() req: Request & { user: { id: string } }) {
+  getMe(@Req() req: AuthenticatedRequest) {
     return this.userService.findOne(req.user.id);
+  }
+
+  @Patch('me')
+  @JwtAuth()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update current user profile' })
+  @ApiBody({ type: UpdateUserDto })
+  @ApiOkResponse({ description: 'User profile updated successfully' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  updateMe(@Body() dto: UpdateUserDto, @Req() req: AuthenticatedRequest) {
+    return this.userService.update(req.user.id, dto);
   }
 
   @Get('me/has-password')
@@ -57,7 +74,7 @@ export class UserController {
   @ApiOkResponse({
     description: 'Whether the user can sign in with email/password',
   })
-  async hasPassword(@Req() req: Request & { user: { id: string } }) {
+  async hasPassword(@Req() req: AuthenticatedRequest) {
     const hasPassword = await this.userService.checkUserPassword(req.user.id);
     return { hasPassword };
   }
@@ -77,7 +94,7 @@ export class UserController {
   @UseInterceptors(AvatarUploadInterceptor())
   uploadMyAvatar(
     @UploadedFile() file: Express.Multer.File,
-    @Req() req: Request & { user: { id: string } },
+    @Req() req: AuthenticatedRequest,
   ) {
     if (!file) {
       throw new BadRequestException('Missing file (use form field "file").');
@@ -90,7 +107,7 @@ export class UserController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Remove current user avatar' })
   @ApiNoContentResponse({ description: 'Avatar removed' })
-  removeMyAvatar(@Req() req: Request & { user: { id: string } }) {
+  removeMyAvatar(@Req() req: AuthenticatedRequest) {
     return this.userService.removeAvatar(req.user.id);
   }
 
@@ -100,10 +117,7 @@ export class UserController {
   @ApiOperation({ summary: 'Update current user theme preference' })
   @ApiBody({ type: UpdateThemeDto })
   @ApiOkResponse({ description: 'Theme preference updated' })
-  updateMyTheme(
-    @Body() dto: UpdateThemeDto,
-    @Req() req: Request & { user: { id: string } },
-  ) {
+  updateMyTheme(@Body() dto: UpdateThemeDto, @Req() req: AuthenticatedRequest) {
     return this.userService.updateTheme(req.user.id, dto.theme);
   }
 
@@ -115,7 +129,7 @@ export class UserController {
   @ApiOkResponse({ description: 'Notification preferences updated' })
   updateMyNotificationPreferences(
     @Body() dto: UpdateNotificationPreferencesDto,
-    @Req() req: Request & { user: { id: string } },
+    @Req() req: AuthenticatedRequest,
   ) {
     return this.userService.updateNotificationPreferences(req.user.id, dto);
   }
@@ -131,7 +145,7 @@ export class UserController {
   })
   changeMyPassword(
     @Body() dto: ChangePasswordDto,
-    @Req() req: Request & { user: { id: string } },
+    @Req() req: AuthenticatedRequest,
   ) {
     return this.userService.changePassword(req.user.id, dto);
   }
@@ -148,29 +162,46 @@ export class UserController {
     return this.userService.findAll();
   }
 
-  @Get(':id')
-  @ApiOkResponse({ description: 'User found' })
-  @ApiNotFoundResponse({ description: 'User not found' })
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.userService.findOne(id);
-  }
-
-  @Patch(':id')
+  @Get(':id/contributions')
   @JwtAuth()
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update user profile' })
-  @ApiBody({ type: UpdateUserDto })
-  @ApiOkResponse({ description: 'User profile updated successfully' })
+  @ApiOperation({ summary: 'List published ideas and problems by user' })
+  @ApiOkResponse({ description: 'Paginated user contributions feed' })
+  @ApiNotFoundResponse({ description: 'User not found' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
-  @ApiForbiddenResponse({ description: "Cannot update another user's profile" })
-  async update(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateUserDto,
-    @Req() req: Request & { user: { id: string } },
+  getContributions(
+    @Param('id', ParseUUIDPipe) profileId: string,
+    @Query() query: GetContributionsQueryDto,
+    @Req() req: AuthenticatedRequest,
   ) {
-    if (req.user.id !== id) {
-      throw new ForbiddenException('You can only update your own profile');
-    }
-    return this.userService.update(id, dto);
+    return this.userContributionsService.getContributions(
+      profileId,
+      query,
+      req.user.id,
+    );
+  }
+
+  @Get(':id')
+  @JwtAuth()
+  @ApiBearerAuth()
+  @ApiOkResponse({ description: 'User found' })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.userService.getPublicProfile(id, req.user.id);
+  }
+
+  @Get(':id/statistics')
+  @JwtAuth()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get user statistics' })
+  @ApiOkResponse({ description: 'User statistics' })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  getUserStatistics(@Param('id', ParseUUIDPipe) id: string) {
+    return this.userContributionsService.getUserStatistics(id);
   }
 }

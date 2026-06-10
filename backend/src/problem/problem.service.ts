@@ -29,6 +29,8 @@ import {
   resolveProblemRecipientUserIds,
 } from '../notification/lib/notification-integration.util';
 import { PrismaService } from '../prisma/prisma.service';
+import { buildStatusPublicationUpdate } from '../shared/lib/publication.util';
+import { SubscriberNotificationService } from '../subscription/subscriber-notification.service';
 import {
   deleteAllProblemMedia,
   findProblemMediaPublicIds,
@@ -86,6 +88,7 @@ export class ProblemService {
     private readonly cloudinary: CloudinaryService,
     private readonly eventEmitter: EventEmitter2,
     private readonly aiSummaryService: AiSummaryService,
+    private readonly subscriberNotificationService: SubscriberNotificationService,
   ) {}
 
   async toggleLike(problemId: string, userId: string): Promise<void> {
@@ -459,8 +462,9 @@ export class ProblemService {
   ): Promise<ProblemFormResponse> {
     const { isPublished, ...updateDto } = dto;
 
-    const { problem, shouldRequestSummary, publishLifecycle } =
+    const { problem, shouldRequestSummary, publishLifecycle, shouldNotify } =
       await this.prisma.$transaction(async tx => {
+        let shouldNotify = false;
         if (!isPublished) {
           const currentDraftsCount = await tx.problem.count({
             where: { authorId, status: ProblemStatus.DRAFT },
@@ -532,13 +536,16 @@ export class ProblemService {
             throw new UnprocessableEntityException(results);
           }
 
+          const publication = buildStatusPublicationUpdate({
+            publishedAt: results.publishedAt ?? null,
+            requestSummary,
+            status: ProblemStatus.PUBLISHED,
+          });
+          shouldNotify = publication.shouldNotifySubscribers;
+
           results = await tx.problem.update({
             where: { id: created.id },
-            data: {
-              status: ProblemStatus.PUBLISHED,
-              publishedAt: new Date(),
-              ...buildSummaryResetData(requestSummary),
-            },
+            data: publication.data,
             include: PROBLEM_FORM_INCLUDE,
           });
         }
@@ -546,6 +553,7 @@ export class ProblemService {
         return {
           problem: results,
           shouldRequestSummary: requestSummary,
+          shouldNotify,
           publishLifecycle: isPublished
             ? {
                 previousStatus: ProblemStatus.DRAFT,
@@ -570,6 +578,17 @@ export class ProblemService {
         nextStatus: problem.status,
         nextStage: problem.stage,
       });
+    }
+
+    if (shouldNotify) {
+      await this.subscriberNotificationService.notifySubscribersOfNewPublication(
+        {
+          authorId,
+          entityType: 'problem',
+          entityId: problem.id,
+          entityTitle: problem.title,
+        },
+      );
     }
 
     if (shouldRequestSummary) {
@@ -603,9 +622,25 @@ export class ProblemService {
     const limit = Math.min(query.limit ?? 10, 50);
     const skip = (page - 1) * limit;
 
+    let authorIdFilter: Prisma.ProblemWhereInput['authorId'];
+    if (query.feedOnly) {
+      if (!currentUserId) {
+        authorIdFilter = { in: [] };
+      } else {
+        const following = await this.prisma.subscription.findMany({
+          where: { followerId: currentUserId },
+          select: { followingId: true },
+        });
+        authorIdFilter = {
+          in: following.map(subscription => subscription.followingId),
+        };
+      }
+    }
+
     const where: Prisma.ProblemWhereInput = {
       status: ProblemStatus.PUBLISHED,
       ...(query.stage !== undefined ? { stage: query.stage } : {}),
+      ...(authorIdFilter !== undefined ? { authorId: authorIdFilter } : {}),
     };
 
     const orderBy = this.resolvePublicOrderBy(query.sort);
