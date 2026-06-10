@@ -380,6 +380,9 @@ export function GlobalSearchPage() {
                     linkedItemsExpanded={false}
                     onToggleLinkedItems={handleToggleLinkedItems}
                     isMobile={isMobile}
+                    entityType={
+                      item.entityType === 'IDEA' ? 'IDEA' : 'PROBLEM'
+                    }
                   />
                 ))}
 

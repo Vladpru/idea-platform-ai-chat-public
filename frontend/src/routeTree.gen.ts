@@ -31,6 +31,7 @@ import { Route as AuthStatisticLeaderboardRouteImport } from './routes/_auth/sta
 import { Route as AuthSettingsNotificationsRouteImport } from './routes/_auth/settings.notifications'
 import { Route as AuthProfileProblemsRouteImport } from './routes/_auth/profile/problems'
 import { Route as AuthProfileIdeasRouteImport } from './routes/_auth/profile/ideas'
+import { Route as AuthProfileProfileIdRouteImport } from './routes/_auth/profile/$profileId'
 import { Route as AuthProblemsNewRouteImport } from './routes/_auth/problems/new'
 import { Route as AuthProblemsProblemIdRouteImport } from './routes/_auth/problems/$problemId'
 import { Route as AuthLiveChatsRoomIdRouteImport } from './routes/_auth/live-chats/$roomId'
@@ -148,6 +149,11 @@ const AuthProfileIdeasRoute = AuthProfileIdeasRouteImport.update({
   path: '/ideas',
   getParentRoute: () => AuthProfileRouteRoute,
 } as any)
+const AuthProfileProfileIdRoute = AuthProfileProfileIdRouteImport.update({
+  id: '/$profileId',
+  path: '/$profileId',
+  getParentRoute: () => AuthProfileRouteRoute,
+} as any)
 const AuthProblemsNewRoute = AuthProblemsNewRouteImport.update({
   id: '/new',
   path: '/new',
@@ -193,6 +199,7 @@ export interface FileRoutesByFullPath {
   '/live-chats/$roomId': typeof AuthLiveChatsRoomIdRoute
   '/problems/$problemId': typeof AuthProblemsProblemIdRoute
   '/problems/new': typeof AuthProblemsNewRoute
+  '/profile/$profileId': typeof AuthProfileProfileIdRoute
   '/profile/ideas': typeof AuthProfileIdeasRoute
   '/profile/problems': typeof AuthProfileProblemsRoute
   '/settings/notifications': typeof AuthSettingsNotificationsRoute
@@ -217,6 +224,7 @@ export interface FileRoutesByTo {
   '/live-chats/$roomId': typeof AuthLiveChatsRoomIdRoute
   '/problems/$problemId': typeof AuthProblemsProblemIdRoute
   '/problems/new': typeof AuthProblemsNewRoute
+  '/profile/$profileId': typeof AuthProfileProfileIdRoute
   '/profile/ideas': typeof AuthProfileIdeasRoute
   '/profile/problems': typeof AuthProfileProblemsRoute
   '/settings/notifications': typeof AuthSettingsNotificationsRoute
@@ -247,6 +255,7 @@ export interface FileRoutesById {
   '/_auth/live-chats/$roomId': typeof AuthLiveChatsRoomIdRoute
   '/_auth/problems/$problemId': typeof AuthProblemsProblemIdRoute
   '/_auth/problems/new': typeof AuthProblemsNewRoute
+  '/_auth/profile/$profileId': typeof AuthProfileProfileIdRoute
   '/_auth/profile/ideas': typeof AuthProfileIdeasRoute
   '/_auth/profile/problems': typeof AuthProfileProblemsRoute
   '/_auth/settings/notifications': typeof AuthSettingsNotificationsRoute
@@ -277,6 +286,7 @@ export interface FileRouteTypes {
     | '/live-chats/$roomId'
     | '/problems/$problemId'
     | '/problems/new'
+    | '/profile/$profileId'
     | '/profile/ideas'
     | '/profile/problems'
     | '/settings/notifications'
@@ -301,6 +311,7 @@ export interface FileRouteTypes {
     | '/live-chats/$roomId'
     | '/problems/$problemId'
     | '/problems/new'
+    | '/profile/$profileId'
     | '/profile/ideas'
     | '/profile/problems'
     | '/settings/notifications'
@@ -330,6 +341,7 @@ export interface FileRouteTypes {
     | '/_auth/live-chats/$roomId'
     | '/_auth/problems/$problemId'
     | '/_auth/problems/new'
+    | '/_auth/profile/$profileId'
     | '/_auth/profile/ideas'
     | '/_auth/profile/problems'
     | '/_auth/settings/notifications'
@@ -505,6 +517,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthProfileIdeasRouteImport
       parentRoute: typeof AuthProfileRouteRoute
     }
+    '/_auth/profile/$profileId': {
+      id: '/_auth/profile/$profileId'
+      path: '/$profileId'
+      fullPath: '/profile/$profileId'
+      preLoaderRoute: typeof AuthProfileProfileIdRouteImport
+      parentRoute: typeof AuthProfileRouteRoute
+    }
     '/_auth/problems/new': {
       id: '/_auth/problems/new'
       path: '/new'
@@ -588,12 +607,14 @@ const AuthProblemsRouteRouteWithChildren =
   AuthProblemsRouteRoute._addFileChildren(AuthProblemsRouteRouteChildren)
 
 interface AuthProfileRouteRouteChildren {
+  AuthProfileProfileIdRoute: typeof AuthProfileProfileIdRoute
   AuthProfileIdeasRoute: typeof AuthProfileIdeasRoute
   AuthProfileProblemsRoute: typeof AuthProfileProblemsRoute
   AuthProfileIndexRoute: typeof AuthProfileIndexRoute
 }
 
 const AuthProfileRouteRouteChildren: AuthProfileRouteRouteChildren = {
+  AuthProfileProfileIdRoute: AuthProfileProfileIdRoute,
   AuthProfileIdeasRoute: AuthProfileIdeasRoute,
   AuthProfileProblemsRoute: AuthProfileProblemsRoute,
   AuthProfileIndexRoute: AuthProfileIndexRoute,

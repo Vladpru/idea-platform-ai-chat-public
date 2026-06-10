@@ -1,3 +1,5 @@
+import { motion } from 'framer-motion';
+
 import { cn } from '@/shared/lib/utils';
 
 type DashboardFeedToggleProps = {
@@ -6,8 +8,10 @@ type DashboardFeedToggleProps = {
   className?: string;
 };
 
-const feedToggleButtonClass =
-  'cursor-pointer text-xs font-bold tracking-wide uppercase transition-colors';
+const feedToggleSegmentClass =
+  'relative z-10 px-2.5 py-1 text-xs font-bold tracking-wide uppercase transition-colors duration-200';
+
+const feedToggleSpring = { type: 'spring' as const, stiffness: 400, damping: 32 };
 
 export function DashboardFeedToggle({
   feedOnly,
@@ -15,31 +19,39 @@ export function DashboardFeedToggle({
   className,
 }: DashboardFeedToggleProps) {
   return (
-    <div className={cn('flex items-center gap-4', className)}>
-      <button
-        type="button"
-        onClick={() => onFeedOnlyChange(true)}
+    <button
+      type="button"
+      role="switch"
+      aria-checked={feedOnly}
+      aria-label={feedOnly ? 'Showing following only' : 'Showing all'}
+      onClick={() => onFeedOnlyChange(!feedOnly)}
+      className={cn(
+        'border-brand-gray-200 bg-brand-gray-100 relative inline-grid cursor-pointer grid-cols-2 rounded-md border p-0.5',
+        className,
+      )}
+    >
+      <motion.div
+        aria-hidden
+        className="bg-card pointer-events-none absolute inset-y-0.5 left-0.5 w-[calc(50%-2px)] rounded shadow-sm"
+        animate={{ x: feedOnly ? '100%' : '0%' }}
+        transition={feedToggleSpring}
+      />
+      <span
         className={cn(
-          feedToggleButtonClass,
-          feedOnly
-            ? 'text-brand-dark-blue'
-            : 'text-brand-gray-500 hover:text-brand-dark-blue',
-        )}
-      >
-        Following
-      </button>
-      <button
-        type="button"
-        onClick={() => onFeedOnlyChange(false)}
-        className={cn(
-          feedToggleButtonClass,
-          !feedOnly
-            ? 'text-brand-dark-blue'
-            : 'text-brand-gray-500 hover:text-brand-dark-blue',
+          feedToggleSegmentClass,
+          !feedOnly ? 'text-brand-dark-blue' : 'text-brand-gray-500',
         )}
       >
         All
-      </button>
-    </div>
+      </span>
+      <span
+        className={cn(
+          feedToggleSegmentClass,
+          feedOnly ? 'text-brand-dark-blue' : 'text-brand-gray-500',
+        )}
+      >
+        Following
+      </span>
+    </button>
   );
 }

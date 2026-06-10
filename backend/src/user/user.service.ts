@@ -181,7 +181,7 @@ export class UserService {
     return users.map(toUserPublic);
   }
 
-  async findOne(id: string): Promise<UserPublic> {
+  private async findOne(id: string): Promise<UserPublic> {
     const user = await this.prisma.user.findUnique({
       where: { id },
       select: USER_PUBLIC_SELECT,

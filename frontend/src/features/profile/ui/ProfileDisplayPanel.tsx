@@ -1,7 +1,5 @@
-import { type SessionUser, nameInitial } from '@/features/auth';
 import { nameInitial } from '@/features/auth';
 import type { UserPublic } from '@/features/profile/api/profile.api';
-import { fetchHasPassword } from '@/features/profile/api/profile.api';
 import { ChangePasswordModal } from '@/features/profile/ui/ChangePasswordModal';
 import {
   outlineBtn,

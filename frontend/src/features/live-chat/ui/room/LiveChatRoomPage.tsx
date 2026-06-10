@@ -12,7 +12,7 @@ export function LiveChatRoomPage({ roomId }: LiveChatRoomPageProps) {
   const { data: room, isLoading, isError } = useLiveChatRoomQuery(roomId);
 
   return (
-    <div className="container mx-auto max-w-5xl bg-white p-6 md:p-10">
+    <div className="container mx-auto h-[100vh] max-w-5xl bg-white p-6 md:p-10">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <Link
           to=".."
@@ -58,7 +58,10 @@ export function LiveChatRoomPage({ roomId }: LiveChatRoomPageProps) {
               </Link>
             </div>
 
-            <LiveChatTeamAvatars team={room.team ?? []} className="self-start" />
+            <LiveChatTeamAvatars
+              team={room.team ?? []}
+              className="self-start"
+            />
           </header>
 
           <LiveChatRoomPanel roomId={room.id} />

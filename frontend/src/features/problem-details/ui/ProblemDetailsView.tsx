@@ -25,6 +25,8 @@ import { cn } from '@/shared/lib/utils';
 import { AnimatedPanel, AnimatedPanelSwitch } from '@/shared/ui/motion';
 import { SuccessModal } from '@/shared/ui/success-modal';
 
+import { ProblemTeamModal } from '@/features/problem-details/modals/ProblemTeamModal';
+
 import { ProblemHeader } from './ProblemHeader';
 import { ProblemInfoCards } from './ProblemInfoCards';
 import { ProblemTabs } from './ProblemTabs';
@@ -58,6 +60,7 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
     replyToCommentId || searchTab === 'discussion' ? 'discussion' : null;
   const visibleTab = searchTabOverride ?? activeTab;
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [updatedSuccessOpen, setUpdatedSuccessOpen] = useState(false);
   const [prevShowUpdatedSuccess, setPrevShowUpdatedSuccess] =
     useState(showUpdatedSuccess);
@@ -189,6 +192,7 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
               });
             }}
             onBackClick={handleBackClick}
+            onTeamClick={() => setIsTeamModalOpen(true)}
           />
 
           <div className="pt-1">
@@ -281,6 +285,14 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
           />
         ) : null}
       </div>
+
+      {isTeamModalOpen ? (
+        <ProblemTeamModal
+          authorId={problem.authorId}
+          team={problem.team}
+          onClose={() => setIsTeamModalOpen(false)}
+        />
+      ) : null}
 
       <SuccessModal
         open={updatedSuccessOpen}

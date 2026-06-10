@@ -60,6 +60,7 @@ function DashboardCardStandardInner<
   hideLinkedItems = false,
 }: DashboardCardStandardProps<TCard>) {
   const isHorizontal = layout === 'horizontal';
+  const showMainImage = entityType !== 'PROBLEM';
   const hasLinkedItems =
     !hideLinkedItems && card.linkedItems && card.linkedItems.length > 0;
   const stackStatsBelowTags = columnCount >= STATS_BELOW_TAGS_COLUMN_THRESHOLD;
@@ -77,39 +78,45 @@ function DashboardCardStandardInner<
       className={cn(
         'group border-brand-gray-200 bg-card flex h-full w-full overflow-hidden rounded-lg border transition-shadow hover:shadow-md',
         isHorizontal
-          ? 'min-h-[260px] flex-col sm:flex-row'
-          : 'min-h-[400px] flex-col',
+          ? showMainImage
+            ? 'min-h-[260px] flex-col sm:flex-row'
+            : 'flex-col'
+          : showMainImage
+            ? 'min-h-[400px] flex-col'
+            : 'flex-col',
       )}
     >
-      <Link
-        to={detailHref}
-        className={cn(
-          'bg-brand-gray-100 focus-visible:ring-brand-dark-blue relative block shrink-0 overflow-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
-          isHorizontal
-            ? 'aspect-[16/10] w-full sm:aspect-auto sm:min-h-[260px] sm:w-[320px] lg:w-[400px]'
-            : 'aspect-[16/10] w-full',
-        )}
-      >
-        {card.imageUrl ? (
-          <img
-            src={card.imageUrl}
-            alt=""
-            loading="lazy"
-            className="absolute inset-0 size-full object-cover transition-transform duration-300 group-hover:scale-[1.01]"
-          />
-        ) : (
-          <div className="text-brand-gray-400 absolute inset-0 flex size-full items-center justify-center text-xs font-semibold uppercase">
-            {emptyImageText}
-          </div>
-        )}
-      </Link>
+      {showMainImage && (
+        <Link
+          to={detailHref}
+          className={cn(
+            'bg-brand-gray-100 focus-visible:ring-brand-dark-blue relative block shrink-0 overflow-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+            isHorizontal
+              ? 'aspect-16/10 w-full sm:aspect-auto sm:min-h-[260px] sm:w-[320px] lg:w-[400px]'
+              : 'aspect-16/10 w-full',
+          )}
+        >
+          {card.imageUrl ? (
+            <img
+              src={card.imageUrl}
+              alt=""
+              loading="lazy"
+              className="absolute inset-0 size-full object-cover transition-transform duration-300 group-hover:scale-[1.01]"
+            />
+          ) : (
+            <div className="text-brand-gray-400 absolute inset-0 flex size-full items-center justify-center text-xs font-semibold uppercase">
+              {emptyImageText}
+            </div>
+          )}
+        </Link>
+      )}
 
       <div className="relative flex h-full min-w-0 flex-1 flex-col justify-between overflow-hidden">
-        {actionMenu ? (
+        {actionMenu && (
           <div className="absolute top-4 right-4 z-20 sm:top-5 sm:right-5">
             {actionMenu}
           </div>
-        ) : null}
+        )}
 
         <div>
           <Link

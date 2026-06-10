@@ -2,6 +2,7 @@ import {
   nameInitial,
   useAuthSessionStore,
 } from '@/features/auth/model/auth-session-store';
+import { Route as ProfileRoute } from '@/routes/_auth/profile/$profileId';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 
@@ -23,6 +24,7 @@ const linkRowClassName =
 
 const activeLinkProps = {
   className: 'bg-accent text-primary font-semibold',
+  'data-status': 'active',
 };
 
 export interface UserNavProps {
@@ -61,10 +63,11 @@ export function UserNav({ triggerClassName }: UserNavProps) {
         >
           <DropdownMenuItem asChild className="cursor-pointer p-0 text-sm">
             <Link
-              to="/profile/$profileId"
+              to={ProfileRoute.to}
               params={{ profileId: user?.id ?? '' }}
               search={{ tab: 'all' }}
               className={linkRowClassName}
+              activeProps={activeLinkProps}
             >
               <span>Profile</span>
             </Link>
@@ -103,10 +106,9 @@ export function UserNav({ triggerClassName }: UserNavProps) {
           <DropdownMenuItem asChild className="cursor-pointer p-0 text-sm">
             <Link
               to={ROUTES.settings}
-              className={linkRowClassName}
-              activeProps={activeLinkProps}
               search={{ tab: 'appearance' }}
               className={linkRowClassName}
+              activeProps={activeLinkProps}
             >
               <span>Settings</span>
             </Link>

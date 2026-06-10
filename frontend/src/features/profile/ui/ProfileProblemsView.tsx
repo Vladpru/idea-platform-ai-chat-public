@@ -129,6 +129,7 @@ export function ProfileProblemsView() {
           linkedItemsExpanded={false}
           isMobile={isMobile}
           hideLinkedItems
+          entityType="PROBLEM"
           actionMenu={
             <ProblemCardActions
               card={card}
