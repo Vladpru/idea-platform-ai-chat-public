@@ -21,9 +21,11 @@ import { Route as AuthSettingsRouteImport } from './routes/_auth/settings'
 import { Route as AuthSearchRouteImport } from './routes/_auth/search'
 import { Route as AuthProfileRouteRouteImport } from './routes/_auth/profile/route'
 import { Route as AuthProblemsRouteRouteImport } from './routes/_auth/problems/route'
+import { Route as AuthLiveChatsRouteRouteImport } from './routes/_auth/live-chats/route'
 import { Route as AuthIdeasRouteRouteImport } from './routes/_auth/ideas/route'
 import { Route as AuthProfileIndexRouteImport } from './routes/_auth/profile/index'
 import { Route as AuthProblemsIndexRouteImport } from './routes/_auth/problems/index'
+import { Route as AuthLiveChatsIndexRouteImport } from './routes/_auth/live-chats/index'
 import { Route as AuthIdeasIndexRouteImport } from './routes/_auth/ideas/index'
 import { Route as AuthStatisticLeaderboardRouteImport } from './routes/_auth/statistic/leaderboard'
 import { Route as AuthSettingsNotificationsRouteImport } from './routes/_auth/settings.notifications'
@@ -31,6 +33,7 @@ import { Route as AuthProfileProblemsRouteImport } from './routes/_auth/profile/
 import { Route as AuthProfileIdeasRouteImport } from './routes/_auth/profile/ideas'
 import { Route as AuthProblemsNewRouteImport } from './routes/_auth/problems/new'
 import { Route as AuthProblemsProblemIdRouteImport } from './routes/_auth/problems/$problemId'
+import { Route as AuthLiveChatsRoomIdRouteImport } from './routes/_auth/live-chats/$roomId'
 import { Route as AuthIdeasNewRouteImport } from './routes/_auth/ideas/new'
 import { Route as AuthIdeasIdeaIdRouteImport } from './routes/_auth/ideas/$ideaId'
 
@@ -93,6 +96,11 @@ const AuthProblemsRouteRoute = AuthProblemsRouteRouteImport.update({
   path: '/problems',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthLiveChatsRouteRoute = AuthLiveChatsRouteRouteImport.update({
+  id: '/live-chats',
+  path: '/live-chats',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AuthIdeasRouteRoute = AuthIdeasRouteRouteImport.update({
   id: '/ideas',
   path: '/ideas',
@@ -107,6 +115,11 @@ const AuthProblemsIndexRoute = AuthProblemsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthProblemsRouteRoute,
+} as any)
+const AuthLiveChatsIndexRoute = AuthLiveChatsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthLiveChatsRouteRoute,
 } as any)
 const AuthIdeasIndexRoute = AuthIdeasIndexRouteImport.update({
   id: '/',
@@ -145,6 +158,11 @@ const AuthProblemsProblemIdRoute = AuthProblemsProblemIdRouteImport.update({
   path: '/$problemId',
   getParentRoute: () => AuthProblemsRouteRoute,
 } as any)
+const AuthLiveChatsRoomIdRoute = AuthLiveChatsRoomIdRouteImport.update({
+  id: '/$roomId',
+  path: '/$roomId',
+  getParentRoute: () => AuthLiveChatsRouteRoute,
+} as any)
 const AuthIdeasNewRoute = AuthIdeasNewRouteImport.update({
   id: '/new',
   path: '/new',
@@ -163,6 +181,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/ideas': typeof AuthIdeasRouteRouteWithChildren
+  '/live-chats': typeof AuthLiveChatsRouteRouteWithChildren
   '/problems': typeof AuthProblemsRouteRouteWithChildren
   '/profile': typeof AuthProfileRouteRouteWithChildren
   '/search': typeof AuthSearchRoute
@@ -171,6 +190,7 @@ export interface FileRoutesByFullPath {
   '/auth/callback': typeof AuthCallbackRoute
   '/ideas/$ideaId': typeof AuthIdeasIdeaIdRoute
   '/ideas/new': typeof AuthIdeasNewRoute
+  '/live-chats/$roomId': typeof AuthLiveChatsRoomIdRoute
   '/problems/$problemId': typeof AuthProblemsProblemIdRoute
   '/problems/new': typeof AuthProblemsNewRoute
   '/profile/ideas': typeof AuthProfileIdeasRoute
@@ -178,6 +198,7 @@ export interface FileRoutesByFullPath {
   '/settings/notifications': typeof AuthSettingsNotificationsRoute
   '/statistic/leaderboard': typeof AuthStatisticLeaderboardRoute
   '/ideas/': typeof AuthIdeasIndexRoute
+  '/live-chats/': typeof AuthLiveChatsIndexRoute
   '/problems/': typeof AuthProblemsIndexRoute
   '/profile/': typeof AuthProfileIndexRoute
 }
@@ -193,6 +214,7 @@ export interface FileRoutesByTo {
   '/': typeof AuthIndexRoute
   '/ideas/$ideaId': typeof AuthIdeasIdeaIdRoute
   '/ideas/new': typeof AuthIdeasNewRoute
+  '/live-chats/$roomId': typeof AuthLiveChatsRoomIdRoute
   '/problems/$problemId': typeof AuthProblemsProblemIdRoute
   '/problems/new': typeof AuthProblemsNewRoute
   '/profile/ideas': typeof AuthProfileIdeasRoute
@@ -200,6 +222,7 @@ export interface FileRoutesByTo {
   '/settings/notifications': typeof AuthSettingsNotificationsRoute
   '/statistic/leaderboard': typeof AuthStatisticLeaderboardRoute
   '/ideas': typeof AuthIdeasIndexRoute
+  '/live-chats': typeof AuthLiveChatsIndexRoute
   '/problems': typeof AuthProblemsIndexRoute
   '/profile': typeof AuthProfileIndexRoute
 }
@@ -211,6 +234,7 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_auth/ideas': typeof AuthIdeasRouteRouteWithChildren
+  '/_auth/live-chats': typeof AuthLiveChatsRouteRouteWithChildren
   '/_auth/problems': typeof AuthProblemsRouteRouteWithChildren
   '/_auth/profile': typeof AuthProfileRouteRouteWithChildren
   '/_auth/search': typeof AuthSearchRoute
@@ -220,6 +244,7 @@ export interface FileRoutesById {
   '/_auth/': typeof AuthIndexRoute
   '/_auth/ideas/$ideaId': typeof AuthIdeasIdeaIdRoute
   '/_auth/ideas/new': typeof AuthIdeasNewRoute
+  '/_auth/live-chats/$roomId': typeof AuthLiveChatsRoomIdRoute
   '/_auth/problems/$problemId': typeof AuthProblemsProblemIdRoute
   '/_auth/problems/new': typeof AuthProblemsNewRoute
   '/_auth/profile/ideas': typeof AuthProfileIdeasRoute
@@ -227,6 +252,7 @@ export interface FileRoutesById {
   '/_auth/settings/notifications': typeof AuthSettingsNotificationsRoute
   '/_auth/statistic/leaderboard': typeof AuthStatisticLeaderboardRoute
   '/_auth/ideas/': typeof AuthIdeasIndexRoute
+  '/_auth/live-chats/': typeof AuthLiveChatsIndexRoute
   '/_auth/problems/': typeof AuthProblemsIndexRoute
   '/_auth/profile/': typeof AuthProfileIndexRoute
 }
@@ -239,6 +265,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/ideas'
+    | '/live-chats'
     | '/problems'
     | '/profile'
     | '/search'
@@ -247,6 +274,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/ideas/$ideaId'
     | '/ideas/new'
+    | '/live-chats/$roomId'
     | '/problems/$problemId'
     | '/problems/new'
     | '/profile/ideas'
@@ -254,6 +282,7 @@ export interface FileRouteTypes {
     | '/settings/notifications'
     | '/statistic/leaderboard'
     | '/ideas/'
+    | '/live-chats/'
     | '/problems/'
     | '/profile/'
   fileRoutesByTo: FileRoutesByTo
@@ -269,6 +298,7 @@ export interface FileRouteTypes {
     | '/'
     | '/ideas/$ideaId'
     | '/ideas/new'
+    | '/live-chats/$roomId'
     | '/problems/$problemId'
     | '/problems/new'
     | '/profile/ideas'
@@ -276,6 +306,7 @@ export interface FileRouteTypes {
     | '/settings/notifications'
     | '/statistic/leaderboard'
     | '/ideas'
+    | '/live-chats'
     | '/problems'
     | '/profile'
   id:
@@ -286,6 +317,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/_auth/ideas'
+    | '/_auth/live-chats'
     | '/_auth/problems'
     | '/_auth/profile'
     | '/_auth/search'
@@ -295,6 +327,7 @@ export interface FileRouteTypes {
     | '/_auth/'
     | '/_auth/ideas/$ideaId'
     | '/_auth/ideas/new'
+    | '/_auth/live-chats/$roomId'
     | '/_auth/problems/$problemId'
     | '/_auth/problems/new'
     | '/_auth/profile/ideas'
@@ -302,6 +335,7 @@ export interface FileRouteTypes {
     | '/_auth/settings/notifications'
     | '/_auth/statistic/leaderboard'
     | '/_auth/ideas/'
+    | '/_auth/live-chats/'
     | '/_auth/problems/'
     | '/_auth/profile/'
   fileRoutesById: FileRoutesById
@@ -401,6 +435,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthProblemsRouteRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/live-chats': {
+      id: '/_auth/live-chats'
+      path: '/live-chats'
+      fullPath: '/live-chats'
+      preLoaderRoute: typeof AuthLiveChatsRouteRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_auth/ideas': {
       id: '/_auth/ideas'
       path: '/ideas'
@@ -421,6 +462,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/problems/'
       preLoaderRoute: typeof AuthProblemsIndexRouteImport
       parentRoute: typeof AuthProblemsRouteRoute
+    }
+    '/_auth/live-chats/': {
+      id: '/_auth/live-chats/'
+      path: '/'
+      fullPath: '/live-chats/'
+      preLoaderRoute: typeof AuthLiveChatsIndexRouteImport
+      parentRoute: typeof AuthLiveChatsRouteRoute
     }
     '/_auth/ideas/': {
       id: '/_auth/ideas/'
@@ -471,6 +519,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthProblemsProblemIdRouteImport
       parentRoute: typeof AuthProblemsRouteRoute
     }
+    '/_auth/live-chats/$roomId': {
+      id: '/_auth/live-chats/$roomId'
+      path: '/$roomId'
+      fullPath: '/live-chats/$roomId'
+      preLoaderRoute: typeof AuthLiveChatsRoomIdRouteImport
+      parentRoute: typeof AuthLiveChatsRouteRoute
+    }
     '/_auth/ideas/new': {
       id: '/_auth/ideas/new'
       path: '/new'
@@ -503,6 +558,19 @@ const AuthIdeasRouteRouteChildren: AuthIdeasRouteRouteChildren = {
 const AuthIdeasRouteRouteWithChildren = AuthIdeasRouteRoute._addFileChildren(
   AuthIdeasRouteRouteChildren,
 )
+
+interface AuthLiveChatsRouteRouteChildren {
+  AuthLiveChatsRoomIdRoute: typeof AuthLiveChatsRoomIdRoute
+  AuthLiveChatsIndexRoute: typeof AuthLiveChatsIndexRoute
+}
+
+const AuthLiveChatsRouteRouteChildren: AuthLiveChatsRouteRouteChildren = {
+  AuthLiveChatsRoomIdRoute: AuthLiveChatsRoomIdRoute,
+  AuthLiveChatsIndexRoute: AuthLiveChatsIndexRoute,
+}
+
+const AuthLiveChatsRouteRouteWithChildren =
+  AuthLiveChatsRouteRoute._addFileChildren(AuthLiveChatsRouteRouteChildren)
 
 interface AuthProblemsRouteRouteChildren {
   AuthProblemsProblemIdRoute: typeof AuthProblemsProblemIdRoute
@@ -548,6 +616,7 @@ const AuthSettingsRouteWithChildren = AuthSettingsRoute._addFileChildren(
 
 interface AuthRouteChildren {
   AuthIdeasRouteRoute: typeof AuthIdeasRouteRouteWithChildren
+  AuthLiveChatsRouteRoute: typeof AuthLiveChatsRouteRouteWithChildren
   AuthProblemsRouteRoute: typeof AuthProblemsRouteRouteWithChildren
   AuthProfileRouteRoute: typeof AuthProfileRouteRouteWithChildren
   AuthSearchRoute: typeof AuthSearchRoute
@@ -559,6 +628,7 @@ interface AuthRouteChildren {
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthIdeasRouteRoute: AuthIdeasRouteRouteWithChildren,
+  AuthLiveChatsRouteRoute: AuthLiveChatsRouteRouteWithChildren,
   AuthProblemsRouteRoute: AuthProblemsRouteRouteWithChildren,
   AuthProfileRouteRoute: AuthProfileRouteRouteWithChildren,
   AuthSearchRoute: AuthSearchRoute,

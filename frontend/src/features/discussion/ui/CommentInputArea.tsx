@@ -16,18 +16,16 @@ import { useReplyContext } from '@/features/discussion/ui/reply-context';
 import { getAttachmentFileKey } from '@/features/ideas/lib/create-idea/attachments';
 import { IdeaAttachmentCard } from '@/features/ideas/ui/create-idea/IdeaAttachmentCard';
 import { useBlocker } from '@tanstack/react-router';
-import { Paperclip, Send } from 'lucide-react';
 import {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
 } from 'react';
 import type { MouseEvent } from 'react';
 
 import { useFileHandler } from '@/shared/hooks/use-file-handler';
-import { cn } from '@/shared/lib/utils';
+import { MessageComposer } from '@/shared/ui/message-composer';
 
 import { QuotedReplyPreview } from './QuotedReplyBlock';
 
@@ -55,7 +53,6 @@ export function CommentInputArea({
 }: CommentInputAreaProps) {
   const { replyTo, clearReply, setReplyTo } = useReplyContext();
   const [content, setContent] = useState('');
-  const [isFloating, setIsFloating] = useState(true);
 
   const [cachedQuote, setCachedQuote] = useState<ReturnType<
     typeof toParentQuote
@@ -65,9 +62,7 @@ export function CommentInputArea({
     setCachedQuote(toParentQuote(replyTo));
   }
 
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const sentinelRef = useRef<HTMLDivElement>(null);
 
   const { mutate } = useCreateCommentMutation(entityType, entityId);
 
@@ -104,46 +99,11 @@ export function CommentInputArea({
     enableBeforeUnload: () => hasUnsavedDraft,
   });
 
-  const adjustTextareaHeight = useCallback(() => {
-    const element = textareaRef.current;
-    if (!element) return;
-
-    element.style.height = '0px';
-    const currentScrollHeight = element.scrollHeight;
-
-    element.style.height = `${Math.min(Math.max(currentScrollHeight, 40), 120)}px`;
-  }, []);
-
   useEffect(() => {
     const isDirty = contentLength > 0 || hasFiles;
     setDraftDirty(isDirty);
     return () => setDraftDirty(false);
   }, [contentLength, hasFiles, setDraftDirty]);
-
-  useLayoutEffect(() => {
-    adjustTextareaHeight();
-  }, [content, isFloating, adjustTextareaHeight]);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsFloating(!entry.isIntersecting);
-      },
-      {
-        root: null,
-        threshold: 0,
-        rootMargin: '100px 0px 0px 0px',
-      },
-    );
-
-    if (sentinelRef.current) {
-      observer.observe(sentinelRef.current);
-    }
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
 
   const resetInput = useCallback(() => {
     setContent('');
@@ -152,8 +112,7 @@ export function CommentInputArea({
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-    setTimeout(adjustTextareaHeight, 0);
-  }, [clearFiles, clearReply, adjustTextareaHeight]);
+  }, [clearFiles, clearReply]);
 
   const handleSubmit = () => {
     if (!canSubmit) return;
@@ -213,43 +172,51 @@ export function CommentInputArea({
   const displayQuote = parentQuote || cachedQuote;
 
   return (
-    <>
-      <div className={cn('sticky bottom-4 z-10 mt-6 w-full', className)}>
-        <div
-          className={cn(
-            'grid transition-all duration-300 ease-in-out',
-            parentQuote
-              ? 'mb-3 grid-rows-[1fr] opacity-100'
-              : 'mb-0 grid-rows-[0fr] opacity-0',
-            isFloating ? 'mx-auto max-w-4xl' : 'w-full',
-          )}
-        >
-          <div className="overflow-hidden">
-            {displayQuote ? (
-              <div
-                onClick={handleQuoteClick}
-                role="button"
-                tabIndex={0}
-                className="cursor-pointer"
-              >
-                <QuotedReplyPreview
-                  quote={displayQuote}
-                  onCancel={clearReply}
-                  className="w-full"
-                />
-              </div>
-            ) : null}
+    <MessageComposer
+      content={content}
+      onContentChange={setContent}
+      onSubmit={handleSubmit}
+      canSubmit={canSubmit}
+      disabled={isCurrentlyEditing}
+      placeholder={
+        isCurrentlyEditing
+          ? 'Finish editing to type a new message...'
+          : 'Type your message...'
+      }
+      inputId="discussion-comment-input"
+      className={className}
+      attachDisabled={isCurrentlyEditing || atLimit}
+      onAttachClick={() => fileInputRef.current?.click()}
+      fileInputRef={fileInputRef}
+      accept={accept}
+      onFileChange={handleFileChange}
+      isOverLimit={isOverLimit}
+      overLimitBanner={
+        isOverLimit ? (
+          <div className="animate-in fade-in slide-in-from-bottom-2 absolute -top-10 right-0 z-20 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 shadow-sm">
+            Character limit exceeded ({contentLength} / {MAX_CHARS})
           </div>
-        </div>
-
-        {files.length > 0 ? (
+        ) : undefined
+      }
+      quotePreview={
+        displayQuote ? (
           <div
-            className={cn(
-              'mb-3 flex flex-wrap items-start gap-3 transition-all duration-300 ease-in-out',
-              isFloating ? 'mx-auto max-w-4xl' : 'w-full',
-            )}
+            onClick={handleQuoteClick}
+            role="button"
+            tabIndex={0}
+            className="cursor-pointer"
           >
-            {files.map(file => {
+            <QuotedReplyPreview
+              quote={displayQuote}
+              onCancel={clearReply}
+              className="w-full"
+            />
+          </div>
+        ) : undefined
+      }
+      attachmentsPreview={
+        files.length > 0
+          ? files.map(file => {
               const key = getAttachmentFileKey(file);
               return (
                 <IdeaAttachmentCard
@@ -260,128 +227,9 @@ export function CommentInputArea({
                   onRemove={() => removeFile(key)}
                 />
               );
-            })}
-          </div>
-        ) : null}
-
-        <div
-          className={cn(
-            'relative flex items-end',
-            isFloating ? 'mx-auto max-w-4xl gap-3' : 'w-full gap-2 p-2',
-          )}
-        >
-          {isOverLimit && (
-            <div className="animate-in fade-in slide-in-from-bottom-2 absolute -top-10 right-0 z-20 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 shadow-sm">
-              Character limit exceeded ({contentLength} / {MAX_CHARS})
-            </div>
-          )}
-
-          <div
-            className={cn(
-              'bg-card absolute inset-0 rounded-lg border shadow-sm transition-all duration-500',
-              isFloating
-                ? 'pointer-events-none border-transparent opacity-0'
-                : 'opacity-100',
-              !isFloating
-                ? isOverLimit
-                  ? 'border-red-400'
-                  : 'border-gray-200'
-                : '',
-            )}
-          />
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            accept={accept}
-            className="center flex hidden"
-            disabled={isCurrentlyEditing || atLimit}
-            onChange={handleFileChange}
-          />
-
-          <button
-            type="button"
-            className={cn(
-              'relative z-10 flex shrink-0 cursor-pointer items-center justify-center border transition-all duration-300',
-              isFloating
-                ? 'bg-card size-[52px] rounded-full border-gray-200 shadow-sm hover:bg-gray-50'
-                : 'size-10 rounded-md border-transparent bg-transparent shadow-none hover:bg-gray-100',
-              'text-gray-400 hover:text-gray-600 disabled:opacity-50',
-            )}
-            aria-label="Attach file"
-            disabled={isCurrentlyEditing || atLimit}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Paperclip className="size-5 shrink-0" aria-hidden />
-          </button>
-
-          <div
-            className={cn(
-              'relative z-10 flex flex-1 items-end border transition-colors duration-200',
-              isFloating
-                ? 'bg-card rounded-[28px] px-5 shadow-sm'
-                : 'rounded-md border-transparent bg-transparent px-2 shadow-none',
-              isFloating
-                ? isOverLimit
-                  ? 'border-red-400'
-                  : 'border-gray-200'
-                : 'border-transparent',
-            )}
-          >
-            <label className="sr-only" htmlFor="discussion-comment-input">
-              Type your message
-            </label>
-            <textarea
-              ref={textareaRef}
-              id="discussion-comment-input"
-              value={content}
-              rows={1}
-              disabled={isCurrentlyEditing}
-              placeholder={
-                isCurrentlyEditing
-                  ? 'Finish editing to type a new message...'
-                  : 'Type your message...'
-              }
-              className={cn(
-                'max-h-[120px] min-h-[40px] min-w-0 flex-1 resize-none overflow-y-auto border-0 bg-transparent text-sm leading-[20px] placeholder:text-gray-400',
-                'focus-visible:ring-0 focus-visible:outline-none disabled:opacity-60',
-                'data-[highlighted=true]:ring-brand-dark-blue/30 transition-shadow duration-500 data-[highlighted=true]:ring-2',
-                isFloating ? 'py-4 pr-2' : 'py-[10px]',
-                isOverLimit ? 'text-red-600' : 'text-brand-gray-800',
-              )}
-              onChange={event => {
-                setContent(event.target.value);
-              }}
-              onKeyDown={event => {
-                if (event.key === 'Enter' && !event.shiftKey) {
-                  event.preventDefault();
-                  handleSubmit();
-                }
-              }}
-            />
-          </div>
-
-          <button
-            type="button"
-            disabled={!canSubmit || isCurrentlyEditing}
-            onClick={handleSubmit}
-            className={cn(
-              'relative z-10 flex shrink-0 cursor-pointer items-center justify-center border transition-all duration-300',
-              isFloating
-                ? 'bg-card size-[52px] rounded-full border-gray-200 shadow-sm hover:bg-gray-50'
-                : 'size-10 rounded-md border-transparent bg-transparent shadow-none hover:bg-gray-100',
-              canSubmit
-                ? 'text-brand-dark-blue'
-                : 'cursor-not-allowed text-gray-300',
-            )}
-            aria-label="Send message"
-          >
-            <Send className="size-5 shrink-0" aria-hidden />
-          </button>
-        </div>
-      </div>
-      <div ref={sentinelRef} className="h-px w-full" aria-hidden="true" />
-    </>
+            })
+          : undefined
+      }
+    />
   );
 }

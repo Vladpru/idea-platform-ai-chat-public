@@ -24,5 +24,7 @@ export const ROUTES = {
   settingsNotifications: '/settings/notifications',
   profileIdeas: '/profile/ideas',
   profileProblems: '/profile/problems',
+  liveChats: '/live-chats',
+  liveChatRoom: (id: string) => `/live-chats/${id}`,
   authCallback: '/auth/callback',
 } as const;
