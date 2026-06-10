@@ -6,7 +6,9 @@ import {
   setStoredAuthToken,
 } from '@/shared/lib/auth-token';
 import { clearAuthenticatedQueryCache } from '@/shared/lib/query-client';
+import { extractThemePreference } from '@/shared/lib/theme-storage';
 import { formatUserDisplayName } from '@/shared/lib/user-display';
+import type { ThemePreference } from '@/features/profile/api/profile.api';
 
 export type SessionUser = {
   id: string;
@@ -15,6 +17,7 @@ export type SessionUser = {
   lastName: string;
   name: string;
   picture: string | null;
+  themePreference: ThemePreference;
 };
 
 type AuthSessionState = {
@@ -40,6 +43,7 @@ function parseSessionUser(raw: unknown): SessionUser | null {
   const email = u.email;
 
   const name = formatUserDisplayName({ firstName, lastName, email });
+  const themePreference = extractThemePreference(raw) ?? 'SYSTEM';
 
   return {
     id: u.id,
@@ -48,6 +52,7 @@ function parseSessionUser(raw: unknown): SessionUser | null {
     lastName,
     name,
     picture: avatarUrl,
+    themePreference,
   };
 }
 

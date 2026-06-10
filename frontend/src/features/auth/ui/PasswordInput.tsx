@@ -52,7 +52,7 @@ export function PasswordInput({
           type={visible ? 'text' : 'password'}
           autoComplete={autoComplete}
           placeholder={placeholder}
-          className="rounded-sm bg-transparent py-2.5 pr-10"
+          className="rounded-sm py-2.5 pr-10"
           {...registrationRest}
           maxLength={PASSWORD_MAX_LENGTH}
           onChange={event => {
