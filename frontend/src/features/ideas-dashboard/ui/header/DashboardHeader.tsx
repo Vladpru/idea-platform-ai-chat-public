@@ -26,6 +26,8 @@ export type DashboardHeaderProps = {
   linkedProblemsExpanded: boolean;
   onExpandAll: () => void;
   onCollapseAll: () => void;
+  feedOnly: boolean;
+  onFeedOnlyChange: (feedOnly: boolean) => void;
 };
 
 function DashboardHeaderInner({
@@ -40,6 +42,8 @@ function DashboardHeaderInner({
   linkedProblemsExpanded,
   onExpandAll,
   onCollapseAll,
+  feedOnly,
+  onFeedOnlyChange,
 }: DashboardHeaderProps) {
   const controlsProps = {
     sort,
@@ -58,6 +62,8 @@ function DashboardHeaderInner({
     collapseAllLabel: IDEAS_DASHBOARD_LABELS.collapseAll,
     onExpandAll,
     onCollapseAll,
+    feedOnly,
+    onFeedOnlyChange,
   };
 
   return (
@@ -111,7 +117,9 @@ function areDashboardHeaderPropsEqual(
     prev.showColumnSelect === next.showColumnSelect &&
     prev.linkedProblemsExpanded === next.linkedProblemsExpanded &&
     prev.onExpandAll === next.onExpandAll &&
-    prev.onCollapseAll === next.onCollapseAll
+    prev.onCollapseAll === next.onCollapseAll &&
+    prev.feedOnly === next.feedOnly &&
+    prev.onFeedOnlyChange === next.onFeedOnlyChange
   );
 }
 

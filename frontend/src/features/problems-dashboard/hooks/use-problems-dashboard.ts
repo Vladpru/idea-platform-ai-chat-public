@@ -36,6 +36,7 @@ export function useProblemsDashboardPreferences() {
   const stage: ProblemStage | undefined = search.stage as
     | ProblemStage
     | undefined;
+  const feedOnly = search.feedOnly ?? false;
 
   const activeFilter: ProblemDashboardFilter = stage
     ? API_STAGE_TO_FILTER[stage]
@@ -46,11 +47,11 @@ export function useProblemsDashboardPreferences() {
     if (!raw.has('sort')) {
       void navigate({
         to: '.',
-        search: { sort, stage },
+        search: { sort, stage, feedOnly: feedOnly || undefined },
         replace: true,
       });
     }
-  }, []);
+  }, [feedOnly, navigate, sort, stage]);
 
   const columnCount = useProblemsDashboardGridPreferencesStore(
     s => s.columnCount,
@@ -92,6 +93,20 @@ export function useProblemsDashboardPreferences() {
     [navigate],
   );
 
+  const setFeedOnly = useCallback(
+    (nextFeedOnly: boolean) => {
+      scrollDashboardToTop();
+      void navigate({
+        to: '.',
+        search: prev => ({
+          ...prev,
+          feedOnly: nextFeedOnly ? true : undefined,
+        }),
+      });
+    },
+    [navigate],
+  );
+
   const isMobile = useMediaQuery('(max-width: 767px)');
   const isTablet = useMediaQuery('(min-width: 768px) and (max-width: 1023px)');
   const viewport = resolveDashboardViewport(isMobile, isTablet);
@@ -120,6 +135,8 @@ export function useProblemsDashboardPreferences() {
     setActiveFilter,
     sort,
     setSort,
+    feedOnly,
+    setFeedOnly,
     stage,
     columnCount,
     setColumnCount,
@@ -136,6 +153,7 @@ export function useProblemsDashboardPreferences() {
 export function useProblemsDashboardQuery(
   stage: ProblemStage | undefined,
   sort: ProblemDashboardSort,
+  feedOnly: boolean,
 ) {
   const selectCards = useCallback(
     (data: InfiniteData<ProblemsFeedResponse>) =>
@@ -155,11 +173,12 @@ export function useProblemsDashboardQuery(
   } = useInfiniteQuery({
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    queryKey: ['problems', 'infinite', { stage, sort }],
+    queryKey: ['problems', 'infinite', { stage, sort, feedOnly }],
     queryFn: ({ pageParam }) =>
       fetchProblems({
         stage,
         sort,
+        feedOnly: feedOnly || undefined,
         limit: PROBLEMS_PAGE_SIZE,
         page: pageParam as number,
       }),

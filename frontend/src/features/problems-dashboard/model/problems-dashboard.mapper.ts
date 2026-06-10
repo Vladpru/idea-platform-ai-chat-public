@@ -15,7 +15,8 @@ function toStageLabel(stage: ProblemStage | null): string {
 export function toProblemDashboardCard(dto: ProblemForm): ProblemDashboardCard {
   return {
     id: dto.id,
-    authorId: dto.author.id,
+    authorId:
+      dto.author?.id ?? (dto as unknown as { authorId: string }).authorId ?? '',
     title: dto.title?.trim() || 'Untitled problem',
     description: dto.description?.trim() ?? '',
     imageUrl: null,

@@ -61,10 +61,10 @@ export function UserNav({ triggerClassName }: UserNavProps) {
         >
           <DropdownMenuItem asChild className="cursor-pointer p-0 text-sm">
             <Link
-              to="/profile"
+              to="/profile/$profileId"
+              params={{ profileId: user?.id ?? '' }}
+              search={{ tab: 'all' }}
               className={linkRowClassName}
-              activeOptions={{ exact: true }}
-              activeProps={activeLinkProps}
             >
               <span>Profile</span>
             </Link>
@@ -105,6 +105,8 @@ export function UserNav({ triggerClassName }: UserNavProps) {
               to={ROUTES.settings}
               className={linkRowClassName}
               activeProps={activeLinkProps}
+              search={{ tab: 'appearance' }}
+              className={linkRowClassName}
             >
               <span>Settings</span>
             </Link>

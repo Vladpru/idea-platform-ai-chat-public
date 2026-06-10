@@ -1,3 +1,9 @@
+import type {
+  ProfileContribution,
+  ProfileContributionsTab,
+  ProfileStatistics,
+} from '@/features/profile/model/profile-contributions.types';
+
 import { api } from '@/shared/api/http';
 
 export type ThemePreference = 'LIGHT' | 'DARK' | 'SYSTEM';
@@ -26,6 +32,8 @@ export type UserPublic = {
   avatarUrl: string | null;
   themePreference: ThemePreference;
   notificationPreferences: NotificationPreferencesMap;
+  bio: string | null;
+  socialLinks: string[];
   createdAt: string;
   updatedAt: string;
 };
@@ -34,14 +42,20 @@ export type UserPublic = {
 export type CurrentUser = UserPublic & {
   hasPassword: boolean;
 };
+export type UserPublicProfile = UserPublic & {
+  subscriberCount: number;
+  isSubscribed: boolean;
+};
 
 export type UpdateThemePayload = {
   theme: ThemePreference;
 };
 
 export type PatchUserPayload = {
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
+  bio?: string | null;
+  socialLinks?: string[] | null;
 };
 
 export async function fetchCurrentUser(): Promise<CurrentUser> {
@@ -105,6 +119,91 @@ export async function changePassword(
     '/users/me/password',
     payload,
     { skipAuthRefresh: true },
+  );
+  return data;
+}
+
+export type { ProfileContributionsTab, ProfileStatistics };
+
+type ContributionsApiParams = {
+  type: 'all' | 'idea' | 'problem';
+  tab: 'authored' | 'joined';
+};
+
+function mapContributionsQuery(
+  tab: ProfileContributionsTab,
+): ContributionsApiParams {
+  switch (tab) {
+    case 'idea':
+      return { type: 'idea', tab: 'authored' };
+    case 'problem':
+      return { type: 'problem', tab: 'authored' };
+    case 'joined':
+      return { type: 'all', tab: 'joined' };
+    case 'all':
+    default:
+      return { type: 'all', tab: 'authored' };
+  }
+}
+
+export type FetchProfileContributionsParams = {
+  profileId: string;
+  skip: number;
+  take: number;
+  tab?: ProfileContributionsTab;
+};
+
+export type ProfileContributionsResponse = {
+  data: ProfileContribution[];
+  meta: {
+    skip: number;
+    take: number;
+    total: number;
+  };
+};
+
+export async function fetchUserProfile(
+  userId: string,
+): Promise<UserPublicProfile> {
+  const { data } = await api.get<UserPublicProfile>(`/users/${userId}`);
+  return data;
+}
+
+export async function subscribeToUser(userId: string): Promise<void> {
+  await api.post(`/users/${userId}/subscribe`);
+}
+
+export async function unsubscribeFromUser(userId: string): Promise<void> {
+  await api.delete(`/users/${userId}/subscribe`);
+}
+
+export async function fetchProfileContributions({
+  profileId,
+  skip,
+  take,
+  tab = 'all',
+}: FetchProfileContributionsParams): Promise<ProfileContributionsResponse> {
+  const query = mapContributionsQuery(tab);
+
+  const { data } = await api.get<ProfileContributionsResponse>(
+    `/users/${profileId}/contributions`,
+    {
+      params: {
+        skip,
+        take,
+        type: query.type,
+        tab: query.tab,
+      },
+    },
+  );
+  return data;
+}
+
+export async function fetchUserStatistics(
+  userId: string,
+): Promise<ProfileStatistics> {
+  const { data } = await api.get<ProfileStatistics>(
+    `/users/${userId}/statistics`,
   );
   return data;
 }

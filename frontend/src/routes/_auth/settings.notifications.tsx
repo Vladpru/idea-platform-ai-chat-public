@@ -1,12 +1,10 @@
-import { SettingsPanel } from '@/features/settings';
-import { pageDocumentHead } from '@/shared/lib/document-head';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_auth/settings/notifications')({
-  head: () => pageDocumentHead('Notification settings'),
-  component: SettingsPage,
+  beforeLoad: () => {
+    throw redirect({
+      to: '/settings',
+      search: { tab: 'notifications' },
+    });
+  },
 });
-
-function SettingsPage() {
-  return <SettingsPanel />;
-}

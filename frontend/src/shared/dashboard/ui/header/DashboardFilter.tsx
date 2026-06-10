@@ -40,7 +40,10 @@ export function DashboardFilter<TFilter extends string>({
 
   const tabsRow = (
     <nav
-      className={cn('flex flex-wrap items-center gap-x-6 gap-y-2', className)}
+      className={cn(
+        'flex w-full [scrollbar-width:none] items-center gap-x-6 overflow-x-auto pb-1 whitespace-nowrap [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
+        className,
+      )}
       aria-label={ariaLabel}
     >
       {filters.map(tab => {
@@ -51,7 +54,7 @@ export function DashboardFilter<TFilter extends string>({
             type="button"
             onClick={() => onFilterChange(tab.id)}
             className={cn(
-              'text-brand-dark-blue relative cursor-pointer pb-2 text-base font-normal tracking-wide uppercase transition-colors',
+              'text-brand-dark-blue relative shrink-0 cursor-pointer pb-2 text-base font-normal tracking-wide uppercase transition-colors',
               isActive ? 'font-bold' : 'hover:text-brand-dark-blue',
             )}
           >
@@ -109,7 +112,7 @@ export function DashboardFilter<TFilter extends string>({
         <button
           type="button"
           onClick={() => setIsMobileMenuOpen(true)}
-          className="border-brand-gray-200 text-brand-dark-blue bg-card flex min-w-[120px] items-center justify-between gap-2 rounded-md border px-4 py-2 text-sm font-bold shadow-sm"
+          className="border-brand-gray-200 text-brand-dark-blue bg-card flex min-w-[120px] cursor-pointer items-center justify-between gap-2 rounded-md border px-4 py-2 text-sm font-bold shadow-sm"
         >
           <span className="truncate">{activeTab?.label || 'All'}</span>
           <ChevronDown className="text-brand-gray-400 size-4 shrink-0" />
@@ -119,7 +122,7 @@ export function DashboardFilter<TFilter extends string>({
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-50 flex flex-col justify-end sm:hidden">
           <div
-            className="fixed inset-0 bg-black/40 transition-opacity"
+            className="fixed inset-0 cursor-pointer bg-black/40 transition-opacity"
             onClick={() => setIsMobileMenuOpen(false)}
             aria-hidden="true"
           />
@@ -130,7 +133,7 @@ export function DashboardFilter<TFilter extends string>({
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="text-brand-dark-blue rounded-full p-1 transition-colors hover:bg-gray-100"
+                className="text-brand-dark-blue cursor-pointer rounded-full p-1 transition-colors hover:bg-gray-100"
               >
                 <X className="size-6" />
               </button>
@@ -149,7 +152,7 @@ export function DashboardFilter<TFilter extends string>({
                           setIsMobileMenuOpen(false);
                         }}
                         className={cn(
-                          'w-full rounded-xl px-4 py-3.5 text-left text-base font-normal transition-colors',
+                          'w-full cursor-pointer rounded-xl px-4 py-3.5 text-left text-base font-normal transition-colors',
                           isActive
                             ? 'text-brand-dark-blue bg-brand-gray-100 font-bold'
                             : 'text-brand-black hover:bg-slate-50',

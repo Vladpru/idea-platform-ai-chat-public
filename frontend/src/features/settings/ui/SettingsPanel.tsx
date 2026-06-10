@@ -8,13 +8,16 @@ import {
   buildAllChannelsPatch,
   type NotificationPreferenceKey,
 } from '@/features/settings/model/notification-preferences.types';
+import type { SettingsTab } from '@/features/settings/lib/settings-tab';
+import { SettingsAccountSection } from '@/features/settings/ui/SettingsAccountSection';
 import { useThemeSync } from '@/hooks/useThemeSync';
 import { Monitor, Moon, Sun } from 'lucide-react';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import { cn } from '@/shared/lib/utils';
 import { Switch } from '@/shared/ui';
 import { Tabs, TabsList, TabsTrigger } from '@/shared/ui/tabs';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 
 type NotificationItem = {
   key: NotificationPreferenceKey;
@@ -39,6 +42,12 @@ const NOTIFICATION_ITEMS: NotificationItem[] = [
     description:
       'Sending friendly reminders to revisit your inactive ideas, problems and drafts',
   },
+];
+
+const SETTINGS_NAV_TABS: { id: SettingsTab; label: string }[] = [
+  { id: 'account', label: 'Account' },
+  { id: 'appearance', label: 'Appearance' },
+  { id: 'notifications', label: 'Notifications' },
 ];
 
 const actionButtonClassName =
@@ -126,7 +135,7 @@ function SettingsAppearanceSection() {
   );
 }
 
-export function SettingsPanel() {
+function SettingsNotificationsSection() {
   const accessToken = useAuthSessionStore(s => s.accessToken);
   const { data: user, isLoading } = useCurrentUserQuery({
     enabled: Boolean(accessToken),
@@ -169,6 +178,95 @@ export function SettingsPanel() {
   };
 
   return (
+    <section>
+      <div className="flex flex-col gap-4 sm:gap-5 lg:flex-row lg:items-center lg:gap-12">
+        <h2 className="text-foreground text-2xl font-semibold sm:text-3xl">
+          Notifications
+        </h2>
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+          <button
+            className={cn(
+              actionButtonClassName,
+              isAllEnabled || isLoading
+                ? 'text-muted-foreground/50 cursor-not-allowed'
+                : 'text-primary hover:text-primary/80 cursor-pointer',
+            )}
+            onClick={() => handleSetAll(true)}
+            disabled={isAllEnabled || isLoading || updatePreferences.isPending}
+            type="button"
+          >
+            Enable all
+          </button>
+          <button
+            className={cn(
+              actionButtonClassName,
+              isAllDisabled || isLoading
+                ? 'text-muted-foreground/50 cursor-not-allowed'
+                : 'text-primary hover:text-primary/80 cursor-pointer',
+            )}
+            onClick={() => handleSetAll(false)}
+            disabled={isAllDisabled || isLoading || updatePreferences.isPending}
+            type="button"
+          >
+            Disable all
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-6 space-y-6 sm:mt-8 sm:space-y-7">
+        {NOTIFICATION_ITEMS.map(item => (
+          <div className="space-y-2" key={item.key}>
+            <div>
+              <h3 className="text-foreground text-lg leading-tight font-semibold">
+                {item.title}
+              </h3>
+              {item.description ? (
+                <p className="text-muted-foreground mt-1 max-w-[760px] text-xs leading-5 sm:text-sm">
+                  {item.description}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-10 sm:gap-y-3">
+              <ChannelToggle
+                checked={channels?.[item.key]?.inApp ?? true}
+                label="In-App Notifications"
+                disabled={isLoading || !channels}
+                onChange={value =>
+                  handleSetOneChannel(item.key, 'inApp', value)
+                }
+              />
+              <ChannelToggle
+                checked={channels?.[item.key]?.email ?? true}
+                label="Email Notifications"
+                disabled={isLoading || !channels}
+                onChange={value =>
+                  handleSetOneChannel(item.key, 'email', value)
+                }
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function SettingsPanel() {
+  const navigate = useNavigate();
+  const { tab } = useSearch({ from: '/_auth/settings' });
+
+  const handleTabChange = useCallback(
+    (nextTab: SettingsTab) => {
+      void navigate({
+        to: '/settings',
+        search: { tab: nextTab },
+      });
+    },
+    [navigate],
+  );
+
+  return (
     <main className="bg-brand-neutral dark:bg-background min-h-[calc(100vh-72px)]">
       <section className="bg-card text-card-foreground mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-9">
         <h1
@@ -177,82 +275,28 @@ export function SettingsPanel() {
           Settings
         </h1>
 
-        <div className="mt-7 sm:mt-9 lg:mt-11">
-          <SettingsAppearanceSection />
+        <div className="mt-6 flex flex-wrap gap-2 sm:gap-3">
+          {SETTINGS_NAV_TABS.map(item => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => handleTabChange(item.id)}
+              className={cn(
+                'cursor-pointer rounded-sm px-4 py-2 text-sm font-bold tracking-wide uppercase transition-colors',
+                tab === item.id
+                  ? 'bg-brand-dark-blue text-brand-white'
+                  : 'text-brand-dark-blue hover:bg-brand-dark-blue/10 border-brand-dark-blue border bg-transparent',
+              )}
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
 
-        <div className="border-border mt-10 border-t pt-10 sm:mt-12 sm:pt-12">
-          <div className="flex flex-col gap-4 sm:gap-5 lg:flex-row lg:items-center lg:gap-12">
-            <h2 className="text-foreground text-2xl font-semibold sm:text-3xl">
-              Notifications
-            </h2>
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-              <button
-                className={cn(
-                  actionButtonClassName,
-                  isAllEnabled || isLoading
-                    ? 'text-muted-foreground/50 cursor-not-allowed'
-                    : 'text-primary hover:text-primary/80 cursor-pointer',
-                )}
-                onClick={() => handleSetAll(true)}
-                disabled={isAllEnabled || isLoading || updatePreferences.isPending}
-                type="button"
-              >
-                Enable all
-              </button>
-              <button
-                className={cn(
-                  actionButtonClassName,
-                  isAllDisabled || isLoading
-                    ? 'text-muted-foreground/50 cursor-not-allowed'
-                    : 'text-primary hover:text-primary/80 cursor-pointer',
-                )}
-                onClick={() => handleSetAll(false)}
-                disabled={
-                  isAllDisabled || isLoading || updatePreferences.isPending
-                }
-                type="button"
-              >
-                Disable all
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-6 space-y-6 sm:mt-8 sm:space-y-7">
-            {NOTIFICATION_ITEMS.map(item => (
-              <div className="space-y-2" key={item.key}>
-                <div>
-                  <h3 className="text-foreground text-lg leading-tight font-semibold">
-                    {item.title}
-                  </h3>
-                  {item.description ? (
-                    <p className="text-muted-foreground mt-1 max-w-[760px] text-xs leading-5 sm:text-sm">
-                      {item.description}
-                    </p>
-                  ) : null}
-                </div>
-
-                <div className="flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-10 sm:gap-y-3">
-                  <ChannelToggle
-                    checked={channels?.[item.key]?.inApp ?? true}
-                    label="In-App Notifications"
-                    disabled={isLoading || !channels}
-                    onChange={value =>
-                      handleSetOneChannel(item.key, 'inApp', value)
-                    }
-                  />
-                  <ChannelToggle
-                    checked={channels?.[item.key]?.email ?? true}
-                    label="Email Notifications"
-                    disabled={isLoading || !channels}
-                    onChange={value =>
-                      handleSetOneChannel(item.key, 'email', value)
-                    }
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+        <div className="mt-7 sm:mt-9 lg:mt-11">
+          {tab === 'account' ? <SettingsAccountSection /> : null}
+          {tab === 'appearance' ? <SettingsAppearanceSection /> : null}
+          {tab === 'notifications' ? <SettingsNotificationsSection /> : null}
         </div>
       </section>
     </main>

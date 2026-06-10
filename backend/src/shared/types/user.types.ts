@@ -17,10 +17,17 @@ export interface UserPublic {
   avatarUrl: string | null;
   themePreference: ThemePreference;
   notificationPreferences: NotificationPreferencesMap;
+  bio: string | null;
+  socialLinks: string[];
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface CurrentUserPublic extends UserPublic {
   hasPassword: boolean;
+}
+
+export interface UserPublicProfile extends UserPublic {
+  subscriberCount: number;
+  isSubscribed: boolean;
 }

@@ -5,6 +5,7 @@ import { AiModule } from '../ai/ai.module';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 import { EmbeddingModule } from '../embedding/embedding.module';
 import { PrismaModule } from '../prisma/prisma.module';
+import { SubscriptionModule } from '../subscription/subscription.module';
 import { IdeaMediaService } from './idea-media.service';
 import { IdeaMemberService } from './idea-member.service';
 import { IdeaPrefillService } from './idea-prefill.service';
@@ -19,6 +20,7 @@ import { IdeaService } from './idea.service';
     AiModule,
     EmbeddingModule,
     AiSummaryModule,
+    SubscriptionModule,
   ],
   controllers: [IdeaController],
   providers: [

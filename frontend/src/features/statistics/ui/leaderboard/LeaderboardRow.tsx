@@ -1,18 +1,11 @@
 import { getInitials } from '@/features/idea-details/lib/get-initials';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@/shared/ui/avatar';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/shared/ui/tooltip';
+import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip';
 
 import { getLeaderboardBreakdownItems } from '../../lib/leaderboard-breakdown-labels';
 import { formatContributorPoints } from '../../lib/format-statistics-values';
 import type { LeaderboardEntry } from '../../model/statistics.types';
+import { Link } from '@tanstack/react-router';
 
 type LeaderboardRowProps = {
   rank: number;
@@ -25,25 +18,32 @@ export function LeaderboardRow({ rank, entry }: LeaderboardRowProps) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <li className="border-brand-gray-200 hover:bg-brand-gray-50 flex cursor-default items-center gap-4 border-b px-5 py-4 transition-colors last:border-b-0 sm:px-6">
-          <span className="text-brand-gray-500 w-6 shrink-0 text-sm font-semibold tabular-nums">
-            {rank}.
-          </span>
-          <Avatar size="lg" className="size-11 shrink-0">
-            {entry.avatarUrl ? (
-              <AvatarImage src={entry.avatarUrl} alt={entry.name} />
-            ) : null}
-            <AvatarFallback className="bg-brand-light-blue text-brand-dark-blue text-sm font-semibold">
-              {getInitials(entry.name)}
-            </AvatarFallback>
-          </Avatar>
-          <p className="text-brand-black min-w-0 flex-1 truncate text-sm font-bold">
-            {entry.name}
-          </p>
-          <span className="bg-brand-light-blue text-brand-dark-blue shrink-0 rounded-full px-3 py-1 text-xs font-bold tabular-nums">
-            {formatContributorPoints(entry.points)}
-          </span>
-        </li>
+        <Link
+          to="/profile/$profileId"
+          params={{ profileId: entry.id }}
+          search={{ tab: 'all' }}
+          className="hover:bg-brand-gray-100 group flex items-center gap-3 rounded-lg p-1 transition-colors"
+        >
+          <li className="border-brand-gray-200 hover:bg-brand-gray-50 flex cursor-pointer items-center gap-4 border-b px-5 py-4 transition-colors last:border-b-0 sm:px-6">
+            <span className="text-brand-gray-500 w-6 shrink-0 text-sm font-semibold tabular-nums">
+              {rank}.
+            </span>
+            <Avatar size="lg" className="size-11 shrink-0">
+              {entry.avatarUrl ? (
+                <AvatarImage src={entry.avatarUrl} alt={entry.name} />
+              ) : null}
+              <AvatarFallback className="bg-brand-light-blue text-brand-dark-blue text-sm font-semibold">
+                {getInitials(entry.name)}
+              </AvatarFallback>
+            </Avatar>
+            <p className="text-brand-black min-w-0 flex-1 truncate text-sm font-bold">
+              {entry.name}
+            </p>
+            <span className="bg-brand-light-blue text-brand-dark-blue shrink-0 rounded-full px-3 py-1 text-xs font-bold tabular-nums">
+              {formatContributorPoints(entry.points)}
+            </span>
+          </li>
+        </Link>
       </TooltipTrigger>
       {breakdownItems.length > 0 ? (
         <TooltipContent
@@ -53,7 +53,10 @@ export function LeaderboardRow({ rank, entry }: LeaderboardRowProps) {
         >
           <ul className="space-y-1.5 text-sm">
             {breakdownItems.map(item => (
-              <li key={item.key} className="flex items-center justify-between gap-6">
+              <li
+                key={item.key}
+                className="flex items-center justify-between gap-6"
+              >
                 <span className="text-brand-gray-700">{item.label}</span>
                 <span className="font-bold tabular-nums">{item.value}</span>
               </li>

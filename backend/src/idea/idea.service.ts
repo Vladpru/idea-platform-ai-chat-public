@@ -28,6 +28,8 @@ import {
   resolveIdeaRecipientUserIds,
 } from '../notification/lib/notification-integration.util';
 import { PrismaService } from '../prisma/prisma.service';
+import { buildStatusPublicationUpdate } from '../shared/lib/publication.util';
+import { SubscriberNotificationService } from '../subscription/subscriber-notification.service';
 import { CreateIdeaDto } from './dto/create-idea.dto';
 import { UpdateIdeaDraftDto } from './dto/update-idea-draft.dto';
 import { UpdatePublishedIdeaDto } from './dto/update-published-idea.dto';
@@ -61,6 +63,7 @@ export class IdeaService {
     private readonly ideaMediaService: IdeaMediaService,
     private readonly eventEmitter: EventEmitter2,
     private readonly aiSummaryService: AiSummaryService,
+    private readonly subscriberNotificationService: SubscriberNotificationService,
   ) {}
 
   async toggleLike(ideaId: string, userId: string): Promise<void> {
@@ -430,165 +433,187 @@ export class IdeaService {
   ): Promise<IdeaFormResponse> {
     const { isPublished, ...updateDto } = dto;
 
-    const { idea, shouldRequestSummary, publishedProblems, publishLifecycle } =
-      await this.prisma.$transaction(async tx => {
-        if (!isPublished) {
-          const currentDraftsCount = await tx.idea.count({
-            where: { authorId, status: IdeaStatus.DRAFT },
-          });
-
-          if (currentDraftsCount >= MAX_DRAFTS_PER_USER) {
-            throw new BadRequestException(
-              `Maximum limit of ${MAX_DRAFTS_PER_USER} drafts reached. Publish or delete existing drafts.`,
-            );
-          }
-        }
-
-        const initialStage = dto.stage ?? null;
-
-        let created = await tx.idea.create({
-          data: {
-            authorId,
-            status: IdeaStatus.DRAFT,
-            ...(dto.stage !== undefined ? { stage: dto.stage } : {}),
-            ...(dto.title !== undefined ? { title: dto.title } : {}),
-            ...(dto.description !== undefined
-              ? { description: dto.description }
-              : {}),
-          },
-          include: IDEA_FORM_INCLUDE,
+    const {
+      idea,
+      shouldRequestSummary,
+      publishedProblems,
+      publishLifecycle,
+      shouldNotifyIdea,
+      problemsToNotify,
+    } = await this.prisma.$transaction(async tx => {
+      const problemsToNotify: Array<{ id: string; title: string }> = [];
+      let shouldNotifyIdea = false;
+      if (!isPublished) {
+        const currentDraftsCount = await tx.idea.count({
+          where: { authorId, status: IdeaStatus.DRAFT },
         });
 
-        await this.updateScalarFields(tx, created.id, updateDto, false, false);
-        await this.syncProblems(tx, created.id, authorId, updateDto.problemIds);
-        await this.syncTags(tx, created.id, updateDto);
+        if (currentDraftsCount >= MAX_DRAFTS_PER_USER) {
+          throw new BadRequestException(
+            `Maximum limit of ${MAX_DRAFTS_PER_USER} drafts reached. Publish or delete existing drafts.`,
+          );
+        }
+      }
 
-        if (isPublished) {
-          const projectedTitle =
-            updateDto.title !== undefined ? updateDto.title : created.title;
-          const projectedDescription =
-            updateDto.description !== undefined
-              ? updateDto.description
-              : created.description;
-          const projectedStage =
-            updateDto.stage !== undefined ? updateDto.stage : created.stage;
-          const projectedProblemsCount =
-            updateDto.problemIds !== undefined
-              ? updateDto.problemIds.length
-              : 0;
+      const initialStage = dto.stage ?? null;
 
-          const errors = this.validateForPublish({
-            title: projectedTitle,
-            description: projectedDescription,
-            stage: projectedStage,
-            problemsCount: projectedProblemsCount,
+      let created = await tx.idea.create({
+        data: {
+          authorId,
+          status: IdeaStatus.DRAFT,
+          ...(dto.stage !== undefined ? { stage: dto.stage } : {}),
+          ...(dto.title !== undefined ? { title: dto.title } : {}),
+          ...(dto.description !== undefined
+            ? { description: dto.description }
+            : {}),
+        },
+        include: IDEA_FORM_INCLUDE,
+      });
+
+      await this.updateScalarFields(tx, created.id, updateDto, false, false);
+      await this.syncProblems(tx, created.id, authorId, updateDto.problemIds);
+      await this.syncTags(tx, created.id, updateDto);
+
+      if (isPublished) {
+        const projectedTitle =
+          updateDto.title !== undefined ? updateDto.title : created.title;
+        const projectedDescription =
+          updateDto.description !== undefined
+            ? updateDto.description
+            : created.description;
+        const projectedStage =
+          updateDto.stage !== undefined ? updateDto.stage : created.stage;
+        const projectedProblemsCount =
+          updateDto.problemIds !== undefined ? updateDto.problemIds.length : 0;
+
+        const errors = this.validateForPublish({
+          title: projectedTitle,
+          description: projectedDescription,
+          stage: projectedStage,
+          problemsCount: projectedProblemsCount,
+        });
+
+        if (errors.length > 0) {
+          throw new UnprocessableEntityException({ errors });
+        }
+
+        let publishedProblems: Array<{
+          id: string;
+          title: string;
+          description: string;
+          valueProposition: string | null;
+          category: string | null;
+          impact: string | null;
+        }> = [];
+
+        if (updateDto.problemIds && updateDto.problemIds.length > 0) {
+          const draftProblems = await tx.problem.findMany({
+            where: {
+              id: { in: updateDto.problemIds },
+              status: ProblemStatus.DRAFT,
+            },
+            select: {
+              id: true,
+              title: true,
+              publishedAt: true,
+              description: true,
+              valueProposition: true,
+              category: true,
+              impact: true,
+            },
           });
 
-          if (errors.length > 0) {
-            throw new UnprocessableEntityException({ errors });
-          }
-
-          const publishedAt = new Date();
-          let publishedProblems: Array<{
-            id: string;
-            title: string;
-            description: string;
-            valueProposition: string | null;
-            category: string | null;
-            impact: string | null;
-          }> = [];
-
-          if (updateDto.problemIds && updateDto.problemIds.length > 0) {
-            const draftProblems = await tx.problem.findMany({
-              where: {
-                id: { in: updateDto.problemIds },
-                status: ProblemStatus.DRAFT,
-              },
-              select: {
-                id: true,
-                title: true,
-                description: true,
-                valueProposition: true,
-                category: true,
-                impact: true,
-              },
+          for (const problem of draftProblems) {
+            const summarizable = hasSummarizableContent({
+              entityType: 'problem',
+              title: problem.title,
+              description: problem.description,
+              valueProposition: problem.valueProposition,
+              category: problem.category,
+              impact: problem.impact,
             });
 
-            for (const problem of draftProblems) {
-              const summarizable = hasSummarizableContent({
-                entityType: 'problem',
-                title: problem.title,
-                description: problem.description,
-                valueProposition: problem.valueProposition,
-                category: problem.category,
-                impact: problem.impact,
-              });
+            const problemPublication = buildStatusPublicationUpdate({
+              publishedAt: problem.publishedAt ?? null,
+              requestSummary: summarizable,
+              status: ProblemStatus.PUBLISHED,
+            });
 
-              await tx.problem.update({
-                where: { id: problem.id },
-                data: {
-                  status: ProblemStatus.PUBLISHED,
-                  publishedAt,
-                  ...buildSummaryResetData(summarizable),
-                },
+            if (problemPublication.shouldNotifySubscribers) {
+              problemsToNotify.push({
+                id: problem.id,
+                title: problem.title,
               });
             }
 
-            publishedProblems = draftProblems.filter(problem =>
-              hasSummarizableContent({
-                entityType: 'problem',
-                title: problem.title,
-                description: problem.description,
-                valueProposition: problem.valueProposition,
-                category: problem.category,
-                impact: problem.impact,
-              }),
-            );
+            await tx.problem.update({
+              where: { id: problem.id },
+              data: problemPublication.data,
+            });
           }
 
-          const requestSummary = hasSummarizableContent({
-            entityType: 'idea',
-            title: created.title,
-            description: created.description,
-          });
-
-          created = await tx.idea.update({
-            where: { id: created.id },
-            data: {
-              status: IdeaStatus.PUBLISHED,
-              publishedAt,
-              ...buildSummaryResetData(requestSummary),
-            },
-            include: IDEA_FORM_INCLUDE,
-          });
-
-          return {
-            idea: created,
-            shouldRequestSummary: requestSummary,
-            publishedProblems,
-            publishLifecycle: isPublished
-              ? {
-                  previousStatus: IdeaStatus.DRAFT,
-                  previousStage: initialStage,
-                }
-              : null,
-          };
-        } else {
-          const reloaded = await tx.idea.findUnique({
-            where: { id: created.id },
-            include: IDEA_FORM_INCLUDE,
-          });
-          if (!reloaded) throw new NotFoundException(IDEA_NOT_FOUND);
-          created = reloaded;
+          publishedProblems = draftProblems.filter(problem =>
+            hasSummarizableContent({
+              entityType: 'problem',
+              title: problem.title,
+              description: problem.description,
+              valueProposition: problem.valueProposition,
+              category: problem.category,
+              impact: problem.impact,
+            }),
+          );
         }
+
+        const requestSummary = hasSummarizableContent({
+          entityType: 'idea',
+          title: created.title,
+          description: created.description,
+        });
+
+        const ideaPublication = buildStatusPublicationUpdate({
+          publishedAt: created.publishedAt ?? null,
+          requestSummary,
+          status: IdeaStatus.PUBLISHED,
+        });
+        shouldNotifyIdea = ideaPublication.shouldNotifySubscribers;
+
+        created = await tx.idea.update({
+          where: { id: created.id },
+          data: ideaPublication.data,
+          include: IDEA_FORM_INCLUDE,
+        });
 
         return {
           idea: created,
-          shouldRequestSummary: false,
-          publishedProblems: [],
-          publishLifecycle: null,
+          shouldRequestSummary: requestSummary,
+          publishedProblems,
+          shouldNotifyIdea,
+          problemsToNotify,
+          publishLifecycle: isPublished
+            ? {
+                previousStatus: IdeaStatus.DRAFT,
+                previousStage: initialStage,
+              }
+            : null,
         };
-      });
+      } else {
+        const reloaded = await tx.idea.findUnique({
+          where: { id: created.id },
+          include: IDEA_FORM_INCLUDE,
+        });
+        if (!reloaded) throw new NotFoundException(IDEA_NOT_FOUND);
+        created = reloaded;
+      }
+
+      return {
+        idea: created,
+        shouldRequestSummary: false,
+        publishedProblems: [],
+        shouldNotifyIdea: false,
+        problemsToNotify: [],
+        publishLifecycle: null,
+      };
+    });
 
     this.eventEmitter.emit('entity.mutated', {
       entityType: 'idea',
@@ -605,6 +630,28 @@ export class IdeaService {
         nextStatus: idea.status,
         nextStage: idea.stage,
       });
+    }
+
+    if (shouldNotifyIdea) {
+      await this.subscriberNotificationService.notifySubscribersOfNewPublication(
+        {
+          authorId,
+          entityType: 'idea',
+          entityId: idea.id,
+          entityTitle: idea.title ?? 'Untitled idea',
+        },
+      );
+    }
+
+    for (const problem of problemsToNotify) {
+      await this.subscriberNotificationService.notifySubscribersOfNewPublication(
+        {
+          authorId,
+          entityType: 'problem',
+          entityId: problem.id,
+          entityTitle: problem.title,
+        },
+      );
     }
 
     if (shouldRequestSummary) {
@@ -788,7 +835,12 @@ export class IdeaService {
       shouldRequestSummary,
       publishedProblems,
       previousLifecycle,
+      shouldNotifyIdea,
+      problemsToNotify,
     } = await this.prisma.$transaction(async tx => {
+      const problemsToNotify: Array<{ id: string; title: string }> = [];
+      let shouldNotifyIdea = false;
+
       const idea = await tx.idea.findFirst({
         where: { id, authorId },
         include: IDEA_FORM_INCLUDE,
@@ -822,7 +874,6 @@ export class IdeaService {
       }
 
       const linkedProblemIds = idea.problems.map(link => link.problemId);
-      const publishedAt = new Date();
       let publishedProblems: Array<{
         id: string;
         title: string;
@@ -841,6 +892,7 @@ export class IdeaService {
           select: {
             id: true,
             title: true,
+            publishedAt: true,
             description: true,
             valueProposition: true,
             category: true,
@@ -858,13 +910,22 @@ export class IdeaService {
             impact: problem.impact,
           });
 
+          const problemPublication = buildStatusPublicationUpdate({
+            publishedAt: problem.publishedAt ?? null,
+            requestSummary: summarizable,
+            status: ProblemStatus.PUBLISHED,
+          });
+
+          if (problemPublication.shouldNotifySubscribers) {
+            problemsToNotify.push({
+              id: problem.id,
+              title: problem.title,
+            });
+          }
+
           await tx.problem.update({
             where: { id: problem.id },
-            data: {
-              status: ProblemStatus.PUBLISHED,
-              publishedAt,
-              ...buildSummaryResetData(summarizable),
-            },
+            data: problemPublication.data,
           });
         }
 
@@ -886,13 +947,16 @@ export class IdeaService {
         description: idea.description,
       });
 
+      const ideaPublication = buildStatusPublicationUpdate({
+        publishedAt: idea.publishedAt ?? null,
+        requestSummary,
+        status: IdeaStatus.PUBLISHED,
+      });
+      shouldNotifyIdea = ideaPublication.shouldNotifySubscribers;
+
       const publishedIdea = await tx.idea.update({
         where: { id },
-        data: {
-          status: IdeaStatus.PUBLISHED,
-          publishedAt,
-          ...buildSummaryResetData(requestSummary),
-        },
+        data: ideaPublication.data,
         include: IDEA_FORM_INCLUDE,
       });
 
@@ -900,6 +964,8 @@ export class IdeaService {
         published: publishedIdea,
         shouldRequestSummary: requestSummary,
         publishedProblems,
+        shouldNotifyIdea,
+        problemsToNotify,
         previousLifecycle: {
           status: idea.status,
           stage: idea.stage,
@@ -921,6 +987,28 @@ export class IdeaService {
       nextStatus: published.status,
       nextStage: published.stage,
     });
+
+    if (shouldNotifyIdea) {
+      await this.subscriberNotificationService.notifySubscribersOfNewPublication(
+        {
+          authorId,
+          entityType: 'idea',
+          entityId: published.id,
+          entityTitle: published.title ?? 'Untitled idea',
+        },
+      );
+    }
+
+    for (const problem of problemsToNotify) {
+      await this.subscriberNotificationService.notifySubscribersOfNewPublication(
+        {
+          authorId,
+          entityType: 'problem',
+          entityId: problem.id,
+          entityTitle: problem.title,
+        },
+      );
+    }
 
     if (shouldRequestSummary) {
       this.aiSummaryService.enqueueIdeaSummary(published.id);

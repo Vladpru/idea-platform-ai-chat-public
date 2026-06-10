@@ -11,6 +11,8 @@ export const NOTIFICATION_EVENTS = {
   FOLLOWUP_REQUIRED: 'followup.required',
   IDEA_ASSIGNED: 'idea.assigned',
   PROBLEM_ASSIGNED: 'problem.assigned',
+  NEW_IDEA: 'NEW_IDEA',
+  NEW_PROBLEM: 'NEW_PROBLEM',
 } as const;
 
 export type NotificationEventName =

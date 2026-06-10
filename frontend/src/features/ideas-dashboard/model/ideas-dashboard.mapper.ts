@@ -18,7 +18,10 @@ export function toIdeaDashboardCard(
 ): IdeaDashboardCard {
   return {
     id: dto.id,
-    authorId: dto.author.id,
+    authorId:
+      dto.author?.id ??
+      (dto as unknown as { authorId?: string }).authorId ??
+      '',
     title: dto.title?.trim() || 'Untitled idea',
     description: dto.description?.trim() ?? '',
     imageUrl: dto.mainImage?.url ?? null,

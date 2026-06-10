@@ -15,12 +15,17 @@ import {
   parseNotificationPreferences,
 } from '../notification/lib/notification-preferences.util';
 import { PrismaService } from '../prisma/prisma.service';
-import type { CurrentUserPublic, UserPublic } from '../shared/types/user.types';
+import type {
+  CurrentUserPublic,
+  UserPublic,
+  UserPublicProfile,
+} from '../shared/types/user.types';
 import { isUniqueConstraintError } from '../shared/utils/is-unique-error.util';
 import {
   PASSWORD_MAX_LENGTH,
   validateNewPassword,
 } from '../shared/utils/validate-password.util';
+import { SubscriptionService } from '../subscription/subscription.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateNotificationPreferencesDto } from './dto/update-notification-preferences.dto';
@@ -38,9 +43,19 @@ const USER_PUBLIC_SELECT = {
   avatarUrl: true,
   themePreference: true,
   notificationPreferences: true,
+  bio: true,
+  socialLinks: true,
   createdAt: true,
   updatedAt: true,
 } as const;
+
+function parseSocialLinks(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((item): item is string => typeof item === 'string');
+}
 
 function toUserPublic(user: {
   id: string;
@@ -50,16 +65,27 @@ function toUserPublic(user: {
   avatarUrl: string | null;
   themePreference: ThemePreference;
   notificationPreferences: unknown;
+  bio: string | null;
+  socialLinks: unknown;
   createdAt: Date;
   updatedAt: Date;
 }): UserPublic {
   return {
-    ...user,
+    id: user.id,
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    avatarUrl: user.avatarUrl,
+    themePreference: user.themePreference,
     notificationPreferences: parseNotificationPreferences(
       user.notificationPreferences as Parameters<
         typeof parseNotificationPreferences
       >[0],
     ),
+    bio: user.bio,
+    socialLinks: parseSocialLinks(user.socialLinks),
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
   };
 }
 
@@ -68,6 +94,7 @@ export class UserService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cloudinary: CloudinaryService,
+    private readonly subscriptionService: SubscriptionService,
   ) {}
 
   async create(dto: CreateUserDto) {
@@ -161,6 +188,25 @@ export class UserService {
     });
     if (!user) throw new NotFoundException(`User not found`);
     return toUserPublic(user);
+  }
+
+  async getPublicProfile(
+    id: string,
+    currentUserId: string,
+  ): Promise<UserPublicProfile> {
+    const user = await this.findOne(id);
+    const subscriberCount =
+      await this.subscriptionService.getSubscriberCount(id);
+    const isSubscribed =
+      currentUserId !== id
+        ? await this.subscriptionService.isSubscribed(currentUserId, id)
+        : false;
+
+    return {
+      ...user,
+      subscriberCount,
+      isSubscribed,
+    };
   }
 
   async getMe(id: string): Promise<CurrentUserPublic> {
@@ -327,9 +373,23 @@ export class UserService {
   }
 
   async update(id: string, dto: UpdateUserDto) {
-    const data: { firstName?: string; lastName?: string } = {};
-    if (dto.firstName !== undefined) data.firstName = dto.firstName;
-    if (dto.lastName !== undefined) data.lastName = dto.lastName;
+    const data: Prisma.UserUpdateInput = {};
+
+    if (dto.firstName !== undefined) {
+      data.firstName = dto.firstName;
+    }
+
+    if (dto.lastName !== undefined) {
+      data.lastName = dto.lastName;
+    }
+
+    if (dto.bio !== undefined) {
+      data.bio = dto.bio;
+    }
+
+    if (dto.socialLinks !== undefined) {
+      data.socialLinks = dto.socialLinks;
+    }
 
     if (Object.keys(data).length === 0) {
       return this.findOne(id);
