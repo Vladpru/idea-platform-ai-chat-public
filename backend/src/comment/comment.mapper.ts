@@ -34,6 +34,7 @@ export function toCommentAuthorResponse(
 ): CommentAuthorDto {
   return {
     id: author.id,
+    email: author.email,
     firstName: author.firstName,
     lastName: author.lastName,
     avatarUrl: author.avatarUrl,
