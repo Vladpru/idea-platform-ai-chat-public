@@ -40,12 +40,12 @@ export function SuggestionChip({
             ? 'border-brand-dark-blue/30 bg-brand-light-blue/35 text-brand-gray-800 hover:bg-brand-light-blue/50'
             : tier === 'speculative'
               ? 'border-brand-gray-300 bg-brand-gray-100 text-brand-gray-500 hover:bg-brand-gray-100/80'
-              : 'border-transparent bg-brand-gray-200 text-brand-gray-600 hover:bg-brand-gray-200/80',
+              : 'bg-brand-gray-200 text-brand-gray-600 hover:bg-brand-gray-200/80 border-transparent',
         className,
       )}
       {...props}
     >
-      <Icon className="size-3.5 shrink-0 stroke-[1.5]" aria-hidden />
+      <Icon className="fill size-3.5 shrink-0 stroke-[1.5]" aria-hidden />
       <span className="truncate">{label}</span>
     </button>
   );
