@@ -1,18 +1,21 @@
 import { MediaKind } from '../../../generated/prisma/client';
 import type { PrismaService } from '../../prisma/prisma.service';
-import type { NotificationEmailJobData } from '../types/notification-email.types';
 import type {
   EnrichedCommentContext,
   EnrichedEmailContext,
   EnrichedEntityCard,
 } from '../types/enriched-email.types';
+import type { NotificationEmailJobData } from '../types/notification-email.types';
 
 function readString(payload: Record<string, unknown>, key: string): string {
   const value = payload[key];
   return typeof value === 'string' ? value : '';
 }
 
-function trimExcerpt(text: string | null | undefined, max = 160): string | null {
+function trimExcerpt(
+  text: string | null | undefined,
+  max = 160,
+): string | null {
   if (!text) {
     return null;
   }
@@ -45,6 +48,28 @@ function formatCommentTimestamp(date: Date): string {
     month: 'short',
     year: 'numeric',
   }).format(date);
+}
+
+const AUTHOR_DISPLAY_SELECT = {
+  firstName: true,
+  lastName: true,
+  avatarUrl: true,
+} as const;
+
+type AuthorDisplay = {
+  firstName: string | null;
+  lastName: string | null;
+  avatarUrl: string | null;
+};
+
+async function fetchAuthorDisplay(
+  prisma: PrismaService,
+  authorId: string,
+): Promise<AuthorDisplay | null> {
+  return prisma.user.findUnique({
+    where: { id: authorId },
+    select: AUTHOR_DISPLAY_SELECT,
+  });
 }
 
 function buildFrontendPaths(frontendUrl: string) {
@@ -81,9 +106,7 @@ async function fetchIdeaEntity(
       viewCount: true,
       commentCount: true,
       likeCount: true,
-      author: {
-        select: { firstName: true, lastName: true, avatarUrl: true },
-      },
+      authorId: true,
       media: {
         where: { kind: MediaKind.MAIN_IMAGE },
         orderBy: { sortOrder: 'asc' },
@@ -100,6 +123,8 @@ async function fetchIdeaEntity(
   if (!idea) {
     return null;
   }
+
+  const author = await fetchAuthorDisplay(prisma, idea.authorId);
 
   const tags = idea.tags.map(entry => entry.tag.label ?? entry.tag.name);
   const imageUrl =
@@ -122,10 +147,10 @@ async function fetchIdeaEntity(
     descriptionExcerpt: trimExcerpt(idea.description),
     imageUrl,
     authorName: formatAuthorName(
-      idea.author.firstName,
-      idea.author.lastName,
+      author?.firstName ?? null,
+      author?.lastName ?? null,
     ),
-    authorAvatarUrl: idea.author.avatarUrl,
+    authorAvatarUrl: author?.avatarUrl ?? null,
     stageLabel: idea.stage,
     statusLabel: idea.status,
     tags: tags.slice(0, 3),
@@ -154,9 +179,7 @@ async function fetchProblemEntity(
       viewCount: true,
       commentCount: true,
       likeCount: true,
-      author: {
-        select: { firstName: true, lastName: true, avatarUrl: true },
-      },
+      authorId: true,
       media: {
         where: { kind: MediaKind.MAIN_IMAGE },
         orderBy: { sortOrder: 'asc' },
@@ -173,6 +196,8 @@ async function fetchProblemEntity(
   if (!problem) {
     return null;
   }
+
+  const author = await fetchAuthorDisplay(prisma, problem.authorId);
 
   const tags = problem.tags.map(entry => entry.tag.label ?? entry.tag.name);
   const imageUrl =
@@ -195,10 +220,10 @@ async function fetchProblemEntity(
     descriptionExcerpt: trimExcerpt(problem.description),
     imageUrl,
     authorName: formatAuthorName(
-      problem.author.firstName,
-      problem.author.lastName,
+      author?.firstName ?? null,
+      author?.lastName ?? null,
     ),
-    authorAvatarUrl: problem.author.avatarUrl,
+    authorAvatarUrl: author?.avatarUrl ?? null,
     stageLabel: problem.stage,
     statusLabel: problem.status,
     tags: tags.slice(0, 3),
@@ -276,13 +301,14 @@ async function enrichCommentContext(
       where: { id: commentId },
       select: {
         createdAt: true,
-        author: { select: { avatarUrl: true } },
+        authorId: true,
       },
     });
 
     if (comment) {
       timestamp = formatCommentTimestamp(comment.createdAt);
-      actorAvatarUrl = comment.author.avatarUrl;
+      const author = await fetchAuthorDisplay(prisma, comment.authorId);
+      actorAvatarUrl = author?.avatarUrl ?? null;
     }
   }
 
