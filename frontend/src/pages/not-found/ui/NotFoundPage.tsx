@@ -1,7 +1,7 @@
 import {
   primaryBtn,
   sectionTitleClass,
-} from '@/features/profile/ui/profile-view-classes';
+} from '@/features/profile/ui/shared/profile-view-classes';
 import { ROUTES } from '@/shared/config/paths';
 import { formatPageTitle } from '@/shared/lib/document-head';
 import { AppHeader } from '@/widgets/header';

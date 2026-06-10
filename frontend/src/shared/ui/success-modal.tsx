@@ -1,4 +1,4 @@
-import { primaryBtn } from '@/features/profile/ui/profile-view-classes';
+import { primaryBtn } from '@/features/profile/ui/shared/profile-view-classes';
 
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';

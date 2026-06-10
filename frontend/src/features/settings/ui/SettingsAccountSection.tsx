@@ -1,6 +1,6 @@
 import { useProfileView } from '@/features/profile/hooks/use-profile-view';
-import { ProfileDisplayPanel } from '@/features/profile/ui/ProfileDisplayPanel';
-import { ProfileEditPanel } from '@/features/profile/ui/ProfileEditPanel';
+import { ProfileDisplayPanel } from '@/features/profile/ui/account/ProfileDisplayPanel';
+import { ProfileEditPanel } from '@/features/profile/ui/account/ProfileEditPanel';
 import { Skeleton } from '@/shared/ui/skeleton';
 
 export function SettingsAccountSection() {

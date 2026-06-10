@@ -6,7 +6,7 @@ import {
   textareaClass,
 } from '@/features/ideas/lib/styles';
 import { SparklesIcon } from '@/features/ideas/ui/icons/SparklesIcon';
-import { cancelOutlineBtn } from '@/features/profile/ui/profile-view-classes';
+import { cancelOutlineBtn } from '@/features/profile/ui/shared/profile-view-classes';
 import { Upload, X } from 'lucide-react';
 import { useState } from 'react';
 import { useDropzone } from 'react-dropzone';

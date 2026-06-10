@@ -8,7 +8,7 @@ import {
 } from '@/features/ideas/lib/styles';
 
 import { type ProblemDraft, useProblemsListQuery } from '@/features/problems';
-import { cancelOutlineBtn } from '@/features/profile/ui/profile-view-classes';
+import { cancelOutlineBtn } from '@/features/profile/ui/shared/profile-view-classes';
 import { Check, ChevronDown, Plus, Search, X } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 

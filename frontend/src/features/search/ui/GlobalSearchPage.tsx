@@ -349,7 +349,7 @@ export function GlobalSearchPage() {
               />
               <TabButton
                 active={activeTab === 'problems'}
-                label="UPDATE"
+                label="PROBLEMS"
                 count={problemsTotal}
                 onClick={() => updateTab('problems')}
               />
