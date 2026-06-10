@@ -7,7 +7,8 @@ import {
   liveChatMessageInclude,
   liveChatRoomInclude,
 } from './live-chat.constants';
-import { toLiveChatAuthorResponse } from './live-chat.mapper';
+import { buildDirectPairKey } from './live-chat-direct.util';
+import { toEntityTeam } from './live-chat.mapper';
 import type {
   LiveChatMessageRecord,
   LiveChatRoomRecord,
@@ -60,34 +61,14 @@ export class LiveChatRepository {
     });
   }
 
-  async findDirectRoom(
+  findDirectRoom(
     userAId: string,
     userBId: string,
   ): Promise<LiveChatRoomRecord | null> {
-    const candidates = await this.prisma.liveChatRoom.findMany({
-      where: {
-        ideaId: null,
-        problemId: null,
-        participants: { some: { userId: userAId } },
-      },
+    return this.prisma.liveChatRoom.findUnique({
+      where: { directPairKey: buildDirectPairKey(userAId, userBId) },
       include: liveChatRoomInclude,
     });
-
-    return (
-      candidates.find(room => {
-        if (room.participants.length !== 2) {
-          return false;
-        }
-
-        const participantIds = room.participants.map(
-          participant => participant.user.id,
-        );
-
-        return (
-          participantIds.includes(userAId) && participantIds.includes(userBId)
-        );
-      }) ?? null
-    );
   }
 
   findRoomByEntity(
@@ -113,6 +94,7 @@ export class LiveChatRepository {
   createRoom(data: {
     ideaId: string | null;
     problemId: string | null;
+    directPairKey?: string | null;
     createdById: string;
     participantUserIds?: string[];
   }): Promise<LiveChatRoomRecord> {
@@ -241,60 +223,64 @@ export class LiveChatRepository {
     });
   }
 
+  private static readonly entityTeamSelect = {
+    id: true,
+    author: { select: LIVE_CHAT_AUTHOR_SELECT },
+    members: {
+      select: {
+        user: { select: LIVE_CHAT_AUTHOR_SELECT },
+      },
+      orderBy: { joinedAt: 'asc' as const },
+    },
+  };
+
+  async findIdeaTeamsByIds(
+    ideaIds: string[],
+  ): Promise<Map<string, LiveChatTeamMemberDto[]>> {
+    if (ideaIds.length === 0) {
+      return new Map();
+    }
+
+    const ideas = await this.prisma.idea.findMany({
+      where: { id: { in: ideaIds } },
+      select: LiveChatRepository.entityTeamSelect,
+    });
+
+    return new Map(
+      ideas.map(idea => [idea.id, toEntityTeam(idea.author, idea.members)]),
+    );
+  }
+
+  async findProblemTeamsByIds(
+    problemIds: string[],
+  ): Promise<Map<string, LiveChatTeamMemberDto[]>> {
+    if (problemIds.length === 0) {
+      return new Map();
+    }
+
+    const problems = await this.prisma.problem.findMany({
+      where: { id: { in: problemIds } },
+      select: LiveChatRepository.entityTeamSelect,
+    });
+
+    return new Map(
+      problems.map(problem => [
+        problem.id,
+        toEntityTeam(problem.author, problem.members),
+      ]),
+    );
+  }
+
   async findEntityTeam(
     entityType: EntityTarget,
     entityId: string,
   ): Promise<LiveChatTeamMemberDto[]> {
     if (entityType === EntityTarget.IDEA) {
-      const idea = await this.prisma.idea.findUnique({
-        where: { id: entityId },
-        select: {
-          author: { select: LIVE_CHAT_AUTHOR_SELECT },
-          members: {
-            select: {
-              user: { select: LIVE_CHAT_AUTHOR_SELECT },
-            },
-            orderBy: { joinedAt: 'asc' },
-          },
-        },
-      });
-
-      if (!idea) {
-        return [];
-      }
-
-      return [
-        { ...toLiveChatAuthorResponse(idea.author), isAuthor: true },
-        ...idea.members.map(member => ({
-          ...toLiveChatAuthorResponse(member.user),
-          isAuthor: false,
-        })),
-      ];
+      const teams = await this.findIdeaTeamsByIds([entityId]);
+      return teams.get(entityId) ?? [];
     }
 
-    const problem = await this.prisma.problem.findUnique({
-      where: { id: entityId },
-      select: {
-        author: { select: LIVE_CHAT_AUTHOR_SELECT },
-        members: {
-          select: {
-            user: { select: LIVE_CHAT_AUTHOR_SELECT },
-          },
-          orderBy: { joinedAt: 'asc' },
-        },
-      },
-    });
-
-    if (!problem) {
-      return [];
-    }
-
-    return [
-      { ...toLiveChatAuthorResponse(problem.author), isAuthor: true },
-      ...problem.members.map(member => ({
-        ...toLiveChatAuthorResponse(member.user),
-        isAuthor: false,
-      })),
-    ];
+    const teams = await this.findProblemTeamsByIds([entityId]);
+    return teams.get(entityId) ?? [];
   }
 }

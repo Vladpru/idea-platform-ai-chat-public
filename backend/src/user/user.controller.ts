@@ -52,12 +52,9 @@ export class UserController {
   @JwtAuth()
   @ApiBearerAuth()
   @ApiOkResponse({ description: 'Current user profile' })
-  getMe(@Req() req: Request & { user: { id: string } }) {
+  getMe(@Req() req: AuthenticatedRequest) {
     return this.userService.getMe(req.user.id);
   }
-  // getMe(@Req() req: AuthenticatedRequest) {
-  //   return this.userService.findOne(req.user.id);
-  // }
 
   @Patch('me')
   @JwtAuth()

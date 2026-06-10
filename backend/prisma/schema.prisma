@@ -434,10 +434,11 @@ model CommentMedia {
 }
 
 model LiveChatRoom {
-  id          String   @id @default(uuid())
-  ideaId      String?  @unique @map("idea_id")
-  problemId   String?  @unique @map("problem_id")
-  createdById String   @map("created_by_id")
+  id             String   @id @default(uuid())
+  ideaId         String?  @unique @map("idea_id")
+  problemId      String?  @unique @map("problem_id")
+  directPairKey  String?  @unique @map("direct_pair_key")
+  createdById    String   @map("created_by_id")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 

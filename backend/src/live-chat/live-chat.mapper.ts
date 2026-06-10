@@ -99,6 +99,19 @@ function toLiveChatRoomEntityResponse(
   throw new Error('Live chat room is missing linked context');
 }
 
+export function toEntityTeam(
+  author: LiveChatAuthorRecord,
+  members: Array<{ user: LiveChatAuthorRecord }>,
+): LiveChatTeamMemberDto[] {
+  return [
+    { ...toLiveChatAuthorResponse(author), isAuthor: true },
+    ...members.map(member => ({
+      ...toLiveChatAuthorResponse(member.user),
+      isAuthor: false,
+    })),
+  ];
+}
+
 export function toParticipantTeam(
   room: LiveChatRoomRecord,
 ): LiveChatTeamMemberDto[] {

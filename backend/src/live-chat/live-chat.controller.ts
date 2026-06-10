@@ -23,7 +23,10 @@ import {
 } from '@nestjs/swagger';
 import type { Request } from 'express';
 
-import { EntityTarget } from '../entity-visibility/entity-target.enum';
+import {
+  ENTITY_LINK_TARGETS,
+  type EntityLinkTarget,
+} from '../entity-visibility/entity-target.enum';
 import { JwtAuth } from '../shared/decorators/jwt-auth.decorator';
 import { CreateLiveChatRoomDto, GetLiveChatMessagesQueryDto } from './dto';
 import { LiveChatService } from './live-chat.service';
@@ -92,8 +95,8 @@ export class LiveChatController {
   @ApiNotFoundResponse({ description: 'Entity or room not found' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   findByEntity(
-    @Param('entityType', new ParseEnumPipe(EntityTarget))
-    entityType: EntityTarget,
+    @Param('entityType', new ParseEnumPipe(ENTITY_LINK_TARGETS))
+    entityType: EntityLinkTarget,
     @Param('entityId', ParseUUIDPipe) entityId: string,
     @Req() req: AuthenticatedRequest,
   ): Promise<LiveChatRoomDto> {

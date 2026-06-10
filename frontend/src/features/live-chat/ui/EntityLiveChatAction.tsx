@@ -65,18 +65,17 @@ export function EntityLiveChatAction({
     });
   };
 
-  const handleClick = async () => {
+  const handleClick = () => {
     if (hasRoom && room) {
       navigateToRoom(room.id);
       return;
     }
 
     if (roomNotFound) {
-      const created = await createRoomMutation.mutateAsync({
-        entityType,
-        entityId,
-      });
-      navigateToRoom(created.id);
+      createRoomMutation.mutate(
+        { entityType, entityId },
+        { onSuccess: created => navigateToRoom(created.id) },
+      );
     }
   };
 
@@ -95,7 +94,7 @@ export function EntityLiveChatAction({
       )}
       disabled={isBusy || (!canStartOrOpen && isError)}
       isLoading={isBusy}
-      onClick={() => void handleClick()}
+      onClick={handleClick}
     >
       {label}
     </Button>

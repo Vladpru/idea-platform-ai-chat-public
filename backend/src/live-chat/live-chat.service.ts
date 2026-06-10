@@ -7,9 +7,11 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 
 import { EntityTarget } from '../entity-visibility/entity-target.enum';
 import { EntityVisibilityService } from '../entity-visibility/entity-visibility.service';
+import { isUniqueConstraintError } from '../shared/utils/is-unique-error.util';
 import { NOTIFICATION_EVENTS } from '../notification/events/notification-event-names';
 import type { DirectMessageReceivedNotificationEvent } from '../notification/events/notification.events';
 import { GetLiveChatMessagesQueryDto } from './dto/get-live-chat-messages-query.dto';
+import { buildDirectPairKey } from './live-chat-direct.util';
 import { LiveChatRateLimitService } from './live-chat-rate-limit.service';
 import {
   LIVE_CHAT_CANNOT_CHAT_WITH_SELF,
@@ -34,6 +36,7 @@ import type {
   LiveChatMessageDto,
   LiveChatRoomDto,
   LiveChatRoomListResponse,
+  LiveChatTeamMemberDto,
   PaginatedLiveChatMessagesResponse,
 } from './types/live-chat.types';
 
@@ -55,16 +58,33 @@ export class LiveChatService {
       lastMessages.map(message => [message.roomId, message]),
     );
 
-    const data = await Promise.all(
-      rooms.map(async room => {
-        const team = await this.getRoomTeam(room);
-        return toLiveChatRoomResponse(
-          room,
-          userId,
-          lastMessageByRoomId.get(room.id) ?? null,
-          team,
-        );
-      }),
+    const ideaIds = [
+      ...new Set(
+        rooms
+          .map(room => room.ideaId)
+          .filter((ideaId): ideaId is string => ideaId !== null),
+      ),
+    ];
+    const problemIds = [
+      ...new Set(
+        rooms
+          .map(room => room.problemId)
+          .filter((problemId): problemId is string => problemId !== null),
+      ),
+    ];
+
+    const [ideaTeamsById, problemTeamsById] = await Promise.all([
+      this.liveChatRepository.findIdeaTeamsByIds(ideaIds),
+      this.liveChatRepository.findProblemTeamsByIds(problemIds),
+    ]);
+
+    const data = rooms.map(room =>
+      toLiveChatRoomResponse(
+        room,
+        userId,
+        lastMessageByRoomId.get(room.id) ?? null,
+        this.resolveRoomTeam(room, ideaTeamsById, problemTeamsById),
+      ),
     );
 
     return { data };
@@ -112,6 +132,8 @@ export class LiveChatService {
       throw new NotFoundException(LIVE_CHAT_USER_NOT_FOUND);
     }
 
+    const directPairKey = buildDirectPairKey(userId, targetUserId);
+
     const existingRoom = await this.liveChatRepository.findDirectRoom(
       userId,
       targetUserId,
@@ -121,15 +143,33 @@ export class LiveChatService {
       return this.toRoomDto(existingRoom, userId);
     }
 
-    const room = await this.liveChatRepository.createRoom({
-      ideaId: null,
-      problemId: null,
-      createdById: userId,
-      participantUserIds: [userId, targetUserId],
-    });
+    try {
+      const room = await this.liveChatRepository.createRoom({
+        ideaId: null,
+        problemId: null,
+        directPairKey,
+        createdById: userId,
+        participantUserIds: [userId, targetUserId],
+      });
 
-    const team = toParticipantTeam(room);
-    return toLiveChatRoomResponse(room, userId, null, team);
+      const team = toParticipantTeam(room);
+      return toLiveChatRoomResponse(room, userId, null, team);
+    } catch (error) {
+      if (!isUniqueConstraintError(error)) {
+        throw error;
+      }
+
+      const racedRoom = await this.liveChatRepository.findDirectRoom(
+        userId,
+        targetUserId,
+      );
+
+      if (!racedRoom) {
+        throw error;
+      }
+
+      return this.toRoomDto(racedRoom, userId);
+    }
   }
 
   async findRoomByEntity(
@@ -293,6 +333,26 @@ export class LiveChatService {
     return `${normalized.slice(0, maxLength).trimEnd()}…`;
   }
 
+  private resolveRoomTeam(
+    room: LiveChatRoomRecord,
+    ideaTeamsById: Map<string, LiveChatTeamMemberDto[]>,
+    problemTeamsById: Map<string, LiveChatTeamMemberDto[]>,
+  ): LiveChatTeamMemberDto[] {
+    if (room.ideaId) {
+      return ideaTeamsById.get(room.ideaId) ?? [];
+    }
+
+    if (room.problemId) {
+      return problemTeamsById.get(room.problemId) ?? [];
+    }
+
+    if (room.participants.length > 0) {
+      return toParticipantTeam(room);
+    }
+
+    return [];
+  }
+
   private async getRoomTeam(room: LiveChatRoomRecord) {
     if (room.ideaId) {
       return this.liveChatRepository.findEntityTeam(
@@ -308,7 +368,7 @@ export class LiveChatService {
       );
     }
 
-    if (!room.ideaId && !room.problemId && room.participants.length > 0) {
+    if (room.participants.length > 0) {
       return toParticipantTeam(room);
     }
 
