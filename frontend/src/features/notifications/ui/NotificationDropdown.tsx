@@ -187,7 +187,11 @@ export function NotificationDropdown({
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link to={ROUTES.settingsNotifications} onClick={onClose}>
+                <Link
+                  to={ROUTES.settings}
+                  search={{ tab: 'notifications' }}
+                  onClick={onClose}
+                >
                   Notifications settings
                 </Link>
               </DropdownMenuItem>

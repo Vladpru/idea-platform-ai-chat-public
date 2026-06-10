@@ -103,6 +103,22 @@ export function NotificationMessage({ type, payload }: NotificationMessageProps)
           inactive. Consider updating or publishing it.
         </>
       );
+    case 'NEW_IDEA':
+      return renderWithActor(
+        actorName,
+        <>
+          {' '}
+          published a new idea &quot;{ideaTitle || title}&quot;.
+        </>,
+      );
+    case 'NEW_PROBLEM':
+      return renderWithActor(
+        actorName,
+        <>
+          {' '}
+          published a new problem &quot;{problemTitle || title}&quot;.
+        </>,
+      );
     default:
       return <>You have a new notification.</>;
   }
