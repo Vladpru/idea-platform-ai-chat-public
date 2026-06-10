@@ -64,7 +64,7 @@ export function MyScoreCard({ myScore, isFetching = false }: MyScoreCardProps) {
           return (
             <article
               key={category.key}
-              className="border-brand-gray-200 bg-brand-gray-50 flex flex-col items-center rounded-lg border px-3 py-5 text-center"
+              className="border-brand-gray-200 bg-brand-gray-50 dark:bg-brand-gray-100 flex flex-col items-center rounded-lg border px-3 py-5 text-center"
             >
               <span className="bg-brand-dark-blue flex size-9 items-center justify-center rounded-full text-white">
                 <Icon className="size-4" aria-hidden />

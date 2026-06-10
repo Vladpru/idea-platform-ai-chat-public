@@ -105,12 +105,15 @@ export function AppHeader() {
                 ADD NEW <ChevronDown size={16} />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuItem className="cursor-pointer text-xs font-semibold uppercase">
-                Problem
+            <DropdownMenuContent align="end" className="bg-card w-40">
+              <DropdownMenuItem
+                className="h-10 cursor-pointer text-xs font-semibold uppercase"
+                asChild
+              >
+                <Link to={ROUTES.problemsNew}>Problem</Link>
               </DropdownMenuItem>
               <DropdownMenuItem
-                className="cursor-pointer text-xs font-semibold uppercase"
+                className="h-10 cursor-pointer text-xs font-semibold uppercase"
                 asChild
               >
                 <Link to={ROUTES.ideasNew}>Idea</Link>

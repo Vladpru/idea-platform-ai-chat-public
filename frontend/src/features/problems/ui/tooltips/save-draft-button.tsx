@@ -1,19 +1,15 @@
 import { outlineBtnClass } from '@/features/ideas/lib/styles';
-
+import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/shared/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip';
 
-export const SAVE_DRAFT_TOOLTIP =
-  'Enter a problem title to save as draft.';
+export const SAVE_DRAFT_TOOLTIP = 'Enter a problem title to save as draft.';
 
 type SaveDraftButtonProps = {
   canSave: boolean;
   isSaving: boolean;
   disabled?: boolean;
+  isMobile?: boolean;
   onSave: () => void;
 };
 
@@ -21,6 +17,7 @@ export function SaveDraftButton({
   canSave,
   isSaving,
   disabled = false,
+  isMobile = false,
   onSave,
 }: SaveDraftButtonProps) {
   if (isSaving) {
@@ -28,7 +25,7 @@ export function SaveDraftButton({
       <Button
         type="button"
         variant="outline"
-        className={outlineBtnClass}
+        className={cn(outlineBtnClass, isMobile && 'w-full')}
         disabled
         isLoading
       >
@@ -42,7 +39,7 @@ export function SaveDraftButton({
       <Button
         type="button"
         variant="outline"
-        className={outlineBtnClass}
+        className={cn(outlineBtnClass, isMobile && 'w-full')}
         onClick={onSave}
       >
         Save as draft
@@ -54,11 +51,11 @@ export function SaveDraftButton({
     return (
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="inline-flex">
+          <span className={cn('inline-flex', isMobile && 'w-full')}>
             <Button
               type="button"
               variant="outline"
-              className={outlineBtnClass}
+              className={cn(outlineBtnClass, isMobile && 'w-full')}
               disabled
               tabIndex={-1}
             >
@@ -75,7 +72,7 @@ export function SaveDraftButton({
     <Button
       type="button"
       variant="outline"
-      className={outlineBtnClass}
+      className={cn(outlineBtnClass, isMobile && 'w-full')}
       disabled
     >
       Save as draft

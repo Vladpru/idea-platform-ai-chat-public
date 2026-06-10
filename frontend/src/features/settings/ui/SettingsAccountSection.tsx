@@ -2,8 +2,16 @@ import { useProfileView } from '@/features/profile/hooks/use-profile-view';
 import { ProfileDisplayPanel } from '@/features/profile/ui/account/ProfileDisplayPanel';
 import { ProfileEditPanel } from '@/features/profile/ui/account/ProfileEditPanel';
 import { Skeleton } from '@/shared/ui/skeleton';
+import { useEffect, useState } from 'react';
+import { ConfirmModal } from '@/shared/ui/confirm-modal';
 
-export function SettingsAccountSection() {
+type SettingsAccountSectionProps = {
+  onDirtyChange?: (isDirty: boolean) => void;
+};
+
+export function SettingsAccountSection({
+  onDirtyChange,
+}: SettingsAccountSectionProps) {
   const {
     user,
     isProfileLoading,
@@ -21,6 +29,22 @@ export function SettingsAccountSection() {
     removeMutation,
     busy,
   } = useProfileView();
+
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const isDirty = form.formState.isDirty;
+
+  useEffect(() => {
+    onDirtyChange?.(isEditing && isDirty);
+    return () => onDirtyChange?.(false);
+  }, [isEditing, isDirty, onDirtyChange]);
+
+  const handleCancelEditClick = () => {
+    if (isDirty) {
+      setShowCancelConfirm(true);
+    } else {
+      cancelEdit();
+    }
+  };
 
   if (isProfileLoading && !user) {
     return (
@@ -65,7 +89,7 @@ export function SettingsAccountSection() {
             onPickAvatar={onPickAvatar}
             openFilePicker={openFilePicker}
             onSaveEdit={onSaveEdit}
-            onCancelEdit={cancelEdit}
+            onCancelEdit={handleCancelEditClick}
             onRemoveAvatar={async () => {
               await removeMutation.mutateAsync();
             }}
@@ -76,6 +100,19 @@ export function SettingsAccountSection() {
           />
         )}
       </div>
+
+      <ConfirmModal
+        open={showCancelConfirm}
+        onOpenChange={setShowCancelConfirm}
+        title="Discard Changes"
+        description="Are you sure you want to cancel editing? All your unsaved changes will be lost."
+        confirmLabel="Discard"
+        cancelLabel="Stay"
+        onConfirm={() => {
+          cancelEdit();
+          setShowCancelConfirm(false);
+        }}
+      />
     </section>
   );
 }

@@ -1,6 +1,7 @@
 import { NotificationDropdown } from '@/features/notifications/ui/NotificationDropdown';
 import { useUnreadNotificationCount } from '@/features/notifications/hooks/use-notifications';
 import { HEADER_ACTION_BUTTON_CLASS } from '@/widgets/header/lib/header-action-button-class';
+import { useLocation } from '@tanstack/react-router';
 import { Bell, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -14,9 +15,15 @@ import {
 
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
+  const location = useLocation();
   const isMobile = useMediaQuery('(max-width: 639px)');
   const { data } = useUnreadNotificationCount();
   const unreadCount = data?.count ?? 0;
+
+  useEffect(() => {
+    setOpen(false);
+    document.body.style.pointerEvents = '';
+  }, [location.pathname]);
 
   useEffect(() => {
     if (open && isMobile) {

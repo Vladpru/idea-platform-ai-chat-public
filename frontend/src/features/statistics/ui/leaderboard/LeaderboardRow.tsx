@@ -24,7 +24,7 @@ export function LeaderboardRow({ rank, entry }: LeaderboardRowProps) {
           search={{ tab: 'all' }}
           className="hover:bg-brand-gray-100 group flex items-center gap-3 rounded-lg p-1 transition-colors"
         >
-          <li className="border-brand-gray-200 hover:bg-brand-gray-50 flex cursor-pointer items-center gap-4 border-b px-5 py-4 transition-colors last:border-b-0 sm:px-6">
+          <li className="border-brand-gray-200 hover:bg-brand-gray-100 flex cursor-pointer items-center gap-4 border-b px-5 py-4 transition-colors last:border-b-0 sm:px-6">
             <span className="text-brand-gray-500 w-6 shrink-0 text-sm font-semibold tabular-nums">
               {rank}.
             </span>

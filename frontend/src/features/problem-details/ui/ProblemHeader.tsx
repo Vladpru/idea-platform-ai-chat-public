@@ -26,6 +26,7 @@ import {
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
 import { StageChevronBadge } from '@/shared/ui/stage-chevron-badge';
+import { useMediaQuery } from '@/shared/hooks/use-media-query';
 
 type ProblemHeaderProps = {
   problem: ProblemDetails;
@@ -57,13 +58,15 @@ function ManageDropdown({
   onDeleteClick: () => void;
 }) {
   const navigate = useNavigate();
+  const isMobile = useMediaQuery('(max-width: 768px)');
+  const [open, setOpen] = useState(false);
 
   if (!isAuthor) {
     return null;
   }
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button
           type="button"
@@ -75,10 +78,22 @@ function ManageDropdown({
           )}
         >
           Manage
-          <ChevronDown className="size-4" aria-hidden />
+          <ChevronDown
+            className={cn(
+              'size-4 transition-transform duration-200',
+              open && 'rotate-180',
+            )}
+            aria-hidden
+          />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-44 rounded p-2">
+      <DropdownMenuContent
+        align={isMobile ? 'start' : 'end'}
+        className={cn(
+          'rounded p-2',
+          isMobile ? 'w-[calc(100vw-2rem)] max-w-xs' : 'w-44',
+        )}
+      >
         <DropdownMenuItem
           className="focus:bg-brand-blue-700/10 hover:bg-brand-blue-700/10 cursor-pointer px-3 py-2 text-sm font-normal"
           onSelect={event => {
@@ -174,73 +189,84 @@ export function ProblemHeader({
       >
         <div className="flex flex-col gap-4 pb-4 shadow-none md:flex-row md:items-start md:justify-between">
           <div className="min-w-0 flex-1 space-y-4">
-            <h1 className={cn(pageTitleClass, 'text-brand-black normal-case')}>
+            <h1
+              className={cn(
+                pageTitleClass,
+                'text-brand-black min-w-0 break-words normal-case',
+              )}
+            >
               {title}
             </h1>
 
             <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-6 md:gap-8">
               <div className="flex flex-wrap items-center gap-4 sm:gap-6 md:gap-8">
-              {problem.team.length > 0 ? (
-                <button
-                  type="button"
-                  className="hover:bg-brand-gray-100/80 -m-1 flex cursor-pointer items-center gap-1.5 rounded-md p-1 transition-colors outline-none"
-                  aria-label="View team members"
-                  onClick={onTeamClick}
-                >
-                  <span className={metadataLabelClass}>Team</span>
-                  <AvatarGroup aria-label="Team members">
-                    {problem.team.slice(0, 4).map(member => (
-                      <Avatar
-                        key={member.id}
-                        size="sm"
-                        className="ring-card dark:ring-none ring-2"
-                        title={member.name}
-                      >
-                        {member.avatarUrl ? (
-                          <AvatarImage
-                            src={member.avatarUrl}
-                            alt={member.name}
-                          />
-                        ) : null}
-                        <AvatarFallback className="bg-brand-gray-200 text-brand-gray-800 text-[10px] font-semibold">
-                          {getInitials(member.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                    ))}
-                    {problem.team.length > 4 ? (
-                      <Avatar
-                        size="sm"
-                        className="flex items-center justify-center bg-slate-700 ring-2 ring-white"
-                      >
-                        <span className="text-[11px] font-bold tracking-tight text-white">
-                          +{problem.team.length - 4}
-                        </span>
-                      </Avatar>
-                    ) : null}
-                  </AvatarGroup>
-                </button>
-              ) : null}
+                {problem.team.length > 0 ? (
+                  <button
+                    type="button"
+                    className="hover:bg-brand-gray-100/80 -m-1 flex cursor-pointer items-center gap-1.5 rounded-md p-1 transition-colors outline-none"
+                    aria-label="View team members"
+                    onClick={onTeamClick}
+                  >
+                    <span className={metadataLabelClass}>Team</span>
+                    <AvatarGroup aria-label="Team members">
+                      {problem.team.slice(0, 4).map(member => (
+                        <Avatar
+                          key={member.id}
+                          size="sm"
+                          className="ring-card dark:ring-none ring-2"
+                          title={member.name}
+                        >
+                          {member.avatarUrl ? (
+                            <AvatarImage
+                              src={member.avatarUrl}
+                              alt={member.name}
+                            />
+                          ) : null}
+                          <AvatarFallback className="bg-brand-gray-200 text-brand-gray-800 text-[10px] font-semibold">
+                            {getInitials(member.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                      ))}
+                      {problem.team.length > 4 ? (
+                        <Avatar
+                          size="sm"
+                          className="flex items-center justify-center bg-slate-700 ring-2 ring-white"
+                        >
+                          <span className="text-[11px] font-bold tracking-tight text-white">
+                            +{problem.team.length - 4}
+                          </span>
+                        </Avatar>
+                      ) : null}
+                    </AvatarGroup>
+                  </button>
+                ) : null}
 
-              <StageChevronBadge stage={problem.stage} />
+                <StageChevronBadge stage={problem.stage} />
               </div>
 
               {!isCompact ? (
-                <EntityLiveChatAction
-                  entityKind="PROBLEM"
-                  entityId={problem.id}
-                  viewer={problem.viewer}
-                />
+                <div className="grid w-full grid-cols-1 gap-2 sm:w-auto md:flex md:flex-row md:items-center">
+                  <div className="order-1 w-full md:order-2 md:w-auto">
+                    <ManageDropdown
+                      isAuthor={isAuthor}
+                      isCompact={false}
+                      isDraft={isDraft}
+                      problemId={problem.id}
+                      onDeleteClick={() => setDeleteModalOpen(true)}
+                    />
+                  </div>
+
+                  <div className="mdContext order-2 flex w-full justify-stretch *:w-full md:order-1 md:w-auto">
+                    <EntityLiveChatAction
+                      entityKind="PROBLEM"
+                      entityId={problem.id}
+                      viewer={problem.viewer}
+                    />
+                  </div>
+                </div>
               ) : null}
             </div>
           </div>
-
-          <ManageDropdown
-            isAuthor={isAuthor}
-            isCompact={false}
-            isDraft={isDraft}
-            problemId={problem.id}
-            onDeleteClick={() => setDeleteModalOpen(true)}
-          />
         </div>
       </motion.div>
 
