@@ -17,6 +17,7 @@ const STAGE_VALUES = ['active', 'completed', 'archived'] as const;
 export const problemsSearchSchema = z.object({
   sort: z.enum(SORT_VALUES).catch('newest'),
   stage: z.enum(STAGE_VALUES).optional().catch(undefined),
+  feedOnly: z.boolean().optional().catch(undefined),
 });
 
 export type ProblemsSearchParams = z.infer<typeof problemsSearchSchema>;
