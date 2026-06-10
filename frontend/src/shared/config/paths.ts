@@ -19,6 +19,7 @@ export const ROUTES = {
   statistics: '/statistics',
   statisticsLeaderboard: '/statistic/leaderboard',
   profile: '/profile',
+  profileById: (id: string) => `/profile/${id}`,
   settings: '/settings',
   settingsNotifications: '/settings/notifications',
   profileIdeas: '/profile/ideas',

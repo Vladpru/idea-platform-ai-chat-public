@@ -10,6 +10,7 @@ export type IdeasListParams = {
   limit?: number;
   stage?: ApiStage;
   sort?: IdeaSortOption;
+  feedOnly?: boolean;
 };
 
 export type IdeasFeedMeta = {
