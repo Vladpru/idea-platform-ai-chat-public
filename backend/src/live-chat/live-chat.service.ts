@@ -3,9 +3,12 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 import { EntityTarget } from '../entity-visibility/entity-target.enum';
 import { EntityVisibilityService } from '../entity-visibility/entity-visibility.service';
+import { NOTIFICATION_EVENTS } from '../notification/events/notification-event-names';
+import type { DirectMessageReceivedNotificationEvent } from '../notification/events/notification.events';
 import { GetLiveChatMessagesQueryDto } from './dto/get-live-chat-messages-query.dto';
 import { LiveChatRateLimitService } from './live-chat-rate-limit.service';
 import {
@@ -17,11 +20,15 @@ import {
   LIVE_CHAT_USER_NOT_FOUND,
 } from './live-chat.constants';
 import {
+  formatAuthorDisplayName,
   toLiveChatMessageResponse,
   toLiveChatRoomResponse,
   toParticipantTeam,
 } from './live-chat.mapper';
-import type { LiveChatRoomRecord } from './live-chat.records';
+import type {
+  LiveChatMessageRecord,
+  LiveChatRoomRecord,
+} from './live-chat.records';
 import { LiveChatRepository } from './live-chat.repository';
 import type {
   LiveChatMessageDto,
@@ -36,6 +43,7 @@ export class LiveChatService {
     private readonly liveChatRepository: LiveChatRepository,
     private readonly entityVisibility: EntityVisibilityService,
     private readonly rateLimit: LiveChatRateLimitService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async listRooms(userId: string): Promise<LiveChatRoomListResponse> {
@@ -216,13 +224,15 @@ export class LiveChatService {
       );
     }
 
-    await this.getAccessibleRoom(roomId, userId);
+    const room = await this.getAccessibleRoom(roomId, userId);
 
     const message = await this.liveChatRepository.createMessage({
       roomId,
       authorId: userId,
       content: trimmedContent,
     });
+
+    this.emitDirectMessageNotifications(room, message, userId);
 
     return toLiveChatMessageResponse(message);
   }
@@ -238,6 +248,49 @@ export class LiveChatService {
     const lastMessage = await this.liveChatRepository.findLastMessage(room.id);
     const team = await this.getRoomTeam(room);
     return toLiveChatRoomResponse(room, userId, lastMessage, team);
+  }
+
+  private emitDirectMessageNotifications(
+    room: LiveChatRoomRecord,
+    message: LiveChatMessageRecord,
+    senderId: string,
+  ): void {
+    if (room.ideaId || room.problemId || room.participants.length === 0) {
+      return;
+    }
+
+    const actorName = formatAuthorDisplayName(message.author);
+    const contentSnippet = this.toNotificationSnippet(message.content);
+
+    for (const participant of room.participants) {
+      const recipientUserId = participant.user.id;
+      if (recipientUserId === senderId) {
+        continue;
+      }
+
+      const event: DirectMessageReceivedNotificationEvent = {
+        recipientUserId,
+        roomId: room.id,
+        messageId: message.id,
+        actorId: senderId,
+        actorName,
+        contentSnippet,
+      };
+
+      this.eventEmitter.emit(
+        NOTIFICATION_EVENTS.DIRECT_MESSAGE_RECEIVED,
+        event,
+      );
+    }
+  }
+
+  private toNotificationSnippet(content: string, maxLength = 120): string {
+    const normalized = content.replace(/\s+/g, ' ').trim();
+    if (normalized.length <= maxLength) {
+      return normalized;
+    }
+
+    return `${normalized.slice(0, maxLength).trimEnd()}…`;
   }
 
   private async getRoomTeam(room: LiveChatRoomRecord) {

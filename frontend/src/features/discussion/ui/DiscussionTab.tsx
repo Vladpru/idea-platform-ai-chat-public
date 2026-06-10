@@ -1,7 +1,5 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
-
 import type {
   CommentSort,
   DiscussionEntityType,
@@ -9,13 +7,15 @@ import type {
 import { useCommentsInfiniteQuery } from '@/features/discussion/hooks/use-comments-infinite-query';
 import { useScrollToComment } from '@/features/discussion/hooks/use-scroll-to-comment';
 import { useDiscussionUiStore } from '@/features/discussion/model/discussion-ui-store';
-import { DashboardControls } from '@/shared/dashboard';
 import { CommentInputArea } from '@/features/discussion/ui/CommentInputArea';
 import { CommentList } from '@/features/discussion/ui/CommentList';
 import { ReplyFromSearchEffect } from '@/features/discussion/ui/ReplyFromSearchEffect';
 import { ReplyProvider } from '@/features/discussion/ui/ReplyProvider';
 import { Route as IdeaDetailsRoute } from '@/routes/_auth/ideas/$ideaId';
 import { Route as ProblemDetailsRoute } from '@/routes/_auth/problems/$problemId';
+import { useCallback, useMemo } from 'react';
+
+import { DashboardControls } from '@/shared/dashboard';
 import { cn } from '@/shared/lib/utils';
 
 const COMMENT_SORT_OPTIONS: { label: string; value: CommentSort }[] = [
@@ -45,7 +45,7 @@ function useIdeaDiscussionCommentSort() {
   const onSortChange = useCallback(
     (nextSort: CommentSort) => {
       void navigate({
-        search: { sort: nextSort },
+        search: prev => ({ ...prev, sort: nextSort }),
         replace: true,
       });
     },
@@ -63,7 +63,7 @@ function useProblemDiscussionCommentSort() {
   const onSortChange = useCallback(
     (nextSort: CommentSort) => {
       void navigate({
-        search: { sort: nextSort },
+        search: prev => ({ ...prev, sort: nextSort }),
         replace: true,
       });
     },

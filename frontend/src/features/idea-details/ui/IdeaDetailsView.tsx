@@ -328,6 +328,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
       to: '/ideas/$ideaId',
       params: { ideaId },
       search: {
+        tab: 'discussion',
         ...(discussionSort ? { sort: discussionSort } : {}),
         ...(isEditSearch ? { edit: isEditSearch } : {}),
         ...(showUpdatedSuccess ? { updated: showUpdatedSuccess } : {}),

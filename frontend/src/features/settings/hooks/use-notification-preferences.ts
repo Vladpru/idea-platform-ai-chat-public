@@ -1,8 +1,6 @@
 import {
   fetchCurrentUser,
-  mergeCurrentUser,
   type CurrentUser,
-  type UserPublic,
 } from '@/features/profile/api/profile.api';
 import { updateNotificationPreferences } from '@/features/settings/api/notification-preferences.api';
 import {

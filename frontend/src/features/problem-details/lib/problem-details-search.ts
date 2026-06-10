@@ -14,6 +14,6 @@ export const problemDetailsSearchSchema = discussionSearchSchema
   .extend({
     updated: booleanSearchParamSchema,
   })
-  .partial({ updated: true });
+  .partial();
 
 export type ProblemDetailsSearch = z.infer<typeof problemDetailsSearchSchema>;

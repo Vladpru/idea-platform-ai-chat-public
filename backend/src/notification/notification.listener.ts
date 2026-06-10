@@ -4,6 +4,7 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { NOTIFICATION_EVENTS } from './events/notification-event-names';
 import type {
   CommentCreatedNotificationEvent,
+  DirectMessageReceivedNotificationEvent,
   FollowUpRequiredNotificationEvent,
   IdeaStatusChangedNotificationEvent,
   ProblemStatusChangedNotificationEvent,
@@ -221,6 +222,24 @@ export class NotificationListener {
         sourceEntityTitle: event.sourceEntityTitle,
         matchedEntityId: event.matchedEntityId,
         matchedEntityTitle: event.matchedEntityTitle,
+      },
+    });
+  }
+
+  @OnEvent(NOTIFICATION_EVENTS.DIRECT_MESSAGE_RECEIVED, { async: true })
+  async handleDirectMessageReceived(
+    event: DirectMessageReceivedNotificationEvent,
+  ): Promise<void> {
+    await this.dispatchService.dispatch({
+      recipientUserId: event.recipientUserId,
+      preferenceKey: 'directMessages',
+      notificationType: NOTIFICATION_EVENTS.DIRECT_MESSAGE_RECEIVED,
+      payload: {
+        roomId: event.roomId,
+        messageId: event.messageId,
+        actorId: event.actorId,
+        actorName: event.actorName,
+        contentSnippet: event.contentSnippet,
       },
     });
   }

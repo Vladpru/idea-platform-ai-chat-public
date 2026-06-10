@@ -27,7 +27,7 @@ export function toLiveChatAuthorResponse(
   };
 }
 
-function formatAuthorDisplayName(author: LiveChatAuthorRecord): string {
+export function formatAuthorDisplayName(author: LiveChatAuthorRecord): string {
   const parts = [author.firstName, author.lastName].filter(
     (part): part is string => Boolean(part?.trim()),
   );

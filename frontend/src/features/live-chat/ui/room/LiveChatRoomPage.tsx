@@ -62,6 +62,7 @@ export function LiveChatRoomPage({ roomId }: LiveChatRoomPageProps) {
                       ? { ideaId: room.entity.id }
                       : { problemId: room.entity.id }
                   }
+                  search={{}}
                   className="text-brand-orange mt-2 inline-block text-sm hover:underline"
                 >
                   View {room.entity.type === 'ideas' ? 'idea' : 'problem'}

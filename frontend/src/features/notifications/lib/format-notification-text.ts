@@ -42,6 +42,8 @@ export function formatNotificationText(
       return `A new problem "${matchedEntityTitle || title}" may be similar to your "${sourceEntityTitle || title}".`;
     case 'followup.required':
       return `Your ${entityType} draft "${entityTitle || title}" has been inactive. Consider updating or publishing it.`;
+    case 'direct.message.received':
+      return `${actorName} sent you a message: "${contentSnippet}"`;
     case 'NEW_IDEA':
       return `${actorName} published a new idea "${ideaTitle || title}".`;
     case 'NEW_PROBLEM':

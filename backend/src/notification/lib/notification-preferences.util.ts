@@ -13,6 +13,7 @@ const PREFERENCE_KEYS: NotificationPreferenceKey[] = [
   'newComments',
   'assignedIdeasAndProblems',
   'followUps',
+  'directMessages',
 ];
 
 export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferencesMap = {
@@ -23,6 +24,7 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferencesMap = {
   newComments: { inApp: true, email: true },
   assignedIdeasAndProblems: { inApp: false, email: false },
   followUps: { inApp: true, email: true },
+  directMessages: { inApp: true, email: true },
 };
 
 function isChannelPreferences(

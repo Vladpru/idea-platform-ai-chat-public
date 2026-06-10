@@ -7,7 +7,8 @@ export type NotificationEmailPreferenceKey =
   | 'newSupporters'
   | 'newComments'
   | 'assignedIdeasAndProblems'
-  | 'followUps';
+  | 'followUps'
+  | 'directMessages';
 
 export type NotificationEmailContent = {
   subject: string;

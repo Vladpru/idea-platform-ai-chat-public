@@ -19,6 +19,10 @@ export type NotificationNavigationTarget =
       to: '/problems/$problemId';
       params: { problemId: string };
       search?: DiscussionReplySearch;
+    }
+  | {
+      to: '/live-chats/$roomId';
+      params: { roomId: string };
     };
 
 function ideaTarget(
@@ -71,6 +75,13 @@ export function resolveNotificationNavigationTarget(
 
   if (type === 'NEW_PROBLEM' && problemId) {
     return problemTarget(problemId);
+  }
+
+  if (type === 'direct.message.received') {
+    const roomId = readString(payload, 'roomId');
+    if (roomId) {
+      return { to: '/live-chats/$roomId', params: { roomId } };
+    }
   }
 
   if (type === 'comment.created') {

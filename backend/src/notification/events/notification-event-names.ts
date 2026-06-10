@@ -13,6 +13,7 @@ export const NOTIFICATION_EVENTS = {
   PROBLEM_ASSIGNED: 'problem.assigned',
   NEW_IDEA: 'NEW_IDEA',
   NEW_PROBLEM: 'NEW_PROBLEM',
+  DIRECT_MESSAGE_RECEIVED: 'direct.message.received',
 } as const;
 
 export type NotificationEventName =

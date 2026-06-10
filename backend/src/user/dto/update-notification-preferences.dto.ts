@@ -64,4 +64,10 @@ export class UpdateNotificationPreferencesDto {
   @ValidateNested()
   @Type(() => NotificationChannelPreferencesDto)
   followUps?: NotificationChannelPreferencesDto;
+
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => NotificationChannelPreferencesDto)
+  directMessages?: NotificationChannelPreferencesDto;
 }

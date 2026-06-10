@@ -96,6 +96,7 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
       to: '/problems/$problemId',
       params: { problemId },
       search: {
+        tab: 'discussion',
         ...(discussionSort ? { sort: discussionSort } : {}),
         ...(showUpdatedSuccess ? { updated: showUpdatedSuccess } : {}),
       },

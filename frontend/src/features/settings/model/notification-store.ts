@@ -8,7 +8,8 @@ export type NotificationKey =
   | 'newSupporters'
   | 'newComments'
   | 'assignedIdeasAndProblems'
-  | 'followUps';
+  | 'followUps'
+  | 'directMessages';
 
 export type NotificationChannels = Record<
   NotificationKey,
@@ -33,6 +34,7 @@ const KEYS: NotificationKey[] = [
   'newComments',
   'assignedIdeasAndProblems',
   'followUps',
+  'directMessages',
 ];
 
 const DEFAULT_CHANNELS: NotificationChannels = {
@@ -43,6 +45,7 @@ const DEFAULT_CHANNELS: NotificationChannels = {
   newComments: { inApp: true, email: true },
   assignedIdeasAndProblems: { inApp: true, email: true },
   followUps: { inApp: true, email: true },
+  directMessages: { inApp: true, email: true },
 };
 
 export const useNotificationStore = create<NotificationState>()(

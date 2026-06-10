@@ -5,7 +5,8 @@ export type NotificationPreferenceKey =
   | 'newSupporters'
   | 'newComments'
   | 'assignedIdeasAndProblems'
-  | 'followUps';
+  | 'followUps'
+  | 'directMessages';
 
 export type NotificationChannelPreferences = {
   inApp: boolean;
@@ -118,4 +119,13 @@ export type AssignmentNotificationEvent = {
   entityTitle: string;
   assignerId: string;
   assignerName: string;
+};
+
+export type DirectMessageReceivedNotificationEvent = {
+  recipientUserId: string;
+  roomId: string;
+  messageId: string;
+  actorId: string;
+  actorName: string;
+  contentSnippet: string;
 };

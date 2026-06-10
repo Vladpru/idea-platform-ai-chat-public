@@ -43,11 +43,18 @@ export function NotificationItem({
 
     if (target) {
       onNavigate?.();
-      void navigate({
-        to: target.to,
-        params: target.params,
-        search: target.search,
-      });
+      if (target.to === '/live-chats/$roomId') {
+        void navigate({
+          to: target.to,
+          params: target.params,
+        });
+      } else {
+        void navigate({
+          to: target.to,
+          params: target.params,
+          search: target.search,
+        });
+      }
     }
   };
 

@@ -21,6 +21,7 @@ export type NotificationPreferencesMap = {
   newComments: NotificationChannelPreferences;
   assignedIdeasAndProblems: NotificationChannelPreferences;
   followUps: NotificationChannelPreferences;
+  directMessages: NotificationChannelPreferences;
 };
 
 /** Matches backend `UserPublic` (JSON dates). */
