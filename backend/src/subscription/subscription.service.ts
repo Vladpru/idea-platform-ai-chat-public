@@ -8,8 +8,13 @@ import {
 import { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
+import { shouldUseSubscriberCountCache } from '../shared/context/request-context';
 
 const SUBSCRIBER_COUNT_TTL = 24 * 60 * 60;
+
+type GetSubscriberCountOptions = {
+  useCache?: boolean;
+};
 
 @Injectable()
 export class SubscriptionService {
@@ -100,38 +105,65 @@ export class SubscriptionService {
     return row !== null;
   }
 
-  async getSubscriberCount(userId: string): Promise<number> {
-    const cacheKey = this.subscriberCountKey(userId);
-    const cached = await this.redis.get(cacheKey);
+  async getSubscriberCount(
+    userId: string,
+    options?: GetSubscriberCountOptions,
+  ): Promise<number> {
+    const useCache =
+      options?.useCache ?? shouldUseSubscriberCountCache();
 
-    if (cached !== null) {
-      const parsed = Number.parseInt(cached, 10);
-      if (!Number.isNaN(parsed)) {
-        return parsed;
+    if (useCache) {
+      const cacheKey = this.subscriberCountKey(userId);
+
+      try {
+        const cached = await this.redis.get(cacheKey);
+
+        if (cached !== null) {
+          const parsed = Number.parseInt(cached, 10);
+          if (!Number.isNaN(parsed)) {
+            return parsed;
+          }
+        }
+      } catch {
+        return this.countSubscribersFromDatabase(userId);
       }
+
+      const existingFetch = this.pendingFetches.get(userId);
+      if (existingFetch) {
+        return existingFetch;
+      }
+
+      const dbFetchPromise = this.countSubscribersFromDatabase(userId)
+        .then(async count => {
+          try {
+            await this.redis.set(
+              cacheKey,
+              String(count),
+              SUBSCRIBER_COUNT_TTL,
+            );
+          } catch {
+            return count;
+          } finally {
+            this.pendingFetches.delete(userId);
+          }
+          return count;
+        })
+        .catch(error => {
+          this.pendingFetches.delete(userId);
+          throw error;
+        });
+
+      this.pendingFetches.set(userId, dbFetchPromise);
+      return dbFetchPromise;
     }
 
-    const existingFetch = this.pendingFetches.get(userId);
-    if (existingFetch) {
-      return existingFetch;
-    }
+    return this.countSubscribersFromDatabase(userId);
+  }
 
-    const dbFetchPromise = this.prisma.subscription
-      .count({
-        where: { followingId: userId },
-      })
-      .then(async count => {
-        await this.redis.set(cacheKey, String(count), SUBSCRIBER_COUNT_TTL);
-        this.pendingFetches.delete(userId);
-        return count;
-      })
-      .catch(error => {
-        this.pendingFetches.delete(userId);
-        throw error;
-      });
-
-    this.pendingFetches.set(userId, dbFetchPromise);
-    return dbFetchPromise;
+  private async countSubscribersFromDatabase(userId: string): Promise<number> {
+    return this.prisma.subscription.count({
+      where: { followingId: userId },
+    });
   }
 
   private subscriberCountKey(userId: string): string {

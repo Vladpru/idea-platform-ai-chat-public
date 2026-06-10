@@ -1,6 +1,7 @@
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import { fetchCurrentUser } from '@/features/profile/api/profile.api';
 import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
 
 /**
  * Keeps persisted auth session in sync with the database profile
@@ -9,19 +10,31 @@ import { useQuery } from '@tanstack/react-query';
 export function AuthSessionSync() {
   const accessToken = useAuthSessionStore(s => s.accessToken);
 
-  useQuery({
+  const { data: remoteUser } = useQuery({
     queryKey: ['users', 'me'],
-    queryFn: async () => {
-      const user = await fetchCurrentUser();
-      const token = useAuthSessionStore.getState().accessToken;
-      if (token) {
-        useAuthSessionStore.getState().setSession(user, token);
-      }
-      return user;
-    },
+    queryFn: fetchCurrentUser,
     enabled: Boolean(accessToken),
     staleTime: 60_000,
   });
+
+  useEffect(() => {
+    if (!remoteUser) return;
+
+    const { accessToken: token, user: localUser } =
+      useAuthSessionStore.getState();
+    if (!token) return;
+
+    const unchanged =
+      localUser?.id === remoteUser.id &&
+      localUser.email === remoteUser.email &&
+      localUser.firstName === (remoteUser.firstName ?? '') &&
+      localUser.lastName === (remoteUser.lastName ?? '') &&
+      localUser.picture === (remoteUser.avatarUrl ?? null);
+
+    if (unchanged) return;
+
+    useAuthSessionStore.getState().setSession(remoteUser, token);
+  }, [remoteUser]);
 
   return null;
 }
