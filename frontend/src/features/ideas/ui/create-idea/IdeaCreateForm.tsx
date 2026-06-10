@@ -43,6 +43,7 @@ import { FieldError, FieldGroup, FieldLabel } from './Fields';
 import { IdeaCreateAiAssistLink } from './IdeaCreateAiAssistLink';
 import { IdeaFilesField } from './IdeaFilesField';
 import ProblemSelect, { type ProblemSelectHandle } from './ProblemSelect';
+import { useMediaQuery } from '@/shared/hooks/use-media-query';
 
 const ALLOWED_MAIN_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 const INVALID_MAIN_IMAGE_TYPE_MESSAGE = 'Main image must be PNG, JPEG, or WEBP';
@@ -100,6 +101,8 @@ export function IdeaCreateForm({
     watch,
     formState: { errors },
   } = form;
+
+  const isMobile = useMediaQuery('(max-width: 768px)');
 
   const titleValue = watch('title') || '';
   const descriptionValue = watch('description') || '';
@@ -485,12 +488,12 @@ export function IdeaCreateForm({
           <FieldError message={errors.files?.message} />
         </FieldGroup>
 
-        <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
+        <div className="flex flex-col-reverse gap-3 pt-2 md:flex-row md:items-center md:justify-end">
           <button
             type="button"
             onClick={handleCancel}
             disabled={formBusy}
-            className="text-brand-orange hover:text-brand-orange-hover px-2 text-sm font-bold tracking-wide uppercase transition-colors disabled:opacity-50"
+            className="text-brand-orange hover:text-brand-orange-hover border-brand-orange rounded-md border py-2 text-sm font-bold tracking-wide uppercase transition-colors disabled:opacity-50 md:border-none md:px-2 md:py-0"
           >
             Cancel
           </button>
@@ -498,7 +501,7 @@ export function IdeaCreateForm({
             <Button
               type="button"
               variant="outline"
-              className={outlineBtnClass}
+              className={cn(outlineBtnClass, isMobile && 'w-full')}
               onClick={() => void handleSaveDraft()}
               disabled={formBusy}
               isLoading={isSavingDraft}
@@ -508,7 +511,7 @@ export function IdeaCreateForm({
           ) : null}
           <Button
             type="submit"
-            className={publishBtnClass}
+            className={cn(publishBtnClass, isMobile && 'w-full')}
             disabled={formBusy}
             isLoading={isPublishing}
           >

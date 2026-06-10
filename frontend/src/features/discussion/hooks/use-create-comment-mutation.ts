@@ -214,6 +214,7 @@ function buildOptimisticComment(params: {
     content: params.content,
     author: {
       id: params.author.id,
+      email: params.author.email,
       firstName: params.author.firstName || null,
       lastName: params.author.lastName || null,
       avatarUrl: params.author.picture,

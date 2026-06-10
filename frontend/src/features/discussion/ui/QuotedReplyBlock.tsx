@@ -50,14 +50,14 @@ export function QuotedReplyBlock({
   const authorName = formatUserDisplayName({
     firstName: quote.author!.firstName,
     lastName: quote.author!.lastName,
-    email: null,
+    email: quote.author!.email,
   });
 
   return (
     <div
       onClick={handleClick}
       className={cn(
-        'border-brand-dark-blue bg-brand-gray-50 mt-3 cursor-pointer rounded-r-md border-l-4 p-3 transition-colors hover:bg-brand-gray-100/80',
+        'border-brand-dark-blue bg-brand-gray-50 hover:bg-brand-gray-100/80 mt-3 cursor-pointer rounded-r-md border-l-4 p-3 transition-colors',
         className,
       )}
     >
@@ -129,7 +129,7 @@ export function QuotedReplyPreview({
   const authorName = formatUserDisplayName({
     firstName: quote.author!.firstName,
     lastName: quote.author!.lastName,
-    email: null,
+    email: quote.author!.email,
   });
 
   return (

@@ -6,62 +6,51 @@ import {
   patchTheme,
 } from '@/features/profile/api/profile.api';
 import { currentUserQueryKey } from '@/features/settings/hooks/use-notification-preferences';
+import {
+  preferenceToTheme,
+  themeToPreference,
+} from '@/shared/lib/theme-storage';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef } from 'react';
 import { useTheme } from '@/app/providers/theme-context';
 
-function clientThemeToPreference(theme: string): ThemePreference {
-  if (theme === 'dark') return 'DARK';
-  return 'LIGHT';
-}
-
-function preferenceToClientTheme(
-  pref: ThemePreference,
-): 'light' | 'dark' | 'system' {
-  if (pref === 'LIGHT') return 'light';
-  if (pref === 'DARK') return 'dark';
-  return 'light';
-}
-
-export function useThemeSync(themePreference: ThemePreference | undefined) {
+export function useThemeSync() {
   const queryClient = useQueryClient();
   const accessToken = useAuthSessionStore(s => s.accessToken);
+  const userId = useAuthSessionStore(s => s.user?.id);
+  const themePreference = useAuthSessionStore(s => s.user?.themePreference);
 
-  const { theme: localTheme, setTheme: setLocalTheme } = useTheme();
+  const { theme, setTheme: setContextTheme } = useTheme();
 
-  const lastSyncedPref = useRef<ThemePreference | undefined>(undefined);
-  const pendingLocalChange = useRef(false);
+  const lastPersistedPref = useRef<ThemePreference | undefined>(
+    themePreference,
+  );
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (pendingLocalChange.current) return;
+    lastPersistedPref.current = themePreference;
+  }, [themePreference]);
 
-    const effectivePref = themePreference ?? 'LIGHT';
-    if (lastSyncedPref.current === effectivePref) return;
-
-    lastSyncedPref.current = effectivePref;
-    const normalizedPref = preferenceToClientTheme(effectivePref);
-
-    if (localTheme !== normalizedPref) {
-      setLocalTheme(normalizedPref);
-    }
-  }, [themePreference, localTheme, setLocalTheme]);
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   const persistTheme = useCallback(
     (pref: ThemePreference) => {
       if (!useAuthSessionStore.getState().accessToken) {
-        pendingLocalChange.current = false;
         return;
       }
 
-      const fallbackPref = lastSyncedPref.current || 'LIGHT';
+      const fallbackPref = lastPersistedPref.current ?? 'SYSTEM';
 
       void patchTheme({ theme: pref })
         .then(user => {
-          const userId = useAuthSessionStore.getState().user?.id;
-          if (userId) {
+          const activeUserId = useAuthSessionStore.getState().user?.id;
+          if (activeUserId) {
             queryClient.setQueryData<CurrentUser>(
-              currentUserQueryKey(userId),
+              currentUserQueryKey(activeUserId),
               previous => mergeCurrentUser(previous, user),
             );
           }
@@ -69,18 +58,14 @@ export function useThemeSync(themePreference: ThemePreference | undefined) {
           if (token) {
             useAuthSessionStore.getState().setSession(user, token);
           }
-          lastSyncedPref.current = user.themePreference;
+          lastPersistedPref.current = user.themePreference;
         })
         .catch(error => {
-          setLocalTheme(preferenceToClientTheme(fallbackPref));
-
+          setContextTheme(preferenceToTheme(fallbackPref));
           console.error('Theme sync failed:', error);
-        })
-        .finally(() => {
-          pendingLocalChange.current = false;
         });
     },
-    [queryClient, setLocalTheme],
+    [queryClient, setContextTheme],
   );
 
   const debouncedPersist = useCallback(
@@ -93,27 +78,24 @@ export function useThemeSync(themePreference: ThemePreference | undefined) {
     [persistTheme],
   );
 
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, []);
-
-  const handleThemeChange = useCallback(
+  const setTheme = useCallback(
     (next: 'light' | 'dark' | 'system') => {
-      pendingLocalChange.current = true;
+      setContextTheme(next);
 
-      const resolved = next === 'system' ? 'light' : next;
-      setLocalTheme(resolved);
+      if (userId) {
+        useAuthSessionStore.setState(state => ({
+          user: state.user
+            ? { ...state.user, themePreference: themeToPreference(next) }
+            : null,
+        }));
+      }
 
       if (accessToken) {
-        debouncedPersist(clientThemeToPreference(resolved));
-      } else {
-        pendingLocalChange.current = false;
+        debouncedPersist(themeToPreference(next));
       }
     },
-    [accessToken, debouncedPersist, setLocalTheme],
+    [accessToken, debouncedPersist, setContextTheme, userId],
   );
 
-  return { theme: localTheme, setTheme: handleThemeChange };
+  return { theme, setTheme };
 }
