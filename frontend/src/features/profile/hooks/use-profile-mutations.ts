@@ -1,5 +1,6 @@
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
-import { useMutation } from '@tanstack/react-query';
+import { currentUserQueryKey } from '@/features/settings/hooks/use-notification-preferences';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { submitChangePassword } from '../api/change-password-api';
@@ -19,6 +20,8 @@ function applyUserToSession(user: UserPublic) {
 }
 
 export function usePatchUserMutation(userId: string | undefined) {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (payload: PatchUserPayload) => {
       if (!userId) throw new Error('Missing user id');
@@ -26,6 +29,7 @@ export function usePatchUserMutation(userId: string | undefined) {
     },
     onSuccess: user => {
       applyUserToSession(user);
+      queryClient.setQueryData(currentUserQueryKey, user);
       toast.success('Profile updated');
     },
     onError: () => {
@@ -35,10 +39,13 @@ export function usePatchUserMutation(userId: string | undefined) {
 }
 
 export function useUploadAvatarMutation() {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (file: File) => uploadMyAvatar(file),
     onSuccess: user => {
       applyUserToSession(user);
+      queryClient.setQueryData(currentUserQueryKey, user);
       toast.success('Photo updated');
     },
     onError: () => {
@@ -48,10 +55,13 @@ export function useUploadAvatarMutation() {
 }
 
 export function useRemoveAvatarMutation() {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: () => removeMyAvatar(),
     onSuccess: user => {
       applyUserToSession(user);
+      queryClient.setQueryData(currentUserQueryKey, user);
       toast.success('Photo removed');
     },
     onError: () => {
