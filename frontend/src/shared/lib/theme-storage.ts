@@ -68,11 +68,6 @@ export function writeStoredTheme(
   localStorage.setItem(getThemeStorageKey(userId), theme);
 }
 
-export function clearGuestStoredTheme(): void {
-  localStorage.removeItem(DEFAULT_THEME_STORAGE_KEY);
-  purgeLegacyThemeStorage();
-}
-
 export type RestoredAuthSession = {
   userId: string | null;
   themePreference: ThemePreference | null;

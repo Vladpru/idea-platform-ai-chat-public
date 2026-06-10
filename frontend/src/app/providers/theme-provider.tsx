@@ -1,7 +1,6 @@
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import {
   applyThemeToDocument,
-  clearGuestStoredTheme,
   readAuthSessionFromStorage,
   resolveActiveTheme,
   writeStoredTheme,
@@ -40,15 +39,17 @@ export function ThemeProvider({
     );
   });
 
+  const themeRef = useRef(theme);
+  themeRef.current = theme;
+
   useEffect(() => {
-    const wasAuthenticated = previousUserIdRef.current !== null;
-    const isAuthenticated = userId !== null;
-
-    if (wasAuthenticated && !isAuthenticated) {
-      clearGuestStoredTheme();
-    }
-
+    const previousUserId = previousUserIdRef.current;
     previousUserIdRef.current = userId;
+
+    if (previousUserId !== null && userId === null) {
+      writeStoredTheme(themeRef.current, null);
+      return;
+    }
 
     const resolved = resolveActiveTheme(userId, themePreference);
     setThemeState(resolved);
@@ -62,6 +63,7 @@ export function ThemeProvider({
   const setTheme = useCallback(
     (nextTheme: Theme) => {
       writeStoredTheme(nextTheme, userId);
+      writeStoredTheme(nextTheme, null);
       setThemeState(nextTheme);
       applyThemeToDocument(nextTheme);
     },
