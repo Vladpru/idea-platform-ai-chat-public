@@ -4,6 +4,9 @@ import { getStoredAuthToken } from '@/shared/lib/auth-token';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 import { io, type Socket } from 'socket.io-client';
+import { toast } from 'sonner';
+
+import { markAchievementsSeen } from '@/features/achievements/api/achievements.api';
 
 function getSocketBaseUrl(): string {
   const base = import.meta.env.VITE_API_URL;
@@ -17,6 +20,12 @@ function disconnectSocket(socket: Socket): void {
   socket.removeAllListeners();
   socket.disconnect();
 }
+
+type AchievementBadgePayload = {
+  key: string;
+  name: string;
+  iconPath: string;
+};
 
 export function useNotificationSocket(): void {
   const queryClient = useQueryClient();
@@ -47,11 +56,21 @@ export function useNotificationSocket(): void {
       });
     };
 
+    const handleAchievementUnlocked = (badge: AchievementBadgePayload) => {
+      toast(`Badge unlocked: ${badge.name}`, {
+        description: `You've earned the ${badge.name} badge!`,
+      });
+      void markAchievementsSeen();
+      void queryClient.invalidateQueries({ queryKey: ['achievements', 'me'] });
+    };
+
     socket.on('notification', handleNotification);
+    socket.on('achievement_unlocked', handleAchievementUnlocked);
     socketRef.current = socket;
 
     return () => {
       socket.off('notification', handleNotification);
+      socket.off('achievement_unlocked', handleAchievementUnlocked);
       disconnectSocket(socket);
       if (socketRef.current === socket) {
         socketRef.current = null;

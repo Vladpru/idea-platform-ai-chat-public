@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { OnEvent } from '@nestjs/event-emitter';
 import { JwtService } from '@nestjs/jwt';
 import {
   OnGatewayConnection,
@@ -10,6 +11,8 @@ import {
 import type { Server, Socket } from 'socket.io';
 
 import { PrismaService } from '../prisma/prisma.service';
+import { NOTIFICATION_EVENTS } from './events/notification-event-names';
+import type { AchievementUnlockedEvent } from './events/notification.events';
 import { resolveUserIdFromSocket } from './lib/ws-auth.util';
 import type { NotificationSignalEvent } from './types/notification.types';
 
@@ -85,6 +88,13 @@ export class NotificationGateway
   notifyUser(userId: string): void {
     const payload: NotificationSignalEvent = { type: 'NOTIFICATION_NEW' };
     this.server.to(this.userRoom(userId)).emit('notification', payload);
+  }
+
+  @OnEvent(NOTIFICATION_EVENTS.ACHIEVEMENT_UNLOCKED)
+  handleAchievementUnlocked(event: AchievementUnlockedEvent): void {
+    this.server
+      .to(this.userRoom(event.userId))
+      .emit('achievement_unlocked', event.badge);
   }
 
   private userRoom(userId: string): string {

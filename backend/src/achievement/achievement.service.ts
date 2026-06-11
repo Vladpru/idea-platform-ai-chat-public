@@ -1,5 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
+import { NOTIFICATION_EVENTS } from '../notification/events/notification-event-names';
+import type { AchievementUnlockedEvent } from '../notification/events/notification.events';
 import { AchievementRepository } from './achievement.repository';
 import type { UserAchievementDto } from './dto/user-achievement.dto';
 import {
@@ -13,7 +16,10 @@ import {
 export class AchievementService {
   private readonly logger = new Logger(AchievementService.name);
 
-  constructor(private readonly repo: AchievementRepository) {}
+  constructor(
+    private readonly repo: AchievementRepository,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   async checkAndUnlock(
     userId: string,
@@ -36,6 +42,15 @@ export class AchievementService {
 
       await this.repo.createUserAchievement(userId, achievement.id);
       this.logger.log(`Unlocked ${key} for user ${userId}`);
+      const payload: AchievementUnlockedEvent = {
+        userId,
+        badge: {
+          key: definition.key,
+          name: definition.name,
+          iconPath: definition.iconPath,
+        },
+      };
+      this.eventEmitter.emit(NOTIFICATION_EVENTS.ACHIEVEMENT_UNLOCKED, payload);
     } catch (error) {
       this.logger.error(
         `Failed to check/unlock ${key} for user ${userId}`,
@@ -62,6 +77,18 @@ export class AchievementService {
 
       await this.repo.createUserAchievement(userId, achievement.id, { month });
       this.logger.log(`Unlocked top_contributor (${month}) for user ${userId}`);
+      const definition = ACHIEVEMENT_DEFINITIONS.find(
+        d => d.key === 'top_contributor',
+      )!;
+      const payload: AchievementUnlockedEvent = {
+        userId,
+        badge: {
+          key: 'top_contributor',
+          name: definition.name,
+          iconPath: definition.iconPath,
+        },
+      };
+      this.eventEmitter.emit(NOTIFICATION_EVENTS.ACHIEVEMENT_UNLOCKED, payload);
     } catch (error) {
       this.logger.error(
         `Failed to unlock top_contributor for user ${userId}`,

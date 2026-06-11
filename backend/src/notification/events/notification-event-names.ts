@@ -14,6 +14,7 @@ export const NOTIFICATION_EVENTS = {
   NEW_IDEA: 'NEW_IDEA',
   NEW_PROBLEM: 'NEW_PROBLEM',
   DIRECT_MESSAGE_RECEIVED: 'direct.message.received',
+  ACHIEVEMENT_UNLOCKED: 'achievement.unlocked',
 } as const;
 
 export type NotificationEventName =
