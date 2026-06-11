@@ -46,7 +46,11 @@ export class StatisticsScoringRepository {
         COALESCE(COUNT(*) FILTER (WHERE category = 'views'), 0)::bigint AS views_count,
         COALESCE(SUM(points) FILTER (WHERE category = 'views'), 0)::bigint AS views_points,
         COALESCE(COUNT(*) FILTER (WHERE category = 'likes'), 0)::bigint AS likes_count,
-        COALESCE(SUM(points) FILTER (WHERE category = 'likes'), 0)::bigint AS likes_points
+        COALESCE(SUM(points) FILTER (WHERE category = 'likes'), 0)::bigint AS likes_points,
+        COALESCE(COUNT(*) FILTER (WHERE category = 'completedIdeas'), 0)::bigint AS completed_ideas_count,
+        COALESCE(SUM(points) FILTER (WHERE category = 'completedIdeas'), 0)::bigint AS completed_ideas_points,
+        COALESCE(COUNT(*) FILTER (WHERE category = 'badges'), 0)::bigint AS badges_count,
+        COALESCE(SUM(points) FILTER (WHERE category = 'badges'), 0)::bigint AS badges_points
       FROM activity
       WHERE user_id = ${userId}
     `;
@@ -77,6 +81,14 @@ export class StatisticsScoringRepository {
         count: Number(row?.likes_count ?? 0),
         points: Number(row?.likes_points ?? 0),
       },
+      completedIdeas: {
+        count: Number(row?.completed_ideas_count ?? 0),
+        points: Number(row?.completed_ideas_points ?? 0),
+      },
+      badges: {
+        count: Number(row?.badges_count ?? 0),
+        points: Number(row?.badges_points ?? 0),
+      },
     };
 
     const categories = SCORE_CATEGORY_DEFINITIONS.map(definition => {
@@ -105,11 +117,12 @@ export class StatisticsScoringRepository {
   ): Promise<StatisticsContributor[]> {
     const entries = await this.queryLeaderboardEntries(start, end, 5);
 
-    return entries.map(({ id, name, points, avatarUrl }) => ({
+    return entries.map(({ id, name, points, avatarUrl, achievements }) => ({
       id,
       name,
       points,
       avatarUrl,
+      achievements,
     }));
   }
 
@@ -133,7 +146,9 @@ export class StatisticsScoringRepository {
         COALESCE(SUM(points) FILTER (WHERE category = 'joinedProjects'), 0)::bigint AS joined_projects,
         COALESCE(SUM(points) FILTER (WHERE category = 'comments'), 0)::bigint AS comments,
         COALESCE(SUM(points) FILTER (WHERE category = 'views'), 0)::bigint AS views,
-        COALESCE(SUM(points) FILTER (WHERE category = 'likes'), 0)::bigint AS likes
+        COALESCE(SUM(points) FILTER (WHERE category = 'likes'), 0)::bigint AS likes,
+        COALESCE(SUM(points) FILTER (WHERE category = 'completedIdeas'), 0)::bigint AS completed_ideas,
+        COALESCE(SUM(points) FILTER (WHERE category = 'badges'), 0)::bigint AS badges
       FROM activity
       GROUP BY user_id
       HAVING SUM(points) > 0
@@ -172,6 +187,8 @@ export class StatisticsScoringRepository {
           comments: Number(row.comments),
           views: Number(row.views),
           likes: Number(row.likes),
+          completedIdeas: Number(row.completed_ideas),
+          badges: Number(row.badges),
         },
         achievements: [] as UserAchievementDto[],
       };

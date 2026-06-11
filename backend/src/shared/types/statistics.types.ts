@@ -41,6 +41,7 @@ export interface StatisticsContributor {
   name: string;
   points: number;
   avatarUrl: string | null;
+  achievements: UserAchievementDto[];
 }
 
 export interface LeaderboardBreakdown {
@@ -50,6 +51,8 @@ export interface LeaderboardBreakdown {
   comments: number;
   views: number;
   likes: number;
+  completedIdeas: number;
+  badges: number;
 }
 
 export interface LeaderboardEntry {
