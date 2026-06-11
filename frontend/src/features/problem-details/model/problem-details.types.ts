@@ -36,6 +36,11 @@ export type ProblemDetailsViewer = {
   canJoin: boolean;
 };
 
+export type ProblemDetailsMember = {
+  user: ProblemDetailsAuthor;
+  joinedAt: string;
+};
+
 export type ProblemDetailsTeamMember = {
   id: string;
   name: string;
@@ -72,6 +77,7 @@ export type ProblemDetails = {
   stageValue: ProblemStage | null;
   tags: string[];
   author: ProblemDetailsAuthor;
+  members: ProblemDetailsMember[];
   viewer: ProblemDetailsViewer;
   team: ProblemDetailsTeamMember[];
   attachments: ProblemDetailsAttachment[];

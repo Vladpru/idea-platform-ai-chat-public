@@ -13,6 +13,11 @@ export type ProblemViewerDto = {
   canJoin: boolean;
 };
 
+export type ProblemFormMember = {
+  user: ProblemFormAuthor;
+  joinedAt: string;
+};
+
 export type ProblemFormAuthor = {
   id: string;
   email: string;
@@ -87,6 +92,7 @@ export type ProblemFormResponse = {
   tags: ProblemFormTag[];
   attachments: ProblemMediaResponse[];
   author: ProblemFormAuthor;
+  members: ProblemFormMember[];
   viewer: ProblemViewerDto;
 };
 

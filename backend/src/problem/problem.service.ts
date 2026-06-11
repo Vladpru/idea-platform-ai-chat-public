@@ -29,8 +29,6 @@ import {
   resolveProblemRecipientUserIds,
 } from '../notification/lib/notification-integration.util';
 import { PrismaService } from '../prisma/prisma.service';
-import { buildStatusPublicationUpdate } from '../shared/lib/publication.util';
-import { SubscriberNotificationService } from '../subscription/subscriber-notification.service';
 import {
   deleteAllProblemMedia,
   findProblemMediaPublicIds,
@@ -41,6 +39,8 @@ import {
   deleteProblemTagsExcept,
   findProblemTagIds,
 } from '../prisma/problem-tag.queries';
+import { buildStatusPublicationUpdate } from '../shared/lib/publication.util';
+import { SubscriberNotificationService } from '../subscription/subscriber-notification.service';
 import { CreateProblemDto } from './dto/create-problem.dto';
 import { GetProblemsQueryDto } from './dto/get-problems-query.dto';
 import { MyProblemsQueryDto } from './dto/my-problems.dto';
@@ -600,14 +600,20 @@ export class ProblemService {
 
   private resolvePublicOrderBy(
     sort: GetProblemsQueryDto['sort'],
-  ): Prisma.ProblemOrderByWithRelationInput {
+  ):
+    | Prisma.ProblemOrderByWithRelationInput
+    | Prisma.ProblemOrderByWithRelationInput[] {
     switch (sort) {
       case 'oldest':
         return { publishedAt: 'asc' };
       case 'most-ideas-linked':
-        return { ideas: { _count: 'desc' } };
+        return [{ ideas: { _count: 'desc' } }, { publishedAt: 'desc' }];
       case 'most-viewed':
+        return [{ viewCount: 'desc' }, { publishedAt: 'desc' }];
       case 'most-popular':
+        return [{ likeCount: 'desc' }, { publishedAt: 'desc' }];
+      case 'comments':
+        return [{ comments: { _count: 'desc' } }, { publishedAt: 'desc' }];
       case 'newest':
       default:
         return { publishedAt: 'desc' };

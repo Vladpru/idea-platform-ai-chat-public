@@ -24,6 +24,7 @@ export const ALLOWED_COMMENT_ATTACHMENT_TYPES = new Set([
 
 export const COMMENT_AUTHOR_SELECT = {
   id: true,
+  email: true,
   firstName: true,
   lastName: true,
   avatarUrl: true,

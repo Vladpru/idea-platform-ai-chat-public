@@ -1,4 +1,5 @@
 import PolycodersLogo from '@/assets/svg/polycodersLogo.svg';
+import PolycodersLogoDark from '@/assets/svg/polycodersLogoWhiteText.svg';
 import { LoginForm } from '@/features/auth';
 import { Link } from '@tanstack/react-router';
 
@@ -14,7 +15,12 @@ export function LoginPage() {
               <img
                 src={PolycodersLogo}
                 alt="Polycoders Logo"
-                className="h-15 w-auto shrink-0 object-contain"
+                className="h-15 w-auto shrink-0 object-contain dark:hidden"
+              />
+              <img
+                src={PolycodersLogoDark}
+                alt="Polycoders Logo"
+                className="hidden h-15 w-auto shrink-0 object-contain dark:block"
               />
               <h1 className="text-brand-gray-900 mt-3 text-3xl font-bold tracking-tight uppercase">
                 Sign in
@@ -32,7 +38,7 @@ export function LoginPage() {
               Don&apos;t have an account?{' '}
               <Link
                 to="/register"
-                className="text-brand-dark-blue hover:text-brand-dark-blue/80 dark:text-brand-light-blue dark:hover:text-brand-light-blue/80 underline-none underline-none font-semibold hover:underline hover:underline-offset-2"
+                className="text-brand-dark-blue hover:text-brand-dark-blue/80 dark:text-primary dark:hover:text-primary/80 underline-none underline-none font-semibold hover:underline hover:underline-offset-2"
               >
                 SIGN UP
               </Link>

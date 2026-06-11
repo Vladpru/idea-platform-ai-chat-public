@@ -1,5 +1,6 @@
 export type CommentAuthorDto = {
   id: string;
+  email: string;
   firstName: string | null;
   lastName: string | null;
   avatarUrl: string | null;

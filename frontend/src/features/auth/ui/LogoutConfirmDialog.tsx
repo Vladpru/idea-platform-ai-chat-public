@@ -13,7 +13,7 @@ import {
 } from '@/shared/ui/dialog';
 
 const outlineActionClass =
-  'border-brand-dark-blue text-brand-dark-blue hover:bg-brand-dark-blue/10 dark:border-brand-light-blue dark:text-brand-light-blue dark:hover:bg-brand-light-blue/10 inline-flex min-w-[154px] items-center justify-center rounded-sm border bg-transparent px-6 py-2.5 text-sm font-semibold tracking-wide uppercase';
+  'border-primary text-primary hover:bg-primary/10 inline-flex min-w-[154px] items-center justify-center rounded-sm border bg-transparent px-6 py-2.5 text-sm font-semibold tracking-wide uppercase';
 
 export interface LogoutConfirmDialogProps {
   open: boolean;

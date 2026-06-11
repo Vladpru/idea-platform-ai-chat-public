@@ -4,6 +4,7 @@ import { formatUserDisplayName } from '@/shared/lib/user-display';
 import type {
   ProblemDetails,
   ProblemDetailsAuthor,
+  ProblemDetailsMember,
   ProblemDetailsTeamMember,
   SimilarProblemCard,
 } from './problem-details.types';
@@ -45,7 +46,16 @@ function toStageLabel(stage: ProblemForm['stage']): string {
 
 export function toProblemDetails(dto: ProblemForm): ProblemDetails {
   const author = toAuthor(dto.author);
+  const members: ProblemDetailsMember[] =
+    dto.members?.map(member => ({
+      user: toAuthor(member.user),
+      joinedAt: member.joinedAt,
+    })) ?? [];
+
   const authorTeamMember = toTeamMember(author, 'Author');
+  const memberTeamMembers = members
+    .filter(member => member.user.id !== author.id)
+    .map(member => toTeamMember(member.user, 'Member'));
 
   const commentCount = dto.commentCount ?? 0;
 
@@ -83,12 +93,13 @@ export function toProblemDetails(dto: ProblemForm): ProblemDetails {
         },
       })) ?? [],
     author,
+    members,
     viewer: {
       isAuthor: dto.viewer?.isAuthor ?? false,
       isMember: dto.viewer?.isMember ?? false,
       canJoin: dto.viewer?.canJoin ?? false,
     },
-    team: [authorTeamMember],
+    team: [authorTeamMember, ...memberTeamMembers],
     createdAt: dto.publishedAt ?? new Date(0).toISOString(),
     isLiked: dto.isLiked ?? false,
     stats: {

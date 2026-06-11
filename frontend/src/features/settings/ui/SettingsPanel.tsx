@@ -12,12 +12,13 @@ import type { SettingsTab } from '@/features/settings/lib/settings-tab';
 import { SettingsAccountSection } from '@/features/settings/ui/SettingsAccountSection';
 import { useThemeSync } from '@/hooks/useThemeSync';
 import { Monitor, Moon, Sun } from 'lucide-react';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { cn } from '@/shared/lib/utils';
 import { Switch } from '@/shared/ui';
 import { Tabs, TabsList, TabsTrigger } from '@/shared/ui/tabs';
 import { useNavigate, useSearch } from '@tanstack/react-router';
+import { ConfirmModal } from '@/shared/ui/confirm-modal';
 
 type NotificationItem = {
   key: NotificationPreferenceKey;
@@ -84,13 +85,7 @@ function ChannelToggle({
 }
 
 function SettingsAppearanceSection() {
-  const accessToken = useAuthSessionStore(s => s.accessToken);
-
-  const { data: user } = useCurrentUserQuery({
-    enabled: Boolean(accessToken),
-  });
-
-  const { theme, setTheme } = useThemeSync(user?.themePreference);
+  const { theme, setTheme } = useThemeSync();
 
   const handleThemeClick = (newTheme: string) => {
     setTheme(newTheme as 'light' | 'dark' | 'system');
@@ -260,16 +255,39 @@ function SettingsNotificationsSection() {
 export function SettingsPanel() {
   const navigate = useNavigate();
   const { tab } = useSearch({ from: '/_auth/settings' });
+  const [isDirty, setIsDirty] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [pendingTab, setPendingTab] = useState<SettingsTab | null>(null);
 
   const handleTabChange = useCallback(
     (nextTab: SettingsTab) => {
+      if (tab === nextTab) return;
+
+      if (isDirty) {
+        setPendingTab(nextTab);
+        setShowLeaveConfirm(true);
+        return;
+      }
+
       void navigate({
         to: '/settings',
         search: { tab: nextTab },
       });
     },
-    [navigate],
+    [navigate, tab, isDirty],
   );
+
+  const handleConfirmLeave = () => {
+    setIsDirty(false);
+    setShowLeaveConfirm(false);
+    if (pendingTab) {
+      void navigate({
+        to: '/settings',
+        search: { tab: pendingTab },
+      });
+      setPendingTab(null);
+    }
+  };
 
   return (
     <main className="bg-brand-neutral dark:bg-background min-h-[calc(100vh-72px)]">
@@ -299,11 +317,23 @@ export function SettingsPanel() {
         </div>
 
         <div className="mt-7 sm:mt-9 lg:mt-11">
-          {tab === 'account' ? <SettingsAccountSection /> : null}
+          {tab === 'account' ? (
+            <SettingsAccountSection onDirtyChange={setIsDirty} />
+          ) : null}
           {tab === 'appearance' ? <SettingsAppearanceSection /> : null}
           {tab === 'notifications' ? <SettingsNotificationsSection /> : null}
         </div>
       </section>
+
+      <ConfirmModal
+        open={showLeaveConfirm}
+        onOpenChange={setShowLeaveConfirm}
+        title="Unsaved Changes"
+        description="You have unsaved changes in your profile. Are you sure you want to leave this tab? Your modifications will be lost."
+        confirmLabel="Discard changes"
+        cancelLabel="Stay"
+        onConfirm={handleConfirmLeave}
+      />
     </main>
   );
 }

@@ -61,7 +61,9 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
         className="bg-background text-foreground flex w-[300px] flex-col p-0 sm:w-[400px]"
       >
         <SheetHeader className="border-border bg-card border-b p-4 text-left">
-          <SheetTitle className="text-foreground text-lg font-bold">Menu</SheetTitle>
+          <SheetTitle className="text-foreground text-lg font-bold">
+            Menu
+          </SheetTitle>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto p-4">
@@ -162,9 +164,9 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
                   Live Chats
                 </Link>
                 <Link
-                  to="/profile"
+                  to="/settings"
+                  search={{ tab: 'account' }}
                   className={navLinkClass}
-                  activeOptions={{ exact: true }}
                   activeProps={{
                     className: 'bg-accent text-primary font-semibold',
                   }}

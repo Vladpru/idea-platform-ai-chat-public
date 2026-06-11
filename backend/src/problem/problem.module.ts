@@ -6,6 +6,7 @@ import { EmbeddingModule } from '../embedding/embedding.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { SubscriptionModule } from '../subscription/subscription.module';
 import { TagModule } from '../tag/tag.module';
+import { ProblemMemberService } from './problem-member.service';
 import { ProblemQueryService } from './problem-query.service';
 import { ProblemSuggestedIdeasService } from './problem-suggested-ideas.service';
 import { ProblemController } from './problem.controller';
@@ -25,7 +26,13 @@ import { ProblemService } from './problem.service';
     ProblemService,
     ProblemQueryService,
     ProblemSuggestedIdeasService,
+    ProblemMemberService,
   ],
-  exports: [ProblemService, ProblemQueryService, ProblemSuggestedIdeasService],
+  exports: [
+    ProblemService,
+    ProblemQueryService,
+    ProblemSuggestedIdeasService,
+    ProblemMemberService,
+  ],
 })
 export class ProblemModule {}

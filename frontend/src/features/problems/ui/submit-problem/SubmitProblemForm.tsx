@@ -45,6 +45,7 @@ import { IdeaSelect } from './IdeaSelect';
 import { ProblemFilesField } from './ProblemFilesField';
 import { ProblemTagsField } from './ProblemTagsField';
 import { SimilarProblemsSection } from './SimilarProblemsSection';
+import { useMediaQuery } from '@/shared/hooks/use-media-query';
 
 export type ProblemDocumentAutoFillControls = {
   isScanning: boolean;
@@ -88,6 +89,8 @@ export function SubmitProblemForm({
     formState: { errors, isDirty: formIsDirty },
     watch,
   } = form;
+
+  const isMobile = useMediaQuery('(max-width: 768px)');
 
   const titleValue = watch('title') || '';
   const descriptionValue = watch('description') || '';
@@ -409,26 +412,31 @@ export function SubmitProblemForm({
           excludeProblemId={editingProblemId}
         />
 
-        <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
-          <button
+        <div className="flex flex-col-reverse gap-3 pt-2 md:flex-row md:items-center md:justify-end">
+          <Button
             type="button"
+            variant="outline"
             onClick={handleCancel}
             disabled={formBusy}
-            className="text-brand-orange hover:text-brand-orange-hover px-2 text-sm font-bold tracking-wide uppercase transition-colors disabled:opacity-50"
+            className={cn(
+              'text-brand-orange hover:text-brand-orange-hover border-brand-orange rounded-md border py-2 text-sm font-bold tracking-wide uppercase transition-colors disabled:opacity-50 md:border-none md:px-2 md:py-0',
+              isMobile && 'w-full',
+            )}
           >
             Cancel
-          </button>
+          </Button>
           {!isEditing ? (
             <SaveDraftButton
               canSave={canSaveDraft}
               isSaving={isSavingDraft}
               disabled={formBusy}
-              onSave={() => void handleSaveDraft()}
+              isMobile={isMobile}
+              onSave={handleSaveDraft}
             />
           ) : null}
           <Button
             type="submit"
-            className={publishBtnClass}
+            className={cn(publishBtnClass, isMobile && 'w-full')}
             disabled={formBusy}
             isLoading={isPublishing}
           >

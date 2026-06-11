@@ -1,8 +1,9 @@
 import { groupNotificationsByDate } from '@/features/notifications/lib/group-notifications-by-date';
 import { ROUTES } from '@/shared/config/paths';
-import { Link } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { MoreVertical } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { flushSync } from 'react-dom';
 
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
@@ -88,7 +89,9 @@ export function NotificationDropdown({
   variant = 'popover',
   enabled = true,
 }: NotificationDropdownProps) {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<NotificationTab>('all');
+  const [actionsMenuOpen, setActionsMenuOpen] = useState(false);
   const {
     data,
     isLoading,
@@ -131,6 +134,17 @@ export function NotificationDropdown({
     deleteAll.mutate();
   };
 
+  const handleNotificationSettingsClick = useCallback(() => {
+    flushSync(() => {
+      setActionsMenuOpen(false);
+      onClose?.();
+    });
+    void navigate({
+      to: ROUTES.settings,
+      search: { tab: 'notifications' },
+    });
+  }, [navigate, onClose]);
+
   const emptyStateMinHeight =
     variant === 'sheet' ? 'min-h-0 flex-1' : 'min-h-[400px]';
 
@@ -162,7 +176,7 @@ export function NotificationDropdown({
             />
           </nav>
 
-          <DropdownMenu>
+          <DropdownMenu open={actionsMenuOpen} onOpenChange={setActionsMenuOpen}>
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
@@ -188,14 +202,8 @@ export function NotificationDropdown({
                 Clear all
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link
-                  to={ROUTES.settings}
-                  search={{ tab: 'notifications' }}
-                  onClick={onClose}
-                >
-                  Notifications settings
-                </Link>
+              <DropdownMenuItem onSelect={handleNotificationSettingsClick}>
+                Notifications settings
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

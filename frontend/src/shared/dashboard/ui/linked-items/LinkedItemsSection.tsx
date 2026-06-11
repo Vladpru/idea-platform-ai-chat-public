@@ -75,7 +75,7 @@ export function LinkedItemsSection({
       scrollContainer.removeEventListener('scroll', syncScrollable);
       resizeObserver.disconnect();
     };
-  }, [columnCount, expanded, items]);
+  }, [columnCount, expanded, items, scrollRef]);
 
   if (items.length === 0) {
     return null;
@@ -128,9 +128,7 @@ export function LinkedItemsSection({
                 entityType={entityType}
                 columnCount={columnCount}
                 emptyImageText={linkedItemEmptyImageText}
-                suppressClickRef={
-                  isScrollable ? suppressClickRef : undefined
-                }
+                suppressClickRef={isScrollable ? suppressClickRef : undefined}
               />
             ))}
           </div>
@@ -138,12 +136,14 @@ export function LinkedItemsSection({
           {isScrollable ? (
             <div
               className={cn(
-                'pointer-events-none absolute inset-y-0 flex w-10 items-center justify-end bg-linear-to-l from-white via-white/90 to-transparent pr-1',
+                'pointer-events-none absolute inset-y-0 flex w-10 items-center justify-end pr-1.5',
+                'from-brand-white via-brand-white/80 bg-linear-to-l to-transparent',
+                'dark:from-card dark:via-card/80 dark:to-transparent',
                 getScrollHintOffsetClass(entityType, columnCount),
               )}
               aria-hidden
             >
-              <ChevronRight className="text-brand-dark-blue size-4 shrink-0 opacity-90" />
+              <ChevronRight className="text-brand-dark-blue dark:text-brand-gray-400 size-4 shrink-0 opacity-80" />
             </div>
           ) : null}
         </div>

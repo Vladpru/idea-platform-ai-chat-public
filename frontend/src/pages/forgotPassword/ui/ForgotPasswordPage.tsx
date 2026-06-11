@@ -33,7 +33,7 @@ export function ForgotPasswordPage() {
               Remember your password?{' '}
               <Link
                 to="/login"
-                className="text-brand-dark-blue hover:text-brand-dark-blue/80 dark:text-brand-light-blue dark:hover:text-brand-light-blue/80 font-semibold hover:underline hover:underline-offset-2"
+                className="text-brand-dark-blue hover:text-brand-dark-blue/80 dark:text-primary dark:hover:text-primary/80 font-semibold hover:underline hover:underline-offset-2"
               >
                 SIGN IN
               </Link>

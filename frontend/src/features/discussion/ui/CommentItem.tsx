@@ -1,6 +1,6 @@
 'use client';
 
-import { useBlocker } from '@tanstack/react-router';
+import { Link, useBlocker } from '@tanstack/react-router';
 import { Paperclip } from 'lucide-react';
 import {
   useCallback,
@@ -130,7 +130,7 @@ export function CommentItem({
   const authorName = formatUserDisplayName({
     firstName: comment.author.firstName,
     lastName: comment.author.lastName,
-    email: null,
+    email: comment.author.email,
   });
 
   const visibleExistingAttachments = useMemo(
@@ -361,18 +361,31 @@ export function CommentItem({
         aria-label={`Comment by ${authorName}`}
       >
         <header className="flex gap-3">
-          <Avatar size="default" className="shrink-0">
-            {comment.author.avatarUrl ? (
-              <AvatarImage src={comment.author.avatarUrl} alt="" />
-            ) : null}
-            <AvatarFallback className="bg-brand-gray-100 text-brand-gray-700 text-xs font-semibold">
-              {getAuthorInitials(authorName)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="min-w-0">
-            <p className="text-brand-black text-sm font-semibold">
-              {authorName}
-            </p>
+          <Link
+            to="/profile/$profileId"
+            params={{ profileId: comment.author.id }}
+            search={{ tab: 'all' }}
+            className="group focus-visible:ring-brand-dark-blue flex items-center gap-3 rounded-lg text-left focus-visible:ring-2 focus-visible:outline-none"
+          >
+            <Avatar
+              size="default"
+              className="shrink-0 transition-transform group-hover:scale-105"
+            >
+              {comment.author.avatarUrl ? (
+                <AvatarImage src={comment.author.avatarUrl} alt="" />
+              ) : null}
+              <AvatarFallback className="bg-brand-gray-100 text-brand-gray-700 text-xs font-semibold">
+                {getAuthorInitials(authorName)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <p className="text-brand-black group-hover:text-brand-dark-blue truncate text-sm font-semibold transition-colors">
+                {authorName}
+              </p>
+            </div>
+          </Link>
+
+          <div className="flex items-center">
             <time
               dateTime={comment.createdAt}
               className="text-sm text-gray-400 tabular-nums"

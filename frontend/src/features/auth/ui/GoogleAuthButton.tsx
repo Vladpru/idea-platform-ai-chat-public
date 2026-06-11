@@ -35,7 +35,7 @@ export function GoogleLoginButton({ mode }: Props) {
       <Button
         type="button"
         variant="outline"
-        className="text-primary hover:bg-brand-dark-blue/10 dark:border-brand-light-blue dark:text-brand-light-blue dark:hover:bg-brand-light-blue/10 border-brand-dark-blue h-10 w-full border bg-transparent"
+        className="text-primary hover:bg-brand-dark-blue/10 dark:border-primary dark:text-primary dark:hover:bg-primary/10 border-brand-dark-blue h-10 w-full border bg-transparent"
         isLoading={isBusy}
         onClick={() => void handleLogin()}
       >

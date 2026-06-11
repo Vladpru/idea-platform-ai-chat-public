@@ -21,7 +21,7 @@ export function ProblemInfoCards({
   return (
     <div className="grid gap-4 sm:grid-cols-5">
       {valueProposition && (
-        <article className="border-brand-gray-200 bg-brand-gray-50 col-span-3 rounded-xs border p-4 sm:p-5">
+        <article className="border-brand-gray-200 dark:bg-brand-gray-100 bg-brand-gray-50 col-span-3 rounded-xs border p-4 sm:p-5">
           <h3 className="text-brand-dark-blue text-base font-bold tracking-wide uppercase">
             Value proposition
           </h3>
@@ -32,7 +32,7 @@ export function ProblemInfoCards({
       )}
 
       {formattedCost && (
-        <article className="border-brand-gray-200 bg-brand-gray-50 col-span-2 max-h-23 rounded-xs border p-4 sm:p-5">
+        <article className="border-brand-gray-200 bg-brand-gray-50 dark:bg-brand-gray-100 col-span-2 max-h-23 rounded-xs border p-4 sm:p-5">
           <h3 className="text-brand-dark-blue text-base font-bold tracking-wide uppercase">
             Potential cost benefit
           </h3>

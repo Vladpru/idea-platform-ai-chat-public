@@ -50,7 +50,7 @@ export function LiveChatHubPage() {
       : `${liveChatEntityLabel(activeFilter).toLowerCase()} chats`;
 
   return (
-    <div className="md-p-10 container mx-auto max-w-5xl bg-white p-6">
+    <div className="md-p-10 bg-card container mx-auto max-w-5xl p-6">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-brand-dark-blue text-3xl font-bold">Live Chats</h1>
         <p className="text-brand-gray-600 mt-2 text-sm">
