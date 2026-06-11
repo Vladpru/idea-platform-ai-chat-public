@@ -14,6 +14,7 @@ import {
   Stage,
   SummaryStatus,
 } from '../../generated/prisma/client';
+import { AchievementService } from '../achievement/achievement.service';
 import { AiSummaryService } from '../ai-summary/ai-summary.service';
 import {
   hasSubstantialContentChanges,
@@ -64,6 +65,7 @@ export class IdeaService {
     private readonly eventEmitter: EventEmitter2,
     private readonly aiSummaryService: AiSummaryService,
     private readonly subscriberNotificationService: SubscriberNotificationService,
+    private readonly achievementService: AchievementService,
   ) {}
 
   async toggleLike(ideaId: string, userId: string): Promise<void> {
@@ -630,6 +632,8 @@ export class IdeaService {
         nextStatus: idea.status,
         nextStage: idea.stage,
       });
+
+      void this.achievementService.checkAndUnlock(authorId, 'IDEA_PUBLISHED');
     }
 
     if (shouldNotifyIdea) {
@@ -736,6 +740,10 @@ export class IdeaService {
       this.aiSummaryService.enqueueIdeaSummary(updated.id);
     }
 
+    if (dto.stage === Stage.completed && existing.stage !== Stage.completed) {
+      void this.achievementService.checkAndUnlock(authorId, 'IDEA_COMPLETED');
+    }
+
     return toIdeaFormResponse(updated, authorId);
   }
 
@@ -824,6 +832,10 @@ export class IdeaService {
 
     if (shouldResetSummary) {
       this.aiSummaryService.enqueueIdeaSummary(updated.id);
+    }
+
+    if (dto.stage === Stage.completed && existing.stage !== Stage.completed) {
+      void this.achievementService.checkAndUnlock(authorId, 'IDEA_COMPLETED');
     }
 
     return toIdeaFormResponse(updated, authorId);
@@ -1017,6 +1029,8 @@ export class IdeaService {
     this.aiSummaryService.enqueueSummariesForPublishedProblems(
       publishedProblems,
     );
+
+    void this.achievementService.checkAndUnlock(authorId, 'IDEA_PUBLISHED');
 
     return toIdeaFormResponse(published, authorId);
   }

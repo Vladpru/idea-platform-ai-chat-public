@@ -4,9 +4,9 @@ import { AchievementRepository } from './achievement.repository';
 import type { UserAchievementDto } from './dto/user-achievement.dto';
 import {
   ACHIEVEMENT_DEFINITIONS,
-  TRIGGER_TO_BADGE_KEY,
   type AchievementKey,
   type AchievementTrigger,
+  TRIGGER_TO_BADGE_KEY,
 } from './lib/achievement-criteria';
 
 @Injectable()
@@ -56,7 +56,8 @@ export class AchievementService {
       );
       if (existing) return;
 
-      const achievement = await this.repo.findAchievementByKey('top_contributor');
+      const achievement =
+        await this.repo.findAchievementByKey('top_contributor');
       if (!achievement) return;
 
       await this.repo.createUserAchievement(userId, achievement.id, { month });

@@ -26,6 +26,12 @@ CREATE TABLE "user_achievement" (
 -- CreateIndex
 CREATE UNIQUE INDEX "achievement_key_key" ON "achievement"("key");
 
+-- CreateIndex
+CREATE INDEX "user_achievement_user_id_idx" ON "user_achievement"("user_id");
+
+-- CreateIndex
+CREATE INDEX "user_achievement_achievement_id_idx" ON "user_achievement"("achievement_id");
+
 -- AddForeignKey
 ALTER TABLE "user_achievement" ADD CONSTRAINT "user_achievement_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 

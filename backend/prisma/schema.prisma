@@ -116,6 +116,8 @@ model UserAchievement {
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   achievement Achievement @relation(fields: [achievementId], references: [id])
 
+  @@index([userId])
+  @@index([achievementId])
   @@map("user_achievement")
 }
 

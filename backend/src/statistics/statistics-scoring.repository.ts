@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 
 import { Prisma } from '../../generated/prisma/client';
+import { AchievementService } from '../achievement/achievement.service';
+import type { UserAchievementDto } from '../achievement/dto/user-achievement.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { DEFAULT_SCORING_WEIGHTS } from '../shared/types/scoring.types';
 import type {
@@ -21,7 +23,10 @@ import { formatContributorName } from './lib/scoring/user-name.util';
 
 @Injectable()
 export class StatisticsScoringRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly achievementService: AchievementService,
+  ) {}
 
   async getMyScore(userId: string, start: Date, end: Date): Promise<MyScore> {
     const weights = DEFAULT_SCORING_WEIGHTS;
@@ -153,9 +158,8 @@ export class StatisticsScoringRepository {
 
     const usersById = new Map(users.map(user => [user.id, user]));
 
-    return ranked.map(row => {
+    const entries = ranked.map(row => {
       const user = usersById.get(row.user_id);
-
       return {
         id: row.user_id,
         name: formatContributorName(user),
@@ -169,7 +173,19 @@ export class StatisticsScoringRepository {
           views: Number(row.views),
           likes: Number(row.likes),
         },
+        achievements: [] as UserAchievementDto[],
       };
     });
+
+    await Promise.all(
+      entries.map(async entry => {
+        entry.achievements =
+          await this.achievementService.getUnlockedAchievementsForUser(
+            entry.id,
+          );
+      }),
+    );
+
+    return entries;
   }
 }
