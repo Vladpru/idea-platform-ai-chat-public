@@ -12,6 +12,11 @@ export type ProblemAuthor = {
   avatarUrl: string | null;
 };
 
+export type ProblemFormMember = {
+  user: ProblemAuthor;
+  joinedAt: string;
+};
+
 export type ProblemForm = {
   id: string;
   status: ProblemStatus;
@@ -47,6 +52,7 @@ export type ProblemForm = {
     originalFilename: string;
   }>;
   author: ProblemAuthor;
+  members?: ProblemFormMember[];
   viewer: { isAuthor: boolean; isMember: boolean; canJoin: boolean };
 };
 

@@ -1,5 +1,12 @@
-import type { ProblemDetailsTeamMember } from '@/features/problem-details/model/problem-details.types';
+import type {
+  ProblemDetailsAuthor,
+  ProblemDetailsMember,
+  ProblemDetailsViewer,
+} from '@/features/problem-details/model/problem-details.types';
+import { formatPersonName } from '@/features/idea-details/lib/format-person-name';
 import { getInitials } from '@/features/idea-details/lib/get-initials';
+import { ProblemProjectActions } from '@/features/problem-details/ui/ProblemProjectActions';
+import { useMemo } from 'react';
 import { Link } from '@tanstack/react-router';
 
 import { useMediaQuery } from '@/shared/hooks/use-media-query';
@@ -13,8 +20,10 @@ import {
 } from '@/shared/ui/sheet';
 
 export type ProblemTeamModalProps = {
-  authorId: string;
-  team: ProblemDetailsTeamMember[];
+  problemId: string;
+  author: ProblemDetailsAuthor;
+  members: ProblemDetailsMember[];
+  viewer: ProblemDetailsViewer;
   onClose: () => void;
 };
 
@@ -23,17 +32,26 @@ function formatMemberCount(count: number): string {
 }
 
 export function ProblemTeamModal({
-  authorId,
-  team,
+  problemId,
+  author,
+  members,
+  viewer,
   onClose,
 }: ProblemTeamModalProps) {
   const isMobile = useMediaQuery('(max-width: 639px)');
+
+  const sortedTeam = useMemo(
+    () => [author, ...members.map(member => member.user)],
+    [author, members],
+  );
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
       onClose();
     }
   };
+
+  const showProjectActions = !viewer.isAuthor;
 
   return (
     <Sheet open onOpenChange={handleOpenChange}>
@@ -54,19 +72,24 @@ export function ProblemTeamModal({
         </SheetHeader>
 
         <p className="text-brand-gray-600 font-arial px-6 pt-1 text-base font-normal">
-          {formatMemberCount(team.length)}
+          {formatMemberCount(sortedTeam.length)}
         </p>
 
-        <div className="flex-1 overflow-y-auto px-6 pb-6">
+        <div className="flex-1 overflow-y-auto px-6">
           <ul className="space-y-4 pt-4">
-            {team.map(member => {
-              const isAuthorRow = member.id === authorId;
+            {sortedTeam.map((person, index) => {
+              const fullName = formatPersonName(
+                person.firstName,
+                person.lastName,
+                'Unknown',
+              );
+              const isAuthorRow = index === 0;
 
               return (
-                <li key={member.id}>
+                <li key={`${person.id}-${index}`}>
                   <Link
                     to="/profile/$profileId"
-                    params={{ profileId: member.id }}
+                    params={{ profileId: person.id }}
                     search={{ tab: 'all' }}
                     onClick={() => onClose()}
                     className="focus-visible:ring-brand-dark-blue hover:bg-brand-gray-100 group flex w-full items-center gap-3 rounded-lg p-2 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
@@ -75,20 +98,17 @@ export function ProblemTeamModal({
                       size="default"
                       className="shrink-0 transition-transform group-hover:scale-105"
                     >
-                      {member.avatarUrl ? (
-                        <AvatarImage
-                          src={member.avatarUrl}
-                          alt={member.name}
-                        />
+                      {person.avatarUrl ? (
+                        <AvatarImage src={person.avatarUrl} alt={fullName} />
                       ) : null}
                       <AvatarFallback className="bg-brand-gray-200 text-brand-gray-800 text-xs font-semibold">
-                        {getInitials(member.name)}
+                        {getInitials(fullName)}
                       </AvatarFallback>
                     </Avatar>
 
                     <div className="min-w-0">
                       <p className="text-brand-gray-900 group-hover:text-brand-dark-blue truncate text-sm font-semibold transition-colors">
-                        {member.name}
+                        {fullName}
                       </p>
                       {isAuthorRow ? (
                         <p className="text-brand-gray-500 text-xs">Author</p>
@@ -100,6 +120,19 @@ export function ProblemTeamModal({
             })}
           </ul>
         </div>
+
+        {showProjectActions ? (
+          <div className="border-brand-gray-200 mt-auto flex flex-col gap-4 border-t p-6">
+            <p className="font-arial text-base font-normal">
+              Your skills can help solve this problem. Join now
+            </p>
+            <ProblemProjectActions
+              problemId={problemId}
+              viewer={viewer}
+              layout="stacked"
+            />
+          </div>
+        ) : null}
       </SheetContent>
     </Sheet>
   );

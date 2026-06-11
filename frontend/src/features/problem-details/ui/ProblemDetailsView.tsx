@@ -289,8 +289,10 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
 
       {isTeamModalOpen ? (
         <ProblemTeamModal
-          authorId={problem.authorId}
-          team={problem.team}
+          problemId={problem.id}
+          author={problem.author}
+          members={problem.members}
+          viewer={problem.viewer}
           onClose={() => setIsTeamModalOpen(false)}
         />
       ) : null}

@@ -276,7 +276,7 @@ export function IdeaHeader({
                     />
                   </div>
 
-                  <div className="mdContext order-2 flex w-full justify-stretch *:w-full md:order-1 md:w-auto">
+                  <div className="mdContext order-2 flex w-full justify-stretch gap-2 *:w-full md:order-1 md:w-auto">
                     {showProjectActions ? (
                       <IdeaProjectActions
                         ideaId={idea.id}

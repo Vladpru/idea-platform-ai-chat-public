@@ -6,6 +6,8 @@ import {
   createProblemDraft,
   deleteProblem,
   deleteProblemMedia,
+  joinProblem,
+  leaveProblem,
   updateProblem,
   uploadProblemAttachment,
 } from '@/features/problems/api/problems.api';
@@ -210,6 +212,40 @@ export function useDeleteProblemMediaMutation(problemId: string) {
     onSuccess: () => {
       invalidateProblemQueries(queryClient, problemId);
       toast.success('Attachment removed');
+    },
+    onError: error => {
+      toast.error(getApiErrorMessage(error));
+    },
+  });
+}
+
+export function useJoinProblemMutation(problemId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: [...problemMutationKeys.all, 'join', problemId],
+    mutationFn: () => joinProblem(problemId),
+    onSuccess: () => {
+      invalidateProblemQueries(queryClient, problemId);
+      toast.success('You joined the project');
+    },
+    onError: error => {
+      toast.error(getApiErrorMessage(error));
+    },
+  });
+}
+
+export function useLeaveProblemMutation(problemId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: [...problemMutationKeys.all, 'leave', problemId],
+    mutationFn: () => leaveProblem(problemId),
+    onSuccess: () => {
+      invalidateProblemQueries(queryClient, problemId, {
+        invalidateDashboard: true,
+      });
+      toast.success('You left the project');
     },
     onError: error => {
       toast.error(getApiErrorMessage(error));

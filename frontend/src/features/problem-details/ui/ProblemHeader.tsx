@@ -2,6 +2,7 @@ import { getInitials } from '@/features/idea-details/lib/get-initials';
 import { outlineBtnClass, pageTitleClass } from '@/features/ideas/lib/styles';
 import { EntityLiveChatAction } from '@/features/live-chat/ui/EntityLiveChatAction';
 import type { ProblemDetails } from '@/features/problem-details/model/problem-details.types';
+import { ProblemProjectActions } from '@/features/problem-details/ui/ProblemProjectActions';
 import { useDeleteProblemMutation } from '@/features/problems/hooks/use-problem-mutations';
 import { useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
@@ -245,22 +246,28 @@ export function ProblemHeader({
               </div>
 
               {!isCompact ? (
-                <div className="grid w-full grid-cols-1 gap-2 sm:w-auto md:flex md:flex-row md:items-center">
-                  <div className="order-1 w-full md:order-2 md:w-auto">
+                <div className="flex w-full flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div className="order-1 flex w-full flex-row gap-2 *:flex-1 md:order-2 md:w-auto md:gap-3">
+                    {!isAuthor ? (
+                      <ProblemProjectActions
+                        problemId={problem.id}
+                        viewer={problem.viewer}
+                      />
+                    ) : null}
+                    <EntityLiveChatAction
+                      entityKind="PROBLEM"
+                      entityId={problem.id}
+                      viewer={problem.viewer}
+                    />
+                  </div>
+
+                  <div className="order-2 w-full md:order-1 md:w-auto">
                     <ManageDropdown
                       isAuthor={isAuthor}
                       isCompact={false}
                       isDraft={isDraft}
                       problemId={problem.id}
                       onDeleteClick={() => setDeleteModalOpen(true)}
-                    />
-                  </div>
-
-                  <div className="mdContext order-2 flex w-full justify-stretch *:w-full md:order-1 md:w-auto">
-                    <EntityLiveChatAction
-                      entityKind="PROBLEM"
-                      entityId={problem.id}
-                      viewer={problem.viewer}
                     />
                   </div>
                 </div>
