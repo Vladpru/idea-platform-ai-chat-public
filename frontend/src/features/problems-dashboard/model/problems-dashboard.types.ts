@@ -15,7 +15,8 @@ export type ProblemDashboardSort =
   | 'oldest'
   | 'most-viewed'
   | 'most-popular'
-  | 'most-ideas-linked';
+  | 'most-ideas-linked'
+  | 'comments';
 
 export type ProblemDashboardCard = DashboardCardBase & {
   stageValue: ProblemStage | null;

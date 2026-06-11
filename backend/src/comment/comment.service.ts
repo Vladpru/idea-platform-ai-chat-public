@@ -65,12 +65,7 @@ export class CommentService {
       ideaId,
       userId,
     );
-    return this.findCommentsForEntity(
-      EntityTarget.IDEA,
-      ideaId,
-      query,
-      userId,
-    );
+    return this.findCommentsForEntity(EntityTarget.IDEA, ideaId, query, userId);
   }
 
   async findProblemComments(
@@ -241,7 +236,7 @@ export class CommentService {
     const publicIdsToDelete: string[] = [];
 
     await this.prisma.$transaction(async tx => {
-      await this.assertCommentMutable(tx, commentId, userId);
+      const comment = await this.assertCommentMutable(tx, commentId, userId);
 
       const childComments = await tx.comment.findMany({
         where: { parentId: commentId },
@@ -263,6 +258,22 @@ export class CommentService {
       await tx.comment.delete({
         where: { id: commentId },
       });
+
+      if (comment.ideaId) {
+        await this.adjustEntityCommentCount(
+          tx,
+          EntityTarget.IDEA,
+          comment.ideaId,
+          -1,
+        );
+      } else if (comment.problemId) {
+        await this.adjustEntityCommentCount(
+          tx,
+          EntityTarget.PROBLEM,
+          comment.problemId,
+          -1,
+        );
+      }
     });
 
     if (publicIdsToDelete.length > 0) {
@@ -419,14 +430,13 @@ export class CommentService {
           );
         }
 
-        return tx.comment.create({
+        const createdComment = await tx.comment.create({
           data: {
             id: newCommentId,
             content,
             authorId: userId,
             ideaId: entityType === EntityTarget.IDEA ? entityId : null,
-            problemId:
-              entityType === EntityTarget.PROBLEM ? entityId : null,
+            problemId: entityType === EntityTarget.PROBLEM ? entityId : null,
             parentId: dto.parentId ?? null,
             media: {
               createMany: {
@@ -439,6 +449,10 @@ export class CommentService {
           },
           include: commentDetailInclude(userId),
         });
+
+        await this.adjustEntityCommentCount(tx, entityType, entityId, 1);
+
+        return createdComment;
       });
 
       await this.emitCommentCreatedNotification({
@@ -484,8 +498,7 @@ export class CommentService {
     const event: CommentCreatedNotificationEvent = {
       recipientUserId: params.entityAuthorId,
       commentId: params.commentId,
-      entityType:
-        params.entityType === EntityTarget.IDEA ? 'idea' : 'problem',
+      entityType: params.entityType === EntityTarget.IDEA ? 'idea' : 'problem',
       entityId: params.entityId,
       entityTitle: params.entityTitle ?? 'Untitled',
       actorId: params.actorId,
@@ -552,11 +565,33 @@ export class CommentService {
     }
   }
 
+  private async adjustEntityCommentCount(
+    tx: Prisma.TransactionClient,
+    entityType: EntityTarget,
+    entityId: string,
+    delta: 1 | -1,
+  ): Promise<void> {
+    if (entityType === EntityTarget.IDEA) {
+      await tx.idea.update({
+        where: { id: entityId },
+        data: { commentCount: { increment: delta } },
+        select: { id: true },
+      });
+      return;
+    }
+
+    await tx.problem.update({
+      where: { id: entityId },
+      data: { commentCount: { increment: delta } },
+      select: { id: true },
+    });
+  }
+
   private async assertCommentMutable(
     tx: Prisma.TransactionClient,
     commentId: string,
     userId: string,
-  ): Promise<{ id: string }> {
+  ): Promise<{ id: string; ideaId: string | null; problemId: string | null }> {
     const comment = await tx.comment.findUnique({
       where: { id: commentId },
       select: {
@@ -591,7 +626,11 @@ export class CommentService {
       throw new NotFoundException(COMMENT_NOT_FOUND);
     }
 
-    return comment;
+    return {
+      id: comment.id,
+      ideaId: comment.ideaId,
+      problemId: comment.problemId,
+    };
   }
 
   private async validateParentComment(
@@ -610,10 +649,7 @@ export class CommentService {
     if (entityType === EntityTarget.IDEA && parent.ideaId !== entityId) {
       throw new BadRequestException(PARENT_COMMENT_ENTITY_MISMATCH);
     }
-    if (
-      entityType === EntityTarget.PROBLEM &&
-      parent.problemId !== entityId
-    ) {
+    if (entityType === EntityTarget.PROBLEM && parent.problemId !== entityId) {
       throw new BadRequestException(PARENT_COMMENT_ENTITY_MISMATCH);
     }
   }
