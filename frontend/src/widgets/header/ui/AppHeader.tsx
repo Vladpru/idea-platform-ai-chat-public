@@ -1,6 +1,7 @@
 import PolycodersLogoWhiteText from '@/assets/svg/polycodersLogoWhiteText.svg';
 import { UserNav } from '@/features/auth';
 import { NotificationBell } from '@/features/notifications';
+import { useSearchNavigation } from '@/features/search/hooks/use-search-navigation';
 import { HEADER_ACTION_BUTTON_CLASS } from '@/widgets/header/lib/header-action-button-class';
 import { Link, useMatchRoute } from '@tanstack/react-router';
 import { ChevronDown, Search } from 'lucide-react';
@@ -53,6 +54,8 @@ function NavLink({
 }
 
 export function AppHeader() {
+  const { toggleSearch } = useSearchNavigation();
+
   return (
     <header className="bg-brand-dark-blue dark:bg-header-background sticky top-0 z-50 flex items-center justify-between px-4 py-3 text-white shadow-sm sm:px-10">
       <div className="flex items-center gap-20 xl:gap-35 2xl:gap-45">
@@ -122,14 +125,14 @@ export function AppHeader() {
           </DropdownMenu>
         </div>
 
-        <Link
-          to={ROUTES.search}
+        <button
+          type="button"
           className={HEADER_ACTION_BUTTON_CLASS}
           aria-label="Search"
-          search={{ q: '', t: 'ideas' }}
+          onClick={toggleSearch}
         >
           <Search size={22} strokeWidth={2} />
-        </Link>
+        </button>
 
         <NotificationBell />
 
