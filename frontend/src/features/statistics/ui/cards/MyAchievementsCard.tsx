@@ -4,7 +4,7 @@ import { AchievementGrid, useMyAchievements } from '@/features/achievements';
 import { cn } from '@/shared/lib/utils';
 import { SkeletonCard } from '@/shared/ui/skeleton';
 
-import { StatisticsHowItWorksLink } from '../StatisticsHowItWorksLink';
+import { AchievementsHowItWorksModal } from '../AchievementsHowItWorksModal';
 import {
   statisticsCardClass,
   statisticsIconTileClass,
@@ -35,7 +35,7 @@ export function MyAchievementsCard({
             My achievements
           </h2>
         </div>
-        <StatisticsHowItWorksLink />
+        <AchievementsHowItWorksModal />
       </div>
 
       <div className="mt-6">

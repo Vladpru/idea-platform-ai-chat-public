@@ -1,11 +1,5 @@
 import { getInitials } from '@/features/idea-details/lib/get-initials';
-import type { UserAchievementDto } from '@/features/achievements';
-import activeVoiceIconUrl from '@/features/achievements/public/ActiveVoice.svg';
-import collaboratorIconUrl from '@/features/achievements/public/Collaborator.svg';
-import completerIconUrl from '@/features/achievements/public/Completer.svg';
-import connectorIconUrl from '@/features/achievements/public/Connector.svg';
-import innovatorIconUrl from '@/features/achievements/public/Innovator.svg';
-import topContributorIconUrl from '@/features/achievements/public/TopContributor.svg';
+import { BadgePill } from '@/features/achievements';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip';
 
@@ -13,56 +7,6 @@ import { getLeaderboardBreakdownItems } from '../../lib/leaderboard-breakdown-la
 import { formatContributorPoints } from '../../lib/format-statistics-values';
 import type { LeaderboardEntry } from '../../model/statistics.types';
 import { Link } from '@tanstack/react-router';
-
-const BADGE_ICON_URLS: Record<string, string> = {
-  innovator: innovatorIconUrl,
-  active_voice: activeVoiceIconUrl,
-  collaborator: collaboratorIconUrl,
-  completer: completerIconUrl,
-  connector: connectorIconUrl,
-  top_contributor: topContributorIconUrl,
-};
-
-function BadgePill({
-  badge,
-  allBadges,
-}: {
-  badge: UserAchievementDto;
-  allBadges: UserAchievementDto[];
-}) {
-  const iconUrl = BADGE_ICON_URLS[badge.key];
-  const isTopContributor = badge.key === 'top_contributor';
-
-  const topContributorMonths = isTopContributor
-    ? allBadges
-        .filter(b => b.key === 'top_contributor')
-        .map(b => b.metadata?.month)
-        .filter((m): m is string => Boolean(m))
-    : [];
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span className="flex size-6 items-center justify-center rounded-full">
-          {iconUrl ? (
-            <img src={iconUrl} alt="" aria-hidden className="size-6" />
-          ) : null}
-        </span>
-      </TooltipTrigger>
-      <TooltipContent side="top" align="center">
-        {isTopContributor && topContributorMonths.length > 0 ? (
-          <ul className="space-y-0.5 text-xs">
-            {topContributorMonths.map(month => (
-              <li key={month}>Top Contributor {month}</li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-xs">{badge.name}</p>
-        )}
-      </TooltipContent>
-    </Tooltip>
-  );
-}
 
 type LeaderboardRowProps = {
   rank: number;

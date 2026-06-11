@@ -7,6 +7,8 @@ const BREAKDOWN_LABELS: Record<keyof LeaderboardBreakdown, string> = {
   comments: 'Comments',
   views: 'Views',
   likes: 'Likes',
+  completedIdeas: 'Completed ideas',
+  badges: 'Badges',
 };
 
 export function getLeaderboardBreakdownItems(breakdown: LeaderboardBreakdown) {
