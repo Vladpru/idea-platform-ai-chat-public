@@ -88,7 +88,35 @@ model User {
   liveChatParticipations  LiveChatParticipant[]
   liveChatMessages        LiveChatMessage[]     @relation("LiveChatMessageAuthor")
 
+  userAchievements UserAchievement[]
   @@map("user")
+}
+
+model Achievement {
+  id               String            @id @default(uuid())
+  key              String            @unique
+  name             String
+  description      String
+  iconPath         String            @map("icon_path")
+  threshold        Int?
+  createdAt        DateTime          @default(now()) @map("created_at")
+  userAchievements UserAchievement[]
+
+  @@map("achievement")
+}
+
+model UserAchievement {
+  id            String      @id @default(uuid())
+  userId        String      @map("user_id")
+  achievementId String      @map("achievement_id")
+  unlockedAt    DateTime    @default(now()) @map("unlocked_at")
+  seenAt        DateTime?   @map("seen_at")
+  metadata      Json?
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id])
+
+  @@map("user_achievement")
 }
 
 model Subscription {
