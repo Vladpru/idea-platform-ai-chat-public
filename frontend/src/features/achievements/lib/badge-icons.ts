@@ -4,9 +4,6 @@ import completerIconUrl from '../public/Completer.svg';
 import connectorIconUrl from '../public/Connector.svg';
 import innovatorIconUrl from '../public/Innovator.svg';
 import topContributorIconUrl from '../public/TopContributor.svg';
-import winnerFirstIconUrl from '../public/WinnerFirst.svg';
-import winnerSecondIconUrl from '../public/WinnerSecond.svg';
-import winnerThirdIconUrl from '../public/WinnerThird.svg';
 
 export const BADGE_ICON_URLS: Record<string, string> = {
   innovator: innovatorIconUrl,
@@ -15,9 +12,6 @@ export const BADGE_ICON_URLS: Record<string, string> = {
   completer: completerIconUrl,
   connector: connectorIconUrl,
   top_contributor: topContributorIconUrl,
-  winner_first: winnerFirstIconUrl,
-  winner_second: winnerSecondIconUrl,
-  winner_third: winnerThirdIconUrl,
 };
 
 export const BADGE_EARNED_MESSAGES: Record<string, string> = {
@@ -27,7 +21,4 @@ export const BADGE_EARNED_MESSAGES: Record<string, string> = {
   completer: "You've completed 3 ideas — execution makes the difference!",
   connector: "You've invited 5+ users — your network drives collaboration!",
   top_contributor: "You've topped the monthly leaderboard — outstanding!",
-  winner_first: "You placed 1st in the Ideation Challenge — well done!",
-  winner_second: "You placed 2nd in the Ideation Challenge — well done!",
-  winner_third: "You placed 3rd in the Ideation Challenge — well done!",
 };

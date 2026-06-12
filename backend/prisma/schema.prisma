@@ -175,6 +175,7 @@ model Idea {
   likeCount          Int                         @default(0) @map("like_count")
   commentCount       Int                         @default(0) @map("comment_count")
   publishedAt        DateTime?                   @map("published_at")
+  completedAt        DateTime?                   @map("completed_at")
   createdAt          DateTime                    @default(now()) @map("created_at")
   updatedAt          DateTime                    @updatedAt @map("updated_at")
   searchVector       Unsupported("tsvector")?    @map("search_vector")

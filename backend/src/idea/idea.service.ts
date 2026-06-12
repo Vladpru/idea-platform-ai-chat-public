@@ -205,11 +205,13 @@ export class IdeaService {
     dto: UpdateIdeaDraftDto,
     resetSummary: boolean,
     isPublished: boolean,
+    setCompletedAt = false,
   ): Promise<void> {
     const scalarData: {
       stage?: UpdateIdeaDraftDto['stage'];
       title?: string;
       description?: string;
+      completedAt?: Date | null;
       aiEmbedding?: null;
       embeddingHash?: null;
       aiSummary?: null;
@@ -218,6 +220,7 @@ export class IdeaService {
     } = {};
 
     if ('stage' in dto && dto.stage !== undefined) scalarData.stage = dto.stage;
+    if (setCompletedAt) scalarData.completedAt = new Date();
     if (dto.title !== undefined) scalarData.title = dto.title;
     if (dto.description !== undefined) scalarData.description = dto.description;
 
@@ -697,12 +700,16 @@ export class IdeaService {
           dto,
         );
 
+        const completingNow =
+          dto.stage === Stage.completed && existing.stage !== Stage.completed;
+
         await this.updateScalarFields(
           tx,
           id,
           dto,
           resetSummary,
           existing.status === IdeaStatus.PUBLISHED,
+          completingNow,
         );
         await this.syncProblems(tx, id, authorId, dto.problemIds);
         await this.syncTags(tx, id, dto);
@@ -716,7 +723,12 @@ export class IdeaService {
           throw new NotFoundException(IDEA_NOT_FOUND);
         }
 
-        return { updated: record, shouldResetSummary: resetSummary, existing };
+        return {
+          updated: record,
+          shouldResetSummary: resetSummary,
+          existing,
+          completingNow,
+        };
       });
 
     this.eventEmitter.emit('entity.mutated', {
@@ -740,7 +752,7 @@ export class IdeaService {
       this.aiSummaryService.enqueueIdeaSummary(updated.id);
     }
 
-    if (dto.stage === Stage.completed && existing.stage !== Stage.completed) {
+    if (completingNow) {
       void this.achievementService.checkAndUnlock(authorId, 'IDEA_COMPLETED');
     }
 
@@ -797,7 +809,10 @@ export class IdeaService {
           throw new UnprocessableEntityException({ errors });
         }
 
-        await this.updateScalarFields(tx, id, dto, resetSummary, true);
+        const completingNow =
+          dto.stage === Stage.completed && existing.stage !== Stage.completed;
+
+        await this.updateScalarFields(tx, id, dto, resetSummary, true, completingNow);
         await this.syncProblems(tx, id, authorId, dto.problemIds);
         await this.syncTags(tx, id, dto);
 
@@ -810,7 +825,12 @@ export class IdeaService {
           throw new NotFoundException(IDEA_NOT_FOUND);
         }
 
-        return { updated: record, shouldResetSummary: resetSummary, existing };
+        return {
+          updated: record,
+          shouldResetSummary: resetSummary,
+          existing,
+          completingNow,
+        };
       });
 
     this.eventEmitter.emit('entity.mutated', {
@@ -834,7 +854,7 @@ export class IdeaService {
       this.aiSummaryService.enqueueIdeaSummary(updated.id);
     }
 
-    if (dto.stage === Stage.completed && existing.stage !== Stage.completed) {
+    if (completingNow) {
       void this.achievementService.checkAndUnlock(authorId, 'IDEA_COMPLETED');
     }
 

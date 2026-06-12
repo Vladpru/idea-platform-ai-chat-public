@@ -60,8 +60,9 @@ export function buildScoreActivityCte(
     FROM "idea"
     WHERE "status" = ${IdeaStatus.PUBLISHED}
       AND "stage" = ${Stage.completed}
-      AND ${asUtcTimestamptz('updated_at')} >= ${start}
-      AND ${asUtcTimestamptz('updated_at')} <= ${end}
+      AND "completed_at" IS NOT NULL
+      AND ${asUtcTimestamptz('completed_at')} >= ${start}
+      AND ${asUtcTimestamptz('completed_at')} <= ${end}
 
     UNION ALL
 
