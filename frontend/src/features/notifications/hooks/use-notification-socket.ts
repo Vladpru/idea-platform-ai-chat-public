@@ -1,9 +1,14 @@
-import { notificationQueryKeys } from '@/features/notifications/lib/notification-query-keys';
+
+import { BADGE_EARNED_MESSAGES } from '@/features/achievements/lib/badge-icons';
+import { BadgeToast } from '@/features/achievements/ui/BadgeToast';
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
-import { getStoredAuthToken } from '@/shared/lib/auth-token';
+import { notificationQueryKeys } from '@/features/notifications/lib/notification-query-keys';
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef } from 'react';
-import { io, type Socket } from 'socket.io-client';
+import { createElement, useEffect, useRef } from 'react';
+import { type Socket, io } from 'socket.io-client';
+import { toast } from 'sonner';
+
+import { getStoredAuthToken } from '@/shared/lib/auth-token';
 
 function getSocketBaseUrl(): string {
   const base = import.meta.env.VITE_API_URL;
@@ -17,6 +22,12 @@ function disconnectSocket(socket: Socket): void {
   socket.removeAllListeners();
   socket.disconnect();
 }
+
+type AchievementBadgePayload = {
+  key: string;
+  name: string;
+  iconPath: string;
+};
 
 export function useNotificationSocket(): void {
   const queryClient = useQueryClient();
@@ -47,11 +58,30 @@ export function useNotificationSocket(): void {
       });
     };
 
+    const handleAchievementUnlocked = (badge: AchievementBadgePayload) => {
+      const description =
+        BADGE_EARNED_MESSAGES[badge.key] ??
+        `You've earned the ${badge.name} badge!`;
+      toast.custom(
+        () =>
+          createElement(BadgeToast, {
+            name: badge.name,
+            badgeKey: badge.key,
+            description,
+          }),
+        { duration: 6000 },
+      );
+      void queryClient.invalidateQueries({ queryKey: ['achievements', 'me'] });
+      void queryClient.invalidateQueries({ queryKey: ['statistics'] });
+    };
+
     socket.on('notification', handleNotification);
+    socket.on('achievement_unlocked', handleAchievementUnlocked);
     socketRef.current = socket;
 
     return () => {
       socket.off('notification', handleNotification);
+      socket.off('achievement_unlocked', handleAchievementUnlocked);
       disconnectSocket(socket);
       if (socketRef.current === socket) {
         socketRef.current = null;

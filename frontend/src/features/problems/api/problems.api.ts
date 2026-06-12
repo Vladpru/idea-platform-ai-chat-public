@@ -86,6 +86,14 @@ export async function deleteProblem(id: string): Promise<void> {
   await api.delete(PROBLEMS_ROUTES.byId(id));
 }
 
+export async function joinProblem(problemId: string): Promise<void> {
+  await api.post(PROBLEMS_ROUTES.join(problemId));
+}
+
+export async function leaveProblem(problemId: string): Promise<void> {
+  await api.delete(PROBLEMS_ROUTES.leave(problemId));
+}
+
 export async function uploadProblemAttachment(
   problemId: string,
   { file }: UploadProblemAttachmentPayload,

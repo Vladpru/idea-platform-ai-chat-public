@@ -10,6 +10,7 @@ const SORT_VALUES = [
   'most-viewed',
   'most-popular',
   'most-ideas-linked',
+  'comments',
 ] as const;
 
 const STAGE_VALUES = ['active', 'completed', 'archived'] as const;

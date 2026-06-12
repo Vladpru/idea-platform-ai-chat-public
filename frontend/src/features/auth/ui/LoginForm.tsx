@@ -68,7 +68,7 @@ export function LoginForm() {
             autoComplete="email"
             autoFocus
             placeholder="you@example.com"
-            className="rounded-sm bg-transparent py-2.5"
+            className="rounded-sm py-2.5"
             aria-invalid={!!errors.email}
             {...register('email')}
           />
@@ -93,7 +93,7 @@ export function LoginForm() {
           <div className="flex h-18 items-start justify-end">
             <Link
               to="/forgotPassword"
-              className="text-brand-dark-blue hover:text-brand-dark-blue/80 dark:text-brand-light-blue dark:hover:text-brand-light-blue/80 text-xs font-medium hover:underline hover:underline-offset-2"
+              className="text-brand-dark-blue hover:text-brand-dark-blue/80 dark:text-primary dark:hover:text-primary/80 text-xs font-medium hover:underline hover:underline-offset-2"
             >
               FORGOT PASSWORD?
             </Link>

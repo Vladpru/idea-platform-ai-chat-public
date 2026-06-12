@@ -6,6 +6,8 @@ import {
   createProblemDraft,
   deleteProblem,
   deleteProblemMedia,
+  joinProblem,
+  leaveProblem,
   updateProblem,
   uploadProblemAttachment,
 } from '@/features/problems/api/problems.api';
@@ -112,9 +114,16 @@ export function usePublishProblemMutation() {
       invalidateProblemQueries(queryClient, problem.id, {
         invalidateDashboard: true,
       });
-      toast.success(
-        variables.problemId ? 'Problem updated' : 'Problem published',
-      );
+      if (variables.problemId) {
+        toast.success('🎉 You earned +15 points', {
+          description: 'Progress shared — your updates keep the project moving.',
+        });
+      } else {
+        toast.success('🎉 You earned +50 points', {
+          description:
+            "Great work — you've identified a new problem that drives innovation.",
+        });
+      }
     },
     onError: error => {
       toast.error(getApiErrorMessage(error));
@@ -158,7 +167,9 @@ export function useUpdateProblemMutation(problemId: string) {
       updateProblem(problemId, payload),
     onSuccess: problem => {
       invalidateProblemQueries(queryClient, problem.id);
-      toast.success('Problem updated');
+      toast.success('🎉 You earned +15 points', {
+        description: 'Progress shared — your updates keep the project moving.',
+      });
     },
     onError: error => {
       toast.error(getApiErrorMessage(error));
@@ -210,6 +221,42 @@ export function useDeleteProblemMediaMutation(problemId: string) {
     onSuccess: () => {
       invalidateProblemQueries(queryClient, problemId);
       toast.success('Attachment removed');
+    },
+    onError: error => {
+      toast.error(getApiErrorMessage(error));
+    },
+  });
+}
+
+export function useJoinProblemMutation(problemId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: [...problemMutationKeys.all, 'join', problemId],
+    mutationFn: () => joinProblem(problemId),
+    onSuccess: () => {
+      invalidateProblemQueries(queryClient, problemId);
+      toast.success('🎉 You earned +20 points', {
+        description: 'Welcome aboard! Collaboration drives the best solutions.',
+      });
+    },
+    onError: error => {
+      toast.error(getApiErrorMessage(error));
+    },
+  });
+}
+
+export function useLeaveProblemMutation(problemId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: [...problemMutationKeys.all, 'leave', problemId],
+    mutationFn: () => leaveProblem(problemId),
+    onSuccess: () => {
+      invalidateProblemQueries(queryClient, problemId, {
+        invalidateDashboard: true,
+      });
+      toast.success('You left the project');
     },
     onError: error => {
       toast.error(getApiErrorMessage(error));

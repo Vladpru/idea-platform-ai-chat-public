@@ -10,17 +10,15 @@ import {
   Min,
 } from 'class-validator';
 
-import {
-  ProblemStage,
-  ProblemStatus,
-} from '../../../generated/prisma/client';
+import { ProblemStage, ProblemStatus } from '../../../generated/prisma/client';
 
 export type ProblemSortOption =
   | 'newest'
   | 'oldest'
   | 'most-viewed'
   | 'most-popular'
-  | 'most-ideas-linked';
+  | 'most-ideas-linked'
+  | 'comments';
 
 export const PROBLEM_SORT_OPTIONS: ProblemSortOption[] = [
   'newest',
@@ -28,6 +26,7 @@ export const PROBLEM_SORT_OPTIONS: ProblemSortOption[] = [
   'most-viewed',
   'most-popular',
   'most-ideas-linked',
+  'comments',
 ];
 
 export class GetProblemsQueryDto {

@@ -28,11 +28,11 @@ type IdeaLinkedProblemsTabProps = {
 
 const headerActionClass = cn(
   outlineBtnClass,
-  'h-9 px-4 text-xs whitespace-nowrap sm:w-auto',
+  'h-10 px-4 text-sm md:h-9 md:text-xs whitespace-nowrap sm:w-auto',
 );
 
 const headerActionsLayoutClass =
-  'flex w-full flex-row gap-3 md:w-auto md:flex-nowrap';
+  'flex w-full flex-col gap-3 md:w-auto md:flex-row md:flex-nowrap';
 
 type LinkedProblemsHeaderProps = {
   onCreateNew: () => void;

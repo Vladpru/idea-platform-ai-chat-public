@@ -1,5 +1,6 @@
 import type {
   ProblemFormAuthor,
+  ProblemFormMember,
   ProblemFormRecord,
   ProblemFormResponse,
   ProblemFormTag,
@@ -120,6 +121,12 @@ export function toProblemFormResponse(
     tags: problem.tags.map(toProblemFormTag),
     attachments: attachments.map(toProblemMediaResponse),
     author: toProblemAuthorResponse(problem.author),
+    members: problem.members.map(
+      (m): ProblemFormMember => ({
+        user: toProblemAuthorResponse(m.user),
+        joinedAt: m.joinedAt.toISOString(),
+      }),
+    ),
     viewer: {
       isAuthor,
       isMember,

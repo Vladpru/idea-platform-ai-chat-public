@@ -29,6 +29,7 @@ import {
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
 import { StageChevronBadge } from '@/shared/ui/stage-chevron-badge';
+import { useMediaQuery } from '@/shared/hooks/use-media-query';
 
 type IdeaHeaderProps = {
   idea: IdeaDetails;
@@ -61,12 +62,15 @@ function ManageDropdown({
   onScheduleConference?: () => void;
   onDeleteClick: () => void;
 }) {
+  const isMobile = useMediaQuery('(max-width: 768px)');
+  const [open, setOpen] = useState(false);
+
   if (!isAuthor) {
     return null;
   }
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button
           type="button"
@@ -78,11 +82,22 @@ function ManageDropdown({
           )}
         >
           Manage
-          <ChevronDown className="size-4" aria-hidden />
+          <ChevronDown
+            className={cn(
+              'size-4 transition-transform duration-200',
+              open && 'rotate-180',
+            )}
+            aria-hidden
+          />
         </Button>
       </DropdownMenuTrigger>
-
-      <DropdownMenuContent align="end" className="w-44 rounded p-2">
+      <DropdownMenuContent
+        align="end"
+        className={cn(
+          'rounded p-2',
+          isMobile ? 'w-[calc(100vw-2rem)] max-w-xs' : 'w-44',
+        )}
+      >
         {!isEditing ? (
           <DropdownMenuItem
             className="focus:bg-brand-blue-700/10 hover:bg-brand-blue-700/10 cursor-pointer px-3 py-2 text-sm font-normal"
@@ -202,26 +217,21 @@ export function IdeaHeader({
       >
         <div className="flex flex-col gap-4 pb-4 md:flex-row md:items-start md:justify-between">
           <div className="min-w-0 flex-1 space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               {isEditing ? (
                 <p className="text-brand-gray-600 text-xs font-semibold tracking-wide uppercase">
                   Editing idea
                 </p>
               ) : (
                 <h1
-                  className={cn(pageTitleClass, 'text-brand-black normal-case')}
+                  className={cn(
+                    pageTitleClass,
+                    'text-brand-black min-w-0 flex-1 break-words normal-case',
+                  )}
                 >
                   {title}
                 </h1>
               )}
-              <ManageDropdown
-                isAuthor={isAuthor}
-                isEditing={isEditing}
-                isCompact={false}
-                onStartEdit={onStartEdit}
-                onScheduleConference={onScheduleConference}
-                onDeleteClick={() => setDeleteModalOpen(true)}
-              />
             </div>
 
             <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-6 md:gap-8">
@@ -275,15 +285,31 @@ export function IdeaHeader({
               ) : null}
 
               {!isEditing ? (
-                <div className="flex flex-wrap items-center gap-2">
-                  {showProjectActions ? (
-                    <IdeaProjectActions ideaId={idea.id} viewer={idea.viewer} />
-                  ) : null}
-                  <EntityLiveChatAction
-                    entityKind="IDEA"
-                    entityId={idea.id}
-                    viewer={idea.viewer}
-                  />
+                <div className="grid w-full grid-cols-1 gap-2 sm:w-auto md:flex md:flex-row md:items-end">
+                  <div className="order-1 w-full md:order-2 md:w-auto">
+                    <ManageDropdown
+                      isAuthor={isAuthor}
+                      isEditing={isEditing}
+                      isCompact={false}
+                      onStartEdit={onStartEdit}
+                      onScheduleConference={onScheduleConference}
+                      onDeleteClick={() => setDeleteModalOpen(true)}
+                    />
+                  </div>
+
+                  <div className="mdContext order-2 flex w-full justify-stretch gap-2 *:w-full md:order-1 md:w-auto">
+                    {showProjectActions ? (
+                      <IdeaProjectActions
+                        ideaId={idea.id}
+                        viewer={idea.viewer}
+                      />
+                    ) : null}
+                    <EntityLiveChatAction
+                      entityKind="IDEA"
+                      entityId={idea.id}
+                      viewer={idea.viewer}
+                    />
+                  </div>
                 </div>
               ) : null}
             </div>

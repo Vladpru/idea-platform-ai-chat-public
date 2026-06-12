@@ -8,7 +8,7 @@ const profileParamsSchema = z.object({
 });
 
 const profileContributionsSearchSchema = z.object({
-  tab: z.enum(['all', 'ideas', 'problems', 'joined']).catch('all'),
+  tab: z.enum(['all', 'ideas', 'problems', 'joined', 'drafts']).catch('all'),
 });
 
 export const Route = createFileRoute('/_auth/profile/$profileId')({

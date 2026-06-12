@@ -4,7 +4,8 @@ export type ProfileContributionsSearchTab =
   | 'all'
   | 'ideas'
   | 'problems'
-  | 'joined';
+  | 'joined'
+  | 'drafts';
 
 export function toContributionsApiTab(
   tab: ProfileContributionsSearchTab,
@@ -12,6 +13,7 @@ export function toContributionsApiTab(
   if (tab === 'ideas') return 'idea';
   if (tab === 'problems') return 'problem';
   if (tab === 'joined') return 'joined';
+  if (tab === 'drafts') return 'drafts';
   return 'all';
 }
 
@@ -21,5 +23,6 @@ export function toContributionsSearchTab(
   if (tab === 'idea') return 'ideas';
   if (tab === 'problem') return 'problems';
   if (tab === 'joined') return 'joined';
+  if (tab === 'drafts') return 'drafts';
   return 'all';
 }

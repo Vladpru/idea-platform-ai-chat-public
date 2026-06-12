@@ -118,7 +118,37 @@ model User {
   conferenceInvitesSent   ConferenceInvite[]    @relation("ConferenceInviteSender")
   conferenceInvitesRecv   ConferenceInvite[]    @relation("ConferenceInviteRecipient")
 
+  userAchievements UserAchievement[]
   @@map("user")
+}
+
+model Achievement {
+  id               String            @id @default(uuid())
+  key              String            @unique
+  name             String
+  description      String
+  iconPath         String            @map("icon_path")
+  threshold        Int?
+  createdAt        DateTime          @default(now()) @map("created_at")
+  userAchievements UserAchievement[]
+
+  @@map("achievement")
+}
+
+model UserAchievement {
+  id            String      @id @default(uuid())
+  userId        String      @map("user_id")
+  achievementId String      @map("achievement_id")
+  unlockedAt    DateTime    @default(now()) @map("unlocked_at")
+  seenAt        DateTime?   @map("seen_at")
+  metadata      Json?
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id])
+
+  @@index([userId])
+  @@index([achievementId])
+  @@map("user_achievement")
 }
 
 model Subscription {
@@ -175,6 +205,7 @@ model Idea {
   likeCount          Int                         @default(0) @map("like_count")
   commentCount       Int                         @default(0) @map("comment_count")
   publishedAt        DateTime?                   @map("published_at")
+  completedAt        DateTime?                   @map("completed_at")
   createdAt          DateTime                    @default(now()) @map("created_at")
   updatedAt          DateTime                    @updatedAt @map("updated_at")
   searchVector       Unsupported("tsvector")?    @map("search_vector")

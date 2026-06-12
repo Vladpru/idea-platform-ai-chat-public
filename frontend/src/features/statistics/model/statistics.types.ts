@@ -1,3 +1,5 @@
+import type { UserAchievementDto } from '@/features/achievements';
+
 export type StatisticsPeriod =
   | 'day'
   | 'month'
@@ -31,6 +33,7 @@ export type TopContributor = {
   name: string;
   points: number;
   avatarUrl: string | null;
+  achievements: UserAchievementDto[];
 };
 
 export type LeaderboardBreakdown = {
@@ -40,6 +43,8 @@ export type LeaderboardBreakdown = {
   comments: number;
   views: number;
   likes: number;
+  completedIdeas: number;
+  badges: number;
 };
 
 export type LeaderboardEntry = {
@@ -48,6 +53,7 @@ export type LeaderboardEntry = {
   points: number;
   avatarUrl: string | null;
   breakdown: LeaderboardBreakdown;
+  achievements: UserAchievementDto[];
 };
 
 export type LeaderboardResponse = {

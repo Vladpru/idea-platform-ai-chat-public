@@ -6,4 +6,6 @@ export const PROBLEMS_ROUTES = {
   media: (problemId: string) => `/problems/${problemId}/media`,
   mediaById: (problemId: string, mediaId: string) =>
     `/problems/${problemId}/media/${mediaId}`,
+  join: (problemId: string) => `/problems/${problemId}/join`,
+  leave: (problemId: string) => `/problems/${problemId}/leave`,
 } as const;

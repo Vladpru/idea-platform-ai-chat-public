@@ -1,3 +1,5 @@
+import type { UserAchievementDto } from '../../achievement/dto/user-achievement.dto';
+
 export type StatisticsPeriod =
   | 'day'
   | 'month'
@@ -39,6 +41,7 @@ export interface StatisticsContributor {
   name: string;
   points: number;
   avatarUrl: string | null;
+  achievements: UserAchievementDto[];
 }
 
 export interface LeaderboardBreakdown {
@@ -48,6 +51,8 @@ export interface LeaderboardBreakdown {
   comments: number;
   views: number;
   likes: number;
+  completedIdeas: number;
+  badges: number;
 }
 
 export interface LeaderboardEntry {
@@ -56,6 +61,7 @@ export interface LeaderboardEntry {
   points: number;
   avatarUrl: string | null;
   breakdown: LeaderboardBreakdown;
+  achievements: UserAchievementDto[];
 }
 
 export interface LeaderboardResponse {

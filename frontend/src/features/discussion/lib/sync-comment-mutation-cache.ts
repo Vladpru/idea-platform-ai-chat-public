@@ -8,6 +8,9 @@ import type { IdeaDetails } from '@/features/idea-details/model/idea-details.typ
 import { ideaMutationKeys } from '@/features/ideas/hooks/use-idea-mutations';
 import type { ProblemDetails } from '@/features/problem-details/model/problem-details.types';
 import { problemMutationKeys } from '@/features/problems/hooks/use-problem-mutations';
+import { myIdeasDashboardKeys } from '@/features/profile/hooks/use-my-ideas-dashboard';
+import { myProblemsDashboardKeys } from '@/features/profile/hooks/use-my-problems-dashboard';
+import { profileContributionsKeys } from '@/features/profile/hooks/use-profile-contributions';
 import type { InfiniteData, QueryClient } from '@tanstack/react-query';
 
 export type CommentLikePatch = {
@@ -199,6 +202,48 @@ function patchDiscussionCount<T extends IdeaDetails | ProblemDetails>(
   };
 }
 
+type WithCommentCount = { id: string; commentCount?: number };
+
+type FeedPage<T> = { data: T[]; meta: unknown };
+
+function patchCommentCountInFeedItem<T extends WithCommentCount>(
+  item: T,
+  entityId: string,
+  delta: number,
+): T {
+  if (item.id !== entityId || item.commentCount === undefined) return item;
+  return { ...item, commentCount: Math.max(0, item.commentCount + delta) };
+}
+
+function patchCommentCountInInfiniteFeed<T extends WithCommentCount>(
+  data: InfiniteData<FeedPage<T>>,
+  entityId: string,
+  delta: number,
+): InfiniteData<FeedPage<T>> {
+  return {
+    ...data,
+    pages: data.pages.map(page => ({
+      ...page,
+      data: page.data.map(item =>
+        patchCommentCountInFeedItem(item, entityId, delta),
+      ),
+    })),
+  };
+}
+
+function patchCommentCountInFlatFeed<T extends WithCommentCount>(
+  data: FeedPage<T>,
+  entityId: string,
+  delta: number,
+): FeedPage<T> {
+  return {
+    ...data,
+    data: data.data.map(item =>
+      patchCommentCountInFeedItem(item, entityId, delta),
+    ),
+  };
+}
+
 export function adjustEntityDiscussionCountInCache(
   queryClient: QueryClient,
   entityType: DiscussionEntityType,
@@ -210,11 +255,58 @@ export function adjustEntityDiscussionCountInCache(
       ideaMutationKeys.detail(entityId),
       old => (old ? patchDiscussionCount(old, delta) : old),
     );
+
+    queryClient.setQueriesData<InfiniteData<FeedPage<WithCommentCount>>>(
+      { queryKey: ideaMutationKeys.all },
+      old =>
+        old?.pages ? patchCommentCountInInfiniteFeed(old, entityId, delta) : old,
+    );
+
+    queryClient.setQueriesData<FeedPage<WithCommentCount>>(
+      { queryKey: ideaMutationKeys.lists() },
+      old => (old ? patchCommentCountInFlatFeed(old, entityId, delta) : old),
+    );
+
+    queryClient.setQueriesData<InfiniteData<FeedPage<WithCommentCount>>>(
+      { queryKey: myIdeasDashboardKeys.all },
+      old =>
+        old?.pages ? patchCommentCountInInfiniteFeed(old, entityId, delta) : old,
+    );
+
+    queryClient.setQueriesData<InfiniteData<FeedPage<WithCommentCount>>>(
+      { queryKey: profileContributionsKeys.all },
+      old =>
+        old?.pages ? patchCommentCountInInfiniteFeed(old, entityId, delta) : old,
+    );
+
     return;
   }
 
   queryClient.setQueryData<ProblemDetails>(
     problemMutationKeys.detail(entityId),
     old => (old ? patchDiscussionCount(old, delta) : old),
+  );
+
+  queryClient.setQueriesData<InfiniteData<FeedPage<WithCommentCount>>>(
+    { queryKey: problemMutationKeys.all },
+    old =>
+      old?.pages ? patchCommentCountInInfiniteFeed(old, entityId, delta) : old,
+  );
+
+  queryClient.setQueriesData<FeedPage<WithCommentCount>>(
+    { queryKey: problemMutationKeys.lists() },
+    old => (old ? patchCommentCountInFlatFeed(old, entityId, delta) : old),
+  );
+
+  queryClient.setQueriesData<InfiniteData<FeedPage<WithCommentCount>>>(
+    { queryKey: myProblemsDashboardKeys.all },
+    old =>
+      old?.pages ? patchCommentCountInInfiniteFeed(old, entityId, delta) : old,
+  );
+
+  queryClient.setQueriesData<InfiniteData<FeedPage<WithCommentCount>>>(
+    { queryKey: profileContributionsKeys.all },
+    old =>
+      old?.pages ? patchCommentCountInInfiniteFeed(old, entityId, delta) : old,
   );
 }

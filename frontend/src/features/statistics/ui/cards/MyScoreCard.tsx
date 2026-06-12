@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { formatContributorPoints } from '../../lib/format-statistics-values';
 import { getScoreCategoryIcon } from '../../lib/score-category-icons';
 import type { MyScore } from '../../model/statistics.types';
-import { StatisticsHowItWorksLink } from '../StatisticsHowItWorksLink';
+import { ScoreHowItWorksModal } from '../ScoreHowItWorksModal';
 import {
   statisticsCardClass,
   statisticsIconTileClass,
@@ -37,7 +37,7 @@ export function MyScoreCard({ myScore, isFetching = false }: MyScoreCardProps) {
           </span>
           <h2 className="text-brand-dark-blue text-lg font-bold">My score</h2>
         </div>
-        <StatisticsHowItWorksLink />
+        <ScoreHowItWorksModal />
       </div>
 
       <div className="mt-6 flex flex-col items-center text-center">
@@ -64,7 +64,7 @@ export function MyScoreCard({ myScore, isFetching = false }: MyScoreCardProps) {
           return (
             <article
               key={category.key}
-              className="border-brand-gray-200 bg-brand-gray-50 flex flex-col items-center rounded-lg border px-3 py-5 text-center"
+              className="border-brand-gray-200 bg-brand-gray-50 dark:bg-brand-gray-100 flex flex-col items-center rounded-lg border px-3 py-5 text-center"
             >
               <span className="bg-brand-dark-blue flex size-9 items-center justify-center rounded-full text-white">
                 <Icon className="size-4" aria-hidden />

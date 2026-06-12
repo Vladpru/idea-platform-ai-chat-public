@@ -14,6 +14,7 @@ import { SkeletonCard } from '@/shared/ui/skeleton';
 
 import type { GlobalSearchResultItem, SearchTab } from '../api/search.types';
 import { useGlobalSearch } from '../hooks/use-global-search';
+import { useSearchNavigation } from '../hooks/use-search-navigation';
 import { mapSearchItemToDashboardCard } from '../lib/map-search-item-to-card';
 import { SearchSchema } from '../model/search.schema';
 
@@ -153,6 +154,7 @@ export function GlobalSearchPage() {
   const activeTab: SearchTab =
     searchParams.t === 'problems' ? 'problems' : 'ideas';
   const navigate = useNavigate();
+  const { dismissSearch } = useSearchNavigation();
   const isMobile = useMediaQuery('(max-width: 768px)');
 
   const [localQuery, setLocalQuery] = useState(q);
@@ -251,16 +253,6 @@ export function GlobalSearchPage() {
       replace: true,
     });
   };
-
-  const dismissSearch = useCallback(() => {
-    if (window.history.length > 1) {
-      window.history.back();
-      return;
-    }
-    navigate({
-      to: ROUTES.home,
-    });
-  }, [navigate]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {

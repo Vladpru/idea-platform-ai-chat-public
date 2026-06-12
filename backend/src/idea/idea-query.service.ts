@@ -51,16 +51,18 @@ export class IdeaQueryService {
   private resolveOrderBy(
     sort: IdeaSortOption | undefined,
     fallback: Prisma.IdeaOrderByWithRelationInput,
-  ): Prisma.IdeaOrderByWithRelationInput {
+  ):
+    | Prisma.IdeaOrderByWithRelationInput
+    | Prisma.IdeaOrderByWithRelationInput[] {
     switch (sort) {
       case 'oldest':
         return { publishedAt: 'asc' };
       case 'views':
-        return { viewCount: 'desc' };
+        return [{ viewCount: 'desc' }, { publishedAt: 'desc' }];
       case 'likes':
-        return { likeCount: 'desc' };
+        return [{ likeCount: 'desc' }, { publishedAt: 'desc' }];
       case 'comments':
-        return { commentCount: 'desc' };
+        return [{ comments: { _count: 'desc' } }, { publishedAt: 'desc' }];
       case 'newest':
         return { publishedAt: 'desc' };
       default:

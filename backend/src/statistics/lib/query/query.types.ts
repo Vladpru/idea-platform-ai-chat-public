@@ -11,6 +11,8 @@ export type LeaderboardScoreRow = {
   comments: bigint;
   views: bigint;
   likes: bigint;
+  completed_ideas: bigint;
+  badges: bigint;
 };
 
 export type UserScoreBreakdownRow = {
@@ -26,6 +28,10 @@ export type UserScoreBreakdownRow = {
   views_points: bigint;
   likes_count: bigint;
   likes_points: bigint;
+  completed_ideas_count: bigint;
+  completed_ideas_points: bigint;
+  badges_count: bigint;
+  badges_points: bigint;
 };
 
 export type ContributorUserRow = {

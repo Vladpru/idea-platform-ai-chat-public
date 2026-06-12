@@ -43,4 +43,5 @@ export const PROBLEM_DASHBOARD_SORT_OPTIONS: {
   { value: 'most-viewed', label: 'Most viewed' },
   { value: 'most-popular', label: 'Most Popular' },
   { value: 'most-ideas-linked', label: 'Most Ideas Linked' },
+  { value: 'comments', label: 'Most Commented' },
 ];

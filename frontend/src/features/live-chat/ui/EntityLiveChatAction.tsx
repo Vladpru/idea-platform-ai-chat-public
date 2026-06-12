@@ -26,7 +26,7 @@ type EntityLiveChatActionProps = {
 };
 
 const chatBtnClass =
-  'border-brand-dark-blue text-brand-dark-blue hover:bg-brand-dark-blue/10 h-10 rounded-sm border bg-card px-5 text-xs font-bold uppercase tracking-wide sm:text-sm';
+  'border-brand-dark-blue text-brand-dark-blue hover:bg-brand-dark-blue/10 h-10 rounded-sm border bg-card px-2 font-bold uppercase tracking-wide min-w-0 sm:px-5';
 
 export function EntityLiveChatAction({
   entityKind,
@@ -96,7 +96,7 @@ export function EntityLiveChatAction({
       isLoading={isBusy}
       onClick={handleClick}
     >
-      {label}
+      <span className="truncate text-[12px] sm:text-sm">{label}</span>
     </Button>
   );
 }

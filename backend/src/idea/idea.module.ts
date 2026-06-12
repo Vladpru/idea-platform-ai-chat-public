@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { AchievementModule } from '../achievement/achievement.module';
 import { AiSummaryModule } from '../ai-summary/ai-summary.module';
 import { AiModule } from '../ai/ai.module';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
@@ -21,6 +22,7 @@ import { IdeaService } from './idea.service';
     EmbeddingModule,
     AiSummaryModule,
     SubscriptionModule,
+    AchievementModule,
   ],
   controllers: [IdeaController],
   providers: [

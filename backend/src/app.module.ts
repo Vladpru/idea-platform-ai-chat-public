@@ -22,6 +22,7 @@ import { ProblemModule } from './problem/problem.module';
 import { RedisModule } from './redis/redis.module';
 import { SearchModule } from './search/search.module';
 import { SimilarityModule } from './similarity/similarity.module';
+import { AchievementModule } from './achievement/achievement.module';
 import { StatisticsModule } from './statistics/statistics.module';
 import { SubscriptionModule } from './subscription/subscription.module';
 import { TagModule } from './tag/tag.module';
@@ -71,6 +72,7 @@ import { UserModule } from './user/user.module';
     SearchModule,
     SimilarityModule,
     StatisticsModule,
+    AchievementModule,
     TagModule,
   ],
   providers: [

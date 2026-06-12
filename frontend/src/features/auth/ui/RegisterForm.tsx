@@ -75,7 +75,7 @@ export function RegisterForm() {
             autoComplete="email"
             autoFocus
             placeholder="you@example.com"
-            className="rounded-sm bg-transparent py-2.5"
+            className="rounded-sm py-2.5"
             aria-invalid={!!errors.email}
             {...register('email')}
           />

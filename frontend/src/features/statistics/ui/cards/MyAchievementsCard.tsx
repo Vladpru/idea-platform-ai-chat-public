@@ -1,8 +1,10 @@
 import { Award } from 'lucide-react';
 
+import { AchievementGrid, useMyAchievements } from '@/features/achievements';
 import { cn } from '@/shared/lib/utils';
+import { SkeletonCard } from '@/shared/ui/skeleton';
 
-import { StatisticsHowItWorksLink } from '../StatisticsHowItWorksLink';
+import { AchievementsHowItWorksModal } from '../AchievementsHowItWorksModal';
 import {
   statisticsCardClass,
   statisticsIconTileClass,
@@ -15,6 +17,8 @@ type MyAchievementsCardProps = {
 export function MyAchievementsCard({
   isFetching = false,
 }: MyAchievementsCardProps) {
+  const { data: achievements, isLoading } = useMyAchievements();
+
   return (
     <section
       className={cn(
@@ -31,12 +35,18 @@ export function MyAchievementsCard({
             My achievements
           </h2>
         </div>
-        <StatisticsHowItWorksLink />
+        <AchievementsHowItWorksModal />
       </div>
 
-      <p className="text-brand-gray-500 mt-6 text-sm">
-        Achievements and badges will appear here soon.
-      </p>
+      <div className="mt-6">
+        {isLoading ? (
+          <SkeletonCard className="h-32" />
+        ) : achievements && achievements.length > 0 ? (
+          <AchievementGrid achievements={achievements} />
+        ) : (
+          <p className="text-brand-gray-500 text-sm">No achievements yet.</p>
+        )}
+      </div>
     </section>
   );
 }

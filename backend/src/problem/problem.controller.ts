@@ -43,6 +43,7 @@ import { SuggestedIdeasQueryDto } from './dto/suggested-ideas-query.dto';
 import { SuggestedTagsQueryDto } from './dto/suggested-tags-query.dto';
 import { UpdateProblemDraftDto } from './dto/update-problem-draft.dto';
 import { ProblemStage } from './enum/problem-stage.enum';
+import { ProblemMemberService } from './problem-member.service';
 import { ProblemQueryService } from './problem-query.service';
 import { ProblemSuggestedIdeasService } from './problem-suggested-ideas.service';
 import { ProblemService } from './problem.service';
@@ -63,6 +64,7 @@ export class ProblemController {
     private readonly problemQueryService: ProblemQueryService,
     private readonly problemSuggestedIdeasService: ProblemSuggestedIdeasService,
     private readonly tagSuggestionService: TagSuggestionService,
+    private readonly problemMemberService: ProblemMemberService,
   ) {}
 
   @Post()
@@ -251,6 +253,36 @@ export class ProblemController {
     @Req() req: AuthenticatedRequest,
   ): Promise<void> {
     await this.problemService.delete(id, req.user.id);
+  }
+
+  @Post(':id/join')
+  @JwtAuth()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Join a published problem' })
+  @ApiCreatedResponse({ description: 'Joined problem successfully' })
+  @ApiNotFoundResponse({ description: 'Problem not found' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @HttpCode(HttpStatus.CREATED)
+  join(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.problemMemberService.joinProblem(id, req.user.id);
+  }
+
+  @Delete(':id/leave')
+  @JwtAuth()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Leave a problem' })
+  @ApiNoContentResponse({ description: 'Left problem successfully' })
+  @ApiNotFoundResponse({ description: 'Problem or member not found' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async leave(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<void> {
+    await this.problemMemberService.leaveProblem(id, req.user.id);
   }
 
   @Post(':id/like')

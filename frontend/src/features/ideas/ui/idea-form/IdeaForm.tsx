@@ -14,13 +14,18 @@ import { IdeaEditAttachmentsField } from '@/features/ideas/ui/idea-form/IdeaEdit
 import { IdeaEditMainImageField } from '@/features/ideas/ui/idea-form/IdeaEditMainImageField';
 import { SuggestedTagsField } from '@/features/tags/ui/SuggestedTagsField';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ChevronDown } from 'lucide-react';
 import { useEffect, useId } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 
 import { cn } from '@/shared/lib/utils';
-import { selectClass } from '@/shared/ui/TagsInput';
 import { Input } from '@/shared/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select';
 
 export type IdeaFormInitialData = IdeaEditFormValues;
 
@@ -82,25 +87,31 @@ export function IdeaForm({
         <FieldLabel htmlFor={`${formId}-stage`} required>
           Stage
         </FieldLabel>
-        <div className="relative mt-2">
-          <select
-            id={`${formId}-stage`}
-            className={cn(selectClass, 'pr-9')}
-            aria-invalid={!!errors.stage}
-            disabled={isSubmitting}
-            {...register('stage')}
-          >
-            {IDEA_STAGES.map(stage => (
-              <option key={stage.value} value={stage.value}>
-                {stage.label}
-              </option>
-            ))}
-          </select>
-          <ChevronDown
-            className="text-brand-gray-600 pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2"
-            aria-hidden
-          />
-        </div>
+        <Controller
+          control={control}
+          name="stage"
+          render={({ field }) => (
+            <Select
+              value={field.value ?? ''}
+              onValueChange={field.onChange}
+              disabled={isSubmitting}
+            >
+              <SelectTrigger
+                id={`${formId}-stage`}
+                className={cn('bg-card mt-2 w-full', errors.stage && 'border-destructive')}
+              >
+                <SelectValue placeholder="Select stage" />
+              </SelectTrigger>
+              <SelectContent>
+                {IDEA_STAGES.map(stage => (
+                  <SelectItem key={stage.value} value={stage.value}>
+                    {stage.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
         <FieldError message={errors.stage?.message} />
       </FieldGroup>
 

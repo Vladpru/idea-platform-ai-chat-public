@@ -8,6 +8,12 @@ export const PROBLEM_FORM_AUTHOR_SELECT = {
   avatarUrl: true,
 } as const;
 
+export const PROBLEM_FORM_MEMBER_INCLUDE = {
+  user: {
+    select: PROBLEM_FORM_AUTHOR_SELECT,
+  },
+} as const satisfies Prisma.ProblemMemberInclude;
+
 export const PROBLEM_COMMENT_COUNT_SELECT = {
   _count: {
     select: { comments: true },
@@ -19,7 +25,9 @@ export const PROBLEM_FORM_INCLUDE = {
   author: {
     select: PROBLEM_FORM_AUTHOR_SELECT,
   },
-  members: true,
+  members: {
+    include: PROBLEM_FORM_MEMBER_INCLUDE,
+  },
   ideas: {
     include: {
       idea: {

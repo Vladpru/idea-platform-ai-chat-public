@@ -27,6 +27,7 @@ type CreateCommentMutationContext = {
   previousData?: CommentInfiniteQueriesSnapshot;
   optimisticAttachments?: CommentAttachmentDto[];
   optimisticCommentId?: string;
+  isRetry?: boolean;
 };
 
 function prependCommentToInfiniteData(
@@ -214,6 +215,7 @@ function buildOptimisticComment(params: {
     content: params.content,
     author: {
       id: params.author.id,
+      email: params.author.email,
       firstName: params.author.firstName || null,
       lastName: params.author.lastName || null,
       avatarUrl: params.author.picture,
@@ -318,7 +320,12 @@ export function useCreateCommentMutation(
         },
       );
 
-      return { previousData, optimisticAttachments, optimisticCommentId };
+      const isRetry = Boolean(retryableFailed);
+      if (!isRetry) {
+        adjustEntityDiscussionCountInCache(queryClient, entityType, entityId, 1);
+      }
+
+      return { previousData, optimisticAttachments, optimisticCommentId, isRetry };
     },
     onSuccess: (realComment, _variables, context) => {
       queryClient.setQueriesData<InfiniteData<PaginatedCommentsResponse>>(
@@ -341,10 +348,16 @@ export function useCreateCommentMutation(
         URL.revokeObjectURL(att.url),
       );
 
-      adjustEntityDiscussionCountInCache(queryClient, entityType, entityId, 1);
+      if (context?.isRetry) {
+        adjustEntityDiscussionCountInCache(queryClient, entityType, entityId, 1);
+      }
     },
     onError: (_error, variables, context) => {
       toast.error('Could not post comment');
+
+      if (!context?.isRetry) {
+        adjustEntityDiscussionCountInCache(queryClient, entityType, entityId, -1);
+      }
 
       if (!context?.optimisticCommentId) {
         return;

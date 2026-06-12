@@ -1,5 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import {
+  Award,
+  CheckCircle2,
   Eye,
   Heart,
   Lightbulb,
@@ -8,17 +10,19 @@ import {
   Users,
 } from 'lucide-react';
 
-import type { MyScoreCategory } from '../model/statistics.types';
+import type { ScoreCategoryKey } from '../model/statistics.types';
 
-const SCORE_CATEGORY_ICONS: Record<MyScoreCategory['key'], LucideIcon> = {
+const SCORE_CATEGORY_ICONS: Record<ScoreCategoryKey, LucideIcon> = {
   ideas: Lightbulb,
   updates: PenLine,
   joinedProjects: Users,
   comments: MessageSquare,
   views: Eye,
   likes: Heart,
+  completedIdeas: CheckCircle2,
+  badges: Award,
 };
 
-export function getScoreCategoryIcon(key: MyScoreCategory['key']): LucideIcon {
+export function getScoreCategoryIcon(key: ScoreCategoryKey): LucideIcon {
   return SCORE_CATEGORY_ICONS[key];
 }

@@ -1,4 +1,5 @@
 import { getInitials } from '@/features/idea-details/lib/get-initials';
+import { BadgePill } from '@/features/achievements';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip';
 
@@ -24,7 +25,7 @@ export function LeaderboardRow({ rank, entry }: LeaderboardRowProps) {
           search={{ tab: 'all' }}
           className="hover:bg-brand-gray-100 group flex items-center gap-3 rounded-lg p-1 transition-colors"
         >
-          <li className="border-brand-gray-200 hover:bg-brand-gray-50 flex cursor-pointer items-center gap-4 border-b px-5 py-4 transition-colors last:border-b-0 sm:px-6">
+          <li className="border-brand-gray-200 hover:bg-brand-gray-100 flex cursor-pointer items-center gap-4 border-b px-5 py-4 transition-colors last:border-b-0 sm:px-6">
             <span className="text-brand-gray-500 w-6 shrink-0 text-sm font-semibold tabular-nums">
               {rank}.
             </span>
@@ -36,9 +37,28 @@ export function LeaderboardRow({ rank, entry }: LeaderboardRowProps) {
                 {getInitials(entry.name)}
               </AvatarFallback>
             </Avatar>
-            <p className="text-brand-black min-w-0 flex-1 truncate text-sm font-bold">
-              {entry.name}
-            </p>
+            <div className="flex min-w-0 flex-1 items-center gap-1.5">
+              <p className="text-brand-black truncate text-sm font-bold">
+                {entry.name}
+              </p>
+              {entry.achievements && entry.achievements.length > 0 ? (
+                <div className="flex shrink-0 items-center gap-1">
+                  {entry.achievements
+                    .filter((a, i, arr) =>
+                      a.key !== 'top_contributor'
+                        ? arr.findIndex(x => x.key === a.key) === i
+                        : i === arr.findIndex(x => x.key === 'top_contributor'),
+                    )
+                    .map(badge => (
+                      <BadgePill
+                        key={`${badge.key}-${badge.unlockedAt}`}
+                        badge={badge}
+                        allBadges={entry.achievements}
+                      />
+                    ))}
+                </div>
+              ) : null}
+            </div>
             <span className="bg-brand-light-blue text-brand-dark-blue shrink-0 rounded-full px-3 py-1 text-xs font-bold tabular-nums">
               {formatContributorPoints(entry.points)}
             </span>
