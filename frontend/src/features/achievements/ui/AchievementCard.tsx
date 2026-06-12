@@ -1,12 +1,7 @@
 import { cn } from '@/shared/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip';
 
-import activeVoiceIconUrl from '../public/ActiveVoice.svg';
-import collaboratorIconUrl from '../public/Collaborator.svg';
-import completerIconUrl from '../public/Completer.svg';
-import connectorIconUrl from '../public/Connector.svg';
-import innovatorIconUrl from '../public/Innovator.svg';
-import topContributorIconUrl from '../public/TopContributor.svg';
+import { BADGE_ICON_URLS } from '../lib/badge-icons';
 import type { UserAchievementDto } from '../model/achievements.types';
 
 const BADGE_UNLOCK_HINTS: Record<string, string> = {
@@ -16,15 +11,6 @@ const BADGE_UNLOCK_HINTS: Record<string, string> = {
   collaborator: 'Join 10 projects to unlock the Collaborator badge',
   completer: 'Complete 3 ideas to unlock the Completer badge',
   connector: 'Invite 5 users to unlock the Connector badge',
-};
-
-const BADGE_ICON_URLS: Record<string, string> = {
-  innovator: innovatorIconUrl,
-  active_voice: activeVoiceIconUrl,
-  collaborator: collaboratorIconUrl,
-  completer: completerIconUrl,
-  connector: connectorIconUrl,
-  top_contributor: topContributorIconUrl,
 };
 
 type AchievementCardProps = {

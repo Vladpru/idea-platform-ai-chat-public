@@ -1,9 +1,10 @@
-import { useEffect, useRef } from 'react';
-
+import { createElement, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
 import { markAchievementsSeen } from '../api/achievements.api';
+import { BADGE_EARNED_MESSAGES } from '../lib/badge-icons';
 import type { UserAchievementDto } from '../model/achievements.types';
+import { BadgeToast } from '../ui/BadgeToast';
 
 export function useAchievementToast(
   achievements: UserAchievementDto[] | undefined,
@@ -19,11 +20,19 @@ export function useAchievementToast(
     shownRef.current = true;
 
     newBadges.forEach(badge => {
-      toast(`Badge unlocked: ${badge.name}`, {
-        description: badge.progress.threshold
-          ? `You've reached the ${badge.name} milestone!`
-          : `You've earned the ${badge.name} badge!`,
-      });
+      const description =
+        BADGE_EARNED_MESSAGES[badge.key] ??
+        `You've earned the ${badge.name} badge!`;
+
+      toast.custom(
+        () =>
+          createElement(BadgeToast, {
+            name: badge.name,
+            badgeKey: badge.key,
+            description,
+          }),
+        { duration: 6000 },
+      );
     });
 
     void markAchievementsSeen();

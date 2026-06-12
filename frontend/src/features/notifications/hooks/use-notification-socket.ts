@@ -1,12 +1,14 @@
-import { notificationQueryKeys } from '@/features/notifications/lib/notification-query-keys';
+import { markAchievementsSeen } from '@/features/achievements/api/achievements.api';
+import { BADGE_EARNED_MESSAGES } from '@/features/achievements/lib/badge-icons';
+import { BadgeToast } from '@/features/achievements/ui/BadgeToast';
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
-import { getStoredAuthToken } from '@/shared/lib/auth-token';
+import { notificationQueryKeys } from '@/features/notifications/lib/notification-query-keys';
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef } from 'react';
-import { io, type Socket } from 'socket.io-client';
+import { createElement, useEffect, useRef } from 'react';
+import { type Socket, io } from 'socket.io-client';
 import { toast } from 'sonner';
 
-import { markAchievementsSeen } from '@/features/achievements/api/achievements.api';
+import { getStoredAuthToken } from '@/shared/lib/auth-token';
 
 function getSocketBaseUrl(): string {
   const base = import.meta.env.VITE_API_URL;
@@ -57,9 +59,18 @@ export function useNotificationSocket(): void {
     };
 
     const handleAchievementUnlocked = (badge: AchievementBadgePayload) => {
-      toast(`Badge unlocked: ${badge.name}`, {
-        description: `You've earned the ${badge.name} badge!`,
-      });
+      const description =
+        BADGE_EARNED_MESSAGES[badge.key] ??
+        `You've earned the ${badge.name} badge!`;
+      toast.custom(
+        () =>
+          createElement(BadgeToast, {
+            name: badge.name,
+            badgeKey: badge.key,
+            description,
+          }),
+        { duration: 6000 },
+      );
       void markAchievementsSeen();
       void queryClient.invalidateQueries({ queryKey: ['achievements', 'me'] });
     };
