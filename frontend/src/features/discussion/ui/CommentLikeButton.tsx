@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ThumbsUp } from 'lucide-react';
 
 import type { DiscussionEntityType } from '@/features/discussion/api/comments-api.types';
 import { useCommentLikeToggle } from '@/features/discussion/hooks/use-comment-like-toggle';
 import type { CommentLikePatch } from '@/features/discussion/lib/sync-comment-like-query-cache';
+import { useDebouncedLike } from '@/shared/hooks/use-debounced-like';
 import { cn } from '@/shared/lib/utils';
 
 type CommentLikeButtonProps = {
@@ -14,15 +15,6 @@ type CommentLikeButtonProps = {
   likeCount: number;
   className?: string;
 };
-
-function getNextLikeState(current: CommentLikePatch): CommentLikePatch {
-  return {
-    isLiked: !current.isLiked,
-    likeCount: current.isLiked
-      ? Math.max(0, current.likeCount - 1)
-      : current.likeCount + 1,
-  };
-}
 
 export function CommentLikeButton({
   commentId,
@@ -35,13 +27,15 @@ export function CommentLikeButton({
   const [shouldAnimate, setShouldAnimate] = useState(false);
   const { mutate } = useCommentLikeToggle(entityType, entityId);
 
-  const handleClick = () => {
-    const next = getNextLikeState({ isLiked, likeCount });
+  const onCommit = useCallback(
+    (nextState: CommentLikePatch, onSettled: () => void) => {
+      setShouldAnimate(nextState.isLiked);
+      mutate({ commentId, nextState }, { onSettled });
+    },
+    [commentId, mutate],
+  );
 
-    setShouldAnimate(next.isLiked);
-
-    mutate({ commentId, nextState: next });
-  };
+  const { optimistic, toggle } = useDebouncedLike({ isLiked, likeCount, onCommit });
 
   return (
     <button
@@ -50,21 +44,21 @@ export function CommentLikeButton({
         'text-brand-dark-blue hover:text-brand-dark-blue/80 inline-flex cursor-pointer items-center gap-1.5 text-sm transition-all duration-200 active:scale-90',
         className,
       )}
-      aria-label={isLiked ? 'Unlike comment' : 'Like comment'}
-      aria-pressed={isLiked}
-      onClick={handleClick}
+      aria-label={optimistic.isLiked ? 'Unlike comment' : 'Like comment'}
+      aria-pressed={optimistic.isLiked}
+      onClick={toggle}
     >
       <ThumbsUp
         className={cn(
           'size-4 transition-colors duration-200',
-          isLiked
+          optimistic.isLiked
             ? 'fill-brand-dark-blue text-brand-dark-blue'
             : 'text-brand-dark-blue fill-transparent',
           shouldAnimate && 'animate-like-pop',
         )}
       />
       <span aria-live="polite" className="tabular-nums">
-        {likeCount}
+        {optimistic.likeCount}
       </span>
     </button>
   );

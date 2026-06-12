@@ -7,6 +7,7 @@ import type {
   DiscussionEntityType,
 } from '@/features/discussion/api/comments-api.types';
 import { commentQueryKeys } from '@/features/discussion/hooks/comment-query-keys';
+import { ENTITY_DETAILS_POLL_INTERVAL_MS } from '@/shared/lib/summary-polling';
 import { useInfiniteQuery } from '@tanstack/react-query';
 
 type UseCommentsInfiniteQueryOptions = {
@@ -35,5 +36,7 @@ export function useCommentsInfiniteQuery(
     getNextPageParam: lastPage =>
       lastPage.meta.hasNextPage ? lastPage.meta.page + 1 : undefined,
     enabled: Boolean(entityId) && (options?.enabled ?? true),
+    refetchInterval: ENTITY_DETAILS_POLL_INTERVAL_MS,
+    refetchIntervalInBackground: false,
   });
 }
