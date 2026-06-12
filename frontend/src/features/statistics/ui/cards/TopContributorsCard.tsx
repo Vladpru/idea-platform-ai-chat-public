@@ -1,4 +1,5 @@
 import { getInitials } from '@/features/idea-details/lib/get-initials';
+import { BadgePill } from '@/features/achievements';
 import { Link } from '@tanstack/react-router';
 import { ArrowRight, Star } from 'lucide-react';
 
@@ -51,7 +52,7 @@ function ContributorEntry({
             {getInitials(contributor.name)}
           </AvatarFallback>
         </Avatar>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="text-brand-black group-hover:text-brand-dark-blue truncate text-sm font-bold transition-colors">
             {contributor.name}
           </p>
@@ -59,6 +60,23 @@ function ContributorEntry({
             {formatContributorPoints(contributor.points)}
           </span>
         </div>
+        {contributor.achievements && contributor.achievements.length > 0 ? (
+          <div className="flex shrink-0 items-center gap-1">
+            {contributor.achievements
+              .filter((a, i, arr) =>
+                a.key !== 'top_contributor'
+                  ? arr.findIndex(x => x.key === a.key) === i
+                  : i === arr.findIndex(x => x.key === 'top_contributor'),
+              )
+              .map(badge => (
+                <BadgePill
+                  key={`${badge.key}-${badge.unlockedAt}`}
+                  badge={badge}
+                  allBadges={contributor.achievements}
+                />
+              ))}
+          </div>
+        ) : null}
       </Link>
     </li>
   );

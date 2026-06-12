@@ -8,6 +8,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 
 import { IdeaStatus, Prisma } from '../../generated/prisma/client';
 import type { IdeaMemberModel } from '../../generated/prisma/models/IdeaMember';
+import { AchievementService } from '../achievement/achievement.service';
 import { NOTIFICATION_EVENTS } from '../notification/events/notification-event-names';
 import type { SupporterAddedNotificationEvent } from '../notification/events/notification.events';
 import { resolveActorDisplayName } from '../notification/lib/notification-integration.util';
@@ -18,6 +19,7 @@ export class IdeaMemberService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly achievementService: AchievementService,
   ) {}
 
   private ideaMemberKey(
@@ -60,6 +62,8 @@ export class IdeaMemberService {
         userId,
       },
     });
+
+    await this.achievementService.checkAndUnlock(userId, 'PROJECT_JOINED');
 
     const actorName = await resolveActorDisplayName(this.prisma, userId);
 

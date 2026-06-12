@@ -5,22 +5,29 @@ import { useMemo, type ReactNode } from 'react';
 type TabsLayoutProps = {
   activeTab: ProfileContributionsTab;
   onTabChange: (tab: ProfileContributionsTab) => void;
+  isOwner?: boolean;
   children: ReactNode;
 };
 
-const PROFILE_CONTRIBUTION_TABS: TabDefinition<ProfileContributionsTab>[] = [
+const BASE_TABS: TabDefinition<ProfileContributionsTab>[] = [
   { id: 'all', label: 'All Contributions' },
   { id: 'idea', label: 'Ideas' },
   { id: 'problem', label: 'Problems' },
   { id: 'joined', label: 'Joined' },
 ];
 
+const DRAFTS_TAB: TabDefinition<ProfileContributionsTab> = { id: 'drafts', label: 'Drafts' };
+
 export function TabsLayout({
   activeTab,
   onTabChange,
+  isOwner = false,
   children,
 }: TabsLayoutProps) {
-  const tabs = useMemo(() => PROFILE_CONTRIBUTION_TABS, []);
+  const tabs = useMemo(
+    () => (isOwner ? [...BASE_TABS, DRAFTS_TAB] : BASE_TABS),
+    [isOwner],
+  );
 
   return (
     <div>

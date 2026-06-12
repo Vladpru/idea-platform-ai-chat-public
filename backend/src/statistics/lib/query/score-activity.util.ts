@@ -1,4 +1,4 @@
-import { IdeaStatus, Prisma } from '../../../../generated/prisma/client';
+import { IdeaStatus, Prisma, Stage } from '../../../../generated/prisma/client';
 import type { ScoringWeights } from '../../../shared/types/scoring.types';
 import { asUtcTimestamptz, scoringPoints } from './timestamp-sql.util';
 
@@ -53,5 +53,22 @@ export function buildScoreActivityCte(
     FROM "idea_like"
     WHERE ${asUtcTimestamptz('created_at')} >= ${start}
       AND ${asUtcTimestamptz('created_at')} <= ${end}
+
+    UNION ALL
+
+    SELECT "author_id", 'completedIdeas'::text, ${scoringPoints(weights.COMPLETE_IDEA)}
+    FROM "idea"
+    WHERE "status" = ${IdeaStatus.PUBLISHED}
+      AND "stage" = ${Stage.completed}
+      AND "completed_at" IS NOT NULL
+      AND ${asUtcTimestamptz('completed_at')} >= ${start}
+      AND ${asUtcTimestamptz('completed_at')} <= ${end}
+
+    UNION ALL
+
+    SELECT "user_id", 'badges'::text, ${scoringPoints(weights.EARN_BADGE)}
+    FROM "user_achievement"
+    WHERE ${asUtcTimestamptz('unlocked_at')} >= ${start}
+      AND ${asUtcTimestamptz('unlocked_at')} <= ${end}
   `;
 }

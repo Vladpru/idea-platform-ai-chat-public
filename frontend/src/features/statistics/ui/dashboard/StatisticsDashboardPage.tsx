@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import { useMyAchievements, useAchievementToast } from '@/features/achievements';
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import { Card } from '@/shared/ui';
 import { Button } from '@/shared/ui/button';
@@ -9,6 +10,7 @@ import { useStatisticsSnapshot } from '../../hooks/use-statistics-snapshot';
 import type { StatisticsPeriod } from '../../model/statistics.types';
 import { StatisticsTimeRangeSelect } from '../StatisticsTimeRangeSelect';
 import { CostBenefitCard } from '../cards/CostBenefitCard';
+import { MyAchievementsCard } from '../cards/MyAchievementsCard';
 import { MyScoreCard } from '../cards/MyScoreCard';
 import { TopContributorsCard } from '../cards/TopContributorsCard';
 import { StatisticsMultiLineChartCard } from '../charts/StatisticsMultiLineChartCard';
@@ -36,6 +38,9 @@ export function StatisticsDashboardPage() {
   const [period, setPeriod] = useState<StatisticsPeriod>('year_to_date');
   const { data, isLoading, isError, error, refetch, isFetching } =
     useStatisticsSnapshot(period);
+
+  const { data: achievements } = useMyAchievements();
+  useAchievementToast(achievements);
 
   return (
     <main className="bg-brand-neutral min-h-[calc(100vh-56px)] px-4 md:px-8 lg:px-12">
@@ -107,6 +112,10 @@ export function StatisticsDashboardPage() {
 
               <div className="mt-4 lg:mt-5">
                 <MyScoreCard myScore={data.myScore} isFetching={isFetching} />
+              </div>
+
+              <div className="mt-4 lg:mt-5">
+                <MyAchievementsCard isFetching={isFetching} />
               </div>
             </>
           )}

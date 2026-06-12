@@ -71,6 +71,7 @@ type StatisticsMultiLineChartProps = {
   ariaLabel: string;
   fillSeriesKey?: string;
   period?: StatisticsPeriod;
+  activeSeries?: string | null;
 };
 
 export function StatisticsMultiLineChart({
@@ -78,6 +79,7 @@ export function StatisticsMultiLineChart({
   ariaLabel,
   fillSeriesKey,
   period,
+  activeSeries = null,
 }: StatisticsMultiLineChartProps) {
   const isDenseDayView = period === 'day';
   const seriesKeys = panel.series.map(series => series.key);
@@ -170,22 +172,32 @@ export function StatisticsMultiLineChart({
             isAnimationActive={false}
           />
         ) : null}
-        {panel.series.map(series => (
-          <Line
-            key={series.key}
-            dataKey={series.key}
-            type="monotone"
-            stroke={`var(--color-${series.key})`}
-            strokeWidth={2.5}
-            dot={createSeriesDot(series.key)}
-            activeDot={{
-              r: 5,
-              fill: `var(--color-${series.key})`,
-              stroke: 'var(--statistics-chart-dot-ring)',
-              strokeWidth: 2,
-            }}
-          />
-        ))}
+        {panel.series.map(series => {
+          const isActive = activeSeries === series.key;
+          const isInactive = activeSeries !== null && !isActive;
+
+          return (
+            <Line
+              key={series.key}
+              dataKey={series.key}
+              type="monotone"
+              stroke={`var(--color-${series.key})`}
+              strokeWidth={isActive ? 3.5 : 2.5}
+              strokeOpacity={isInactive ? 0.1 : 1}
+              dot={createSeriesDot(series.key)}
+              activeDot={
+                isInactive
+                  ? false
+                  : {
+                      r: 5,
+                      fill: `var(--color-${series.key})`,
+                      stroke: 'var(--statistics-chart-dot-ring)',
+                      strokeWidth: 2,
+                    }
+              }
+            />
+          );
+        })}
       </ComposedChart>
     </ChartContainer>
   );

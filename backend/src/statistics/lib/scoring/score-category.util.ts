@@ -24,6 +24,12 @@ export const SCORE_CATEGORY_DEFINITIONS: ScoreCategoryDefinition[] = [
   { key: 'comments', label: 'Comments', singularLabel: 'Comment' },
   { key: 'views', label: 'Views', singularLabel: 'View' },
   { key: 'likes', label: 'Likes', singularLabel: 'Like' },
+  {
+    key: 'completedIdeas',
+    label: 'Completed ideas',
+    singularLabel: 'Completed idea',
+  },
+  { key: 'badges', label: 'Badges', singularLabel: 'Badge' },
 ];
 
 export function formatScoreCategoryCountLabel(

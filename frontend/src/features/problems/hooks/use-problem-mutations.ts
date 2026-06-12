@@ -114,9 +114,16 @@ export function usePublishProblemMutation() {
       invalidateProblemQueries(queryClient, problem.id, {
         invalidateDashboard: true,
       });
-      toast.success(
-        variables.problemId ? 'Problem updated' : 'Problem published',
-      );
+      if (variables.problemId) {
+        toast.success('🎉 You earned +15 points', {
+          description: 'Progress shared — your updates keep the project moving.',
+        });
+      } else {
+        toast.success('🎉 You earned +50 points', {
+          description:
+            "Great work — you've identified a new problem that drives innovation.",
+        });
+      }
     },
     onError: error => {
       toast.error(getApiErrorMessage(error));
@@ -160,7 +167,9 @@ export function useUpdateProblemMutation(problemId: string) {
       updateProblem(problemId, payload),
     onSuccess: problem => {
       invalidateProblemQueries(queryClient, problem.id);
-      toast.success('Problem updated');
+      toast.success('🎉 You earned +15 points', {
+        description: 'Progress shared — your updates keep the project moving.',
+      });
     },
     onError: error => {
       toast.error(getApiErrorMessage(error));
@@ -227,7 +236,9 @@ export function useJoinProblemMutation(problemId: string) {
     mutationFn: () => joinProblem(problemId),
     onSuccess: () => {
       invalidateProblemQueries(queryClient, problemId);
-      toast.success('You joined the project');
+      toast.success('🎉 You earned +20 points', {
+        description: 'Welcome aboard! Collaboration drives the best solutions.',
+      });
     },
     onError: error => {
       toast.error(getApiErrorMessage(error));

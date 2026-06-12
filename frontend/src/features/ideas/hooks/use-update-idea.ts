@@ -17,8 +17,17 @@ export function useUpdateIdea(ideaId: string, status: IdeaStatus) {
     mutationKey: [...ideaMutationKeys.all, 'update', ideaId, status],
     mutationFn: (values: IdeaEditFormValues) =>
       saveEditedIdea(ideaId, status, values),
-    onSuccess: () => {
+    onSuccess: (_data, values) => {
       invalidateIdeaQueries(queryClient, ideaId);
+      if (values.stage === 'completed') {
+        toast.success('🎉 You earned +100 points', {
+          description: 'You completed an idea — great work!',
+        });
+      } else {
+        toast.success('🎉 You earned +15 points', {
+          description: 'Progress shared — your updates keep the project moving.',
+        });
+      }
     },
     onError: error => {
       toast.error(getApiErrorMessage(error));

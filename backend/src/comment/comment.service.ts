@@ -14,6 +14,7 @@ import {
   Prisma,
   ProblemStatus,
 } from '../../generated/prisma/client';
+import { AchievementService } from '../achievement/achievement.service';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { EntityTarget } from '../entity-visibility/entity-target.enum';
 import { EntityVisibilityService } from '../entity-visibility/entity-visibility.service';
@@ -53,6 +54,7 @@ export class CommentService {
     private readonly cloudinary: CloudinaryService,
     private readonly eventEmitter: EventEmitter2,
     private readonly entityVisibility: EntityVisibilityService,
+    private readonly achievementService: AchievementService,
   ) {}
 
   async findIdeaComments(
@@ -454,6 +456,11 @@ export class CommentService {
 
         return createdComment;
       });
+
+      await this.achievementService.checkAndUnlock(
+        fullComment.authorId,
+        'COMMENT_CREATED',
+      );
 
       await this.emitCommentCreatedNotification({
         commentId: fullComment.id,

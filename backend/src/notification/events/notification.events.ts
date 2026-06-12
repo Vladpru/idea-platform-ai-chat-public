@@ -129,3 +129,12 @@ export type DirectMessageReceivedNotificationEvent = {
   actorName: string;
   contentSnippet: string;
 };
+
+export type AchievementUnlockedEvent = {
+  userId: string;
+  badge: {
+    key: string;
+    name: string;
+    iconPath: string;
+  };
+};
