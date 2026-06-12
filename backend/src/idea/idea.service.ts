@@ -636,7 +636,7 @@ export class IdeaService {
         nextStage: idea.stage,
       });
 
-      void this.achievementService.checkAndUnlock(authorId, 'IDEA_PUBLISHED');
+      await this.achievementService.checkAndUnlock(authorId, 'IDEA_PUBLISHED');
     }
 
     if (shouldNotifyIdea) {
@@ -753,7 +753,7 @@ export class IdeaService {
     }
 
     if (completingNow) {
-      void this.achievementService.checkAndUnlock(authorId, 'IDEA_COMPLETED');
+      await this.achievementService.checkAndUnlock(authorId, 'IDEA_COMPLETED');
     }
 
     return toIdeaFormResponse(updated, authorId);
@@ -855,7 +855,7 @@ export class IdeaService {
     }
 
     if (completingNow) {
-      void this.achievementService.checkAndUnlock(authorId, 'IDEA_COMPLETED');
+      await this.achievementService.checkAndUnlock(authorId, 'IDEA_COMPLETED');
     }
 
     return toIdeaFormResponse(updated, authorId);
@@ -1050,7 +1050,7 @@ export class IdeaService {
       publishedProblems,
     );
 
-    void this.achievementService.checkAndUnlock(authorId, 'IDEA_PUBLISHED');
+    await this.achievementService.checkAndUnlock(authorId, 'IDEA_PUBLISHED');
 
     return toIdeaFormResponse(published, authorId);
   }

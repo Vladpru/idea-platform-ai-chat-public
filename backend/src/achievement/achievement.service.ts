@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
+import { Prisma } from '../../generated/prisma/client';
 import { NOTIFICATION_EVENTS } from '../notification/events/notification-event-names';
 import type { AchievementUnlockedEvent } from '../notification/events/notification.events';
 import { AchievementRepository } from './achievement.repository';
@@ -52,6 +53,12 @@ export class AchievementService {
       };
       this.eventEmitter.emit(NOTIFICATION_EVENTS.ACHIEVEMENT_UNLOCKED, payload);
     } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        return;
+      }
       this.logger.error(
         `Failed to check/unlock ${key} for user ${userId}`,
         error,
@@ -90,6 +97,12 @@ export class AchievementService {
       };
       this.eventEmitter.emit(NOTIFICATION_EVENTS.ACHIEVEMENT_UNLOCKED, payload);
     } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        return;
+      }
       this.logger.error(
         `Failed to unlock top_contributor for user ${userId}`,
         error,
@@ -185,18 +198,14 @@ export class AchievementService {
   private async getAllCounts(
     userId: string,
   ): Promise<Partial<Record<AchievementKey, number>>> {
-    const [ideas, comments, joins, completed] = await Promise.all([
-      this.repo.countPublishedIdeas(userId),
-      this.repo.countComments(userId),
-      this.repo.countJoinedProjects(userId),
-      this.repo.countCompletedIdeas(userId),
-    ]);
+    const { publishedIdeas, completedIdeas, comments, joinedProjects } =
+      await this.repo.countProgressMetrics(userId);
 
     return {
-      innovator: ideas,
+      innovator: publishedIdeas,
       active_voice: comments,
-      collaborator: joins,
-      completer: completed,
+      collaborator: joinedProjects,
+      completer: completedIdeas,
       connector: 0,
       top_contributor: 0,
     };

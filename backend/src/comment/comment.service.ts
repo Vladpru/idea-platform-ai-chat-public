@@ -457,7 +457,7 @@ export class CommentService {
         return createdComment;
       });
 
-      void this.achievementService.checkAndUnlock(
+      await this.achievementService.checkAndUnlock(
         fullComment.authorId,
         'COMMENT_CREATED',
       );

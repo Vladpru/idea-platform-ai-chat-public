@@ -13,23 +13,23 @@ export class AchievementCronService {
     private readonly scoringRepo: StatisticsScoringRepository,
   ) {}
 
-  // Runs at 00:00 on the 1st of every month
-  @Cron('0 0 1 * *')
+  // Runs at 00:00 UTC on the 1st of every month
+  @Cron('0 0 1 * *', { timeZone: 'UTC' })
   async awardTopContributor(): Promise<void> {
-    const now = new Date();
-    const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const start = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), 1);
+    const nowUtc = new Date();
+    const prevYear =
+      nowUtc.getUTCMonth() === 0
+        ? nowUtc.getUTCFullYear() - 1
+        : nowUtc.getUTCFullYear();
+    const prevMonthIndex =
+      nowUtc.getUTCMonth() === 0 ? 11 : nowUtc.getUTCMonth() - 1;
+
+    const start = new Date(Date.UTC(prevYear, prevMonthIndex, 1));
     const end = new Date(
-      prevMonth.getFullYear(),
-      prevMonth.getMonth() + 1,
-      0,
-      23,
-      59,
-      59,
-      999,
+      Date.UTC(prevYear, prevMonthIndex + 1, 1) - 1,
     );
 
-    const month = `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}`;
+    const month = `${prevYear}-${String(prevMonthIndex + 1).padStart(2, '0')}`;
 
     this.logger.log(`Awarding Top Contributor for ${month}`);
 

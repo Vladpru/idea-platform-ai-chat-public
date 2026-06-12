@@ -63,7 +63,7 @@ export class IdeaMemberService {
       },
     });
 
-    void this.achievementService.checkAndUnlock(userId, 'PROJECT_JOINED');
+    await this.achievementService.checkAndUnlock(userId, 'PROJECT_JOINED');
 
     const actorName = await resolveActorDisplayName(this.prisma, userId);
 

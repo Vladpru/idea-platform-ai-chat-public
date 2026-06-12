@@ -1,7 +1,15 @@
 import { Injectable } from '@nestjs/common';
 
+import { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import type { AchievementKey } from './lib/achievement-criteria';
+
+export type ProgressCounts = {
+  publishedIdeas: number;
+  completedIdeas: number;
+  comments: number;
+  joinedProjects: number;
+};
 
 @Injectable()
 export class AchievementRepository {
@@ -57,6 +65,38 @@ export class AchievementRepository {
       where: { userId, seenAt: null },
       data: { seenAt: new Date() },
     });
+  }
+
+  async countProgressMetrics(userId: string): Promise<ProgressCounts> {
+    const rows = await this.prisma.$queryRaw<
+      [
+        {
+          published_ideas: bigint;
+          completed_ideas: bigint;
+          comments: bigint;
+          joined_projects: bigint;
+        },
+      ]
+    >(Prisma.sql`
+      SELECT
+        (SELECT COUNT(*) FROM "idea"
+          WHERE "author_id" = ${userId} AND "status" = 'PUBLISHED')::bigint        AS published_ideas,
+        (SELECT COUNT(*) FROM "idea"
+          WHERE "author_id" = ${userId} AND "status" = 'PUBLISHED'
+            AND "stage" = 'completed')::bigint                                      AS completed_ideas,
+        (SELECT COUNT(*) FROM "comment"
+          WHERE "author_id" = ${userId})::bigint                                    AS comments,
+        (SELECT COUNT(*) FROM "idea_member"
+          WHERE "user_id" = ${userId})::bigint                                      AS joined_projects
+    `);
+
+    const row = rows[0];
+    return {
+      publishedIdeas: Number(row.published_ideas),
+      completedIdeas: Number(row.completed_ideas),
+      comments: Number(row.comments),
+      joinedProjects: Number(row.joined_projects),
+    };
   }
 
   async countPublishedIdeas(userId: string): Promise<number> {
