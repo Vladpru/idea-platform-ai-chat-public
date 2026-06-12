@@ -4,18 +4,21 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
+  DialogHeader,
+  DialogTitle,
   DialogTrigger,
 } from '@/shared/ui/dialog';
 
 const SCORE_RULES: { label: string; points: number }[] = [
-  { label: 'Create idea', points: 50 },
-  { label: 'Join idea', points: 20 },
-  { label: 'Update idea', points: 15 },
-  { label: 'Invite collaborator', points: 25 },
-  { label: 'Comment on idea', points: 5 },
-  { label: 'New badge earned', points: 10 },
-  { label: 'Like idea', points: 3 },
-  { label: 'View idea', points: 1 },
+  { label: 'New badge earned', points: 200 },
+  { label: 'Complete idea', points: 100 },
+  { label: 'Create idea/problem/product', points: 50 },
+  { label: 'Join idea/problem/product', points: 20 },
+  { label: 'Create update for idea/problem/product', points: 15 },
+  { label: 'Invite collaborator', points: 15 },
+  { label: 'Comment idea/problem/product', points: 5 },
+  { label: 'Like idea/problem/product', points: 3 },
+  { label: 'View idea/problem/product', points: 1 },
 ];
 
 export function ScoreHowItWorksModal() {
@@ -24,54 +27,49 @@ export function ScoreHowItWorksModal() {
       <DialogTrigger asChild>
         <button
           type="button"
-          className="text-brand-dark-blue hover:text-brand-dark-blue/80 inline-flex items-center gap-1.5 text-xs font-bold tracking-wide uppercase transition-colors"
+          className="text-brand-dark-blue hover:text-brand-dark-blue/80 inline-flex cursor-pointer items-center gap-1.5 text-xs font-bold tracking-wide uppercase transition-colors"
         >
           How it works
           <CircleHelp className="size-4" aria-hidden />
         </button>
       </DialogTrigger>
-      <DialogContent className="max-w-lg gap-0 overflow-hidden p-0">
-        <DialogClose className="text-brand-gray-500 hover:text-brand-black absolute top-4 right-4 z-10 transition-colors">
-          <X className="size-5" />
+      <DialogContent className="border-brand-gray-600 max-w-2xl rounded-sm">
+        <DialogClose className="text-brand-gray-500 hover:text-brand-gray-700 absolute top-4 right-6 transition-colors">
+          <X className="size-5" aria-hidden />
           <span className="sr-only">Close</span>
         </DialogClose>
-
-        <div className="px-8 pt-8 pb-6 text-center">
-          <h2 className="text-brand-dark-blue text-xl font-bold">
+        <DialogHeader>
+          <DialogTitle className="text-center text-xl font-bold">
             How Points work
-          </h2>
-          <p className="text-brand-gray-500 mt-2 text-sm leading-relaxed">
-            Earn points by contributing to ideas on the platform.
-            <br />
-            Points reset monthly and determine your leaderboard rank.
-          </p>
-        </div>
-
-        <div className="px-8 pb-8">
-          <div className="border-brand-gray-200 overflow-hidden rounded-xl border">
-            <div className="bg-brand-gray-50 dark:bg-brand-gray-100 grid grid-cols-2 px-4 py-2.5">
-              <span className="text-brand-gray-500 text-xs font-semibold tracking-wide uppercase">
-                Action
-              </span>
-              <span className="text-brand-gray-500 text-right text-xs font-semibold tracking-wide uppercase">
-                Points
-              </span>
-            </div>
-
-            {SCORE_RULES.map(({ label, points }) => (
-              <div
-                key={label}
-                className="border-brand-gray-200 grid grid-cols-2 border-t px-4 py-3"
-              >
-                <span className="text-brand-black text-sm font-medium">
-                  {label}
-                </span>
-                <span className="text-brand-dark-blue text-right text-sm font-bold tabular-nums">
-                  +{points}
-                </span>
-              </div>
-            ))}
-          </div>
+          </DialogTitle>
+        </DialogHeader>
+        <p className="text-brand-gray-600 text-center text-sm">
+          Contribute ideas, solve problems, and support others.
+          <br />
+          The more you participate, the higher your score — and the greater your
+          impact on innovation.
+        </p>
+        <div className="mt-1 overflow-hidden border border-gray-600">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-brand-light-blue">
+                <th className="text-brand-dark-blue px-4 py-3 text-left font-semibold">
+                  Action
+                </th>
+                <th className="text-brand-dark-blue px-4 py-3 text-left font-semibold">
+                  Points
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {SCORE_RULES.map(({ label, points }) => (
+                <tr key={label} className="border-t border-gray-200">
+                  <td className="text-brand-gray-700 px-4 py-3">{label}</td>
+                  <td className="text-brand-gray-700 px-4 py-3">+{points}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </DialogContent>
     </Dialog>

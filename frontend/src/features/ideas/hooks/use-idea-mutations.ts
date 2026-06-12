@@ -137,7 +137,9 @@ export function useUpdateIdeaMutation(ideaId: string) {
     mutationFn: (payload: UpdateIdeaPayload) => updateIdea(ideaId, payload),
     onSuccess: idea => {
       invalidateIdeaQueries(queryClient, idea.id);
-      toast.success('Idea updated');
+      toast.success('🎉 You earned +15 points', {
+        description: 'Progress shared — your updates keep the project moving.',
+      });
     },
     onError: error => {
       toast.error(getApiErrorMessage(error));
@@ -228,7 +230,9 @@ export function usePublishIdeaMutation() {
         invalidateDashboard: true,
       });
       if (action === 'publish') {
-        toast.success('Idea published');
+        toast.success('🎉 You earned +50 points', {
+          description: 'Great work — your new idea moves innovation forward!',
+        });
       }
     },
     onError: error => {

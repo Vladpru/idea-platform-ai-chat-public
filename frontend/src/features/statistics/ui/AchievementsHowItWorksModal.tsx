@@ -1,55 +1,32 @@
-import { CircleHelp } from 'lucide-react';
+import { CircleHelp, X } from 'lucide-react';
 
-import activeVoiceIconUrl from '@/features/achievements/public/ActiveVoice.svg';
-import collaboratorIconUrl from '@/features/achievements/public/Collaborator.svg';
-import completerIconUrl from '@/features/achievements/public/Completer.svg';
-import connectorIconUrl from '@/features/achievements/public/Connector.svg';
-import innovatorIconUrl from '@/features/achievements/public/Innovator.svg';
-import topContributorIconUrl from '@/features/achievements/public/TopContributor.svg';
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from '@/shared/ui/dialog';
 
-const BADGE_RULES: { key: string; name: string; iconUrl: string; description: string }[] = [
+const BADGE_RULES: { key: string; name: string; description: string }[] = [
+  { key: 'innovator', name: 'Innovator', description: 'Create 3+ ideas' },
   {
-    key: 'innovator',
-    name: 'Innovator',
-    iconUrl: innovatorIconUrl,
-    description: 'Publish 5 ideas',
+    key: 'collaborator',
+    name: 'Collaborator',
+    description: 'Join 10+ ideas/problems/products',
   },
   {
     key: 'active_voice',
     name: 'Active Voice',
-    iconUrl: activeVoiceIconUrl,
-    description: 'Create 10 comments',
+    description: 'Add 10+ comments',
   },
-  {
-    key: 'collaborator',
-    name: 'Collaborator',
-    iconUrl: collaboratorIconUrl,
-    description: 'Join 10 projects',
-  },
-  {
-    key: 'completer',
-    name: 'Completer',
-    iconUrl: completerIconUrl,
-    description: 'Complete 3 ideas',
-  },
-  {
-    key: 'connector',
-    name: 'Connector',
-    iconUrl: connectorIconUrl,
-    description: 'Invite 5 users',
-  },
+  { key: 'completer', name: 'Completer', description: 'Complete 5+ ideas' },
+  { key: 'connector', name: 'Connector', description: 'Invite 5+ users' },
   {
     key: 'top_contributor',
-    name: 'Top Contributor',
-    iconUrl: topContributorIconUrl,
-    description: 'Finish 1st on the monthly leaderboard',
+    name: 'Top Contributor (Monthly)',
+    description: 'Achieve the highest score in a month',
   },
 ];
 
@@ -59,30 +36,51 @@ export function AchievementsHowItWorksModal() {
       <DialogTrigger asChild>
         <button
           type="button"
-          className="text-brand-dark-blue hover:text-brand-dark-blue/80 inline-flex items-center gap-1.5 text-xs font-bold tracking-wide uppercase transition-colors"
+          className="text-brand-dark-blue hover:text-brand-dark-blue/80 inline-flex cursor-pointer items-center gap-1.5 text-xs font-bold tracking-wide uppercase transition-colors"
         >
           How it works
           <CircleHelp className="size-4" aria-hidden />
         </button>
       </DialogTrigger>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="border-brand-gray-600 max-w-2xl rounded-sm">
+        <DialogClose className="text-brand-gray-500 hover:text-brand-gray-700 absolute top-4 right-6 transition-colors">
+          <X className="size-5" aria-hidden />
+          <span className="sr-only">Close</span>
+        </DialogClose>
         <DialogHeader>
-          <DialogTitle>How achievements work</DialogTitle>
+          <DialogTitle className="text-center text-xl font-bold">
+            How Achievements work
+          </DialogTitle>
         </DialogHeader>
-        <p className="text-brand-gray-700 text-sm">
-          Earn badges by hitting contribution milestones:
+        <p className="text-brand-gray-600 text-center text-sm">
+          Achievements recognize your ongoing contributions — from sharing ideas
+          to completing projects. Each badge marks a milestone on your path to
+          becoming a top innovator.
         </p>
-        <ul className="space-y-3">
-          {BADGE_RULES.map(({ key, name, iconUrl, description }) => (
-            <li key={key} className="flex items-center gap-3">
-              <img src={iconUrl} alt="" aria-hidden className="size-9 shrink-0" />
-              <div className="min-w-0">
-                <p className="text-brand-black text-sm font-bold">{name}</p>
-                <p className="text-brand-gray-500 text-xs">{description}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
+        <div className="mt-1 overflow-hidden border border-gray-600">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-brand-light-blue">
+                <th className="text-brand-dark-blue px-4 py-3 text-left font-semibold">
+                  Badge
+                </th>
+                <th className="text-brand-dark-blue px-4 py-3 text-left font-semibold">
+                  How to earn it
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {BADGE_RULES.map(({ key, name, description }) => (
+                <tr key={key} className="border-brand-light-blue border-t">
+                  <td className="text-brand-gray-700 px-4 py-3">{name}</td>
+                  <td className="text-brand-gray-700 px-4 py-3">
+                    {description}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </DialogContent>
     </Dialog>
   );

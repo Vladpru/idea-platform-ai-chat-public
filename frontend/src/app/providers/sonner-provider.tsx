@@ -5,7 +5,7 @@ export function SonnerProvider({ children }: { children: ReactNode }) {
   return (
     <>
       {children}
-      <Toaster position="bottom-left" theme="light" richColors />
+      <Toaster position="bottom-right" theme="light" />
     </>
   );
 }
