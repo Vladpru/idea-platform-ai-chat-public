@@ -536,7 +536,7 @@ export function CommentItem({
           ) : null}
         </div>
 
-        <footer className="mt-4 flex items-center justify-end gap-6">
+        <footer className="mt-4 flex items-center justify-end gap-4">
           {isClientError ? (
             <div className="flex w-full flex-wrap items-center justify-between gap-3 sm:justify-end">
               <p className="text-sm font-medium text-red-600">Failed to send</p>
@@ -559,6 +559,20 @@ export function CommentItem({
             </div>
           ) : (
             <>
+              <FooterActionButton
+                onClick={() => setReplyTo(comment)}
+                disabled={isMutating || isEditing}
+                className="cursor-pointer"
+              >
+                REPLY
+              </FooterActionButton>
+              <CommentLikeButton
+                commentId={comment.id}
+                entityType={entityType}
+                entityId={entityId}
+                isLiked={comment.isLiked}
+                likeCount={comment.likeCount}
+              />
               {isAuthor ? (
                 isEditing ? (
                   <div className="flex items-center gap-4">
@@ -587,20 +601,6 @@ export function CommentItem({
                   />
                 )
               ) : null}
-              <FooterActionButton
-                onClick={() => setReplyTo(comment)}
-                disabled={isMutating || isEditing}
-                className="cursor-pointer"
-              >
-                REPLY
-              </FooterActionButton>
-              <CommentLikeButton
-                commentId={comment.id}
-                entityType={entityType}
-                entityId={entityId}
-                isLiked={comment.isLiked}
-                likeCount={comment.likeCount}
-              />
             </>
           )}
         </footer>

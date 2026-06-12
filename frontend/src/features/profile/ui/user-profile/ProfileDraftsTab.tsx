@@ -9,6 +9,7 @@ import { ROUTES } from '@/shared/config/paths';
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
 import { SkeletonCard } from '@/shared/ui/skeleton';
+import { useMediaQuery } from '@/shared/hooks/use-media-query';
 
 import { useIdeaDrafts } from '../../hooks/use-idea-drafts';
 import { useProblemDrafts } from '../../hooks/use-problem-drafts';
@@ -19,6 +20,7 @@ type DraftType = 'ideas' | 'problems';
 
 export function ProfileDraftsTab() {
   const [draftType, setDraftType] = useState<DraftType>('ideas');
+  const isMobile = useMediaQuery('(max-width: 767px)');
 
   const ideaDrafts = useIdeaDrafts();
   const problemDrafts = useProblemDrafts();
@@ -98,6 +100,7 @@ export function ProfileDraftsTab() {
                   card={card}
                   detailHref={ROUTES.ideaDetail(card.id)}
                   layout="horizontal"
+                  isMobile={isMobile}
                   emptyDescriptionText={IDEAS_DASHBOARD_LABELS.emptyDescription}
                   emptyImageText={IDEAS_DASHBOARD_LABELS.emptyImage}
                   linkedSectionLabel={IDEAS_DASHBOARD_LABELS.linkedSectionLabel}
@@ -125,6 +128,7 @@ export function ProfileDraftsTab() {
                   card={card}
                   detailHref={ROUTES.problemDetail(card.id)}
                   layout="horizontal"
+                  isMobile={isMobile}
                   emptyDescriptionText={PROBLEMS_DASHBOARD_LABELS.emptyDescription}
                   emptyImageText={PROBLEMS_DASHBOARD_LABELS.emptyImage}
                   linkedSectionLabel={PROBLEMS_DASHBOARD_LABELS.linkedSectionLabel}
