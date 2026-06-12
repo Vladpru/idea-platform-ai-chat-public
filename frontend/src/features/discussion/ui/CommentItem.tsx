@@ -1,16 +1,6 @@
 'use client';
 
-import { Link, useBlocker } from '@tanstack/react-router';
-import { Paperclip } from 'lucide-react';
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react';
-
+import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import type {
   CommentDto,
   DiscussionEntityType,
@@ -21,7 +11,6 @@ import {
 } from '@/features/discussion/hooks/use-create-comment-mutation';
 import { useDeleteCommentMutation } from '@/features/discussion/hooks/use-delete-comment-mutation';
 import { useUpdateCommentMutation } from '@/features/discussion/hooks/use-update-comment-mutation';
-import { removeCommentFromCache } from '@/features/discussion/lib/sync-comment-mutation-cache';
 import {
   COMMENT_ATTACHMENT_ACCEPT,
   COMMENT_ATTACHMENT_ALLOWED_MESSAGE,
@@ -30,26 +19,37 @@ import {
 } from '@/features/discussion/lib/comment-attachments.constants';
 import { formatCommentTime } from '@/features/discussion/lib/format-discussion-date';
 import { scheduleHighlightDirtyComment } from '@/features/discussion/lib/highlight-dirty-comment';
+import { removeCommentFromCache } from '@/features/discussion/lib/sync-comment-mutation-cache';
+import { useDiscussionUiStore } from '@/features/discussion/model/discussion-ui-store';
 import { CommentAttachmentPreview } from '@/features/discussion/ui/CommentAttachmentPreview';
 import { CommentItemActions } from '@/features/discussion/ui/CommentItemActions';
 import { CommentLikeButton } from '@/features/discussion/ui/CommentLikeButton';
-
-import { useDiscussionUiStore } from '@/features/discussion/model/discussion-ui-store';
 import { useReplyContext } from '@/features/discussion/ui/reply-context';
-import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import { getAttachmentFileKey } from '@/features/ideas/lib/create-idea/attachments';
 import DeleteImageButton from '@/features/ideas/ui/create-idea/DeleteImageButton';
 import { IdeaAttachmentCard } from '@/features/ideas/ui/create-idea/IdeaAttachmentCard';
+import { useQueryClient } from '@tanstack/react-query';
+import { Link, useBlocker } from '@tanstack/react-router';
+import { Paperclip } from 'lucide-react';
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+
 import { useFileHandler } from '@/shared/hooks/use-file-handler';
 import {
   formatUserDisplayName,
   getAuthorInitials,
 } from '@/shared/lib/user-display';
+import { cn } from '@/shared/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { ConfirmModal } from '@/shared/ui/confirm-modal';
 import { ImageLightbox } from '@/shared/ui/image-lightbox';
-import { cn } from '@/shared/lib/utils';
-import { useQueryClient } from '@tanstack/react-query';
+
 import { QuotedReplyBlock } from './QuotedReplyBlock';
 
 type CommentItemProps = {
@@ -151,6 +151,18 @@ export function CommentItem({
           ),
       ),
     [comment.attachments],
+  );
+
+  const editImageAttachments = useMemo(
+    () =>
+      visibleExistingAttachments.filter(
+        attachment =>
+          attachment.mimeType?.startsWith('image/') ||
+          /\.(jpe?g|png|gif|webp|svg|bmp|avif)$/i.test(
+            attachment.originalFilename,
+          ),
+      ),
+    [visibleExistingAttachments],
   );
 
   const maxNewAttachments = Math.max(
@@ -423,7 +435,7 @@ export function CommentItem({
                       attachment.originalFilename,
                     );
                   const imageIndex = isImage
-                    ? imageAttachments.findIndex(
+                    ? editImageAttachments.findIndex(
                         item => item.id === attachment.id,
                       )
                     : -1;
@@ -435,7 +447,7 @@ export function CommentItem({
                     >
                       <CommentAttachmentPreview
                         attachment={attachment}
-                        className="pointer-events-none w-20"
+                        className="w-20"
                         onImageClick={
                           imageIndex >= 0
                             ? () => setLightboxIndex(imageIndex)
@@ -638,16 +650,18 @@ export function CommentItem({
         }}
       />
 
-      {lightboxIndex !== null && imageAttachments.length > 0 ? (
+      {lightboxIndex !== null && (
         <ImageLightbox
-          images={imageAttachments.map(attachment => ({
-            url: attachment.url,
-            alt: attachment.originalFilename,
-          }))}
+          images={(isEditing ? editImageAttachments : imageAttachments).map(
+            attachment => ({
+              url: attachment.url,
+              alt: attachment.originalFilename,
+            }),
+          )}
           initialIndex={lightboxIndex}
           onClose={() => setLightboxIndex(null)}
         />
-      ) : null}
+      )}
     </>
   );
 }

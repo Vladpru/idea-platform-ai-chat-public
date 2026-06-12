@@ -109,6 +109,7 @@ export function CommentInputArea({
     setContent('');
     clearFiles();
     clearReply();
+    setCachedQuote(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -208,7 +209,10 @@ export function CommentInputArea({
           >
             <QuotedReplyPreview
               quote={displayQuote}
-              onCancel={clearReply}
+              onCancel={() => {
+                clearReply();
+                setCachedQuote(null);
+              }}
               className="w-full"
             />
           </div>

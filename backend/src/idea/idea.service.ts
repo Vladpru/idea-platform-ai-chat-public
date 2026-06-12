@@ -677,7 +677,7 @@ export class IdeaService {
     authorId: string,
     dto: UpdateIdeaDraftDto,
   ): Promise<IdeaFormResponse> {
-    const { updated, shouldResetSummary, existing } =
+    const { updated, shouldResetSummary, existing, completingNow } =
       await this.prisma.$transaction(async tx => {
         const existing = await tx.idea.findFirst({
           where: { id, authorId },
@@ -764,7 +764,7 @@ export class IdeaService {
     authorId: string,
     dto: UpdatePublishedIdeaDto,
   ): Promise<IdeaFormResponse> {
-    const { updated, shouldResetSummary, existing } =
+    const { updated, shouldResetSummary, existing, completingNow } =
       await this.prisma.$transaction(async tx => {
         const existing = await tx.idea.findFirst({
           where: { id, authorId },
@@ -812,7 +812,14 @@ export class IdeaService {
         const completingNow =
           dto.stage === Stage.completed && existing.stage !== Stage.completed;
 
-        await this.updateScalarFields(tx, id, dto, resetSummary, true, completingNow);
+        await this.updateScalarFields(
+          tx,
+          id,
+          dto,
+          resetSummary,
+          true,
+          completingNow,
+        );
         await this.syncProblems(tx, id, authorId, dto.problemIds);
         await this.syncTags(tx, id, dto);
 
