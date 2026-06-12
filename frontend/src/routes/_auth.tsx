@@ -13,12 +13,14 @@ export const Route = createFileRoute('/_auth')({
     }
   },
   component: () => (
-    <>
+    <div className="flex h-dvh flex-col overflow-hidden">
       <AuthSessionSync />
       <NotificationSocketProvider />
       <AppHeader />
-      <Outlet />
-    </>
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+        <Outlet />
+      </div>
+    </div>
   ),
   notFoundComponent: () => <NotFoundPage variant="content" />,
 });

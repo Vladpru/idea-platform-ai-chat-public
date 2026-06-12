@@ -2,12 +2,12 @@ import { Injectable } from '@nestjs/common';
 
 import { EntityTarget } from '../entity-visibility/entity-target.enum';
 import { PrismaService } from '../prisma/prisma.service';
+import { buildDirectPairKey } from './live-chat-direct.util';
 import {
   LIVE_CHAT_AUTHOR_SELECT,
   liveChatMessageInclude,
   liveChatRoomInclude,
 } from './live-chat.constants';
-import { buildDirectPairKey } from './live-chat-direct.util';
 import { toEntityTeam } from './live-chat.mapper';
 import type {
   LiveChatMessageRecord,
@@ -168,6 +168,9 @@ export class LiveChatRepository {
       roomId: row.roomId,
       authorId: row.authorId,
       content: row.content,
+      attachmentUrl: null,
+      attachmentName: null,
+      attachmentMimeType: null,
       createdAt: row.createdAt,
       author: {
         id: row.authorUserId,
@@ -207,10 +210,20 @@ export class LiveChatRepository {
     roomId: string;
     authorId: string;
     content: string;
+    attachmentUrl?: string | null;
+    attachmentName?: string | null;
+    attachmentMimeType?: string | null;
   }): Promise<LiveChatMessageRecord> {
     return this.prisma.$transaction(async tx => {
       const created = await tx.liveChatMessage.create({
-        data,
+        data: {
+          roomId: data.roomId,
+          authorId: data.authorId,
+          content: data.content,
+          attachmentUrl: data.attachmentUrl ?? null,
+          attachmentName: data.attachmentName ?? null,
+          attachmentMimeType: data.attachmentMimeType ?? null,
+        },
         include: liveChatMessageInclude,
       });
 

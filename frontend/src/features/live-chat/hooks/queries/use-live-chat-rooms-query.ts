@@ -6,6 +6,10 @@ export function useLiveChatRoomsQuery() {
   return useQuery({
     queryKey: liveChatQueryKeys.rooms(),
     queryFn: fetchLiveChatRooms,
-    select: response => response.data,
+    select: response =>
+      response.data.map(room => ({
+        ...room,
+        activeCall: room.activeCall ?? null,
+      })),
   });
 }

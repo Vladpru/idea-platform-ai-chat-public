@@ -9,7 +9,7 @@ import {
 import { outlineBtnClass, pageTitleClass } from '@/features/ideas/lib/styles';
 import { EntityLiveChatAction } from '@/features/live-chat/ui/EntityLiveChatAction';
 import { motion } from 'framer-motion';
-import { ArrowLeft, ChevronDown } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Video } from 'lucide-react';
 import { type MouseEvent, useState } from 'react';
 
 import { cn } from '@/shared/lib/utils';
@@ -37,6 +37,7 @@ type IdeaHeaderProps = {
   isCompact?: boolean;
   showProjectActions?: boolean;
   onStartEdit?: () => void;
+  onScheduleConference?: () => void;
   onDeleteSuccess?: () => void;
   onTeamClick?: () => void;
   onBackClick?: (event: MouseEvent<HTMLButtonElement>) => void;
@@ -50,12 +51,14 @@ function ManageDropdown({
   isEditing,
   isCompact,
   onStartEdit,
+  onScheduleConference,
   onDeleteClick,
 }: {
   isAuthor: boolean;
   isEditing: boolean;
   isCompact: boolean;
   onStartEdit?: () => void;
+  onScheduleConference?: () => void;
   onDeleteClick: () => void;
 }) {
   if (!isAuthor) {
@@ -91,6 +94,21 @@ function ManageDropdown({
           </DropdownMenuItem>
         ) : null}
 
+        {!isEditing ? (
+          <>
+            <DropdownMenuSeparator className="my-0" />
+            <DropdownMenuItem
+              className="focus:bg-brand-blue-700/10 hover:bg-brand-blue-700/10 cursor-pointer px-3 py-2 text-sm font-normal"
+              onSelect={() => {
+                onScheduleConference?.();
+              }}
+            >
+              <Video className="mr-2 size-4" />
+              Schedule conference
+            </DropdownMenuItem>
+          </>
+        ) : null}
+
         {!isEditing ? <DropdownMenuSeparator className="my-0" /> : null}
 
         <DropdownMenuItem
@@ -113,6 +131,7 @@ export function IdeaHeader({
   isCompact = false,
   showProjectActions = true,
   onStartEdit,
+  onScheduleConference,
   onDeleteSuccess,
   onTeamClick,
   onBackClick,
@@ -166,6 +185,7 @@ export function IdeaHeader({
           isEditing={isEditing}
           isCompact={true}
           onStartEdit={onStartEdit}
+          onScheduleConference={onScheduleConference}
           onDeleteClick={() => setDeleteModalOpen(true)}
         />
       </motion.div>
@@ -199,6 +219,7 @@ export function IdeaHeader({
                 isEditing={isEditing}
                 isCompact={false}
                 onStartEdit={onStartEdit}
+                onScheduleConference={onScheduleConference}
                 onDeleteClick={() => setDeleteModalOpen(true)}
               />
             </div>

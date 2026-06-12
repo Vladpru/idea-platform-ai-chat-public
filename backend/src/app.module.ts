@@ -11,6 +11,7 @@ import { AiSummaryModule } from './ai-summary/ai-summary.module';
 import { AiModule } from './ai/ai.module';
 import { AuthModule } from './auth/auth.module';
 import { CommentModule } from './comment/comment.module';
+import { IdeaConferenceModule } from './idea-conference/idea-conference.module';
 import { IdeaModule } from './idea/idea.module';
 import { LiveChatModule } from './live-chat/live-chat.module';
 import { MailModule } from './mail/mail.module';
@@ -57,6 +58,7 @@ import { UserModule } from './user/user.module';
     AiSummaryModule,
     AiImageModule,
     IdeaModule,
+    IdeaConferenceModule,
     ProblemModule,
     CommentModule,
     LiveChatModule,

@@ -11,7 +11,7 @@ import { CommentInputArea } from '@/features/discussion/ui/CommentInputArea';
 import { CommentList } from '@/features/discussion/ui/CommentList';
 import { ReplyFromSearchEffect } from '@/features/discussion/ui/ReplyFromSearchEffect';
 import { ReplyProvider } from '@/features/discussion/ui/ReplyProvider';
-import { Route as IdeaDetailsRoute } from '@/routes/_auth/ideas/$ideaId';
+import { Route as IdeaDetailsRoute } from '@/routes/_auth/ideas/$ideaId/index';
 import { Route as ProblemDetailsRoute } from '@/routes/_auth/problems/$problemId';
 import { useCallback, useMemo } from 'react';
 

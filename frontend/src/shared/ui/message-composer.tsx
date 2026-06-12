@@ -1,6 +1,6 @@
 'use client';
 
-import { Paperclip, Send } from 'lucide-react';
+import { Loader2, Paperclip, Send } from 'lucide-react';
 import {
   useCallback,
   useEffect,
@@ -25,6 +25,7 @@ export type MessageComposerProps = {
   className?: string;
   showAttachButton?: boolean;
   attachDisabled?: boolean;
+  isAttachLoading?: boolean;
   onAttachClick?: () => void;
   fileInputRef?: RefObject<HTMLInputElement | null>;
   accept?: string;
@@ -46,6 +47,7 @@ export function MessageComposer({
   className,
   showAttachButton = true,
   attachDisabled = false,
+  isAttachLoading = false,
   onAttachClick,
   fileInputRef,
   accept,
@@ -135,7 +137,7 @@ export function MessageComposer({
 
         <div
           className={cn(
-            'relative flex items-end',
+            'relative flex min-w-0 items-end',
             isFloating ? 'mx-auto max-w-4xl gap-3' : 'w-full gap-2 p-2',
           )}
         >
@@ -178,16 +180,20 @@ export function MessageComposer({
                 'text-gray-400 hover:text-gray-600 disabled:opacity-50',
               )}
               aria-label="Attach file"
-              disabled={disabled || attachDisabled}
+              disabled={disabled || attachDisabled || isAttachLoading}
               onClick={onAttachClick}
             >
-              <Paperclip className="size-5 shrink-0" aria-hidden />
+              {isAttachLoading ? (
+                <Loader2 className="size-5 shrink-0 animate-spin" aria-hidden />
+              ) : (
+                <Paperclip className="size-5 shrink-0" aria-hidden />
+              )}
             </button>
           ) : null}
 
           <div
             className={cn(
-              'relative z-10 flex flex-1 items-end border transition-colors duration-200',
+              'relative z-10 flex min-w-0 flex-1 items-end border transition-colors duration-200',
               isFloating
                 ? 'bg-card rounded-[28px] px-5 shadow-sm'
                 : 'rounded-md border-transparent bg-transparent px-2 shadow-none',

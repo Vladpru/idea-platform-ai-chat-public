@@ -2,14 +2,16 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { EntityTarget } from '../entity-visibility/entity-target.enum';
 import { EntityVisibilityService } from '../entity-visibility/entity-visibility.service';
-import { isUniqueConstraintError } from '../shared/utils/is-unique-error.util';
 import { NOTIFICATION_EVENTS } from '../notification/events/notification-event-names';
 import type { DirectMessageReceivedNotificationEvent } from '../notification/events/notification.events';
+import { isUniqueConstraintError } from '../shared/utils/is-unique-error.util';
 import { GetLiveChatMessagesQueryDto } from './dto/get-live-chat-messages-query.dto';
 import { buildDirectPairKey } from './live-chat-direct.util';
 import { LiveChatRateLimitService } from './live-chat-rate-limit.service';
@@ -39,14 +41,24 @@ import type {
   LiveChatTeamMemberDto,
   PaginatedLiveChatMessagesResponse,
 } from './types/live-chat.types';
+import { toVideoCallResponse } from './video-call.mapper';
+import { VideoCallRepository } from './video-call.repository';
+
+export type LiveChatAttachmentPayload = {
+  url: string;
+  name: string;
+  mimeType: string;
+};
 
 @Injectable()
 export class LiveChatService {
   constructor(
     private readonly liveChatRepository: LiveChatRepository,
+    private readonly videoCallRepository: VideoCallRepository,
     private readonly entityVisibility: EntityVisibilityService,
     private readonly rateLimit: LiveChatRateLimitService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly cloudinary: CloudinaryService,
   ) {}
 
   async listRooms(userId: string): Promise<LiveChatRoomListResponse> {
@@ -73,10 +85,17 @@ export class LiveChatService {
       ),
     ];
 
-    const [ideaTeamsById, problemTeamsById] = await Promise.all([
+    const [ideaTeamsById, problemTeamsById, activeCalls] = await Promise.all([
       this.liveChatRepository.findIdeaTeamsByIds(ideaIds),
       this.liveChatRepository.findProblemTeamsByIds(problemIds),
+      this.videoCallRepository.findActiveCallsByRoomIds(
+        rooms.map(room => room.id),
+      ),
     ]);
+
+    const activeCallByRoomId = new Map(
+      activeCalls.map(call => [call.roomId, toVideoCallResponse(call)]),
+    );
 
     const data = rooms.map(room =>
       toLiveChatRoomResponse(
@@ -84,6 +103,7 @@ export class LiveChatService {
         userId,
         lastMessageByRoomId.get(room.id) ?? null,
         this.resolveRoomTeam(room, ideaTeamsById, problemTeamsById),
+        activeCallByRoomId.get(room.id) ?? null,
       ),
     );
 
@@ -246,16 +266,43 @@ export class LiveChatService {
     };
   }
 
+  async uploadMessageAttachment(
+    roomId: string,
+    userId: string,
+    file: Express.Multer.File,
+  ): Promise<LiveChatAttachmentPayload> {
+    if (!file) {
+      throw new UnprocessableEntityException('No file provided');
+    }
+
+    await this.getAccessibleRoom(roomId, userId);
+
+    const uploaded = await this.cloudinary.uploadLiveChatAttachment(
+      file,
+      roomId,
+    );
+
+    return {
+      url: uploaded.url,
+      name: file.originalname,
+      mimeType: file.mimetype,
+    };
+  }
+
   async sendMessage(
     roomId: string,
     userId: string,
     content: string,
+    attachment?: LiveChatAttachmentPayload | null,
   ): Promise<LiveChatMessageDto> {
     await this.rateLimit.assertRateLimit(userId);
 
     const trimmedContent = content.trim();
-    if (trimmedContent.length === 0) {
-      throw new BadRequestException('Message content is required');
+
+    if (trimmedContent.length === 0 && !attachment?.url) {
+      throw new BadRequestException(
+        'Message content or attachment is required',
+      );
     }
 
     if (trimmedContent.length > LIVE_CHAT_MESSAGE_CONTENT_MAX_LENGTH) {
@@ -270,6 +317,9 @@ export class LiveChatService {
       roomId,
       authorId: userId,
       content: trimmedContent,
+      attachmentUrl: attachment?.url ?? null,
+      attachmentName: attachment?.name ?? null,
+      attachmentMimeType: attachment?.mimeType ?? null,
     });
 
     this.emitDirectMessageNotifications(room, message, userId);

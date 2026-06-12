@@ -10,7 +10,13 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { IsUUID } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsUUID,
+  IsUrl,
+  MaxLength,
+} from 'class-validator';
 import type { Server, Socket } from 'socket.io';
 
 import { resolveUserIdFromSocket } from '../notification/lib/ws-auth.util';
@@ -18,6 +24,10 @@ import { PrismaService } from '../prisma/prisma.service';
 import { SendLiveChatMessageDto } from './dto/send-live-chat-message.dto';
 import { LiveChatService } from './live-chat.service';
 import type { LiveChatMessageDto } from './types/live-chat.types';
+import type {
+  VideoCallDto,
+  VideoCallLifecyclePayload,
+} from './types/video-call.types';
 
 export interface AuthenticatedLiveChatSocket extends Socket {
   data: {
@@ -38,6 +48,21 @@ class LeaveLiveChatRoomDto {
 class SendLiveChatMessagePayloadDto extends SendLiveChatMessageDto {
   @IsUUID()
   roomId!: string;
+
+  @IsOptional()
+  @IsString()
+  @IsUrl()
+  attachmentUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(512)
+  attachmentName?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(128)
+  attachmentMimeType?: string;
 }
 
 @WebSocketGateway({
@@ -158,10 +183,19 @@ export class LiveChatGateway
     }
 
     try {
+      const attachment = payload.attachmentUrl
+        ? {
+            url: payload.attachmentUrl,
+            name: payload.attachmentName ?? payload.attachmentUrl,
+            mimeType: payload.attachmentMimeType ?? 'application/octet-stream',
+          }
+        : null;
+
       const message = await this.liveChatService.sendMessage(
         payload.roomId,
         userId,
         payload.content,
+        attachment,
       );
 
       this.server.to(this.roomName(payload.roomId)).emit('message', message);
@@ -172,6 +206,22 @@ export class LiveChatGateway
         error instanceof Error ? error.message : 'Failed to send message';
       return { ok: false, error: message };
     }
+  }
+
+  emitCallScheduled(roomId: string, call: VideoCallDto): void {
+    this.server.to(this.roomName(roomId)).emit('call_scheduled', call);
+  }
+
+  emitCallStarted(roomId: string, call: VideoCallDto): void {
+    this.server.to(this.roomName(roomId)).emit('call_started', call);
+  }
+
+  emitCallEnded(roomId: string, payload: VideoCallLifecyclePayload): void {
+    this.server.to(this.roomName(roomId)).emit('call_ended', payload);
+  }
+
+  emitCallCancelled(roomId: string, payload: VideoCallLifecyclePayload): void {
+    this.server.to(this.roomName(roomId)).emit('call_cancelled', payload);
   }
 
   private roomName(roomId: string): string {
