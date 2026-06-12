@@ -10,7 +10,7 @@ import type {
 } from '@/features/problems/api/problems-api.types';
 
 export type ProfileContributionKind = 'idea' | 'problem';
-export type ProfileContributionsTab = 'all' | 'idea' | 'problem' | 'joined';
+export type ProfileContributionsTab = 'all' | 'idea' | 'problem' | 'joined' | 'drafts';
 
 export type ProfileContributionAuthor = {
   id: string;

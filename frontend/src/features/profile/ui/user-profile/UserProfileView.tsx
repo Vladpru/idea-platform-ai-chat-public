@@ -1,5 +1,4 @@
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
-import type { ProfileContributionsTab } from '@/features/profile/model/profile-contributions.types';
 import { useProfileContributions } from '@/features/profile/hooks/use-profile-contributions';
 import {
   useSubscribeMutation,
@@ -10,14 +9,17 @@ import {
   toContributionsApiTab,
   toContributionsSearchTab,
 } from '@/features/profile/lib/profile-contributions-tab';
+import type { ProfileContributionsTab } from '@/features/profile/model/profile-contributions.types';
 import { EntityGrid } from '@/features/profile/ui/user-profile/EntityGrid';
+import { ProfileDraftsTab } from '@/features/profile/ui/user-profile/ProfileDraftsTab';
 import { ProfileHeader } from '@/features/profile/ui/user-profile/ProfileHeader';
 import { TabsLayout } from '@/features/profile/ui/user-profile/TabsLayout';
+import { useNavigate, useSearch } from '@tanstack/react-router';
+import { useCallback, useEffect, useMemo } from 'react';
+
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import { Button } from '@/shared/ui/button';
 import { Skeleton } from '@/shared/ui/skeleton';
-import { useNavigate, useSearch } from '@tanstack/react-router';
-import { useCallback, useMemo } from 'react';
 
 type UserProfileViewProps = {
   profileId: string;
@@ -49,6 +51,19 @@ export function UserProfileView({ profileId }: UserProfileViewProps) {
     [navigate, profileId],
   );
 
+  useEffect(() => {
+    if (activeTab === 'drafts' && !isOwner) {
+      void navigate({
+        to: '/profile/$profileId',
+        params: { profileId },
+        search: { tab: 'all' },
+        replace: true,
+      });
+    }
+  }, [activeTab, isOwner, navigate, profileId]);
+
+  const isDraftsTab = activeTab === 'drafts';
+
   const {
     items,
     isLoading: isContributionsLoading,
@@ -58,7 +73,7 @@ export function UserProfileView({ profileId }: UserProfileViewProps) {
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
-  } = useProfileContributions(profileId, activeTab);
+  } = useProfileContributions(profileId, isDraftsTab ? 'all' : activeTab);
 
   const handleLoadMore = useCallback(() => {
     void fetchNextPage();
@@ -125,8 +140,14 @@ export function UserProfileView({ profileId }: UserProfileViewProps) {
           onUnsubscribe={handleUnsubscribe}
         />
 
-        <TabsLayout activeTab={activeTab} onTabChange={setActiveTab}>
-          {isContributionsError ? (
+        <TabsLayout
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          isOwner={isOwner}
+        >
+          {isDraftsTab ? (
+            <ProfileDraftsTab />
+          ) : isContributionsError ? (
             <div className="border-brand-gray-200 bg-card rounded-lg border px-6 py-10 text-center">
               <p className="text-brand-gray-700 mb-4 text-sm">
                 {getApiErrorMessage(contributionsError, {

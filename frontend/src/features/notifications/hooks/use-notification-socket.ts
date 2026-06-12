@@ -1,4 +1,4 @@
-import { markAchievementsSeen } from '@/features/achievements/api/achievements.api';
+
 import { BADGE_EARNED_MESSAGES } from '@/features/achievements/lib/badge-icons';
 import { BadgeToast } from '@/features/achievements/ui/BadgeToast';
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
@@ -71,8 +71,8 @@ export function useNotificationSocket(): void {
           }),
         { duration: 6000 },
       );
-      void markAchievementsSeen();
       void queryClient.invalidateQueries({ queryKey: ['achievements', 'me'] });
+      void queryClient.invalidateQueries({ queryKey: ['statistics'] });
     };
 
     socket.on('notification', handleNotification);
