@@ -14,17 +14,17 @@ import { ApiExcludeController } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { WebhookReceiver } from 'livekit-server-sdk';
 
-import { IdeaConferenceService } from './idea-conference.service';
+import { ConferenceService } from './conference.service';
 
 @ApiExcludeController()
 @Controller('webhooks/livekit/conference')
-export class IdeaConferenceWebhookController {
-  private readonly logger = new Logger(IdeaConferenceWebhookController.name);
+export class ConferenceWebhookController {
+  private readonly logger = new Logger(ConferenceWebhookController.name);
   private webhookReceiver: WebhookReceiver | null = null;
 
   constructor(
     private readonly config: ConfigService,
-    private readonly ideaConferenceService: IdeaConferenceService,
+    private readonly conferenceService: ConferenceService,
   ) {}
 
   @Post()
@@ -57,7 +57,7 @@ export class IdeaConferenceWebhookController {
     }
 
     if (event.event === 'room_finished' && event.room?.name) {
-      await this.ideaConferenceService.handleRoomFinished(event.room.name);
+      await this.conferenceService.handleRoomFinished(event.room.name);
     }
   }
 

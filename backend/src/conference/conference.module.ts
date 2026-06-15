@@ -7,24 +7,26 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { ConferenceInviteController } from './conference-invite.controller';
 import { ConferenceInviteRepository } from './conference-invite.repository';
 import { ConferenceInviteService } from './conference-invite.service';
-import { IdeaConferenceWebhookController } from './idea-conference-webhook.controller';
+import { ConferenceWebhookController } from './conference-webhook.controller';
+import { ConferenceRepository } from './conference.repository';
+import { ConferenceService } from './conference.service';
 import { IdeaConferenceController } from './idea-conference.controller';
-import { IdeaConferenceRepository } from './idea-conference.repository';
-import { IdeaConferenceService } from './idea-conference.service';
+import { ProblemConferenceController } from './problem-conference.controller';
 
 @Module({
   imports: [PrismaModule, EntityVisibilityModule, LivekitModule, MailModule],
   controllers: [
     IdeaConferenceController,
+    ProblemConferenceController,
     ConferenceInviteController,
-    IdeaConferenceWebhookController,
+    ConferenceWebhookController,
   ],
   providers: [
-    IdeaConferenceRepository,
-    IdeaConferenceService,
+    ConferenceRepository,
+    ConferenceService,
     ConferenceInviteRepository,
     ConferenceInviteService,
   ],
-  exports: [IdeaConferenceService, ConferenceInviteService],
+  exports: [ConferenceService, ConferenceInviteService],
 })
-export class IdeaConferenceModule {}
+export class ConferenceModule {}

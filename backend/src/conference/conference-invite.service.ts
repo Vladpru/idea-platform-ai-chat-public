@@ -154,9 +154,12 @@ export class ConferenceInviteService {
   async previewInvite(token: string): Promise<ConferenceInvitePreviewDto> {
     const invite = await this.findValidPendingExternalInvite(token);
 
+    const entityTitle =
+      invite.conference.idea?.title ?? invite.conference.problem?.title ?? null;
+
     return toConferenceInvitePreviewResponse({
       conferenceTitle: invite.conference.title,
-      ideaTitle: invite.conference.idea.title,
+      entityTitle,
       scheduledFor: invite.conference.scheduledFor,
     });
   }

@@ -1,12 +1,12 @@
 import type { Prisma } from '../../generated/prisma/client';
 import { LIVE_CHAT_AUTHOR_SELECT } from '../live-chat/live-chat.constants';
 
-export const ideaConferenceInclude = {
+export const conferenceInclude = {
   scheduledBy: {
     select: LIVE_CHAT_AUTHOR_SELECT,
   },
-} satisfies Prisma.IdeaConferenceInclude;
+} satisfies Prisma.ConferenceInclude;
 
-export type IdeaConferenceRecord = Prisma.IdeaConferenceGetPayload<{
-  include: typeof ideaConferenceInclude;
+export type ConferenceRecord = Prisma.ConferenceGetPayload<{
+  include: typeof conferenceInclude;
 }>;

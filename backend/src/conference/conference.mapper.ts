@@ -3,13 +3,14 @@ import {
   formatAuthorDisplayName,
   toLiveChatAuthorResponse,
 } from '../live-chat/live-chat.mapper';
-import type { IdeaConferenceRecord } from './idea-conference.records';
-import type { IdeaTeamMemberRecord } from './idea-conference.repository';
+import type { ConferenceRecord } from './conference.records';
+import type { ConferenceTeamMemberRecord } from './conference.repository';
 import type {
-  IdeaConferenceDto,
+  ConferenceDto,
+  ConferenceEntityType,
   SuggestedSpeakerDto,
   SuggestedSpeakerInviteState,
-} from './types/idea-conference.types';
+} from './types/conference.types';
 
 function toIsoString(date: Date): string {
   return date.toISOString();
@@ -19,12 +20,32 @@ function toNullableIsoString(date: Date | null): string | null {
   return date ? toIsoString(date) : null;
 }
 
-export function toIdeaConferenceResponse(
-  conference: IdeaConferenceRecord,
-): IdeaConferenceDto {
+function resolveConferenceEntity(conference: ConferenceRecord): {
+  entityType: ConferenceEntityType;
+  entityId: string;
+} {
+  if (conference.ideaId !== null) {
+    return { entityType: 'IDEA', entityId: conference.ideaId };
+  }
+
+  if (conference.problemId !== null) {
+    return { entityType: 'PROBLEM', entityId: conference.problemId };
+  }
+
+  throw new Error(
+    `Conference ${conference.id} is missing both ideaId and problemId`,
+  );
+}
+
+export function toConferenceResponse(
+  conference: ConferenceRecord,
+): ConferenceDto {
+  const { entityType, entityId } = resolveConferenceEntity(conference);
+
   return {
     id: conference.id,
-    ideaId: conference.ideaId,
+    entityType,
+    entityId,
     scheduledBy: toLiveChatAuthorResponse(conference.scheduledBy),
     title: conference.title,
     description: conference.description,
@@ -55,7 +76,7 @@ export function toInviteState(
 }
 
 export function toSuggestedSpeakerResponse(params: {
-  user: IdeaTeamMemberRecord;
+  user: ConferenceTeamMemberRecord;
   roleLabel: string;
   inviteState: SuggestedSpeakerInviteState;
 }): SuggestedSpeakerDto {

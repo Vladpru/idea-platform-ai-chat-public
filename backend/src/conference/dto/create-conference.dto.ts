@@ -12,7 +12,7 @@ import {
 
 import { IsFutureIsoDate } from './is-future-iso-date.decorator';
 
-export class CreateIdeaConferenceDto {
+export class CreateConferenceDto {
   @ApiProperty({ example: 'Product roadmap Q&A' })
   @IsString()
   @MinLength(1)

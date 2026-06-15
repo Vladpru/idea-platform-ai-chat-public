@@ -24,21 +24,22 @@ import {
 } from '@nestjs/swagger';
 import type { Request } from 'express';
 
+import { EntityTarget } from '../entity-visibility/entity-target.enum';
 import { JwtAuth } from '../shared/decorators/jwt-auth.decorator';
+import { ConferenceService } from './conference.service';
 import {
+  CreateConferenceDto,
   CreateConferenceInviteDto,
-  CreateIdeaConferenceDto,
   GetSuggestedSpeakersQueryDto,
-  UpdateIdeaConferenceDto,
+  UpdateConferenceDto,
 } from './dto';
-import { IdeaConferenceService } from './idea-conference.service';
 import type { ConferenceInviteDto } from './types/conference-invite.types';
 import type {
-  IdeaConferenceDto,
-  IdeaConferenceListResponse,
+  ConferenceDto,
+  ConferenceListResponse,
   JoinConferenceResponse,
   SuggestedSpeakersResponse,
-} from './types/idea-conference.types';
+} from './types/conference.types';
 
 type AuthenticatedRequest = Request & { user: { id: string } };
 
@@ -47,7 +48,7 @@ type AuthenticatedRequest = Request & { user: { id: string } };
 @JwtAuth()
 @ApiBearerAuth()
 export class IdeaConferenceController {
-  constructor(private readonly ideaConferenceService: IdeaConferenceService) {}
+  constructor(private readonly conferenceService: ConferenceService) {}
 
   @Get('suggested-speakers')
   @ApiOperation({ summary: 'List suggested speakers for an idea conference' })
@@ -59,7 +60,8 @@ export class IdeaConferenceController {
     @Query() query: GetSuggestedSpeakersQueryDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<SuggestedSpeakersResponse> {
-    return this.ideaConferenceService.getSuggestedSpeakers(
+    return this.conferenceService.getSuggestedSpeakers(
+      EntityTarget.IDEA,
       ideaId,
       req.user.id,
       query.conferenceId,
@@ -74,8 +76,12 @@ export class IdeaConferenceController {
   listConferences(
     @Param('ideaId', ParseUUIDPipe) ideaId: string,
     @Req() req: AuthenticatedRequest,
-  ): Promise<IdeaConferenceListResponse> {
-    return this.ideaConferenceService.listByIdea(ideaId, req.user.id);
+  ): Promise<ConferenceListResponse> {
+    return this.conferenceService.listByEntity(
+      EntityTarget.IDEA,
+      ideaId,
+      req.user.id,
+    );
   }
 
   @Post()
@@ -88,10 +94,15 @@ export class IdeaConferenceController {
   @ApiUnprocessableEntityResponse({ description: 'Validation failed' })
   scheduleConference(
     @Param('ideaId', ParseUUIDPipe) ideaId: string,
-    @Body() dto: CreateIdeaConferenceDto,
+    @Body() dto: CreateConferenceDto,
     @Req() req: AuthenticatedRequest,
-  ): Promise<IdeaConferenceDto> {
-    return this.ideaConferenceService.schedule(ideaId, req.user.id, dto);
+  ): Promise<ConferenceDto> {
+    return this.conferenceService.schedule(
+      EntityTarget.IDEA,
+      ideaId,
+      req.user.id,
+      dto,
+    );
   }
 
   @Post(':conferenceId/invites')
@@ -108,7 +119,8 @@ export class IdeaConferenceController {
     @Body() dto: CreateConferenceInviteDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<ConferenceInviteDto> {
-    return this.ideaConferenceService.inviteSpeaker(
+    return this.conferenceService.inviteSpeaker(
+      EntityTarget.IDEA,
       ideaId,
       conferenceId,
       req.user.id,
@@ -130,7 +142,8 @@ export class IdeaConferenceController {
     @Param('conferenceId', ParseUUIDPipe) conferenceId: string,
     @Req() req: AuthenticatedRequest,
   ): Promise<JoinConferenceResponse> {
-    return this.ideaConferenceService.joinConference(
+    return this.conferenceService.joinConference(
+      EntityTarget.IDEA,
       ideaId,
       conferenceId,
       req.user.id,
@@ -147,10 +160,11 @@ export class IdeaConferenceController {
   updateConference(
     @Param('ideaId', ParseUUIDPipe) ideaId: string,
     @Param('conferenceId', ParseUUIDPipe) conferenceId: string,
-    @Body() dto: UpdateIdeaConferenceDto,
+    @Body() dto: UpdateConferenceDto,
     @Req() req: AuthenticatedRequest,
-  ): Promise<IdeaConferenceDto> {
-    return this.ideaConferenceService.updateStatus(
+  ): Promise<ConferenceDto> {
+    return this.conferenceService.updateStatus(
+      EntityTarget.IDEA,
       ideaId,
       conferenceId,
       req.user.id,

@@ -15,6 +15,6 @@ export type ConferenceInviteDto = {
 
 export type ConferenceInvitePreviewDto = {
   conferenceTitle: string;
-  ideaTitle: string | null;
+  entityTitle: string | null;
   scheduledFor: string;
 };

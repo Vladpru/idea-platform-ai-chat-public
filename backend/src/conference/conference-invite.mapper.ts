@@ -24,12 +24,12 @@ export function toConferenceInviteResponse(
 
 export function toConferenceInvitePreviewResponse(params: {
   conferenceTitle: string;
-  ideaTitle: string | null;
+  entityTitle: string | null;
   scheduledFor: Date;
 }): ConferenceInvitePreviewDto {
   return {
     conferenceTitle: params.conferenceTitle,
-    ideaTitle: params.ideaTitle,
+    entityTitle: params.entityTitle,
     scheduledFor: toIsoString(params.scheduledFor),
   };
 }

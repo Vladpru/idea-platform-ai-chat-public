@@ -6,8 +6,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import { IdeaConferenceStatus } from '../../generated/prisma/client';
-import { EntityTarget } from '../entity-visibility/entity-target.enum';
+import {
+  type ConferenceInviteStatus,
+  ConferenceStatus,
+} from '../../generated/prisma/client';
+import type { EntityLinkTarget } from '../entity-visibility/entity-target.enum';
 import { EntityVisibilityService } from '../entity-visibility/entity-visibility.service';
 import { formatAuthorDisplayName } from '../live-chat/live-chat.mapper';
 import { LivekitRoomService } from '../livekit/livekit-room.service';
@@ -20,39 +23,39 @@ import {
   CONFERENCE_INVITE_INVALID_TARGET,
 } from './conference-invite.constants';
 import { ConferenceInviteService } from './conference-invite.service';
-import type { CreateConferenceInviteDto } from './dto/create-conference-invite.dto';
-import type { CreateIdeaConferenceDto } from './dto/create-idea-conference.dto';
-import type { IdeaConferenceUpdateAction } from './dto/update-idea-conference.dto';
 import {
-  IDEA_CONFERENCE_ALREADY_LIVE,
-  IDEA_CONFERENCE_AUTHOR_ONLY,
-  IDEA_CONFERENCE_INVALID_SPEAKERS,
-  IDEA_CONFERENCE_NOT_FOUND,
-  IDEA_CONFERENCE_NOT_LIVE,
-  IDEA_CONFERENCE_NOT_SCHEDULED,
-  IDEA_CONFERENCE_SCHEDULED_FOR_PAST,
-} from './idea-conference.constants';
+  CONFERENCE_ALREADY_LIVE,
+  CONFERENCE_AUTHOR_ONLY,
+  CONFERENCE_INVALID_SPEAKERS,
+  CONFERENCE_NOT_FOUND,
+  CONFERENCE_NOT_LIVE,
+  CONFERENCE_NOT_SCHEDULED,
+  CONFERENCE_SCHEDULED_FOR_PAST,
+} from './conference.constants';
 import {
   buildConferenceProviderRoomName,
   mapInviteStateByUserId,
-  toIdeaConferenceResponse,
+  toConferenceResponse,
   toInviteState,
   toSuggestedSpeakerResponse,
-} from './idea-conference.mapper';
-import { IdeaConferenceRepository } from './idea-conference.repository';
+} from './conference.mapper';
+import { ConferenceRepository } from './conference.repository';
+import type { CreateConferenceInviteDto } from './dto/create-conference-invite.dto';
+import type { CreateConferenceDto } from './dto/create-conference.dto';
+import type { ConferenceUpdateAction } from './dto/update-conference.dto';
 import type { ConferenceInviteDto } from './types/conference-invite.types';
 import type {
+  ConferenceDto,
+  ConferenceListResponse,
   ConferenceRole,
-  IdeaConferenceDto,
-  IdeaConferenceListResponse,
   JoinConferenceResponse,
   SuggestedSpeakersResponse,
-} from './types/idea-conference.types';
+} from './types/conference.types';
 
 @Injectable()
-export class IdeaConferenceService {
+export class ConferenceService {
   constructor(
-    private readonly ideaConferenceRepository: IdeaConferenceRepository,
+    private readonly conferenceRepository: ConferenceRepository,
     private readonly entityVisibility: EntityVisibilityService,
     private readonly livekitRoomService: LivekitRoomService,
     private readonly livekitTokenService: LivekitTokenService,
@@ -60,90 +63,91 @@ export class IdeaConferenceService {
   ) {}
 
   async schedule(
-    ideaId: string,
+    target: EntityLinkTarget,
+    entityId: string,
     userId: string,
-    dto: CreateIdeaConferenceDto,
-  ): Promise<IdeaConferenceDto> {
-    await this.assertIdeaAuthor(ideaId, userId);
+    dto: CreateConferenceDto,
+  ): Promise<ConferenceDto> {
+    await this.assertEntityAuthor(target, entityId, userId);
 
     const scheduledDate = new Date(dto.scheduledFor);
 
     if (Number.isNaN(scheduledDate.getTime())) {
-      throw new BadRequestException(IDEA_CONFERENCE_SCHEDULED_FOR_PAST);
+      throw new BadRequestException(CONFERENCE_SCHEDULED_FOR_PAST);
     }
 
     if (scheduledDate.getTime() <= Date.now()) {
-      throw new BadRequestException(IDEA_CONFERENCE_SCHEDULED_FOR_PAST);
+      throw new BadRequestException(CONFERENCE_SCHEDULED_FOR_PAST);
     }
 
     const speakerUserIds = await this.resolveSpeakerUserIds(
-      ideaId,
+      target,
+      entityId,
       dto.speakerUserIds ?? [],
     );
 
     const conference =
-      await this.ideaConferenceRepository.createConferenceWithInvites({
-        conference: {
-          ideaId,
-          scheduledById: userId,
-          title: dto.title,
-          description: dto.description ?? null,
-          scheduledFor: scheduledDate,
-        },
+      await this.conferenceRepository.createConferenceWithInvites({
+        target,
+        entityId,
+        scheduledById: userId,
+        title: dto.title,
+        description: dto.description ?? null,
+        scheduledFor: scheduledDate,
         speakerUserIds,
         invitedById: userId,
       });
 
-    return toIdeaConferenceResponse(conference);
+    return toConferenceResponse(conference);
   }
 
-  async listByIdea(
-    ideaId: string,
+  async listByEntity(
+    target: EntityLinkTarget,
+    entityId: string,
     userId: string,
-  ): Promise<IdeaConferenceListResponse> {
-    await this.entityVisibility.getVisibleEntity(
-      EntityTarget.IDEA,
-      ideaId,
-      userId,
+  ): Promise<ConferenceListResponse> {
+    await this.entityVisibility.getVisibleEntity(target, entityId, userId);
+
+    const conferences = await this.conferenceRepository.findManyByEntity(
+      target,
+      entityId,
     );
 
-    const conferences =
-      await this.ideaConferenceRepository.findManyByIdeaId(ideaId);
-
     return {
-      conferences: conferences.map(toIdeaConferenceResponse),
+      conferences: conferences.map(toConferenceResponse),
     };
   }
 
   async getSuggestedSpeakers(
-    ideaId: string,
+    target: EntityLinkTarget,
+    entityId: string,
     userId: string,
     conferenceId?: string,
   ): Promise<SuggestedSpeakersResponse> {
-    await this.entityVisibility.getVisibleEntity(
-      EntityTarget.IDEA,
-      ideaId,
-      userId,
+    await this.entityVisibility.getVisibleEntity(target, entityId, userId);
+
+    const team = await this.conferenceRepository.findEntityTeam(
+      target,
+      entityId,
     );
 
-    const team = await this.ideaConferenceRepository.findIdeaTeam(ideaId);
-
     if (!team) {
-      throw new NotFoundException(IDEA_CONFERENCE_NOT_FOUND);
+      throw new NotFoundException(CONFERENCE_NOT_FOUND);
     }
 
     const resolvedConferenceId = await this.resolveConferenceIdForSpeakers(
-      ideaId,
+      target,
+      entityId,
       conferenceId,
     );
 
     const inviteStateByUserId = resolvedConferenceId
       ? mapInviteStateByUserId(
-          await this.ideaConferenceRepository.findInvitesByConferenceId(
+          await this.conferenceRepository.findInvitesByConferenceId(
             resolvedConferenceId,
           ),
         )
-      : new Map();
+      : new Map<string, ConferenceInviteStatus>();
 
     const speakers = [
       toSuggestedSpeakerResponse({
@@ -167,23 +171,27 @@ export class IdeaConferenceService {
   }
 
   async inviteSpeaker(
-    ideaId: string,
+    target: EntityLinkTarget,
+    entityId: string,
     conferenceId: string,
     userId: string,
     dto: CreateConferenceInviteDto,
   ): Promise<ConferenceInviteDto> {
-    await this.assertIdeaAuthor(ideaId, userId);
+    await this.assertEntityAuthor(target, entityId, userId);
 
     const conference = await this.findConferenceForMutation(
-      ideaId,
+      target,
+      entityId,
       conferenceId,
     );
 
     this.assertInviteTarget(dto);
 
     if (dto.userId) {
-      const authorId =
-        await this.ideaConferenceRepository.findIdeaAuthorId(ideaId);
+      const authorId = await this.conferenceRepository.findEntityAuthorId(
+        target,
+        entityId,
+      );
 
       if (dto.userId === authorId) {
         throw new BadRequestException(CONFERENCE_INVITE_CANNOT_INVITE_AUTHOR);
@@ -206,42 +214,40 @@ export class IdeaConferenceService {
   }
 
   async joinConference(
-    ideaId: string,
+    target: EntityLinkTarget,
+    entityId: string,
     conferenceId: string,
     userId: string,
   ): Promise<JoinConferenceResponse> {
-    await this.entityVisibility.getVisibleEntity(
-      EntityTarget.IDEA,
-      ideaId,
-      userId,
-    );
+    await this.entityVisibility.getVisibleEntity(target, entityId, userId);
 
-    const conference = await this.ideaConferenceRepository.findById(
+    const conference = await this.conferenceRepository.findById(
       conferenceId,
-      ideaId,
+      target,
+      entityId,
     );
 
     if (!conference) {
-      throw new NotFoundException(IDEA_CONFERENCE_NOT_FOUND);
+      throw new NotFoundException(CONFERENCE_NOT_FOUND);
     }
 
-    if (conference.status !== IdeaConferenceStatus.LIVE) {
-      throw new BadRequestException(IDEA_CONFERENCE_NOT_LIVE);
+    if (conference.status !== ConferenceStatus.LIVE) {
+      throw new BadRequestException(CONFERENCE_NOT_LIVE);
     }
 
     if (!conference.providerRoomName) {
-      throw new BadRequestException(IDEA_CONFERENCE_NOT_LIVE);
+      throw new BadRequestException(CONFERENCE_NOT_LIVE);
     }
 
-    const participant =
-      await this.ideaConferenceRepository.findUserAuthor(userId);
+    const participant = await this.conferenceRepository.findUserAuthor(userId);
 
     if (!participant) {
-      throw new NotFoundException(IDEA_CONFERENCE_NOT_FOUND);
+      throw new NotFoundException(CONFERENCE_NOT_FOUND);
     }
 
     const role = await this.resolveConferenceRole(
-      ideaId,
+      target,
+      entityId,
       conference.id,
       userId,
     );
@@ -260,50 +266,50 @@ export class IdeaConferenceService {
       token,
       livekitUrl: this.livekitTokenService.getLivekitUrl(),
       role,
-      conference: toIdeaConferenceResponse(conference),
+      conference: toConferenceResponse(conference),
     };
   }
 
   async handleRoomFinished(providerRoomName: string): Promise<void> {
     const conference =
-      await this.ideaConferenceRepository.findByProviderRoomName(
-        providerRoomName,
-      );
+      await this.conferenceRepository.findByProviderRoomName(providerRoomName);
 
-    if (!conference || conference.status !== IdeaConferenceStatus.LIVE) {
+    if (!conference || conference.status !== ConferenceStatus.LIVE) {
       return;
     }
 
-    await this.ideaConferenceRepository.updateStatus(conference.id, {
-      status: IdeaConferenceStatus.ENDED,
+    await this.conferenceRepository.updateStatus(conference.id, {
+      status: ConferenceStatus.ENDED,
       endedAt: new Date(),
     });
   }
 
   async updateStatus(
-    ideaId: string,
+    target: EntityLinkTarget,
+    entityId: string,
     conferenceId: string,
     userId: string,
-    action: IdeaConferenceUpdateAction,
-  ): Promise<IdeaConferenceDto> {
+    action: ConferenceUpdateAction,
+  ): Promise<ConferenceDto> {
     if (action === 'end') {
-      await this.assertAuthorOrSpeaker(ideaId, conferenceId, userId);
+      await this.assertAuthorOrSpeaker(target, entityId, conferenceId, userId);
     } else {
-      await this.assertIdeaAuthor(ideaId, userId);
+      await this.assertEntityAuthor(target, entityId, userId);
     }
 
-    const conference = await this.ideaConferenceRepository.findById(
+    const conference = await this.conferenceRepository.findById(
       conferenceId,
-      ideaId,
+      target,
+      entityId,
     );
 
     if (!conference) {
-      throw new NotFoundException(IDEA_CONFERENCE_NOT_FOUND);
+      throw new NotFoundException(CONFERENCE_NOT_FOUND);
     }
 
     switch (action) {
       case 'start':
-        return this.startConference(ideaId, conference);
+        return this.startConference(target, entityId, conference);
       case 'end':
         return this.endConference(conference);
       case 'cancel':
@@ -314,20 +320,23 @@ export class IdeaConferenceService {
   }
 
   private async startConference(
-    ideaId: string,
+    target: EntityLinkTarget,
+    entityId: string,
     conference: NonNullable<
-      Awaited<ReturnType<IdeaConferenceRepository['findById']>>
+      Awaited<ReturnType<ConferenceRepository['findById']>>
     >,
-  ): Promise<IdeaConferenceDto> {
-    if (conference.status !== IdeaConferenceStatus.SCHEDULED) {
-      throw new BadRequestException(IDEA_CONFERENCE_NOT_SCHEDULED);
+  ): Promise<ConferenceDto> {
+    if (conference.status !== ConferenceStatus.SCHEDULED) {
+      throw new BadRequestException(CONFERENCE_NOT_SCHEDULED);
     }
 
-    const existingLive =
-      await this.ideaConferenceRepository.findLiveConference(ideaId);
+    const existingLive = await this.conferenceRepository.findLiveConference(
+      target,
+      entityId,
+    );
 
     if (existingLive && existingLive.id !== conference.id) {
-      throw new ConflictException(IDEA_CONFERENCE_ALREADY_LIVE);
+      throw new ConflictException(CONFERENCE_ALREADY_LIVE);
     }
 
     const startedAt = new Date();
@@ -336,10 +345,10 @@ export class IdeaConferenceService {
     let updatedConference;
 
     try {
-      updatedConference = await this.ideaConferenceRepository.updateStatus(
+      updatedConference = await this.conferenceRepository.updateStatus(
         conference.id,
         {
-          status: IdeaConferenceStatus.LIVE,
+          status: ConferenceStatus.LIVE,
           startedAt,
           providerRoomName,
         },
@@ -349,7 +358,7 @@ export class IdeaConferenceService {
         throw error;
       }
 
-      throw new ConflictException(IDEA_CONFERENCE_ALREADY_LIVE);
+      throw new ConflictException(CONFERENCE_ALREADY_LIVE);
     }
 
     try {
@@ -358,9 +367,9 @@ export class IdeaConferenceService {
         LIVEKIT_ROOM_EMPTY_TIMEOUT_SECONDS,
       );
     } catch (error) {
-      await this.ideaConferenceRepository
+      await this.conferenceRepository
         .updateStatus(conference.id, {
-          status: IdeaConferenceStatus.SCHEDULED,
+          status: ConferenceStatus.SCHEDULED,
           startedAt: null,
           providerRoomName: null,
         })
@@ -369,16 +378,16 @@ export class IdeaConferenceService {
       throw error;
     }
 
-    return toIdeaConferenceResponse(updatedConference);
+    return toConferenceResponse(updatedConference);
   }
 
   private async endConference(
     conference: NonNullable<
-      Awaited<ReturnType<IdeaConferenceRepository['findById']>>
+      Awaited<ReturnType<ConferenceRepository['findById']>>
     >,
-  ): Promise<IdeaConferenceDto> {
-    if (conference.status !== IdeaConferenceStatus.LIVE) {
-      throw new BadRequestException(IDEA_CONFERENCE_NOT_LIVE);
+  ): Promise<ConferenceDto> {
+    if (conference.status !== ConferenceStatus.LIVE) {
+      throw new BadRequestException(CONFERENCE_NOT_LIVE);
     }
 
     if (conference.providerRoomName) {
@@ -387,63 +396,69 @@ export class IdeaConferenceService {
         .catch(() => undefined);
     }
 
-    const updatedConference = await this.ideaConferenceRepository.updateStatus(
+    const updatedConference = await this.conferenceRepository.updateStatus(
       conference.id,
       {
-        status: IdeaConferenceStatus.ENDED,
+        status: ConferenceStatus.ENDED,
         endedAt: new Date(),
       },
     );
 
-    return toIdeaConferenceResponse(updatedConference);
+    return toConferenceResponse(updatedConference);
   }
 
   private async cancelConference(
     conference: NonNullable<
-      Awaited<ReturnType<IdeaConferenceRepository['findById']>>
+      Awaited<ReturnType<ConferenceRepository['findById']>>
     >,
-  ): Promise<IdeaConferenceDto> {
-    if (conference.status !== IdeaConferenceStatus.SCHEDULED) {
-      throw new BadRequestException(IDEA_CONFERENCE_NOT_SCHEDULED);
+  ): Promise<ConferenceDto> {
+    if (conference.status !== ConferenceStatus.SCHEDULED) {
+      throw new BadRequestException(CONFERENCE_NOT_SCHEDULED);
     }
 
-    const updatedConference = await this.ideaConferenceRepository.updateStatus(
+    const updatedConference = await this.conferenceRepository.updateStatus(
       conference.id,
       {
-        status: IdeaConferenceStatus.CANCELLED,
+        status: ConferenceStatus.CANCELLED,
         endedAt: new Date(),
       },
     );
 
-    return toIdeaConferenceResponse(updatedConference);
+    return toConferenceResponse(updatedConference);
   }
 
-  private async assertIdeaAuthor(
-    ideaId: string,
+  private async assertEntityAuthor(
+    target: EntityLinkTarget,
+    entityId: string,
     userId: string,
   ): Promise<void> {
-    const authorId =
-      await this.ideaConferenceRepository.findIdeaAuthorId(ideaId);
+    const authorId = await this.conferenceRepository.findEntityAuthorId(
+      target,
+      entityId,
+    );
 
     if (!authorId) {
-      throw new NotFoundException(IDEA_CONFERENCE_NOT_FOUND);
+      throw new NotFoundException(CONFERENCE_NOT_FOUND);
     }
 
     if (authorId !== userId) {
-      throw new ForbiddenException(IDEA_CONFERENCE_AUTHOR_ONLY);
+      throw new ForbiddenException(CONFERENCE_AUTHOR_ONLY);
     }
   }
 
   private async assertAuthorOrSpeaker(
-    ideaId: string,
+    target: EntityLinkTarget,
+    entityId: string,
     conferenceId: string,
     userId: string,
   ): Promise<void> {
-    const authorId =
-      await this.ideaConferenceRepository.findIdeaAuthorId(ideaId);
+    const authorId = await this.conferenceRepository.findEntityAuthorId(
+      target,
+      entityId,
+    );
 
     if (!authorId) {
-      throw new NotFoundException(IDEA_CONFERENCE_NOT_FOUND);
+      throw new NotFoundException(CONFERENCE_NOT_FOUND);
     }
 
     if (authorId === userId) {
@@ -456,22 +471,26 @@ export class IdeaConferenceService {
     );
 
     if (!hasInvite) {
-      throw new ForbiddenException(IDEA_CONFERENCE_AUTHOR_ONLY);
+      throw new ForbiddenException(CONFERENCE_AUTHOR_ONLY);
     }
   }
 
   private async resolveSpeakerUserIds(
-    ideaId: string,
+    target: EntityLinkTarget,
+    entityId: string,
     speakerUserIds: string[],
   ): Promise<string[]> {
     if (speakerUserIds.length === 0) {
       return [];
     }
 
-    const team = await this.ideaConferenceRepository.findIdeaTeam(ideaId);
+    const team = await this.conferenceRepository.findEntityTeam(
+      target,
+      entityId,
+    );
 
     if (!team) {
-      throw new NotFoundException(IDEA_CONFERENCE_NOT_FOUND);
+      throw new NotFoundException(CONFERENCE_NOT_FOUND);
     }
 
     const teamUserIds = new Set([
@@ -484,58 +503,67 @@ export class IdeaConferenceService {
     );
 
     if (uniqueSpeakerIds.some(id => !teamUserIds.has(id))) {
-      throw new BadRequestException(IDEA_CONFERENCE_INVALID_SPEAKERS);
+      throw new BadRequestException(CONFERENCE_INVALID_SPEAKERS);
     }
 
     return uniqueSpeakerIds;
   }
 
   private async resolveConferenceIdForSpeakers(
-    ideaId: string,
+    target: EntityLinkTarget,
+    entityId: string,
     conferenceId?: string,
   ): Promise<string | null> {
     if (conferenceId) {
-      const conference = await this.ideaConferenceRepository.findById(
+      const conference = await this.conferenceRepository.findById(
         conferenceId,
-        ideaId,
+        target,
+        entityId,
       );
 
       if (!conference) {
-        throw new NotFoundException(IDEA_CONFERENCE_NOT_FOUND);
+        throw new NotFoundException(CONFERENCE_NOT_FOUND);
       }
 
       return conference.id;
     }
 
-    const liveConference =
-      await this.ideaConferenceRepository.findLiveConference(ideaId);
+    const liveConference = await this.conferenceRepository.findLiveConference(
+      target,
+      entityId,
+    );
 
     if (liveConference) {
       return liveConference.id;
     }
 
     const nextScheduled =
-      await this.ideaConferenceRepository.findNextScheduledConference(ideaId);
+      await this.conferenceRepository.findNextScheduledConference(
+        target,
+        entityId,
+      );
 
     return nextScheduled?.id ?? null;
   }
 
   private async findConferenceForMutation(
-    ideaId: string,
+    target: EntityLinkTarget,
+    entityId: string,
     conferenceId: string,
   ) {
-    const conference = await this.ideaConferenceRepository.findById(
+    const conference = await this.conferenceRepository.findById(
       conferenceId,
-      ideaId,
+      target,
+      entityId,
     );
 
     if (!conference) {
-      throw new NotFoundException(IDEA_CONFERENCE_NOT_FOUND);
+      throw new NotFoundException(CONFERENCE_NOT_FOUND);
     }
 
     if (
-      conference.status === IdeaConferenceStatus.ENDED ||
-      conference.status === IdeaConferenceStatus.CANCELLED
+      conference.status === ConferenceStatus.ENDED ||
+      conference.status === ConferenceStatus.CANCELLED
     ) {
       throw new BadRequestException(CONFERENCE_INVITE_CONFERENCE_CLOSED);
     }
@@ -553,12 +581,15 @@ export class IdeaConferenceService {
   }
 
   private async resolveConferenceRole(
-    ideaId: string,
+    target: EntityLinkTarget,
+    entityId: string,
     conferenceId: string,
     userId: string,
   ): Promise<ConferenceRole> {
-    const authorId =
-      await this.ideaConferenceRepository.findIdeaAuthorId(ideaId);
+    const authorId = await this.conferenceRepository.findEntityAuthorId(
+      target,
+      entityId,
+    );
 
     if (authorId === userId) {
       return 'speaker';

@@ -1,21 +1,24 @@
-import type { IdeaConferenceStatus } from '../../../generated/prisma/client';
+import type { ConferenceStatus } from '../../../generated/prisma/client';
 import type { LiveChatAuthorDto } from '../../live-chat/types/live-chat.types';
 
-export type IdeaConferenceDto = {
+export type ConferenceEntityType = 'IDEA' | 'PROBLEM';
+
+export type ConferenceDto = {
   id: string;
-  ideaId: string;
+  entityType: ConferenceEntityType;
+  entityId: string;
   scheduledBy: LiveChatAuthorDto;
   title: string;
   description: string | null;
-  status: IdeaConferenceStatus;
+  status: ConferenceStatus;
   scheduledFor: string;
   startedAt: string | null;
   endedAt: string | null;
   createdAt: string;
 };
 
-export type IdeaConferenceListResponse = {
-  conferences: IdeaConferenceDto[];
+export type ConferenceListResponse = {
+  conferences: ConferenceDto[];
 };
 
 export type SuggestedSpeakerInviteState =
@@ -42,5 +45,5 @@ export type JoinConferenceResponse = {
   token: string;
   livekitUrl: string;
   role: ConferenceRole;
-  conference: IdeaConferenceDto;
+  conference: ConferenceDto;
 };

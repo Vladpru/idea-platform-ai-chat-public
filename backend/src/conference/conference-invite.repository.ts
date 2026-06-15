@@ -34,9 +34,8 @@ export type ConferenceInvitePreviewRecord = {
   conference: {
     title: string;
     scheduledFor: Date;
-    idea: {
-      title: string | null;
-    };
+    idea: { title: string | null } | null;
+    problem: { title: string | null } | null;
   };
 };
 
@@ -105,6 +104,11 @@ export class ConferenceInviteRepository {
             title: true,
             scheduledFor: true,
             idea: {
+              select: {
+                title: true,
+              },
+            },
+            problem: {
               select: {
                 title: true,
               },
