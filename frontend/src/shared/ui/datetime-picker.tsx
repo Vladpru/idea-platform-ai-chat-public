@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { format, isValid, parse, startOfToday } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 
@@ -7,13 +7,6 @@ import { Button } from '@/shared/ui/button';
 import { Calendar } from '@/shared/ui/calendar';
 import { Input } from '@/shared/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shared/ui/popover';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/shared/ui/select';
 
 type DateTimePickerProps = {
   value: Date | undefined;
@@ -25,8 +18,9 @@ type DateTimePickerProps = {
 
 const DISPLAY_FORMAT = 'MMM dd, yyyy HH:mm';
 
-const HOURS = Array.from({ length: 24 }, (_, i) => i);
-const MINUTES = Array.from({ length: 60 }, (_, i) => i);
+const pad = (n: number) => String(n).padStart(2, '0');
+const clamp = (n: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, n));
 
 function mergeDateAndTime(date: Date, hour: number, minute: number): Date {
   const next = new Date(date);
@@ -81,14 +75,29 @@ export function DateTimePicker({
     );
   };
 
-  const isHourDisabled = (h: number): boolean =>
-    selectedIsToday && h < nowHour;
+  // Keep the existing guard against scheduling a time earlier than "now" when
+  // the selected day is today. Applied on blur so it never fights live typing.
+  const clampToAllowedTime = (h: number, m: number): [number, number] => {
+    if (!selectedIsToday) return [h, m];
+    if (h < nowHour) return [nowHour, nowMinute];
+    if (h === nowHour && m < nowMinute) return [h, nowMinute];
+    return [h, m];
+  };
 
-  const isMinuteDisabled = (m: number): boolean => {
-    if (!selectedIsToday) return false;
-    if (hour > nowHour) return false;
-    if (hour < nowHour) return true;
-    return m < nowMinute;
+  // Local buffers so a partially typed value (e.g. "1") isn't reformatted to
+  // "01" mid-edit. Synced back from `value` only while the field is unfocused.
+  const [hourInput, setHourInput] = useState(pad(hour));
+  const [minuteInput, setMinuteInput] = useState(pad(minute));
+  const hourFocused = useRef(false);
+  const minuteFocused = useRef(false);
+
+  useEffect(() => {
+    if (!hourFocused.current) setHourInput(pad(hour));
+    if (!minuteFocused.current) setMinuteInput(pad(minute));
+  }, [hour, minute]);
+
+  const commitTime = (h: number, m: number) => {
+    onChange(mergeDateAndTime(value ?? getDefaultDateTime(), h, m));
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -110,17 +119,50 @@ export function DateTimePicker({
     onChange(mergeDateAndTime(date, hour, minute));
   };
 
-  const handleHourChange = (next: string) => {
-    onChange(
-      mergeDateAndTime(value ?? getDefaultDateTime(), Number(next), minute),
-    );
+  // Block letters/symbols at the source while still allowing navigation,
+  // editing and clipboard shortcuts.
+  const blockNonNumericKeys = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (
+      e.key.length === 1 &&
+      !/[0-9]/.test(e.key) &&
+      !e.ctrlKey &&
+      !e.metaKey
+    ) {
+      e.preventDefault();
+    }
   };
 
-  const handleMinuteChange = (next: string) => {
-    onChange(
-      mergeDateAndTime(value ?? getDefaultDateTime(), hour, Number(next)),
-    );
+  const handleHourChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const digits = e.target.value.replace(/\D/g, '').slice(0, 2);
+    setHourInput(digits);
+    if (digits === '') return;
+    commitTime(clamp(Number(digits), 0, 23), minute);
   };
+
+  const handleHourBlur = () => {
+    hourFocused.current = false;
+    const [h, m] = clampToAllowedTime(clamp(Number(hourInput) || 0, 0, 23), minute);
+    setHourInput(pad(h));
+    setMinuteInput(pad(m));
+    commitTime(h, m);
+  };
+
+  const handleMinuteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const digits = e.target.value.replace(/\D/g, '').slice(0, 2);
+    setMinuteInput(digits);
+    if (digits === '') return;
+    commitTime(hour, clamp(Number(digits), 0, 59));
+  };
+
+  const handleMinuteBlur = () => {
+    minuteFocused.current = false;
+    const [h, m] = clampToAllowedTime(hour, clamp(Number(minuteInput) || 0, 0, 59));
+    setHourInput(pad(h));
+    setMinuteInput(pad(m));
+    commitTime(h, m);
+  };
+
+  const timeInputClassName = 'h-9 w-12 px-1 text-center tabular-nums';
 
   return (
     <Popover>
@@ -140,7 +182,7 @@ export function DateTimePicker({
         </PopoverTrigger>
       </div>
 
-      <PopoverContent className="w-auto p-3" align="end" sideOffset={6}>
+      <PopoverContent className="w-auto p-4" align="end" sideOffset={6}>
         <Calendar
           mode="single"
           selected={value}
@@ -149,47 +191,45 @@ export function DateTimePicker({
           defaultMonth={value ?? getDefaultDateTime()}
         />
 
-        <div className="mt-3 border-t border-border pt-3">
-          <div className="flex flex-row items-center justify-between">
-            <span className="text-sm text-muted-foreground">Time</span>
-            <div className="flex flex-row items-center gap-1.5">
-              <Select value={String(hour)} onValueChange={handleHourChange}>
-                <SelectTrigger className="w-[75px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent position="popper" sideOffset={4}>
-                  {HOURS.map(h => (
-                    <SelectItem
-                      key={h}
-                      value={String(h)}
-                      disabled={isHourDisabled(h)}
-                    >
-                      {String(h).padStart(2, '0')}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        <div className="border-border mt-4 border-t pt-4">
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground text-sm">Time</span>
+            <div className="flex items-center gap-2">
+              <Input
+                type="text"
+                inputMode="numeric"
+                aria-label="Hours"
+                maxLength={2}
+                value={hourInput}
+                onChange={handleHourChange}
+                onKeyDown={blockNonNumericKeys}
+                onFocus={e => {
+                  hourFocused.current = true;
+                  e.currentTarget.select();
+                }}
+                onBlur={handleHourBlur}
+                className={timeInputClassName}
+              />
 
-              <span className="select-none text-sm font-semibold text-muted-foreground">
+              <span className="text-muted-foreground select-none text-sm font-semibold">
                 :
               </span>
 
-              <Select value={String(minute)} onValueChange={handleMinuteChange}>
-                <SelectTrigger className="w-[75px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent position="popper" sideOffset={4}>
-                  {MINUTES.map(m => (
-                    <SelectItem
-                      key={m}
-                      value={String(m)}
-                      disabled={isMinuteDisabled(m)}
-                    >
-                      {String(m).padStart(2, '0')}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                type="text"
+                inputMode="numeric"
+                aria-label="Minutes"
+                maxLength={2}
+                value={minuteInput}
+                onChange={handleMinuteChange}
+                onKeyDown={blockNonNumericKeys}
+                onFocus={e => {
+                  minuteFocused.current = true;
+                  e.currentTarget.select();
+                }}
+                onBlur={handleMinuteBlur}
+                className={timeInputClassName}
+              />
             </div>
           </div>
         </div>

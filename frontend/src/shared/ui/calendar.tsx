@@ -17,18 +17,21 @@ function Calendar({
       showOutsideDays={showOutsideDays}
       className={cn('p-0', className)}
       classNames={{
-        months: 'flex flex-col gap-4',
+        // `Months` is the positioning context; the single `Nav` (which holds
+        // both chevrons) is rendered as its first child, so we overlay it on
+        // top of the caption row instead of absolutely positioning each button.
+        months: 'relative flex flex-col gap-4',
         month: 'space-y-4',
-        month_caption: 'flex items-center justify-center pt-1 relative',
+        month_caption: 'flex h-9 items-center justify-center',
         caption_label: 'text-sm font-medium',
-        nav: 'flex items-center gap-1',
+        nav: 'absolute inset-x-0 top-0 flex h-9 items-center justify-between px-1',
         button_previous: cn(
           buttonVariants({ variant: 'outline' }),
-          'absolute left-1 size-7 bg-transparent p-0 opacity-70 hover:opacity-100',
+          'size-7 bg-transparent p-0 opacity-70 hover:opacity-100',
         ),
         button_next: cn(
           buttonVariants({ variant: 'outline' }),
-          'absolute right-1 size-7 bg-transparent p-0 opacity-70 hover:opacity-100',
+          'size-7 bg-transparent p-0 opacity-70 hover:opacity-100',
         ),
         month_grid: 'w-full border-collapse',
         weekdays: 'flex',
