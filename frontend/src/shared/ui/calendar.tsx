@@ -2,9 +2,9 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { DayPicker, type DayPickerProps } from 'react-day-picker';
 
 import { cn } from '@/shared/lib/utils';
-import { buttonVariants } from '@/shared/ui/button';
 
 import 'react-day-picker/style.css';
+import { buttonVariants } from './button-variants';
 
 function Calendar({
   className,
