@@ -1,11 +1,11 @@
-import type { IdeaConferenceDto } from '@/features/idea-conference/api/idea-conference-api.types';
-import { formatConferenceScheduledFor } from '@/features/idea-conference/lib/format-conference-time';
-import { useConferenceCountdown } from '@/features/idea-conference/lib/use-conference-countdown';
+import type { ConferenceDto } from '@/features/conference/api/conference-api.types';
+import { formatConferenceScheduledFor } from '@/features/conference/lib/format-conference-time';
+import { useConferenceCountdown } from '@/features/conference/lib/use-conference-countdown';
 
 import { Button } from '@/shared/ui/button';
 
 type ConferenceWaitingRoomProps = {
-  conference: IdeaConferenceDto;
+  conference: ConferenceDto;
   isAuthor: boolean;
   isStarting: boolean;
   onStartConference?: () => void;
@@ -42,7 +42,9 @@ export function ConferenceWaitingRoom({
           {conference.title}
         </h1>
         {conference.description ? (
-          <p className="text-brand-gray-600 text-base">{conference.description}</p>
+          <p className="text-brand-gray-600 text-base">
+            {conference.description}
+          </p>
         ) : null}
         <p className="text-brand-gray-500 text-sm">
           Scheduled for {formatConferenceScheduledFor(conference.scheduledFor)}

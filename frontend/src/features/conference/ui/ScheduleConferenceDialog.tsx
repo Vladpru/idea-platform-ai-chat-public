@@ -1,8 +1,12 @@
-import { inviteConferenceSpeaker } from '@/features/idea-conference/api/idea-conference.api';
-import type { SuggestedSpeakerDto } from '@/features/idea-conference/api/idea-conference-api.types';
-import { useScheduleConferenceMutation } from '@/features/idea-conference/hooks/mutations/use-schedule-conference-mutation';
-import { useSuggestedSpeakersQuery } from '@/features/idea-conference/hooks/queries/use-suggested-speakers-query';
-import { ideaConferenceQueryKeys } from '@/features/idea-conference/lib/idea-conference-query-keys';
+import { inviteConferenceSpeaker } from '@/features/conference/api/conference.api';
+import type {
+  ConferenceEntityType,
+  SuggestedSpeakerDto,
+} from '@/features/conference/api/conference-api.types';
+import { useScheduleConferenceMutation } from '@/features/conference/hooks/mutations/use-schedule-conference-mutation';
+import { useSuggestedSpeakersQuery } from '@/features/conference/hooks/queries/use-suggested-speakers-query';
+import { getEntityNoun } from '@/features/conference/lib/conference-navigation';
+import { conferenceQueryKeys } from '@/features/conference/lib/conference-query-keys';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 
@@ -29,8 +33,9 @@ import {
 } from '@/shared/ui/user-invite-card/UserInviteCard';
 import { toast } from 'sonner';
 
-type ScheduleIdeaConferenceDialogProps = {
-  ideaId: string;
+type ScheduleConferenceDialogProps = {
+  entityType: ConferenceEntityType;
+  entityId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
@@ -61,15 +66,22 @@ function mapSpeakerCardState(
   return 'idle';
 }
 
-export function ScheduleIdeaConferenceDialog({
-  ideaId,
+export function ScheduleConferenceDialog({
+  entityType,
+  entityId,
   open,
   onOpenChange,
-}: ScheduleIdeaConferenceDialogProps) {
+}: ScheduleConferenceDialogProps) {
   const queryClient = useQueryClient();
-  const scheduleMutation = useScheduleConferenceMutation(ideaId);
+  const entity = useMemo(
+    () => ({ entityType, entityId }),
+    [entityType, entityId],
+  );
+  const entityNoun = getEntityNoun(entityType);
+
+  const scheduleMutation = useScheduleConferenceMutation(entity);
   const { data: suggestedSpeakers, isLoading: isSuggestedSpeakersLoading } =
-    useSuggestedSpeakersQuery(ideaId, { enabled: open });
+    useSuggestedSpeakersQuery(entity, { enabled: open });
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -167,12 +179,12 @@ export function ScheduleIdeaConferenceDialog({
       });
 
       for (const email of externalEmails) {
-        await inviteConferenceSpeaker(ideaId, conference.id, { email });
+        await inviteConferenceSpeaker(entity, conference.id, { email });
       }
 
       if (externalEmails.length > 0) {
         await queryClient.invalidateQueries({
-          queryKey: ideaConferenceQueryKeys.suggestedSpeakers(ideaId),
+          queryKey: conferenceQueryKeys.suggestedSpeakers(entity),
         });
         toast.success('External speaker invites sent');
       }
@@ -189,8 +201,8 @@ export function ScheduleIdeaConferenceDialog({
         <DialogHeader>
           <DialogTitle>Schedule conference</DialogTitle>
           <DialogDescription>
-            Plan a public webinar for this idea and invite speakers from your
-            team.
+            Plan a public webinar for this {entityNoun} and invite speakers from
+            your team.
           </DialogDescription>
         </DialogHeader>
 

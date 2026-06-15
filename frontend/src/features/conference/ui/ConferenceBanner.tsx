@@ -1,44 +1,60 @@
-import type { IdeaConferenceDto } from '@/features/idea-conference/api/idea-conference-api.types';
-import { useUpdateConferenceMutation } from '@/features/idea-conference/hooks/mutations/use-update-conference-mutation';
-import { useIdeaConferencesQuery } from '@/features/idea-conference/hooks/queries/use-idea-conferences-query';
-import { formatConferenceScheduledFor } from '@/features/idea-conference/lib/format-conference-time';
-import { resolveFeaturedConference } from '@/features/idea-conference/lib/resolve-featured-conference';
+import type {
+  ConferenceDto,
+  ConferenceEntityType,
+} from '@/features/conference/api/conference-api.types';
+import { useUpdateConferenceMutation } from '@/features/conference/hooks/mutations/use-update-conference-mutation';
+import { useConferencesQuery } from '@/features/conference/hooks/queries/use-conferences-query';
+import { formatConferenceScheduledFor } from '@/features/conference/lib/format-conference-time';
+import { resolveFeaturedConference } from '@/features/conference/lib/resolve-featured-conference';
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import { useNavigate } from '@tanstack/react-router';
 import { Calendar, Radio } from 'lucide-react';
+import { useMemo } from 'react';
 
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
 
-type IdeaConferenceBannerProps = {
-  ideaId: string;
+type ConferenceBannerProps = {
+  entityType: ConferenceEntityType;
+  entityId: string;
   authorId: string;
   className?: string;
 };
 
 function navigateToConference(
   navigate: ReturnType<typeof useNavigate>,
-  ideaId: string,
-  conference: IdeaConferenceDto,
+  entityType: ConferenceEntityType,
+  entityId: string,
+  conference: ConferenceDto,
 ) {
+  if (entityType === 'IDEA') {
+    void navigate({
+      to: '/ideas/$ideaId/conferences/$conferenceId',
+      params: { ideaId: entityId, conferenceId: conference.id },
+    });
+    return;
+  }
+
   void navigate({
-    to: '/ideas/$ideaId/conferences/$conferenceId',
-    params: {
-      ideaId,
-      conferenceId: conference.id,
-    },
+    to: '/problems/$problemId/conferences/$conferenceId',
+    params: { problemId: entityId, conferenceId: conference.id },
   });
 }
 
-export function IdeaConferenceBanner({
-  ideaId,
+export function ConferenceBanner({
+  entityType,
+  entityId,
   authorId,
   className,
-}: IdeaConferenceBannerProps) {
+}: ConferenceBannerProps) {
   const navigate = useNavigate();
+  const entity = useMemo(
+    () => ({ entityType, entityId }),
+    [entityType, entityId],
+  );
   const currentUserId = useAuthSessionStore(state => state.user?.id);
-  const { data, isLoading } = useIdeaConferencesQuery(ideaId);
-  const updateMutation = useUpdateConferenceMutation(ideaId);
+  const { data, isLoading } = useConferencesQuery(entity);
+  const updateMutation = useUpdateConferenceMutation(entity);
   const featured = resolveFeaturedConference(data?.conferences ?? []);
   const conference = featured?.conference ?? null;
 
@@ -87,7 +103,9 @@ export function IdeaConferenceBanner({
         <Button
           type="button"
           className="bg-brand-orange hover:bg-brand-orange/90 w-full sm:w-auto"
-          onClick={() => navigateToConference(navigate, ideaId, conference)}
+          onClick={() =>
+            navigateToConference(navigate, entityType, entityId, conference)
+          }
         >
           Go to stage
         </Button>
@@ -104,7 +122,9 @@ export function IdeaConferenceBanner({
           type="button"
           variant="outline"
           className="w-full sm:w-auto"
-          onClick={() => navigateToConference(navigate, ideaId, conference)}
+          onClick={() =>
+            navigateToConference(navigate, entityType, entityId, conference)
+          }
         >
           Go to waiting room
         </Button>
@@ -116,7 +136,9 @@ export function IdeaConferenceBanner({
         <Button
           type="button"
           className="bg-brand-orange hover:bg-brand-orange/90 w-full sm:w-auto"
-          onClick={() => navigateToConference(navigate, ideaId, conference)}
+          onClick={() =>
+            navigateToConference(navigate, entityType, entityId, conference)
+          }
         >
           Join conference
         </Button>
@@ -148,7 +170,9 @@ export function IdeaConferenceBanner({
                 Live now
               </p>
             ) : null}
-            <p className="text-brand-dark-blue font-medium">{conference.title}</p>
+            <p className="text-brand-dark-blue font-medium">
+              {conference.title}
+            </p>
           </div>
         </div>
 

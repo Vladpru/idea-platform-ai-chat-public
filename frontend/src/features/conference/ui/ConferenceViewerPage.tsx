@@ -1,24 +1,31 @@
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
-import type { ConferenceRole } from '@/features/idea-conference/api/idea-conference-api.types';
-import { updateIdeaConference } from '@/features/idea-conference/api/idea-conference.api';
-import { useJoinConferenceMutation } from '@/features/idea-conference/hooks/mutations/use-join-conference-mutation';
-import { useUpdateConferenceMutation } from '@/features/idea-conference/hooks/mutations/use-update-conference-mutation';
-import { useIdeaConferenceQuery } from '@/features/idea-conference/hooks/queries/use-idea-conference-query';
-import { ideaConferenceQueryKeys } from '@/features/idea-conference/lib/idea-conference-query-keys';
-import { ConferenceListenerView } from '@/features/idea-conference/ui/ConferenceListenerView';
-import { ConferenceStage } from '@/features/idea-conference/ui/ConferenceStage';
-import { ConferenceWaitingRoom } from '@/features/idea-conference/ui/ConferenceWaitingRoom';
+import { updateConference } from '@/features/conference/api/conference.api';
+import type {
+  ConferenceEntityType,
+  ConferenceRole,
+} from '@/features/conference/api/conference-api.types';
+import { useJoinConferenceMutation } from '@/features/conference/hooks/mutations/use-join-conference-mutation';
+import { useUpdateConferenceMutation } from '@/features/conference/hooks/mutations/use-update-conference-mutation';
+import { useConferenceQuery } from '@/features/conference/hooks/queries/use-conference-query';
+import {
+  getEntityDetailPath,
+  getEntityNoun,
+} from '@/features/conference/lib/conference-navigation';
+import { conferenceQueryKeys } from '@/features/conference/lib/conference-query-keys';
 import type { PreJoinPrefs } from '@/shared/ui/pre-join-room';
 import { PreJoinRoom } from '@/shared/ui/pre-join-room';
 import { ConfirmModal } from '@/shared/ui/confirm-modal';
 import { Link, useBlocker, useNavigate } from '@tanstack/react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { ROUTES } from '@/shared/config/paths';
 import { cn } from '@/shared/lib/utils';
+
+import { ConferenceListenerView } from './ConferenceListenerView';
+import { ConferenceStage } from './ConferenceStage';
+import { ConferenceWaitingRoom } from './ConferenceWaitingRoom';
 
 type ConferenceSessionState = {
   token: string;
@@ -26,26 +33,39 @@ type ConferenceSessionState = {
   role: ConferenceRole;
 };
 
-type IdeaConferenceViewerPageProps = {
-  ideaId: string;
+type ConferenceViewerPageProps = {
+  entityType: ConferenceEntityType;
+  entityId: string;
   conferenceId: string;
 };
 
-export function IdeaConferenceViewerPage({
-  ideaId,
+export function ConferenceViewerPage({
+  entityType,
+  entityId,
   conferenceId,
-}: IdeaConferenceViewerPageProps) {
+}: ConferenceViewerPageProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const currentUserId = useAuthSessionStore(state => state.user?.id);
+
+  const entity = useMemo(
+    () => ({ entityType, entityId }),
+    [entityType, entityId],
+  );
+  const entityDetailPath = useMemo(
+    () => getEntityDetailPath(entity),
+    [entity],
+  );
+  const entityNoun = getEntityNoun(entityType);
+
   const {
     data: conference,
     isLoading,
     isError,
     refetch,
-  } = useIdeaConferenceQuery(ideaId, conferenceId);
-  const joinMutation = useJoinConferenceMutation(ideaId, conferenceId);
-  const updateMutation = useUpdateConferenceMutation(ideaId);
+  } = useConferenceQuery(entity, conferenceId);
+  const joinMutation = useJoinConferenceMutation(entity, conferenceId);
+  const updateMutation = useUpdateConferenceMutation(entity);
 
   const [session, setSession] = useState<ConferenceSessionState | null>(null);
   const [isReadyToJoin, setIsReadyToJoin] = useState(false);
@@ -102,12 +122,12 @@ export function IdeaConferenceViewerPage({
     joinAttemptedRef.current = true;
 
     void beginLiveSession().catch(() => {
-      void navigate({ to: ROUTES.ideaDetail(ideaId) });
+      void navigate({ to: entityDetailPath });
     });
   }, [
     beginLiveSession,
     conference?.status,
-    ideaId,
+    entityDetailPath,
     joinMutation.isPending,
     navigate,
     session,
@@ -133,22 +153,22 @@ export function IdeaConferenceViewerPage({
     setJoinPrefs(null);
     joinAttemptedRef.current = false;
     void queryClient.invalidateQueries({
-      queryKey: ideaConferenceQueryKeys.byIdea(ideaId),
+      queryKey: conferenceQueryKeys.byEntity(entity),
     });
-  }, [ideaId, queryClient]);
+  }, [entity, queryClient]);
 
   const handleAutoEnd = useCallback(async () => {
-    await updateIdeaConference(ideaId, conferenceId, { action: 'end' }).catch(
+    await updateConference(entity, conferenceId, { action: 'end' }).catch(
       () => {},
     );
     void queryClient.invalidateQueries({
-      queryKey: ideaConferenceQueryKeys.byIdea(ideaId),
+      queryKey: conferenceQueryKeys.byEntity(entity),
     });
     setSession(null);
     setIsReadyToJoin(false);
     setJoinPrefs(null);
     joinAttemptedRef.current = false;
-  }, [conferenceId, ideaId, queryClient]);
+  }, [conferenceId, entity, queryClient]);
 
   const handleConnectionLost = useCallback(async () => {
     const currentSession = sessionRef.current;
@@ -158,11 +178,13 @@ export function IdeaConferenceViewerPage({
     }
 
     if (reconnectingRef.current) {
-      toast.error('Conference disconnected. Please rejoin from the idea page.');
+      toast.error(
+        `Conference disconnected. Please rejoin from the ${entityNoun} page.`,
+      );
       setSession(null);
       setIsReadyToJoin(false);
       joinAttemptedRef.current = false;
-      void navigate({ to: ROUTES.ideaDetail(ideaId) });
+      void navigate({ to: entityDetailPath });
       return;
     }
 
@@ -178,15 +200,17 @@ export function IdeaConferenceViewerPage({
       }
       toast.success('Reconnected to the conference');
     } catch {
-      toast.error('Could not reconnect. Please try again from the idea page.');
+      toast.error(
+        `Could not reconnect. Please try again from the ${entityNoun} page.`,
+      );
       setSession(null);
       setIsReadyToJoin(false);
       joinAttemptedRef.current = false;
-      void navigate({ to: ROUTES.ideaDetail(ideaId) });
+      void navigate({ to: entityDetailPath });
     } finally {
       reconnectingRef.current = false;
     }
-  }, [beginLiveSession, ideaId, navigate]);
+  }, [beginLiveSession, entityDetailPath, entityNoun, navigate]);
 
   const { proceed, reset, status } = useBlocker({
     shouldBlockFn: () => Boolean(session && isReadyToJoin),
@@ -229,11 +253,11 @@ export function IdeaConferenceViewerPage({
     if (shouldProceed) {
       proceed?.();
     } else {
-      void navigate({ to: ROUTES.ideaDetail(ideaId) });
+      void navigate({ to: entityDetailPath });
     }
   }, [
     conferenceId,
-    ideaId,
+    entityDetailPath,
     leaveAction,
     navigate,
     proceed,
@@ -275,10 +299,10 @@ export function IdeaConferenceViewerPage({
       <div className="flex min-h-[calc(100dvh-56px)] flex-col items-center justify-center gap-4 px-4">
         <p className="text-brand-gray-600 text-sm">Conference not found.</p>
         <Link
-          to={ROUTES.ideaDetail(ideaId)}
+          to={entityDetailPath}
           className="text-primary text-sm font-medium hover:underline"
         >
-          Back to idea
+          Back to {entityNoun}
         </Link>
       </div>
     );
@@ -294,10 +318,10 @@ export function IdeaConferenceViewerPage({
           This conference has {conference.status.toLowerCase()}.
         </p>
         <Link
-          to={ROUTES.ideaDetail(ideaId)}
+          to={entityDetailPath}
           className="text-primary text-sm font-medium hover:underline"
         >
-          Back to idea
+          Back to {entityNoun}
         </Link>
       </div>
     );
@@ -309,11 +333,11 @@ export function IdeaConferenceViewerPage({
     <div className="flex w-full flex-1 flex-col overflow-hidden bg-white dark:bg-zinc-950">
       <div className="border-brand-gray-200 bg-card shrink-0 border-b px-4 py-4 sm:px-6">
         <Link
-          to={ROUTES.ideaDetail(ideaId)}
+          to={entityDetailPath}
           className="text-brand-dark-blue inline-flex items-center text-sm font-medium hover:underline"
         >
           <ArrowLeft className="mr-2 size-4" />
-          Back to idea
+          Back to {entityNoun}
         </Link>
       </div>
 
