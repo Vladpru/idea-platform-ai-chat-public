@@ -20,6 +20,9 @@ type LastMessageRow = {
   roomId: string;
   authorId: string;
   content: string;
+  attachmentUrl: string | null;
+  attachmentName: string | null;
+  attachmentMimeType: string | null;
   createdAt: Date;
   authorUserId: string;
   authorFirstName: string | null;
@@ -152,6 +155,9 @@ export class LiveChatRepository {
         m.room_id AS "roomId",
         m.author_id AS "authorId",
         m.content,
+        m.attachment_url AS "attachmentUrl",
+        m.attachment_name AS "attachmentName",
+        m.attachment_mime_type AS "attachmentMimeType",
         m.created_at AS "createdAt",
         u.id AS "authorUserId",
         u.first_name AS "authorFirstName",
@@ -168,9 +174,9 @@ export class LiveChatRepository {
       roomId: row.roomId,
       authorId: row.authorId,
       content: row.content,
-      attachmentUrl: null,
-      attachmentName: null,
-      attachmentMimeType: null,
+      attachmentUrl: row.attachmentUrl,
+      attachmentName: row.attachmentName,
+      attachmentMimeType: row.attachmentMimeType,
       createdAt: row.createdAt,
       author: {
         id: row.authorUserId,
