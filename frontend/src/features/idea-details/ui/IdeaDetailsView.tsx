@@ -24,8 +24,8 @@ import {
   IDEA_UPDATED_SUCCESS_TITLE,
 } from '@/features/ideas/lib/modals/copy';
 import { outlineBtnClass, primaryBtnClass } from '@/features/ideas/lib/styles';
-import { IdeaConferenceBanner } from '@/features/idea-conference/ui/IdeaConferenceBanner';
-import { ScheduleIdeaConferenceDialog } from '@/features/idea-conference/ui/ScheduleIdeaConferenceDialog';
+import { ConferenceBanner } from '@/features/conference/ui/ConferenceBanner';
+import { ScheduleConferenceDialog } from '@/features/conference/ui/ScheduleConferenceDialog';
 import { IdeaEditorPageHeading } from '@/features/ideas/ui/IdeaEditorPageHeading';
 import { IdeaForm } from '@/features/ideas/ui/idea-form/IdeaForm';
 import { NotFoundPage } from '@/pages/not-found';
@@ -485,8 +485,9 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
               />
             </div>
 
-            <IdeaConferenceBanner
-              ideaId={idea.id}
+            <ConferenceBanner
+              entityType="IDEA"
+              entityId={idea.id}
               authorId={idea.authorId}
             />
           </>
@@ -622,8 +623,9 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
       </div>
 
       {isAuthor ? (
-        <ScheduleIdeaConferenceDialog
-          ideaId={idea.id}
+        <ScheduleConferenceDialog
+          entityType="IDEA"
+          entityId={idea.id}
           open={isScheduleConferenceOpen}
           onOpenChange={setIsScheduleConferenceOpen}
         />

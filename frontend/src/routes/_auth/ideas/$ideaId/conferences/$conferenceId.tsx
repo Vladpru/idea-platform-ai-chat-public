@@ -1,4 +1,4 @@
-import { IdeaConferenceViewerPage } from '@/features/idea-conference/ui/IdeaConferenceViewerPage';
+import { ConferenceViewerPage } from '@/features/conference/ui/ConferenceViewerPage';
 import { createFileRoute, useParams } from '@tanstack/react-router';
 import { z } from 'zod';
 
@@ -25,8 +25,9 @@ function IdeaConferenceRoute() {
   });
 
   return (
-    <IdeaConferenceViewerPage
-      ideaId={ideaId}
+    <ConferenceViewerPage
+      entityType="IDEA"
+      entityId={ideaId}
       conferenceId={conferenceId}
     />
   );
