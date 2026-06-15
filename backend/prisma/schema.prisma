@@ -64,7 +64,7 @@ enum VideoCallStatus {
   CANCELLED
 }
 
-enum IdeaConferenceStatus {
+enum ConferenceStatus {
   SCHEDULED
   LIVE
   ENDED
@@ -114,7 +114,7 @@ model User {
   liveChatParticipations  LiveChatParticipant[]
   liveChatMessages        LiveChatMessage[]     @relation("LiveChatMessageAuthor")
   hostedVideoCalls        VideoCall[]           @relation("VideoCallHost")
-  scheduledConferences    IdeaConference[]      @relation("IdeaConferenceScheduler")
+  scheduledConferences    Conference[]          @relation("ConferenceScheduler")
   conferenceInvitesSent   ConferenceInvite[]    @relation("ConferenceInviteSender")
   conferenceInvitesRecv   ConferenceInvite[]    @relation("ConferenceInviteRecipient")
 
@@ -224,7 +224,7 @@ model Idea {
   views        IdeaView[]
   comments     Comment[]
   liveChatRoom LiveChatRoom?
-  conferences  IdeaConference[]
+  conferences  Conference[]
 
   @@index([authorId, status])
   @@index([status, publishedAt])
@@ -233,28 +233,32 @@ model Idea {
   @@map("idea")
 }
 
-model IdeaConference {
-  id               String               @id @default(uuid())
-  ideaId           String               @map("idea_id")
-  scheduledById    String               @map("scheduled_by_id")
+model Conference {
+  id               String           @id @default(uuid())
+  ideaId           String?          @map("idea_id")
+  problemId        String?          @map("problem_id")
+  scheduledById    String           @map("scheduled_by_id")
   title            String
-  description      String?              @db.Text
-  status           IdeaConferenceStatus @default(SCHEDULED)
-  scheduledFor     DateTime             @map("scheduled_for")
-  startedAt        DateTime?            @map("started_at")
-  endedAt          DateTime?            @map("ended_at")
-  providerRoomName String?              @map("provider_room_name")
-  createdAt        DateTime             @default(now()) @map("created_at")
-  updatedAt        DateTime             @updatedAt @map("updated_at")
+  description      String?          @db.Text
+  status           ConferenceStatus @default(SCHEDULED)
+  scheduledFor     DateTime         @map("scheduled_for")
+  startedAt        DateTime?        @map("started_at")
+  endedAt          DateTime?        @map("ended_at")
+  providerRoomName String?          @map("provider_room_name")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
 
-  idea        Idea               @relation(fields: [ideaId], references: [id], onDelete: Cascade)
-  scheduledBy User               @relation("IdeaConferenceScheduler", fields: [scheduledById], references: [id], onDelete: Cascade)
+  idea        Idea?              @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  problem     Problem?           @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  scheduledBy User               @relation("ConferenceScheduler", fields: [scheduledById], references: [id], onDelete: Cascade)
   invites     ConferenceInvite[]
 
   @@index([ideaId, status])
+  @@index([problemId, status])
   @@index([ideaId, scheduledFor])
+  @@index([problemId, scheduledFor])
   @@index([scheduledById])
-  @@map("idea_conference")
+  @@map("conference")
 }
 
 model ConferenceInvite {
@@ -270,7 +274,7 @@ model ConferenceInvite {
   acceptedAt   DateTime?              @map("accepted_at")
   createdAt    DateTime               @default(now()) @map("created_at")
 
-  conference IdeaConference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  conference Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
   invitedBy  User             @relation("ConferenceInviteSender", fields: [invitedById], references: [id], onDelete: Cascade)
   user       User?            @relation("ConferenceInviteRecipient", fields: [userId], references: [id], onDelete: Cascade)
 
@@ -355,6 +359,7 @@ searchVector       Unsupported("tsvector")?    @map("search_vector") @default(db
   views        ProblemView[]
   comments     Comment[]
   liveChatRoom LiveChatRoom?
+  conferences  Conference[]
 
   @@index([authorId, status])
   @@index([status])
