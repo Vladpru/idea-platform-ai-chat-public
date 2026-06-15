@@ -1,12 +1,12 @@
-import type { IdeaConferenceDto } from '@/features/idea-conference/api/idea-conference-api.types';
+import type { ConferenceDto } from '@/features/conference/api/conference-api.types';
 
 export type FeaturedConference =
-  | { kind: 'live'; conference: IdeaConferenceDto }
-  | { kind: 'scheduled'; conference: IdeaConferenceDto }
+  | { kind: 'live'; conference: ConferenceDto }
+  | { kind: 'scheduled'; conference: ConferenceDto }
   | null;
 
 export function resolveFeaturedConference(
-  conferences: IdeaConferenceDto[],
+  conferences: ConferenceDto[],
 ): FeaturedConference {
   const active = conferences.filter(
     c => c.status === 'LIVE' || c.status === 'SCHEDULED',

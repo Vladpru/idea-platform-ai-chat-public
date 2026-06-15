@@ -15,6 +15,8 @@ export const ROUTES = {
   problemCreation: (id: string) =>
     `/problems/new?problemId=${encodeURIComponent(id)}`,
   problemDetail: (id: string) => `/problems/${id}`,
+  problemConference: (problemId: string, conferenceId: string) =>
+    `/problems/${problemId}/conferences/${conferenceId}`,
   problemDiscussionReply: (id: string, commentId: string) =>
     `/problems/${id}?tab=discussion&replyTo=${encodeURIComponent(commentId)}`,
   search: '/search',

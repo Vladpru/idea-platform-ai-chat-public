@@ -1,16 +1,17 @@
-import { fetchIdeaConferences } from '@/features/idea-conference/api/idea-conference.api';
-import { ideaConferenceQueryKeys } from '@/features/idea-conference/lib/idea-conference-query-keys';
+import { fetchConferences } from '@/features/conference/api/conference.api';
+import type { ConferenceEntity } from '@/features/conference/api/conference-api.types';
+import { conferenceQueryKeys } from '@/features/conference/lib/conference-query-keys';
 import { useQuery } from '@tanstack/react-query';
 
-export function useIdeaConferenceQuery(
-  ideaId: string,
+export function useConferenceQuery(
+  entity: ConferenceEntity,
   conferenceId: string,
   options?: { enabled?: boolean },
 ) {
   return useQuery({
-    queryKey: ideaConferenceQueryKeys.conference(ideaId, conferenceId),
+    queryKey: conferenceQueryKeys.conference(entity, conferenceId),
     queryFn: async () => {
-      const response = await fetchIdeaConferences(ideaId);
+      const response = await fetchConferences(entity);
       const conference = response.conferences.find(
         item => item.id === conferenceId,
       );
@@ -21,7 +22,7 @@ export function useIdeaConferenceQuery(
 
       return conference;
     },
-    enabled: options?.enabled ?? Boolean(ideaId && conferenceId),
+    enabled: options?.enabled ?? Boolean(entity.entityId && conferenceId),
     refetchInterval: query => {
       const status = query.state.data?.status;
 

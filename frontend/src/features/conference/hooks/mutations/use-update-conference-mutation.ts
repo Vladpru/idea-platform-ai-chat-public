@@ -1,6 +1,9 @@
-import { updateIdeaConference } from '@/features/idea-conference/api/idea-conference.api';
-import type { UpdateConferencePayload } from '@/features/idea-conference/api/idea-conference-api.types';
-import { ideaConferenceQueryKeys } from '@/features/idea-conference/lib/idea-conference-query-keys';
+import { updateConference } from '@/features/conference/api/conference.api';
+import type {
+  ConferenceEntity,
+  UpdateConferencePayload,
+} from '@/features/conference/api/conference-api.types';
+import { conferenceQueryKeys } from '@/features/conference/lib/conference-query-keys';
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -33,7 +36,7 @@ function getFailureMessage(action: UpdateConferencePayload['action']): string {
   return 'Failed to update conference';
 }
 
-export function useUpdateConferenceMutation(ideaId: string) {
+export function useUpdateConferenceMutation(entity: ConferenceEntity) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -42,16 +45,16 @@ export function useUpdateConferenceMutation(ideaId: string) {
         throw new Error('Conference ID is required');
       }
 
-      return updateIdeaConference(ideaId, conferenceId, { action });
+      return updateConference(entity, conferenceId, { action });
     },
     onSuccess: (updatedConference, variables) => {
       queryClient.setQueryData(
-        ideaConferenceQueryKeys.conference(ideaId, variables.conferenceId),
+        conferenceQueryKeys.conference(entity, variables.conferenceId),
         updatedConference,
       );
 
       void queryClient.invalidateQueries({
-        queryKey: ideaConferenceQueryKeys.byIdea(ideaId),
+        queryKey: conferenceQueryKeys.byEntity(entity),
       });
 
       toast.success(getSuccessMessage(variables.action));

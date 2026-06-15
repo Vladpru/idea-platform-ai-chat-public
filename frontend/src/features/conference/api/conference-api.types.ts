@@ -1,26 +1,30 @@
 import type { LiveChatAuthorDto } from '@/features/live-chat/api/live-chat-api.types';
 
-export type IdeaConferenceStatus =
-  | 'SCHEDULED'
-  | 'LIVE'
-  | 'ENDED'
-  | 'CANCELLED';
+export type ConferenceEntityType = 'IDEA' | 'PROBLEM';
 
-export type IdeaConferenceDto = {
+export type ConferenceEntity = {
+  entityType: ConferenceEntityType;
+  entityId: string;
+};
+
+export type ConferenceStatus = 'SCHEDULED' | 'LIVE' | 'ENDED' | 'CANCELLED';
+
+export type ConferenceDto = {
   id: string;
-  ideaId: string;
+  entityType: ConferenceEntityType;
+  entityId: string;
   scheduledBy: LiveChatAuthorDto;
   title: string;
   description: string | null;
-  status: IdeaConferenceStatus;
+  status: ConferenceStatus;
   scheduledFor: string;
   startedAt: string | null;
   endedAt: string | null;
   createdAt: string;
 };
 
-export type IdeaConferenceListResponse = {
-  conferences: IdeaConferenceDto[];
+export type ConferenceListResponse = {
+  conferences: ConferenceDto[];
 };
 
 export type SuggestedSpeakerInviteState =
@@ -41,7 +45,7 @@ export type SuggestedSpeakersResponse = {
   speakers: SuggestedSpeakerDto[];
 };
 
-export type ScheduleIdeaConferencePayload = {
+export type ScheduleConferencePayload = {
   title: string;
   description?: string;
   scheduledFor: string;
@@ -69,7 +73,7 @@ export type JoinConferenceResponse = {
   token: string;
   livekitUrl: string;
   role: ConferenceRole;
-  conference: IdeaConferenceDto;
+  conference: ConferenceDto;
 };
 
 export type UpdateConferencePayload = {
