@@ -10,4 +10,6 @@ export const CONFERENCE_INVITE_CANNOT_INVITE_AUTHOR =
 export const CONFERENCE_INVITE_USER_NOT_FOUND = 'User not found';
 export const CONFERENCE_INVITE_CONFERENCE_CLOSED =
   'Invites cannot be sent for ended or cancelled conferences';
+export const CONFERENCE_INVITE_EMAIL_SEND_FAILED =
+  'Unable to send invite email, try again later';
 export const CONFERENCE_INVITE_EXPIRE_DAYS = 7;

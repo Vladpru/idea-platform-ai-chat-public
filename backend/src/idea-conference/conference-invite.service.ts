@@ -4,16 +4,19 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { randomBytes } from 'crypto';
 
 import { ConferenceInviteStatus } from '../../generated/prisma/client';
+import { MailService } from '../mail/mail.service';
 import { isUniqueConstraintError } from '../shared/utils/is-unique-error.util';
 import { validateEmail } from '../shared/utils/validate-password.util';
 import {
   CONFERENCE_INVITE_ALREADY_EXISTS,
   CONFERENCE_INVITE_EMAIL_MISMATCH,
+  CONFERENCE_INVITE_EMAIL_SEND_FAILED,
   CONFERENCE_INVITE_EXPIRE_DAYS,
   CONFERENCE_INVITE_INVALID,
   CONFERENCE_INVITE_NOT_FOUND,
@@ -23,7 +26,10 @@ import {
   toConferenceInvitePreviewResponse,
   toConferenceInviteResponse,
 } from './conference-invite.mapper';
-import { ConferenceInviteRepository } from './conference-invite.repository';
+import {
+  ConferenceInviteRecord,
+  ConferenceInviteRepository,
+} from './conference-invite.repository';
 import {
   hashInviteSecret,
   inviteSecretsMatch,
@@ -39,6 +45,7 @@ export class ConferenceInviteService {
   constructor(
     private readonly conferenceInviteRepository: ConferenceInviteRepository,
     private readonly config: ConfigService,
+    private readonly mail: MailService,
   ) {}
 
   async invitePlatformUser(
@@ -77,7 +84,7 @@ export class ConferenceInviteService {
       Date.now() + CONFERENCE_INVITE_EXPIRE_DAYS * 24 * 60 * 60 * 1000,
     );
 
-    let invite;
+    let invite: ConferenceInviteRecord;
 
     try {
       invite = await this.conferenceInviteRepository.createExternalInvite({
@@ -101,7 +108,21 @@ export class ConferenceInviteService {
     const token = `${invite.id}.${secret}`;
     const inviteUrl = `${frontendUrl}/conference-invite?token=${encodeURIComponent(token)}`;
 
-    console.log(inviteUrl);
+    try {
+      await this.mail.sendConferenceInviteEmail({
+        to: normalizedEmail,
+        inviteUrl,
+        expiresDays: CONFERENCE_INVITE_EXPIRE_DAYS,
+      });
+    } catch {
+      await this.conferenceInviteRepository
+        .deleteInvite(invite.id)
+        .catch(() => undefined);
+
+      throw new ServiceUnavailableException(
+        CONFERENCE_INVITE_EMAIL_SEND_FAILED,
+      );
+    }
 
     return toConferenceInviteResponse(invite);
   }

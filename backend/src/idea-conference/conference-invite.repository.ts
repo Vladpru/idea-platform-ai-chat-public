@@ -157,6 +157,10 @@ export class ConferenceInviteRepository {
     });
   }
 
+  async deleteInvite(inviteId: string): Promise<void> {
+    await this.prisma.conferenceInvite.delete({ where: { id: inviteId } });
+  }
+
   findUserEmail(userId: string): Promise<string | null> {
     return this.prisma.user
       .findUnique({
