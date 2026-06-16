@@ -36,9 +36,9 @@ export function RichTextEditor({
         return htmlToMarkdownPaste(html);
       },
       attributes: {
-        id: id ?? '',
-        'aria-invalid': ariaInvalid ? 'true' : 'false',
-        class: 'min-h-[160px] px-3 py-2 text-sm focus-within:outline-none prose prose-sm dark:prose-invert max-w-none',
+        ...(id ? { id } : {}),
+        ...(ariaInvalid ? { 'aria-invalid': 'true' } : {}),
+        class: 'min-h-[160px] px-3 py-2 text-sm prose prose-sm dark:prose-invert max-w-none',
         ...(placeholder ? { 'data-placeholder': placeholder } : {}),
       },
     },
@@ -59,7 +59,7 @@ export function RichTextEditor({
   }, [editor, disabled]);
 
   const btnBase =
-    'rounded p-1 transition-colors hover:bg-brand-gray-100 type-button';
+    'rounded p-1 transition-colors hover:bg-brand-gray-100';
   const btnActive = 'bg-brand-gray-200 text-brand-dark-blue';
 
   return (
