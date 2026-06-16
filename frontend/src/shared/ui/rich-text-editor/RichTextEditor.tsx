@@ -10,6 +10,7 @@ import { cn } from '@/shared/lib/utils';
 type RichTextEditorProps = {
   value: string;
   onChange: (md: string) => void;
+  onBlur?: () => void;
   disabled?: boolean;
   'aria-invalid'?: boolean;
   id?: string;
@@ -21,6 +22,7 @@ const btnActive = 'bg-brand-gray-200 text-brand-dark-blue';
 export function RichTextEditor({
   value,
   onChange,
+  onBlur,
   disabled = false,
   'aria-invalid': ariaInvalid,
   id,
@@ -31,6 +33,9 @@ export function RichTextEditor({
     editable: !disabled,
     onUpdate: ({ editor }) => {
       onChange(htmlToMarkdown(editor.getHTML()));
+    },
+    onBlur: () => {
+      onBlur?.();
     },
     editorProps: {
       transformPastedHTML(html) {

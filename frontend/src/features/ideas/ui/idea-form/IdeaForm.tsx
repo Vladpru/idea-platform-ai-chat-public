@@ -142,6 +142,7 @@ export function IdeaForm({
               id={`${formId}-description`}
               value={field.value ?? ''}
               onChange={field.onChange}
+              onBlur={field.onBlur}
               disabled={isSubmitting}
               aria-invalid={!!errors.description}
             />

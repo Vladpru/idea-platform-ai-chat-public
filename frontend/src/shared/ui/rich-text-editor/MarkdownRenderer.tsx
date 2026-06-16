@@ -17,7 +17,7 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
 
   return (
     <div
-      className={cn('prose prose-sm dark:prose-invert max-w-none', className)}
+      className={cn('prose prose-sm dark:prose-invert max-w-none overflow-hidden', className)}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
