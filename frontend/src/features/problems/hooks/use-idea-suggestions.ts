@@ -1,4 +1,4 @@
-import { useMyIdeasQuery } from '@/features/ideas/hooks/use-idea-queries';
+import { useIdeasListQuery } from '@/features/ideas/hooks/use-idea-queries';
 import { useSuggestedIdeasQuery } from '@/features/problems/hooks/use-suggested-ideas-query';
 import {
   type SuggestedIdeaChip,
@@ -18,7 +18,7 @@ export function useIdeaSuggestions({
   tags,
   excludeIds,
 }: UseIdeaSuggestionsParams) {
-  const { data: myIdeasFeed, isLoading: isIdeasListLoading } = useMyIdeasQuery({
+  const { data: myIdeasFeed, isLoading: isIdeasListLoading } = useIdeasListQuery({
     limit: 50,
   });
 

@@ -134,17 +134,22 @@ export function LinkedItemsSection({
           </div>
 
           {isScrollable ? (
-            <div
+            <button
+              type="button"
+              aria-label="Scroll linked ideas right"
+              onClick={() =>
+                scrollRef.current?.scrollBy({ left: 160, behavior: 'smooth' })
+              }
               className={cn(
-                'pointer-events-none absolute inset-y-0 flex w-10 items-center justify-end pr-1.5',
+                'absolute inset-y-0 flex w-10 items-center justify-end pr-1.5',
                 'from-brand-white via-brand-white/80 bg-linear-to-l to-transparent',
                 'dark:from-card dark:via-card/80 dark:to-transparent',
+                'cursor-pointer',
                 getScrollHintOffsetClass(entityType, columnCount),
               )}
-              aria-hidden
             >
               <ChevronRight className="text-brand-dark-blue dark:text-brand-gray-400 size-4 shrink-0 opacity-80" />
-            </div>
+            </button>
           ) : null}
         </div>
       ) : null}

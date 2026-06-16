@@ -13,6 +13,7 @@ export type CreationPageTemplateProps = {
   headerAction?: ReactNode;
   footer?: ReactNode;
   backTo?: string;
+  onBackClick?: () => void;
   loadingOverlay?: boolean;
   loadingMessage?: string;
 };
@@ -24,6 +25,7 @@ export function CreationPageTemplate({
   headerAction,
   footer,
   backTo,
+  onBackClick,
   loadingOverlay = false,
   loadingMessage = 'Loading…',
 }: CreationPageTemplateProps) {
@@ -52,14 +54,25 @@ export function CreationPageTemplate({
               </p>
             </div>
           )}
-          {backTo && (
-            <Link
-              to={backTo}
+          {onBackClick ? (
+            <button
+              type="button"
+              onClick={onBackClick}
               className="text-primary hover:text-primary/80 mb-4 inline-flex items-center gap-1 text-xs font-bold tracking-wide uppercase transition-colors"
             >
               <ArrowLeft className="size-4" aria-hidden />
               Back
-            </Link>
+            </button>
+          ) : (
+            backTo && (
+              <Link
+                to={backTo}
+                className="text-primary hover:text-primary/80 mb-4 inline-flex items-center gap-1 text-xs font-bold tracking-wide uppercase transition-colors"
+              >
+                <ArrowLeft className="size-4" aria-hidden />
+                Back
+              </Link>
+            )
           )}
           <div className="mb-8 flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0 flex-1">

@@ -75,6 +75,8 @@ function DashboardCardCompactInner<
 
   const cardPadding = isNarrow ? 'p-3' : 'p-4';
 
+  const cardMinHeight = isNarrow ? 'min-h-[300px]' : '';
+
   const authorRow = (
     <div className="flex min-w-0 items-center gap-2">
       <Avatar className={avatarClassName}>
@@ -94,7 +96,12 @@ function DashboardCardCompactInner<
   ) : null;
 
   return (
-    <article className="group border-brand-gray-200 bg-card relative flex h-full flex-col overflow-hidden rounded-xl border transition-shadow hover:shadow-md">
+    <article
+      className={cn(
+        'group border-brand-gray-200 bg-card relative flex h-full flex-col overflow-hidden rounded-xl border transition-shadow hover:shadow-md',
+        cardMinHeight,
+      )}
+    >
       <Link
         to={detailHref}
         aria-label={card.title}

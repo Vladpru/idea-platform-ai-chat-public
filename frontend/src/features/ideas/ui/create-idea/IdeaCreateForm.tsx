@@ -62,12 +62,14 @@ type IdeaCreateFormProps = {
   onDocumentAutoFillControlsChange?: (
     controls: IdeaDocumentAutoFillControls,
   ) => void;
+  onCancelReady?: (handleCancel: () => void) => void;
 };
 
 export function IdeaCreateForm({
   aiDraftPrefill,
   onAiDraftPrefillApplied,
   onDocumentAutoFillControlsChange,
+  onCancelReady,
 }: IdeaCreateFormProps) {
   const navigate = useNavigate();
   const formId = useId();
@@ -200,11 +202,28 @@ export function IdeaCreateForm({
     },
   });
 
+  const onCancelReadyRef = useRef(onCancelReady);
+
+  useEffect(() => {
+    onCancelReadyRef.current = onCancelReady;
+  }, [onCancelReady]);
+
   const handleCancel = () => {
     requestLeave(() => {
-      void navigate({ to: ROUTES.ideas, search: { sort: 'newest' } });
+      if (isEditing) {
+        void navigate({ to: ROUTES.profileIdeas, search: { tab: 'drafts' } });
+      } else {
+        void navigate({ to: ROUTES.ideas, search: { sort: 'newest' } });
+      }
     });
   };
+
+  const handleCancelRef = useRef(handleCancel);
+  handleCancelRef.current = handleCancel;
+
+  useEffect(() => {
+    onCancelReadyRef.current?.(() => handleCancelRef.current());
+  }, []);
 
   const navigateToIdeaDetail = (
     ideaId: string,

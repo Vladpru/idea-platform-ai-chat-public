@@ -1,4 +1,4 @@
-import { useMyIdeasQuery } from '@/features/ideas/hooks/use-idea-queries';
+import { useIdeasListQuery } from '@/features/ideas/hooks/use-idea-queries';
 import {
   fieldLabelClass,
   primaryBtnClass,
@@ -53,20 +53,20 @@ export function LinkExistingIdeaModal({
     setDropdownOpen(false);
   };
 
-  const { data: myIdeasFeed, isLoading } = useMyIdeasQuery();
+  const { data: ideasFeed, isLoading } = useIdeasListQuery();
   const linkMutation = useLinkIdeasToProblemMutation(problemId);
-  const myIdeas = useMemo(() => myIdeasFeed?.data ?? [], [myIdeasFeed?.data]);
+  const ideas = useMemo(() => ideasFeed?.data ?? [], [ideasFeed?.data]);
 
   const linkedSet = useMemo(() => new Set(linkedIdeaIds), [linkedIdeaIds]);
 
   const availableIdeas = useMemo(() => {
-    return myIdeas
+    return ideas
       .filter(idea => !linkedSet.has(idea.id))
       .map(idea => ({
         id: idea.id,
         label: idea.title?.trim() || 'Untitled idea',
       }));
-  }, [linkedSet, myIdeas]);
+  }, [linkedSet, ideas]);
 
   const filteredIdeas = useMemo(() => {
     const query = search.trim().toLowerCase();

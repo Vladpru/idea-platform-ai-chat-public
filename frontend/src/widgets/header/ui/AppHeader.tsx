@@ -93,7 +93,7 @@ export function AppHeader() {
         </Link>
         <Link
           to={ROUTES.ideasNew}
-          className="bg-brand-orange hover:text-brand-orange border-brand-orange hidden h-9 items-center rounded-sm border px-3 text-xs font-bold tracking-wide text-white uppercase transition-colors hover:bg-transparent sm:h-10 sm:px-4 sm:text-sm lg:inline-flex"
+          className="bg-brand-orange dark:bg-brand-orange-hover hover:dark:bg-brand-orange-hover/80 hover:text-brand-orange border-brand-orange hidden h-9 items-center rounded-sm border px-3 text-xs font-bold tracking-wide text-white uppercase transition-colors hover:bg-transparent sm:h-10 sm:px-4 sm:text-sm lg:inline-flex dark:text-white"
         >
           ADD NEW IDEA
         </Link>
@@ -103,7 +103,7 @@ export function AppHeader() {
             <DropdownMenuTrigger asChild>
               <Button
                 type="button"
-                className="bg-brand-orange flex h-9 items-center gap-1 px-3 text-xs font-semibold tracking-wide text-white uppercase transition-colors hover:opacity-90 sm:h-10 sm:px-4 sm:text-sm"
+                className="bg-brand-orange dark:bg-brand-orange-hover flex h-9 items-center gap-1 px-3 text-xs font-semibold tracking-wide text-white uppercase transition-colors hover:opacity-90 sm:h-10 sm:px-4 sm:text-sm"
               >
                 ADD NEW <ChevronDown size={16} />
               </Button>
