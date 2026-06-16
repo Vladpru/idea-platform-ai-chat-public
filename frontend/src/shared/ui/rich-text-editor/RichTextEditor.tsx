@@ -39,7 +39,7 @@ export function RichTextEditor({
     },
     editorProps: {
       transformPastedHTML(html) {
-        return htmlToMarkdownPaste(html);
+        return markdownToHtml(htmlToMarkdownPaste(html));
       },
       attributes: {
         ...(id ? { id } : {}),
