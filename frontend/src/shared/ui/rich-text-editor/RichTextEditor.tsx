@@ -11,16 +11,17 @@ type RichTextEditorProps = {
   value: string;
   onChange: (md: string) => void;
   disabled?: boolean;
-  placeholder?: string;
   'aria-invalid'?: boolean;
   id?: string;
 };
+
+const btnBase = 'rounded p-1 transition-colors hover:bg-brand-gray-100';
+const btnActive = 'bg-brand-gray-200 text-brand-dark-blue';
 
 export function RichTextEditor({
   value,
   onChange,
   disabled = false,
-  placeholder,
   'aria-invalid': ariaInvalid,
   id,
 }: RichTextEditorProps) {
@@ -39,7 +40,6 @@ export function RichTextEditor({
         ...(id ? { id } : {}),
         ...(ariaInvalid ? { 'aria-invalid': 'true' } : {}),
         class: 'min-h-[160px] px-3 py-2 text-sm prose prose-sm dark:prose-invert max-w-none',
-        ...(placeholder ? { 'data-placeholder': placeholder } : {}),
       },
     },
   });
@@ -57,10 +57,6 @@ export function RichTextEditor({
     if (!editor) return;
     editor.setEditable(!disabled);
   }, [editor, disabled]);
-
-  const btnBase =
-    'rounded p-1 transition-colors hover:bg-brand-gray-100';
-  const btnActive = 'bg-brand-gray-200 text-brand-dark-blue';
 
   return (
     <div

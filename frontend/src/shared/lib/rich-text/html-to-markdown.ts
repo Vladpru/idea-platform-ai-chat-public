@@ -1,26 +1,18 @@
 import TurndownService from 'turndown';
 
 function createTurndown(): TurndownService {
-  const service = new TurndownService({ headingStyle: 'atx' });
-
-  service.addRule('heading', {
-    filter: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
-    replacement(content, node) {
-      const level = Number((node as HTMLElement).tagName.charAt(1));
-      const prefix = '#'.repeat(level);
-      return `\n\n${prefix} ${content}\n\n`;
-    },
-  });
-
-  return service;
+  return new TurndownService({ headingStyle: 'atx' });
 }
 
 const td = createTurndown();
 
 function stripUnsupportedTags(html: string): string {
-  return html
-    .replace(/<(table|thead|tbody|tr|th|td|iframe|script|style)[^>]*>[\s\S]*?<\/\1>/gi, '')
-    .replace(/\s+style="[^"]*"/gi, '');
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  doc
+    .querySelectorAll('table,thead,tbody,tr,th,td,iframe,script,style')
+    .forEach(el => el.remove());
+  doc.querySelectorAll('[style]').forEach(el => el.removeAttribute('style'));
+  return doc.body.innerHTML;
 }
 
 export function htmlToMarkdown(html: string): string {

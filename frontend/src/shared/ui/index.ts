@@ -65,3 +65,4 @@ export {
   SuggestionGroupLabel,
   SuggestionsLoadingMessage,
 } from './suggestion-chip-group';
+export { RichTextEditor, MarkdownRenderer } from './rich-text-editor';
