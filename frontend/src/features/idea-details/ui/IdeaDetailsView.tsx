@@ -24,6 +24,8 @@ import {
   IDEA_UPDATED_SUCCESS_TITLE,
 } from '@/features/ideas/lib/modals/copy';
 import { outlineBtnClass, primaryBtnClass } from '@/features/ideas/lib/styles';
+import { ConferenceBanner } from '@/features/conference/ui/ConferenceBanner';
+import { ScheduleConferenceDialog } from '@/features/conference/ui/ScheduleConferenceDialog';
 import { IdeaEditorPageHeading } from '@/features/ideas/ui/IdeaEditorPageHeading';
 import { IdeaForm } from '@/features/ideas/ui/idea-form/IdeaForm';
 import { NotFoundPage } from '@/pages/not-found';
@@ -77,7 +79,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
     tab: searchTab,
     sort: discussionSort,
   } = useSearch({
-    from: '/_auth/ideas/$ideaId',
+    from: '/_auth/ideas/$ideaId/',
   });
   const formId = useId();
   const [activeTab, setActiveTab] = useState<IdeaTabId>(() => {
@@ -94,6 +96,8 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
     useState<IdeaEditFormValues | null>(null);
   const [hasUnsavedEdits, setHasUnsavedEdits] = useState(false);
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
+  const [isScheduleConferenceOpen, setIsScheduleConferenceOpen] =
+    useState(false);
   const [ideaDiscardModalOpen, setIdeaDiscardModalOpen] = useState(false);
   const [updatedSuccessOpen, setUpdatedSuccessOpen] = useState(false);
   const [prevShowUpdatedSuccess, setPrevShowUpdatedSuccess] =
@@ -106,6 +110,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const skipEditNavigationBlockRef = useRef(false);
   const hasRestoredEditFromUrlRef = useRef(false);
+  const mainRef = useRef<HTMLElement>(null);
 
   if (showUpdatedSuccess !== prevShowUpdatedSuccess) {
     setPrevShowUpdatedSuccess(showUpdatedSuccess);
@@ -372,12 +377,15 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
   }, [enterEditMode, idea, isEditSearch, isEditing]);
 
   useEffect(() => {
+    const scrollEl = mainRef.current?.parentElement;
+    if (!scrollEl) return;
+
     let ticking = false;
 
     const handleScroll = () => {
       if (!ticking) {
         window.requestAnimationFrame(() => {
-          const scrollY = window.scrollY;
+          const scrollY = scrollEl.scrollTop;
           setIsScrolled(prev => {
             if (scrollY > 150 && !prev) return true;
             if (scrollY < 80 && prev) return false;
@@ -390,9 +398,9 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
     };
 
     handleScroll();
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    scrollEl.addEventListener('scroll', handleScroll, { passive: true });
+    return () => scrollEl.removeEventListener('scroll', handleScroll);
+  }, [isPending]);
 
   if (isPending) {
     return <IdeaDetailsPageSkeleton />;
@@ -410,7 +418,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
   );
 
   return (
-    <main className="bg-brand-neutral min-h-[calc(100vh-56px)] px-4 md:px-8 lg:px-12">
+    <main ref={mainRef} className="bg-brand-neutral min-h-[calc(100vh-56px)] px-4 md:px-8 lg:px-12">
       <div className="bg-card mx-auto max-w-5xl space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-8">
         {isEditing ? (
           <div className="pb-2">
@@ -447,7 +455,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
               ) : null}
             </AnimatePresence>
 
-            <div className="bg-card sticky top-[56px] z-30 -mx-4 px-4 py-2 shadow-none transition-all duration-300 sm:-mx-6 sm:px-6">
+            <div className="bg-card sticky top-0 z-30 -mx-4 px-4 py-2 shadow-none transition-all duration-300 sm:-mx-6 sm:px-6">
               <IdeaHeader
                 idea={idea}
                 isAuthor={isAuthor}
@@ -455,6 +463,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
                 isCompact={isScrolled}
                 showProjectActions={true}
                 onStartEdit={() => handleStartEdit(idea)}
+                onScheduleConference={() => setIsScheduleConferenceOpen(true)}
                 onDeleteSuccess={() => {
                   void navigate({
                     to: ROUTES.ideas,
@@ -475,6 +484,12 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
                 }}
               />
             </div>
+
+            <ConferenceBanner
+              entityType="IDEA"
+              entityId={idea.id}
+              authorId={idea.authorId}
+            />
           </>
         )}
 
@@ -606,6 +621,15 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
           />
         ) : null}
       </div>
+
+      {isAuthor ? (
+        <ScheduleConferenceDialog
+          entityType="IDEA"
+          entityId={idea.id}
+          open={isScheduleConferenceOpen}
+          onOpenChange={setIsScheduleConferenceOpen}
+        />
+      ) : null}
 
       {isTeamModalOpen ? (
         <TeamModal

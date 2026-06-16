@@ -13,6 +13,10 @@ export function useLiveChatRoomQuery(
   return useQuery({
     queryKey: liveChatQueryKeys.room(roomId),
     queryFn: () => fetchLiveChatRoom(roomId),
+    select: room => ({
+      ...room,
+      activeCall: room.activeCall ?? null,
+    }),
     enabled: Boolean(roomId) && (options?.enabled ?? true),
   });
 }

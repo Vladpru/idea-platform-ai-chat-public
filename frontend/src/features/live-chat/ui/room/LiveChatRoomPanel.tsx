@@ -1,3 +1,4 @@
+import type { LiveChatAttachmentPayload } from '@/features/live-chat/api/live-chat-api.types';
 import { useLiveChatMessagesQuery } from '@/features/live-chat/hooks/queries/use-live-chat-messages-query';
 import { useLiveChatSocket } from '@/features/live-chat/hooks/socket/use-live-chat-socket';
 import { LiveChatInput } from '@/features/live-chat/ui/messages/LiveChatInput';
@@ -34,8 +35,8 @@ export function LiveChatRoomPanel({
   );
 
   const handleSend = useCallback(
-    async (content: string) => {
-      const message = await sendMessage(content);
+    async (content: string, attachment?: LiveChatAttachmentPayload | null) => {
+      const message = await sendMessage(content, attachment);
       if (message) {
         setScrollToMessageId(message.id);
         return true;
@@ -71,7 +72,7 @@ export function LiveChatRoomPanel({
   return (
     <section
       className={cn(
-        'bg-brand-gray-100 flex min-h-[24rem] w-full flex-col rounded-sm p-4',
+        'flex min-h-0 w-full flex-col bg-zinc-50 p-4 dark:bg-zinc-900',
         className,
       )}
       aria-label="Live chat"
@@ -83,12 +84,14 @@ export function LiveChatRoomPanel({
         onLoadOlder={() => void loadOlderMessages()}
         scrollToMessageId={scrollToMessageId}
         onScrolledToMessage={() => setScrollToMessageId(null)}
-        className="max-h-[32rem] flex-1"
+        className="min-h-0 flex-1"
       />
       <LiveChatInput
+        roomId={roomId}
         onSend={handleSend}
         disabled={!isActive}
-        className="px-2 sm:px-4"
+        className="mt-4 shrink-0 px-2 sm:px-4"
+        isDuringCall
       />
     </section>
   );

@@ -57,6 +57,32 @@ enum SummaryStatus {
   SKIPPED
 }
 
+enum VideoCallStatus {
+  SCHEDULED
+  ACTIVE
+  ENDED
+  CANCELLED
+}
+
+enum ConferenceStatus {
+  SCHEDULED
+  LIVE
+  ENDED
+  CANCELLED
+}
+
+enum ConferenceInviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+}
+
+enum ConferenceInviteType {
+  PLATFORM_USER
+  EXTERNAL_EMAIL
+}
+
 model User {
   id                      String                @id @default(uuid())
   email                   String                @unique
@@ -87,6 +113,10 @@ model User {
   liveChatRoomsCreated    LiveChatRoom[]        @relation("LiveChatRoomCreator")
   liveChatParticipations  LiveChatParticipant[]
   liveChatMessages        LiveChatMessage[]     @relation("LiveChatMessageAuthor")
+  hostedVideoCalls        VideoCall[]           @relation("VideoCallHost")
+  scheduledConferences    Conference[]          @relation("ConferenceScheduler")
+  conferenceInvitesSent   ConferenceInvite[]    @relation("ConferenceInviteSender")
+  conferenceInvitesRecv   ConferenceInvite[]    @relation("ConferenceInviteRecipient")
 
   userAchievements UserAchievement[]
   @@map("user")
@@ -178,7 +208,7 @@ model Idea {
   completedAt        DateTime?                   @map("completed_at")
   createdAt          DateTime                    @default(now()) @map("created_at")
   updatedAt          DateTime                    @updatedAt @map("updated_at")
-  searchVector       Unsupported("tsvector")?    @map("search_vector")
+ searchVector       Unsupported("tsvector")?    @map("search_vector") @default(dbgenerated())
   aiEmbedding        Unsupported("vector(768)")? @map("ai_embedding")
   embeddingHash      String?                     @map("embedding_hash")
   aiSummary          String?                     @map("ai_summary") @db.Text
@@ -194,12 +224,66 @@ model Idea {
   views        IdeaView[]
   comments     Comment[]
   liveChatRoom LiveChatRoom?
+  conferences  Conference[]
 
   @@index([authorId, status])
   @@index([status, publishedAt])
   @@index([searchVector], type: Gin)
   @@index([aiEmbedding], map: "idea_ai_embedding_hnsw_idx")
   @@map("idea")
+}
+
+model Conference {
+  id               String           @id @default(uuid())
+  ideaId           String?          @map("idea_id")
+  problemId        String?          @map("problem_id")
+  scheduledById    String           @map("scheduled_by_id")
+  title            String
+  description      String?          @db.Text
+  status           ConferenceStatus @default(SCHEDULED)
+  scheduledFor     DateTime         @map("scheduled_for")
+  startedAt        DateTime?        @map("started_at")
+  endedAt          DateTime?        @map("ended_at")
+  providerRoomName String?          @map("provider_room_name")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  idea        Idea?              @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  problem     Problem?           @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  scheduledBy User               @relation("ConferenceScheduler", fields: [scheduledById], references: [id], onDelete: Cascade)
+  invites     ConferenceInvite[]
+
+  @@index([ideaId, status])
+  @@index([problemId, status])
+  @@index([ideaId, scheduledFor])
+  @@index([problemId, scheduledFor])
+  @@index([scheduledById])
+  @@map("conference")
+}
+
+model ConferenceInvite {
+  id           String                 @id @default(uuid())
+  conferenceId String                 @map("conference_id")
+  invitedById  String                 @map("invited_by_id")
+  inviteType   ConferenceInviteType   @map("invite_type")
+  status       ConferenceInviteStatus @default(PENDING)
+  userId       String?                @map("user_id")
+  email        String?
+  tokenHash    String?                @map("token_hash")
+  expiresAt    DateTime?              @map("expires_at")
+  acceptedAt   DateTime?              @map("accepted_at")
+  createdAt    DateTime               @default(now()) @map("created_at")
+
+  conference Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  invitedBy  User             @relation("ConferenceInviteSender", fields: [invitedById], references: [id], onDelete: Cascade)
+  user       User?            @relation("ConferenceInviteRecipient", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conferenceId, userId])
+  @@unique([conferenceId, email])
+  @@index([userId])
+  @@index([email])
+  @@index([conferenceId, status])
+  @@map("conference_invite")
 }
 
 model IdeaMember {
@@ -259,7 +343,7 @@ model Problem {
   publishedAt        DateTime?                   @map("published_at")
   createdAt          DateTime                    @default(now()) @map("created_at")
   updatedAt          DateTime                    @updatedAt @map("updated_at")
-  searchVector       Unsupported("tsvector")?    @map("search_vector")
+searchVector       Unsupported("tsvector")?    @map("search_vector") @default(dbgenerated())
   aiEmbedding        Unsupported("vector(768)")? @map("ai_embedding")
   embeddingHash      String?                     @map("embedding_hash")
   aiSummary          String?                     @map("ai_summary") @db.Text
@@ -275,6 +359,7 @@ model Problem {
   views        ProblemView[]
   comments     Comment[]
   liveChatRoom LiveChatRoom?
+  conferences  Conference[]
 
   @@index([authorId, status])
   @@index([status])
@@ -478,8 +563,30 @@ model LiveChatRoom {
   createdBy    User                  @relation("LiveChatRoomCreator", fields: [createdById], references: [id], onDelete: Cascade)
   participants LiveChatParticipant[]
   messages     LiveChatMessage[]
+  videoCalls   VideoCall[]
 
   @@map("live_chat_room")
+}
+
+model VideoCall {
+  id               String          @id @default(uuid())
+  roomId           String          @map("room_id")
+  hostId           String          @map("host_id")
+  status           VideoCallStatus @default(SCHEDULED)
+  scheduledFor     DateTime?       @map("scheduled_for")
+  startedAt        DateTime?       @map("started_at")
+  endedAt          DateTime?       @map("ended_at")
+  providerRoomName String?         @map("provider_room_name")
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+
+  room LiveChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  host User         @relation("VideoCallHost", fields: [hostId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, status])
+  @@index([roomId, scheduledFor])
+  @@index([hostId])
+  @@map("video_call")
 }
 
 model LiveChatParticipant {
@@ -497,11 +604,14 @@ model LiveChatParticipant {
 }
 
 model LiveChatMessage {
-  id        String   @id @default(uuid())
-  roomId    String   @map("room_id")
-  authorId  String   @map("author_id")
-  content   String   @db.Text
-  createdAt DateTime @default(now()) @map("created_at")
+  id                 String   @id @default(uuid())
+  roomId             String   @map("room_id")
+  authorId           String   @map("author_id")
+  content            String   @db.Text
+  attachmentUrl      String?  @map("attachment_url")
+  attachmentName     String?  @map("attachment_name")
+  attachmentMimeType String?  @map("attachment_mime_type")
+  createdAt          DateTime @default(now()) @map("created_at")
 
   room   LiveChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
   author User         @relation("LiveChatMessageAuthor", fields: [authorId], references: [id], onDelete: Cascade)

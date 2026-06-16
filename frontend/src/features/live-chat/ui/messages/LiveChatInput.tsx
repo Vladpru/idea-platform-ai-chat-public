@@ -1,62 +1,175 @@
 import {
-  LIVE_CHAT_MESSAGE_MAX_LENGTH,
-  liveChatMessageContentSchema,
-} from '@/features/live-chat/lib/live-chat-message-schema';
-import { useCallback, useState } from 'react';
-
-import { MessageComposer } from '@/shared/ui/message-composer';
+  COMMENT_ATTACHMENT_ACCEPT,
+  COMMENT_ATTACHMENT_ALLOWED_MESSAGE,
+  COMMENT_ATTACHMENT_MIME_TYPES,
+} from '@/features/discussion/lib/comment-attachments.constants';
+import type { LiveChatAttachmentPayload } from '@/features/live-chat/api/live-chat-api.types';
+import { uploadLiveChatAttachment } from '@/features/live-chat/api/live-chat.api';
+import { LIVE_CHAT_MESSAGE_MAX_LENGTH } from '@/features/live-chat/lib/live-chat-message-schema';
+import { compressImage } from '@/shared/lib/compress-image';
+import { useFileHandler } from '@/shared/hooks/use-file-handler';
 import { cn } from '@/shared/lib/utils';
+import { MessageComposer } from '@/shared/ui/message-composer';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
+import { Paperclip, X } from 'lucide-react';
 
 type LiveChatInputProps = {
-  onSend: (content: string) => Promise<boolean>;
+  roomId: string;
+  onSend: (
+    content: string,
+    attachment?: LiveChatAttachmentPayload | null,
+  ) => Promise<boolean>;
   disabled?: boolean;
   className?: string;
+  isDuringCall?: boolean;
 };
 
 export function LiveChatInput({
+  roomId,
   onSend,
   disabled = false,
   className,
+  isDuringCall,
 }: LiveChatInputProps) {
   const [content, setContent] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [pendingAttachment, setPendingAttachment] =
+    useState<LiveChatAttachmentPayload | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { handleFileChange, files, clearFiles, accept } = useFileHandler({
+    maxFiles: 1,
+    allowedMimeTypes: [...COMMENT_ATTACHMENT_MIME_TYPES],
+    accept: COMMENT_ATTACHMENT_ACCEPT,
+    allowedMessage: COMMENT_ATTACHMENT_ALLOWED_MESSAGE,
+  });
+
+  const latestValidFile = files[0] ?? null;
+
+  useEffect(() => {
+    if (!latestValidFile) return;
+
+    let stale = false;
+
+    const processAttachment = async () => {
+      setIsUploading(true);
+
+      try {
+        const fileToUpload = latestValidFile.type.startsWith('image/')
+          ? await compressImage(latestValidFile).catch(() => latestValidFile)
+          : latestValidFile;
+
+        const result = await uploadLiveChatAttachment(roomId, fileToUpload);
+
+        if (!stale) {
+          setPendingAttachment(result);
+        }
+      } catch {
+        if (!stale) {
+          toast.error('Failed to upload attachment');
+        }
+      } finally {
+        clearFiles();
+        if (!stale) {
+          setIsUploading(false);
+        }
+      }
+    };
+
+    void processAttachment();
+
+    return () => {
+      stale = true;
+    };
+  }, [latestValidFile, roomId, clearFiles]);
 
   const trimmedContent = content.trim();
-  const canSubmit = trimmedContent.length > 0 && !disabled && !isSending;
+  const hasAttachment = pendingAttachment !== null;
+  const canSubmit =
+    (trimmedContent.length > 0 || hasAttachment) &&
+    !disabled &&
+    !isSending &&
+    !isUploading;
 
   const submit = useCallback(async () => {
-    const parsed = liveChatMessageContentSchema.safeParse(content);
-    if (!parsed.success || isSending || disabled) {
+    const trimmed = content.trim();
+    const attachment = pendingAttachment;
+
+    if (
+      (trimmed.length === 0 && !attachment) ||
+      isSending ||
+      disabled ||
+      isUploading
+    ) {
       return;
     }
 
     setIsSending(true);
     try {
-      const sent = await onSend(parsed.data);
+      const sent = await onSend(trimmed, attachment);
       if (sent) {
         setContent('');
+        setPendingAttachment(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
       }
     } finally {
       setIsSending(false);
     }
-  }, [content, disabled, isSending, onSend]);
+  }, [content, disabled, isSending, isUploading, onSend, pendingAttachment]);
 
   const handleChange = (value: string) => {
     setContent(value.slice(0, LIVE_CHAT_MESSAGE_MAX_LENGTH));
   };
 
+  const attachmentsPreview = pendingAttachment ? (
+    <div className="border-border bg-muted/50 flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm">
+      <Paperclip
+        className="text-muted-foreground size-3.5 shrink-0"
+        aria-hidden
+      />
+      <span className="text-foreground max-w-[200px] truncate">
+        {pendingAttachment.name}
+      </span>
+      <button
+        type="button"
+        onClick={() => setPendingAttachment(null)}
+        className="text-muted-foreground hover:text-foreground ml-0.5 shrink-0"
+        aria-label="Remove attachment"
+      >
+        <X className="size-3.5" />
+      </button>
+    </div>
+  ) : undefined;
+
   return (
-    <MessageComposer
-      content={content}
-      onContentChange={handleChange}
-      onSubmit={submit}
-      canSubmit={canSubmit}
-      disabled={disabled}
-      placeholder="Type your message..."
-      inputId="live-chat-message-input"
-      className={cn(className)}
-      showAttachButton
-      attachDisabled
-    />
+    <>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={accept}
+        className="hidden"
+        disabled={disabled || isUploading}
+        onChange={handleFileChange}
+      />
+      <MessageComposer
+        content={content}
+        onContentChange={handleChange}
+        onSubmit={submit}
+        canSubmit={canSubmit}
+        disabled={disabled}
+        placeholder={isDuringCall ? 'Message...' : 'Type your message...'}
+        inputId="live-chat-message-input"
+        className={cn(className)}
+        showAttachButton
+        attachDisabled={isUploading}
+        isAttachLoading={isUploading}
+        onAttachClick={() => fileInputRef.current?.click()}
+        attachmentsPreview={attachmentsPreview}
+      />
+    </>
   );
 }

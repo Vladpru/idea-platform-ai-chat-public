@@ -8,4 +8,6 @@ export const liveChatQueryKeys = {
     [...liveChatQueryKeys.all, 'room-by-entity', entityType, entityId] as const,
   messages: (roomId: string) =>
     [...liveChatQueryKeys.all, 'messages', roomId] as const,
+  calls: (roomId: string) =>
+    [...liveChatQueryKeys.all, 'calls', roomId] as const,
 };

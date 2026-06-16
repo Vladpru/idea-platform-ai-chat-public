@@ -5,6 +5,7 @@ import {
 } from '@/features/live-chat/lib/format-live-chat-time';
 import { liveChatEntityLabel } from '@/features/live-chat/lib/live-chat-entity-type';
 import { Link } from '@tanstack/react-router';
+import { Video } from 'lucide-react';
 
 import { cn } from '@/shared/lib/utils';
 
@@ -30,10 +31,16 @@ export function LiveChatRoomListItem({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <div className="mb-1 flex items-center gap-2">
+          <div className="mb-1 flex flex-wrap items-center gap-2">
             <span className="bg-brand-light-blue text-brand-dark-blue rounded px-2 py-0.5 text-xs font-medium uppercase">
               {liveChatEntityLabel(room.entity.type)}
             </span>
+            {room.activeCall ? (
+              <span className="bg-brand-orange/10 text-brand-orange inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-semibold uppercase">
+                <Video className="h-3 w-3" />
+                Live
+              </span>
+            ) : null}
             <h2 className="text-brand-dark-blue truncate text-base font-semibold">
               {room.entity.title ?? 'Untitled'}
             </h2>

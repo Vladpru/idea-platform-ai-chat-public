@@ -6,6 +6,8 @@ export const ROUTES = {
   ideasNew: '/ideas/new',
   ideaCreation: (id: string) => `/ideas/new?ideaId=${encodeURIComponent(id)}`,
   ideaDetail: (id: string) => `/ideas/${id}`,
+  ideaConference: (ideaId: string, conferenceId: string) =>
+    `/ideas/${ideaId}/conferences/${conferenceId}`,
   ideaDiscussionReply: (id: string, commentId: string) =>
     `/ideas/${id}?tab=discussion&replyTo=${encodeURIComponent(commentId)}`,
   problems: '/problems',
@@ -13,6 +15,8 @@ export const ROUTES = {
   problemCreation: (id: string) =>
     `/problems/new?problemId=${encodeURIComponent(id)}`,
   problemDetail: (id: string) => `/problems/${id}`,
+  problemConference: (problemId: string, conferenceId: string) =>
+    `/problems/${problemId}/conferences/${conferenceId}`,
   problemDiscussionReply: (id: string, commentId: string) =>
     `/problems/${id}?tab=discussion&replyTo=${encodeURIComponent(commentId)}`,
   search: '/search',

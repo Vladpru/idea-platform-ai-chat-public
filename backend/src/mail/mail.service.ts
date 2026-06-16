@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import sgMail from '@sendgrid/mail';
 
 import { buildNotificationEmail } from './lib/build-notification-email';
+import { buildConferenceInviteEmail } from './templates/conference-invite';
 import { buildPasswordResetEmail } from './templates/password-reset';
 import type { EnrichedEmailContext } from './types/enriched-email.types';
 import type { NotificationEmailJobData } from './types/notification-email.types';
@@ -53,6 +54,27 @@ export class MailService {
     } catch (error) {
       this.logger.error('SendGrid send failed during password reset', error);
       throw new Error('Unable to send password reset email');
+    }
+  }
+
+  async sendConferenceInviteEmail(params: {
+    to: string;
+    inviteUrl: string;
+    expiresDays: number;
+  }) {
+    const { subject, text, html } = await buildConferenceInviteEmail(params);
+
+    try {
+      await sgMail.send({
+        from: this.defaultFrom,
+        to: params.to,
+        subject,
+        text,
+        html,
+      });
+    } catch (error) {
+      this.logger.error('SendGrid send failed during conference invite', error);
+      throw new Error('Unable to send conference invite email');
     }
   }
 

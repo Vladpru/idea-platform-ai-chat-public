@@ -33,6 +33,7 @@ type ProblemHeaderProps = {
   problem: ProblemDetails;
   isAuthor?: boolean;
   isCompact?: boolean;
+  onScheduleConference?: () => void;
   onDeleteSuccess?: () => void;
   onBackClick?: (event: MouseEvent<HTMLButtonElement>) => void;
   onTeamClick?: () => void;
@@ -50,12 +51,14 @@ function ManageDropdown({
   isCompact,
   isDraft,
   problemId,
+  onScheduleConference,
   onDeleteClick,
 }: {
   isAuthor: boolean;
   isCompact: boolean;
   isDraft: boolean;
   problemId: string;
+  onScheduleConference?: () => void;
   onDeleteClick: () => void;
 }) {
   const navigate = useNavigate();
@@ -111,6 +114,18 @@ function ManageDropdown({
         <DropdownMenuSeparator className="my-0" />
 
         <DropdownMenuItem
+          className="focus:bg-brand-blue-700/10 hover:bg-brand-blue-700/10 cursor-pointer px-3 py-2 text-sm font-normal"
+          onSelect={event => {
+            event.preventDefault();
+            onScheduleConference?.();
+          }}
+        >
+          Schedule conference
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator className="my-0" />
+
+        <DropdownMenuItem
           className="focus:bg-brand-orange/10 hover:bg-brand-orange/10 cursor-pointer px-3 py-2 text-sm font-normal text-amber-600 focus:text-amber-600"
           onSelect={event => {
             event.preventDefault();
@@ -128,6 +143,7 @@ export function ProblemHeader({
   problem,
   isAuthor = false,
   isCompact = false,
+  onScheduleConference,
   onDeleteSuccess,
   onBackClick,
   onTeamClick,
@@ -174,6 +190,7 @@ export function ProblemHeader({
           isCompact={true}
           isDraft={isDraft}
           problemId={problem.id}
+          onScheduleConference={onScheduleConference}
           onDeleteClick={() => setDeleteModalOpen(true)}
         />
       </motion.div>
@@ -267,6 +284,7 @@ export function ProblemHeader({
                       isCompact={false}
                       isDraft={isDraft}
                       problemId={problem.id}
+                      onScheduleConference={onScheduleConference}
                       onDeleteClick={() => setDeleteModalOpen(true)}
                     />
                   </div>

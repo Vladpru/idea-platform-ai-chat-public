@@ -71,6 +71,13 @@ export class CloudinaryService {
     return this.uploadImage(file, `comments/${commentId}/attachments`);
   }
 
+  async uploadLiveChatAttachment(
+    file: Express.Multer.File,
+    roomId: string,
+  ): Promise<CloudinaryUploadResult> {
+    return this.uploadImage(file, `live-chat/${roomId}/attachments`);
+  }
+
   async deleteByPublicId(publicId: string): Promise<void> {
     if (!publicId?.trim()) {
       this.logger.warn('Cloudinary delete skipped: empty publicId');

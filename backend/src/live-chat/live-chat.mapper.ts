@@ -11,6 +11,7 @@ import type {
   LiveChatRoomEntityDto,
   LiveChatTeamMemberDto,
 } from './types/live-chat.types';
+import type { VideoCallDto } from './types/video-call.types';
 
 function toIsoString(date: Date): string {
   return date.toISOString();
@@ -61,6 +62,9 @@ export function toLiveChatMessageResponse(
     id: message.id,
     roomId: message.roomId,
     content: message.content,
+    attachmentUrl: message.attachmentUrl,
+    attachmentName: message.attachmentName,
+    attachmentMimeType: message.attachmentMimeType,
     author: toLiveChatAuthorResponse(message.author),
     createdAt: toIsoString(message.createdAt),
   };
@@ -126,6 +130,7 @@ export function toLiveChatRoomResponse(
   viewerUserId: string,
   lastMessage: LiveChatMessageRecord | null = null,
   team: LiveChatTeamMemberDto[] = [],
+  activeCall: VideoCallDto | null = null,
 ): LiveChatRoomDto {
   return {
     id: room.id,
@@ -135,5 +140,6 @@ export function toLiveChatRoomResponse(
     updatedAt: toIsoString(room.updatedAt),
     lastMessage: lastMessage ? toLiveChatMessageResponse(lastMessage) : null,
     team,
+    activeCall,
   };
 }

@@ -1,4 +1,6 @@
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
+import { ConferenceBanner } from '@/features/conference/ui/ConferenceBanner';
+import { ScheduleConferenceDialog } from '@/features/conference/ui/ScheduleConferenceDialog';
 import { DiscussionTab } from '@/features/discussion/ui/DiscussionTab';
 import { EntityAiSummaryBlock } from '@/features/entity-ai-summary/EntityAiSummaryBlock';
 import { IdeaStatsFooter } from '@/features/idea-details/ui/IdeaStatsFooter';
@@ -61,6 +63,8 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
   const visibleTab = searchTabOverride ?? activeTab;
   const [isScrolled, setIsScrolled] = useState(false);
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
+  const [isScheduleConferenceOpen, setIsScheduleConferenceOpen] =
+    useState(false);
   const [updatedSuccessOpen, setUpdatedSuccessOpen] = useState(false);
   const [prevShowUpdatedSuccess, setPrevShowUpdatedSuccess] =
     useState(showUpdatedSuccess);
@@ -186,6 +190,7 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
             problem={problem}
             isAuthor={isAuthor}
             isCompact={isScrolled}
+            onScheduleConference={() => setIsScheduleConferenceOpen(true)}
             onDeleteSuccess={() => {
               void navigate({
                 to: ROUTES.problems,
@@ -208,6 +213,12 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
             />
           </div>
         </div>
+
+        <ConferenceBanner
+          entityType="PROBLEM"
+          entityId={problem.id}
+          authorId={problem.authorId}
+        />
 
         <div className="min-h-[280px]">
           <AnimatedPanelSwitch>
@@ -294,6 +305,15 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
           members={problem.members}
           viewer={problem.viewer}
           onClose={() => setIsTeamModalOpen(false)}
+        />
+      ) : null}
+
+      {isAuthor ? (
+        <ScheduleConferenceDialog
+          entityType="PROBLEM"
+          entityId={problem.id}
+          open={isScheduleConferenceOpen}
+          onOpenChange={setIsScheduleConferenceOpen}
         />
       ) : null}
 

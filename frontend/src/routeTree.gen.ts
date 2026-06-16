@@ -37,6 +37,9 @@ import { Route as AuthProblemsProblemIdRouteImport } from './routes/_auth/proble
 import { Route as AuthLiveChatsRoomIdRouteImport } from './routes/_auth/live-chats/$roomId'
 import { Route as AuthIdeasNewRouteImport } from './routes/_auth/ideas/new'
 import { Route as AuthIdeasIdeaIdRouteImport } from './routes/_auth/ideas/$ideaId'
+import { Route as AuthIdeasIdeaIdIndexRouteImport } from './routes/_auth/ideas/$ideaId/index'
+import { Route as AuthProblemsProblemIdConferencesConferenceIdRouteImport } from './routes/_auth/problems/$problemId/conferences/$conferenceId'
+import { Route as AuthIdeasIdeaIdConferencesConferenceIdRouteImport } from './routes/_auth/ideas/$ideaId/conferences/$conferenceId'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -179,6 +182,23 @@ const AuthIdeasIdeaIdRoute = AuthIdeasIdeaIdRouteImport.update({
   path: '/$ideaId',
   getParentRoute: () => AuthIdeasRouteRoute,
 } as any)
+const AuthIdeasIdeaIdIndexRoute = AuthIdeasIdeaIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthIdeasIdeaIdRoute,
+} as any)
+const AuthProblemsProblemIdConferencesConferenceIdRoute =
+  AuthProblemsProblemIdConferencesConferenceIdRouteImport.update({
+    id: '/conferences/$conferenceId',
+    path: '/conferences/$conferenceId',
+    getParentRoute: () => AuthProblemsProblemIdRoute,
+  } as any)
+const AuthIdeasIdeaIdConferencesConferenceIdRoute =
+  AuthIdeasIdeaIdConferencesConferenceIdRouteImport.update({
+    id: '/conferences/$conferenceId',
+    path: '/conferences/$conferenceId',
+    getParentRoute: () => AuthIdeasIdeaIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthIndexRoute
@@ -194,10 +214,10 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthSettingsRouteWithChildren
   '/statistics': typeof AuthStatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
-  '/ideas/$ideaId': typeof AuthIdeasIdeaIdRoute
+  '/ideas/$ideaId': typeof AuthIdeasIdeaIdRouteWithChildren
   '/ideas/new': typeof AuthIdeasNewRoute
   '/live-chats/$roomId': typeof AuthLiveChatsRoomIdRoute
-  '/problems/$problemId': typeof AuthProblemsProblemIdRoute
+  '/problems/$problemId': typeof AuthProblemsProblemIdRouteWithChildren
   '/problems/new': typeof AuthProblemsNewRoute
   '/profile/$profileId': typeof AuthProfileProfileIdRoute
   '/profile/ideas': typeof AuthProfileIdeasRoute
@@ -208,6 +228,9 @@ export interface FileRoutesByFullPath {
   '/live-chats/': typeof AuthLiveChatsIndexRoute
   '/problems/': typeof AuthProblemsIndexRoute
   '/profile/': typeof AuthProfileIndexRoute
+  '/ideas/$ideaId/': typeof AuthIdeasIdeaIdIndexRoute
+  '/ideas/$ideaId/conferences/$conferenceId': typeof AuthIdeasIdeaIdConferencesConferenceIdRoute
+  '/problems/$problemId/conferences/$conferenceId': typeof AuthProblemsProblemIdConferencesConferenceIdRoute
 }
 export interface FileRoutesByTo {
   '/forgotPassword': typeof ForgotPasswordRoute
@@ -219,10 +242,9 @@ export interface FileRoutesByTo {
   '/statistics': typeof AuthStatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/': typeof AuthIndexRoute
-  '/ideas/$ideaId': typeof AuthIdeasIdeaIdRoute
   '/ideas/new': typeof AuthIdeasNewRoute
   '/live-chats/$roomId': typeof AuthLiveChatsRoomIdRoute
-  '/problems/$problemId': typeof AuthProblemsProblemIdRoute
+  '/problems/$problemId': typeof AuthProblemsProblemIdRouteWithChildren
   '/problems/new': typeof AuthProblemsNewRoute
   '/profile/$profileId': typeof AuthProfileProfileIdRoute
   '/profile/ideas': typeof AuthProfileIdeasRoute
@@ -233,6 +255,9 @@ export interface FileRoutesByTo {
   '/live-chats': typeof AuthLiveChatsIndexRoute
   '/problems': typeof AuthProblemsIndexRoute
   '/profile': typeof AuthProfileIndexRoute
+  '/ideas/$ideaId': typeof AuthIdeasIdeaIdIndexRoute
+  '/ideas/$ideaId/conferences/$conferenceId': typeof AuthIdeasIdeaIdConferencesConferenceIdRoute
+  '/problems/$problemId/conferences/$conferenceId': typeof AuthProblemsProblemIdConferencesConferenceIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -250,10 +275,10 @@ export interface FileRoutesById {
   '/_auth/statistics': typeof AuthStatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/_auth/': typeof AuthIndexRoute
-  '/_auth/ideas/$ideaId': typeof AuthIdeasIdeaIdRoute
+  '/_auth/ideas/$ideaId': typeof AuthIdeasIdeaIdRouteWithChildren
   '/_auth/ideas/new': typeof AuthIdeasNewRoute
   '/_auth/live-chats/$roomId': typeof AuthLiveChatsRoomIdRoute
-  '/_auth/problems/$problemId': typeof AuthProblemsProblemIdRoute
+  '/_auth/problems/$problemId': typeof AuthProblemsProblemIdRouteWithChildren
   '/_auth/problems/new': typeof AuthProblemsNewRoute
   '/_auth/profile/$profileId': typeof AuthProfileProfileIdRoute
   '/_auth/profile/ideas': typeof AuthProfileIdeasRoute
@@ -264,6 +289,9 @@ export interface FileRoutesById {
   '/_auth/live-chats/': typeof AuthLiveChatsIndexRoute
   '/_auth/problems/': typeof AuthProblemsIndexRoute
   '/_auth/profile/': typeof AuthProfileIndexRoute
+  '/_auth/ideas/$ideaId/': typeof AuthIdeasIdeaIdIndexRoute
+  '/_auth/ideas/$ideaId/conferences/$conferenceId': typeof AuthIdeasIdeaIdConferencesConferenceIdRoute
+  '/_auth/problems/$problemId/conferences/$conferenceId': typeof AuthProblemsProblemIdConferencesConferenceIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -295,6 +323,9 @@ export interface FileRouteTypes {
     | '/live-chats/'
     | '/problems/'
     | '/profile/'
+    | '/ideas/$ideaId/'
+    | '/ideas/$ideaId/conferences/$conferenceId'
+    | '/problems/$problemId/conferences/$conferenceId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/forgotPassword'
@@ -306,7 +337,6 @@ export interface FileRouteTypes {
     | '/statistics'
     | '/auth/callback'
     | '/'
-    | '/ideas/$ideaId'
     | '/ideas/new'
     | '/live-chats/$roomId'
     | '/problems/$problemId'
@@ -320,6 +350,9 @@ export interface FileRouteTypes {
     | '/live-chats'
     | '/problems'
     | '/profile'
+    | '/ideas/$ideaId'
+    | '/ideas/$ideaId/conferences/$conferenceId'
+    | '/problems/$problemId/conferences/$conferenceId'
   id:
     | '__root__'
     | '/_auth'
@@ -350,6 +383,9 @@ export interface FileRouteTypes {
     | '/_auth/live-chats/'
     | '/_auth/problems/'
     | '/_auth/profile/'
+    | '/_auth/ideas/$ideaId/'
+    | '/_auth/ideas/$ideaId/conferences/$conferenceId'
+    | '/_auth/problems/$problemId/conferences/$conferenceId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -559,17 +595,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthIdeasIdeaIdRouteImport
       parentRoute: typeof AuthIdeasRouteRoute
     }
+    '/_auth/ideas/$ideaId/': {
+      id: '/_auth/ideas/$ideaId/'
+      path: '/'
+      fullPath: '/ideas/$ideaId/'
+      preLoaderRoute: typeof AuthIdeasIdeaIdIndexRouteImport
+      parentRoute: typeof AuthIdeasIdeaIdRoute
+    }
+    '/_auth/problems/$problemId/conferences/$conferenceId': {
+      id: '/_auth/problems/$problemId/conferences/$conferenceId'
+      path: '/conferences/$conferenceId'
+      fullPath: '/problems/$problemId/conferences/$conferenceId'
+      preLoaderRoute: typeof AuthProblemsProblemIdConferencesConferenceIdRouteImport
+      parentRoute: typeof AuthProblemsProblemIdRoute
+    }
+    '/_auth/ideas/$ideaId/conferences/$conferenceId': {
+      id: '/_auth/ideas/$ideaId/conferences/$conferenceId'
+      path: '/conferences/$conferenceId'
+      fullPath: '/ideas/$ideaId/conferences/$conferenceId'
+      preLoaderRoute: typeof AuthIdeasIdeaIdConferencesConferenceIdRouteImport
+      parentRoute: typeof AuthIdeasIdeaIdRoute
+    }
   }
 }
 
+interface AuthIdeasIdeaIdRouteChildren {
+  AuthIdeasIdeaIdIndexRoute: typeof AuthIdeasIdeaIdIndexRoute
+  AuthIdeasIdeaIdConferencesConferenceIdRoute: typeof AuthIdeasIdeaIdConferencesConferenceIdRoute
+}
+
+const AuthIdeasIdeaIdRouteChildren: AuthIdeasIdeaIdRouteChildren = {
+  AuthIdeasIdeaIdIndexRoute: AuthIdeasIdeaIdIndexRoute,
+  AuthIdeasIdeaIdConferencesConferenceIdRoute:
+    AuthIdeasIdeaIdConferencesConferenceIdRoute,
+}
+
+const AuthIdeasIdeaIdRouteWithChildren = AuthIdeasIdeaIdRoute._addFileChildren(
+  AuthIdeasIdeaIdRouteChildren,
+)
+
 interface AuthIdeasRouteRouteChildren {
-  AuthIdeasIdeaIdRoute: typeof AuthIdeasIdeaIdRoute
+  AuthIdeasIdeaIdRoute: typeof AuthIdeasIdeaIdRouteWithChildren
   AuthIdeasNewRoute: typeof AuthIdeasNewRoute
   AuthIdeasIndexRoute: typeof AuthIdeasIndexRoute
 }
 
 const AuthIdeasRouteRouteChildren: AuthIdeasRouteRouteChildren = {
-  AuthIdeasIdeaIdRoute: AuthIdeasIdeaIdRoute,
+  AuthIdeasIdeaIdRoute: AuthIdeasIdeaIdRouteWithChildren,
   AuthIdeasNewRoute: AuthIdeasNewRoute,
   AuthIdeasIndexRoute: AuthIdeasIndexRoute,
 }
@@ -591,14 +663,28 @@ const AuthLiveChatsRouteRouteChildren: AuthLiveChatsRouteRouteChildren = {
 const AuthLiveChatsRouteRouteWithChildren =
   AuthLiveChatsRouteRoute._addFileChildren(AuthLiveChatsRouteRouteChildren)
 
+interface AuthProblemsProblemIdRouteChildren {
+  AuthProblemsProblemIdConferencesConferenceIdRoute: typeof AuthProblemsProblemIdConferencesConferenceIdRoute
+}
+
+const AuthProblemsProblemIdRouteChildren: AuthProblemsProblemIdRouteChildren = {
+  AuthProblemsProblemIdConferencesConferenceIdRoute:
+    AuthProblemsProblemIdConferencesConferenceIdRoute,
+}
+
+const AuthProblemsProblemIdRouteWithChildren =
+  AuthProblemsProblemIdRoute._addFileChildren(
+    AuthProblemsProblemIdRouteChildren,
+  )
+
 interface AuthProblemsRouteRouteChildren {
-  AuthProblemsProblemIdRoute: typeof AuthProblemsProblemIdRoute
+  AuthProblemsProblemIdRoute: typeof AuthProblemsProblemIdRouteWithChildren
   AuthProblemsNewRoute: typeof AuthProblemsNewRoute
   AuthProblemsIndexRoute: typeof AuthProblemsIndexRoute
 }
 
 const AuthProblemsRouteRouteChildren: AuthProblemsRouteRouteChildren = {
-  AuthProblemsProblemIdRoute: AuthProblemsProblemIdRoute,
+  AuthProblemsProblemIdRoute: AuthProblemsProblemIdRouteWithChildren,
   AuthProblemsNewRoute: AuthProblemsNewRoute,
   AuthProblemsIndexRoute: AuthProblemsIndexRoute,
 }
