@@ -7,7 +7,7 @@ import type { IdeaDocumentAutoFillControls } from '@/features/ideas/ui/create-id
 import { SparklesIcon } from '@/features/ideas/ui/icons/SparklesIcon';
 import { GenerateDraftModal } from '@/features/ideas/ui/modals/GenerateDraftModal';
 import { useSearch } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
 import { getApiErrorMessage } from '@/shared/api/api-error';
@@ -18,6 +18,7 @@ import { CreationPageTemplate } from '@/shared/ui/pages/CreationPageTemplate';
 
 export function IdeaCreationPage() {
   const { ideaId } = useSearch({ from: '/_auth/ideas/new' });
+  const [cancelHandler, setCancelHandler] = useState<(() => void) | null>(null);
   const [generateDraftOpen, setGenerateDraftOpen] = useState(false);
   const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
   const [aiDraftPrefill, setAiDraftPrefill] =
@@ -42,10 +43,15 @@ export function IdeaCreationPage() {
     }
   };
 
+  const handleCancelReady = useCallback((fn: () => void) => {
+    setCancelHandler(() => fn);
+  }, []);
+
   return (
     <CreationPageTemplate
       title={ideaId ? 'Edit Idea' : 'Idea creation'}
       quote={IDEA_EDITOR_QUOTE}
+      onBackClick={ideaId && cancelHandler ? cancelHandler : undefined}
       loadingOverlay={documentAutoFillControls?.isScanning}
       loadingMessage="Scanning document and populating fields…"
       headerAction={
@@ -81,6 +87,7 @@ export function IdeaCreationPage() {
         aiDraftPrefill={aiDraftPrefill}
         onAiDraftPrefillApplied={() => setAiDraftPrefill(null)}
         onDocumentAutoFillControlsChange={setDocumentAutoFillControls}
+        onCancelReady={handleCancelReady}
       />
     </CreationPageTemplate>
   );

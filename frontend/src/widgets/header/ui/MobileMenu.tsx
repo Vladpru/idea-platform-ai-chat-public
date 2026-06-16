@@ -201,7 +201,7 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
           </Button>
           <Link
             to={ROUTES.ideasNew}
-            className="bg-brand-accent inline-flex h-10 w-full items-center justify-center rounded-md text-xs font-bold tracking-wide text-white uppercase hover:opacity-90"
+            className="bg-brand-accent dark:bg-brand-orange-hover inline-flex h-10 w-full items-center justify-center rounded-md text-xs font-bold tracking-wide text-white uppercase hover:opacity-90"
           >
             ADD NEW IDEA
           </Link>
