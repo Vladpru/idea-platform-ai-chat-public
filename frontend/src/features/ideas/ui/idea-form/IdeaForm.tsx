@@ -4,7 +4,6 @@ import {
   ideaEditSchema,
 } from '@/features/ideas/lib/edit-idea';
 import { IDEA_STAGES } from '@/features/ideas/lib/stages';
-import { textareaClass } from '@/features/ideas/lib/styles';
 import {
   FieldError,
   FieldGroup,
@@ -19,6 +18,7 @@ import { Controller, useForm } from 'react-hook-form';
 
 import { cn } from '@/shared/lib/utils';
 import { Input } from '@/shared/ui/input';
+import { RichTextEditor } from '@/shared/ui/rich-text-editor';
 import {
   Select,
   SelectContent,
@@ -134,13 +134,18 @@ export function IdeaForm({
         <FieldLabel htmlFor={`${formId}-description`} required>
           Description
         </FieldLabel>
-        <textarea
-          id={`${formId}-description`}
-          className={cn(textareaClass, 'mt-2')}
-          placeholder="Enter a description of the idea..."
-          aria-invalid={!!errors.description}
-          disabled={isSubmitting}
-          {...register('description')}
+        <Controller
+          name="description"
+          control={control}
+          render={({ field }) => (
+            <RichTextEditor
+              id={`${formId}-description`}
+              value={field.value ?? ''}
+              onChange={field.onChange}
+              disabled={isSubmitting}
+              aria-invalid={!!errors.description}
+            />
+          )}
         />
         <FieldError message={errors.description?.message} />
       </FieldGroup>

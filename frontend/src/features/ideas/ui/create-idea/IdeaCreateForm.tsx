@@ -7,7 +7,6 @@ import {
   outlineBtnClass,
   publishBtnClass,
   selectClass,
-  textareaClass,
 } from '@/features/ideas/lib/styles';
 import { SuggestedTagsField } from '@/features/tags/ui/SuggestedTagsField';
 import { useNavigate } from '@tanstack/react-router';
@@ -28,6 +27,7 @@ import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
 import { ConfirmModal } from '@/shared/ui/confirm-modal';
 import { Input } from '@/shared/ui/input';
+import { RichTextEditor } from '@/shared/ui/rich-text-editor';
 import { SaveProgressBeforeLeavingModal } from '@/shared/ui/save-progress-before-leaving-modal';
 import {
   Select,
@@ -397,14 +397,18 @@ export function IdeaCreateForm({
                 : 'Write description with AI prompt'}
             </IdeaCreateAiAssistLink>
           </div>
-          <textarea
-            id={`${formId}-description`}
-            className={cn(textareaClass, 'mt-2')}
-            placeholder="Enter a description of the idea..."
-            aria-invalid={!!errors.description}
-            disabled={formBusy}
-            maxLength={5000}
-            {...register('description')}
+          <Controller
+            name="description"
+            control={control}
+            render={({ field }) => (
+              <RichTextEditor
+                id={`${formId}-description`}
+                value={field.value ?? ''}
+                onChange={field.onChange}
+                disabled={formBusy}
+                aria-invalid={!!errors.description}
+              />
+            )}
           />
           <div className="flex items-start justify-between gap-4 pt-1">
             <FieldError message={errors.description?.message} />
