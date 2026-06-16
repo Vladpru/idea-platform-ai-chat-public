@@ -48,6 +48,7 @@ import {
 
 import { ROUTES } from '@/shared/config/paths';
 import { entityDescriptionDetailClass } from '@/shared/lib/entity-description-classes';
+import { MarkdownRenderer } from '@/shared/ui/rich-text-editor';
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
 import { ConfirmModal } from '@/shared/ui/confirm-modal';
@@ -556,9 +557,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
                     summaryStatus={idea.summaryStatus}
                   />
                   {idea.description ? (
-                    <p className={entityDescriptionDetailClass}>
-                      {idea.description}
-                    </p>
+                    <MarkdownRenderer content={idea.description} className={entityDescriptionDetailClass} />
                   ) : (
                     <p className="text-brand-gray-500 text-sm italic">
                       No description provided yet.
