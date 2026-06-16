@@ -235,6 +235,26 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
     exitEditMode();
   };
 
+  const applyTabChange = useCallback(
+    (tab: IdeaTabId) => {
+      setActiveTab(tab);
+
+      if (replyToCommentId || searchTab === 'discussion') {
+        void navigate({
+          to: ROUTES.ideaDetail(ideaId),
+          search: previous => {
+            const next = { ...previous };
+            delete next.tab;
+            delete next.replyTo;
+            return next;
+          },
+          replace: true,
+        });
+      }
+    },
+    [ideaId, navigate, replyToCommentId, searchTab],
+  );
+
   const handleConfirmIdeaDiscard = () => {
     const action = pendingDiscardAction;
     const tab = pendingTab;
@@ -253,7 +273,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
     if (action === 'navigate-back') {
       router.history.back();
     } else if (action === 'tab-switch' && tab) {
-      setActiveTab(tab);
+      applyTabChange(tab);
     }
   };
 
@@ -306,15 +326,15 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
         return;
       }
 
-      setActiveTab(tab);
+      applyTabChange(tab);
     },
-    [visibleTab, hasUnsavedIdeaEdits, isEditingDirty],
+    [visibleTab, hasUnsavedIdeaEdits, isEditingDirty, applyTabChange],
   );
 
   const handleConfirmDiscussionTabDiscard = () => {
     discardAllUnsaved();
     if (pendingTab) {
-      setActiveTab(pendingTab);
+      applyTabChange(pendingTab);
     }
     setPendingTab(null);
     setShowDiscussionDiscardModal(false);
