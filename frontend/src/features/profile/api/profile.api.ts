@@ -4,6 +4,7 @@ import type {
   ProfileStatistics,
 } from '@/features/profile/model/profile-contributions.types';
 
+import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import { api } from '@/shared/api/http';
 import { db } from '@/shared/offline/db';
 import { isAxiosError } from 'axios';
@@ -77,7 +78,8 @@ export async function fetchCurrentUser(): Promise<CurrentUser> {
     return data;
   } catch (error) {
     if (!isOfflineError(error)) throw error;
-    const local = await db.users.limit(1).first();
+    const userId = useAuthSessionStore.getState().user?.id;
+    const local = userId ? await db.users.get(userId) : undefined;
     if (!local) throw error;
     return local as unknown as CurrentUser;
   }
