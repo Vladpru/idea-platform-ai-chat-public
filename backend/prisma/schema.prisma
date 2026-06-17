@@ -136,11 +136,11 @@ model Achievement {
 }
 
 model UserAchievement {
-  id            String      @id @default(uuid())
-  userId        String      @map("user_id")
-  achievementId String      @map("achievement_id")
-  unlockedAt    DateTime    @default(now()) @map("unlocked_at")
-  seenAt        DateTime?   @map("seen_at")
+  id            String    @id @default(uuid())
+  userId        String    @map("user_id")
+  achievementId String    @map("achievement_id")
+  unlockedAt    DateTime  @default(now()) @map("unlocked_at")
+  seenAt        DateTime? @map("seen_at")
   metadata      Json?
 
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -214,6 +214,7 @@ model Idea {
   aiSummary          String?                     @map("ai_summary") @db.Text
   summaryStatus      SummaryStatus               @default(SKIPPED) @map("summary_status")
   summaryRequestedAt DateTime?                   @map("summary_requested_at")
+  version            Int                         @default(1)
 
   author       User          @relation("IdeaAuthor", fields: [authorId], references: [id], onDelete: Cascade)
   problems     IdeaProblem[]
@@ -349,6 +350,7 @@ searchVector       Unsupported("tsvector")?    @map("search_vector") @default(db
   aiSummary          String?                     @map("ai_summary") @db.Text
   summaryStatus      SummaryStatus               @default(SKIPPED) @map("summary_status")
   summaryRequestedAt DateTime?                   @map("summary_requested_at")
+  version            Int                         @default(1)
 
   author       User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
   members      ProblemMember[]
@@ -550,13 +552,13 @@ model CommentMedia {
 }
 
 model LiveChatRoom {
-  id             String   @id @default(uuid())
-  ideaId         String?  @unique @map("idea_id")
-  problemId      String?  @unique @map("problem_id")
-  directPairKey  String?  @unique @map("direct_pair_key")
-  createdById    String   @map("created_by_id")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id            String   @id @default(uuid())
+  ideaId        String?  @unique @map("idea_id")
+  problemId     String?  @unique @map("problem_id")
+  directPairKey String?  @unique @map("direct_pair_key")
+  createdById   String   @map("created_by_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
   idea         Idea?                 @relation(fields: [ideaId], references: [id], onDelete: Cascade)
   problem      Problem?              @relation(fields: [problemId], references: [id], onDelete: Cascade)
@@ -607,6 +609,7 @@ model LiveChatMessage {
   id                 String   @id @default(uuid())
   roomId             String   @map("room_id")
   authorId           String   @map("author_id")
+  clientMessageId    String   @map("client_message_id")
   content            String   @db.Text
   attachmentUrl      String?  @map("attachment_url")
   attachmentName     String?  @map("attachment_name")
@@ -616,6 +619,7 @@ model LiveChatMessage {
   room   LiveChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
   author User         @relation("LiveChatMessageAuthor", fields: [authorId], references: [id], onDelete: Cascade)
 
+  @@unique([authorId, clientMessageId], map: "live_chat_message_author_id_client_message_id_key")
   @@index([roomId, createdAt])
   @@map("live_chat_message")
 }
