@@ -105,6 +105,7 @@ export function toProblemFormResponse(
 
   return {
     id: problem.id,
+    version: problem.version,
     status: problem.status,
     stage: problem.stage,
     title: problem.title,

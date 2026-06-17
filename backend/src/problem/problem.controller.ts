@@ -22,10 +22,12 @@ import {
   ApiBody,
   ApiConsumes,
   ApiCreatedResponse,
+  ApiHeader,
   ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiPreconditionFailedResponse,
   ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
@@ -34,6 +36,7 @@ import {
 import type { Request } from 'express';
 import { memoryStorage } from 'multer';
 
+import { IfMatch } from '../shared/decorators/if-match.decorator';
 import { JwtAuth } from '../shared/decorators/jwt-auth.decorator';
 import { TagSuggestionService } from '../tag/tag-suggestion.service';
 import { CreateProblemDto } from './dto/create-problem.dto';
@@ -175,17 +178,26 @@ export class ProblemController {
   @Patch(':id')
   @JwtAuth()
   @ApiBearerAuth()
+  @ApiHeader({
+    name: 'If-Match',
+    required: true,
+    description: 'Current entity version for optimistic concurrency',
+  })
   @ApiOperation({ summary: 'Update a problem (partial)' })
   @ApiBody({ type: UpdateProblemDraftDto })
   @ApiOkResponse({ description: 'Problem updated' })
   @ApiNotFoundResponse({ description: 'Problem not found' })
+  @ApiPreconditionFailedResponse({
+    description: 'Version conflict — current entity returned',
+  })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
+    @IfMatch() expectedVersion: number,
     @Body() dto: UpdateProblemDraftDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<ProblemFormResponse> {
-    return this.problemService.update(id, req.user.id, dto);
+    return this.problemService.update(id, req.user.id, expectedVersion, dto);
   }
 
   @Post(':id/media')

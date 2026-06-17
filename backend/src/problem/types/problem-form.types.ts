@@ -73,6 +73,7 @@ export type ProblemMediaResponse = {
 
 export type ProblemFormResponse = {
   id: string;
+  version: number;
   status: ProblemStatus;
   stage: string | null;
   title: string;

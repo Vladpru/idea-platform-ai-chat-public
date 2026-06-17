@@ -4,11 +4,12 @@ import {
   IsInt,
   IsOptional,
   IsString,
-  IsUUID,
   Max,
   MaxLength,
   Min,
 } from 'class-validator';
+
+import { IsUuid } from '../../shared/validators/is-uuid-v7.validator';
 
 export class SuggestedIdeasQueryDto {
   @ApiPropertyOptional({ maxLength: 200 })
@@ -40,14 +41,16 @@ export class SuggestedIdeasQueryDto {
   @Transform(({ value }: { value: unknown }) => {
     if (!value) return [];
     if (Array.isArray(value)) {
-      return value.filter((entry): entry is string => typeof entry === 'string');
+      return value.filter(
+        (entry): entry is string => typeof entry === 'string',
+      );
     }
     return String(value)
       .split(',')
       .map(entry => entry.trim())
       .filter(Boolean);
   })
-  @IsUUID('4', { each: true })
+  @IsUuid({ each: true })
   exclude?: string[] = [];
 
   @ApiPropertyOptional({ default: 6, minimum: 1, maximum: 12 })
