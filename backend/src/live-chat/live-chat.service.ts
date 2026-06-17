@@ -293,8 +293,9 @@ export class LiveChatService {
     roomId: string,
     userId: string,
     content: string,
+    clientMessageId: string,
     attachment?: LiveChatAttachmentPayload | null,
-  ): Promise<LiveChatMessageDto> {
+  ): Promise<{ message: LiveChatMessageDto; isDuplicate: boolean }> {
     await this.rateLimit.assertRateLimit(userId);
 
     const trimmedContent = content.trim();
@@ -313,18 +314,41 @@ export class LiveChatService {
 
     const room = await this.getAccessibleRoom(roomId, userId);
 
-    const message = await this.liveChatRepository.createMessage({
-      roomId,
-      authorId: userId,
-      content: trimmedContent,
-      attachmentUrl: attachment?.url ?? null,
-      attachmentName: attachment?.name ?? null,
-      attachmentMimeType: attachment?.mimeType ?? null,
-    });
+    try {
+      const message = await this.liveChatRepository.createMessage({
+        roomId,
+        authorId: userId,
+        clientMessageId,
+        content: trimmedContent,
+        attachmentUrl: attachment?.url ?? null,
+        attachmentName: attachment?.name ?? null,
+        attachmentMimeType: attachment?.mimeType ?? null,
+      });
 
-    this.emitDirectMessageNotifications(room, message, userId);
+      this.emitDirectMessageNotifications(room, message, userId);
 
-    return toLiveChatMessageResponse(message);
+      return {
+        message: toLiveChatMessageResponse(message),
+        isDuplicate: false,
+      };
+    } catch (error) {
+      if (!isUniqueConstraintError(error)) {
+        throw error;
+      }
+
+      const existing = await this.liveChatRepository.findByClientMessageId(
+        userId,
+        clientMessageId,
+      );
+      if (!existing) {
+        throw error;
+      }
+
+      return {
+        message: toLiveChatMessageResponse(existing),
+        isDuplicate: true,
+      };
+    }
   }
 
   async assertRoomAccess(roomId: string, userId: string): Promise<void> {
