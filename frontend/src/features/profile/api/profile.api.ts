@@ -5,6 +5,8 @@ import type {
 } from '@/features/profile/model/profile-contributions.types';
 
 import { api } from '@/shared/api/http';
+import { db } from '@/shared/offline/db';
+import { isAxiosError } from 'axios';
 
 export type ThemePreference = 'LIGHT' | 'DARK' | 'SYSTEM';
 
@@ -59,9 +61,26 @@ export type PatchUserPayload = {
   socialLinks?: string[] | null;
 };
 
+function isOfflineError(error: unknown): boolean {
+  if (!navigator.onLine) return true;
+  if (!isAxiosError(error)) return false;
+  return (
+    error.code === 'ERR_INTERNET_DISCONNECTED' ||
+    error.message === 'Network Error'
+  );
+}
+
 export async function fetchCurrentUser(): Promise<CurrentUser> {
-  const { data } = await api.get<CurrentUser>('/users/me');
-  return data;
+  try {
+    const { data } = await api.get<CurrentUser>('/users/me');
+    await db.users.put(data);
+    return data;
+  } catch (error) {
+    if (!isOfflineError(error)) throw error;
+    const local = await db.users.limit(1).first();
+    if (!local) throw error;
+    return local as unknown as CurrentUser;
+  }
 }
 
 export function mergeCurrentUser(

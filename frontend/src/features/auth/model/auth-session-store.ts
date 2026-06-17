@@ -56,32 +56,38 @@ function parseSessionUser(raw: unknown): SessionUser | null {
   };
 }
 
+type StoreSetter = (partial: Partial<AuthSessionState>) => void;
+let _set: StoreSetter = () => {};
+
 export const useAuthSessionStore = create<AuthSessionState>()(
   persist(
-    set => ({
-      user: null,
-      accessToken: null,
-      setSession: (apiUser, accessToken) => {
-        const user = parseSessionUser(apiUser);
-        if (!user) {
+    set => {
+      _set = set;
+      return {
+        user: null,
+        accessToken: null,
+        setSession: (apiUser, accessToken) => {
+          const user = parseSessionUser(apiUser);
+          if (!user) {
+            clearStoredAuthToken();
+            set({ user: null, accessToken: null });
+            return;
+          }
+          set({ user, accessToken });
+          setStoredAuthToken(accessToken);
+        },
+        setAccessToken: accessToken => {
+          set({ accessToken });
+          setStoredAuthToken(accessToken);
+        },
+        clearSession: () => {
           clearStoredAuthToken();
+          clearAuthenticatedQueryCache();
           set({ user: null, accessToken: null });
-          return;
-        }
-        set({ user, accessToken });
-        setStoredAuthToken(accessToken);
-      },
-      setAccessToken: accessToken => {
-        set({ accessToken });
-        setStoredAuthToken(accessToken);
-      },
-      clearSession: () => {
-        clearStoredAuthToken();
-        clearAuthenticatedQueryCache();
-        set({ user: null, accessToken: null });
-        void useAuthSessionStore.persist.clearStorage();
-      },
-    }),
+          void useAuthSessionStore.persist.clearStorage();
+        },
+      };
+    },
     {
       name: 'auth-session',
       storage: createJSONStorage(() => localStorage),
@@ -91,8 +97,7 @@ export const useAuthSessionStore = create<AuthSessionState>()(
           setStoredAuthToken(state.accessToken);
         } else if (state) {
           clearStoredAuthToken();
-          state.user = null;
-          state.accessToken = null;
+          _set({ user: null, accessToken: null });
         }
       },
     },
