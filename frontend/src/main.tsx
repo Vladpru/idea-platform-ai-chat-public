@@ -4,9 +4,16 @@ import { RouterProvider } from '@tanstack/react-router';
 import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
 
+import { registerSW } from 'virtual:pwa-register';
+
 import { AppProviders } from '@/app/providers/AppProviders';
 import { router } from '@/app/router';
 import '@/app/styles/index.css';
+import { registerSyncTriggers } from '@/shared/offline/sync-engine';
+
+registerSW({ immediate: true });
+
+registerSyncTriggers();
 
 useAuthSessionStore.persist.onFinishHydration(() => {
   if (!hasValidSession()) {
