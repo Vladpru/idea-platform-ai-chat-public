@@ -63,3 +63,5 @@ CLAUDE.md
 /docs
 
 .codegraph
+# Claude Code local session data
+.claude/
