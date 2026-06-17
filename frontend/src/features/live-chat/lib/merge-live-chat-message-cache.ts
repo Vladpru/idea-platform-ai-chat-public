@@ -15,8 +15,18 @@ export function appendLiveChatMessage(
     };
   }
 
-  if (cache.messages.some(existing => existing.id === message.id)) {
-    return cache;
+
+  const index = cache.messages.findIndex(
+    existing =>
+      (message.clientMessageId &&
+        existing.clientMessageId === message.clientMessageId) ||
+      existing.id === message.id,
+  );
+
+  if (index >= 0) {
+    const messages = cache.messages.slice();
+    messages[index] = message;
+    return { ...cache, messages };
   }
 
   return {

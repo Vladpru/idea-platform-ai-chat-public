@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosError, type AxiosResponse } from 'axios';
 
 const INVALID_CREDENTIALS = 'Invalid email or password';
 
@@ -35,6 +35,22 @@ export function getApiErrorStatus(error: unknown): number | undefined {
 
 export function isApiNotFoundError(error: unknown): boolean {
   return getApiErrorStatus(error) === 404;
+}
+
+/**
+ * Build a synthetic 404 so offline/local code paths can signal "not found" in a
+ * shape `getApiErrorStatus` / `shouldRetryDetailResourceQuery` already recognize.
+ */
+export function createNotFoundError(message = 'Resource not found'): AxiosError {
+  const error = new AxiosError(message, 'ERR_NOT_FOUND');
+  error.response = {
+    status: 404,
+    statusText: 'Not Found',
+    data: null,
+    headers: {},
+    config: error.config,
+  } as AxiosResponse;
+  return error;
 }
 
 function messageFromFieldErrors(

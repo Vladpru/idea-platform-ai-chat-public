@@ -5,12 +5,12 @@ import {
   IsEnum,
   IsOptional,
   IsString,
-  IsUUID,
   Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
 
+import { IsUuid } from '../../shared/validators/is-uuid-v7.validator';
 import { ProblemStage } from '../enum/problem-stage.enum';
 
 export class UpdateProblemDraftDto {
@@ -83,7 +83,7 @@ export class UpdateProblemDraftDto {
   @IsOptional()
   @IsArray()
   @ArrayMaxSize(10)
-  @IsUUID('4', { each: true })
+  @IsUuid({ each: true })
   ideaIds?: string[];
 
   @ApiPropertyOptional({
@@ -95,7 +95,7 @@ export class UpdateProblemDraftDto {
   @IsOptional()
   @IsArray()
   @ArrayMaxSize(20)
-  @IsUUID('4', { each: true })
+  @IsUuid({ each: true })
   tagIds?: string[];
 
   @ApiPropertyOptional({

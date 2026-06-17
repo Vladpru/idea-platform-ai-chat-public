@@ -54,6 +54,7 @@ export type SummaryStatus = 'PENDING' | 'COMPLETED' | 'FAILED' | 'SKIPPED';
 
 export type IdeaFormResponseDto = {
   id: string;
+  version?: number;
   status: IdeaStatus;
   stage: string | null;
   title: string | null;
@@ -61,6 +62,7 @@ export type IdeaFormResponseDto = {
   aiSummary: string | null;
   summaryStatus: SummaryStatus;
   publishedAt: string | null;
+  createdAt?: string;
   viewCount?: number;
   likeCount?: number;
   commentCount?: number;

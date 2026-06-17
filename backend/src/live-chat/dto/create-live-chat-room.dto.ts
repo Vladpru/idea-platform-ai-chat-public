@@ -1,10 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsIn, IsUUID } from 'class-validator';
+import { IsIn } from 'class-validator';
 
 import {
   ENTITY_LINK_TARGETS,
   EntityTarget,
 } from '../../entity-visibility/entity-target.enum';
+import { IsUuid } from '../../shared/validators/is-uuid-v7.validator';
 
 export class CreateLiveChatRoomDto {
   @ApiProperty({ enum: ENTITY_LINK_TARGETS })
@@ -12,6 +13,6 @@ export class CreateLiveChatRoomDto {
   entityType!: EntityTarget.IDEA | EntityTarget.PROBLEM;
 
   @ApiProperty({ format: 'uuid' })
-  @IsUUID()
+  @IsUuid()
   entityId!: string;
 }

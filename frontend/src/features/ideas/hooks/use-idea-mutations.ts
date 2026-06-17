@@ -3,20 +3,12 @@ import {
   type UpdateIdeaPayload,
   type UploadIdeaMediaPayload,
   createIdea,
-  createIdeaDraft,
-  createPublishedIdea,
   deleteIdea,
   deleteIdeaMedia,
-  fetchIdeaById,
   joinIdea,
   leaveIdea,
   linkProblemsToIdea,
   unlinkProblemFromIdea,
-  publishIdea,
-  updatePublishedIdea,
-  updateIdea,
-  updateIdeaDraft,
-  uploadIdeaMainImage,
   uploadIdeaMedia,
 } from '@/features/ideas/api/ideas.api';
 import { myIdeasDashboardKeys } from '@/features/profile/hooks/use-my-ideas-dashboard';
@@ -24,13 +16,63 @@ import {
   type IdeaCreateFormValues,
   formValuesToSavePayload,
 } from '@/features/ideas/lib/create-idea';
-import { IDEA_STATUS, type IdeaStatus } from '@/features/ideas/model/idea.types';
+import {
+  IDEA_STATUS,
+  type ApiStage,
+  type IdeaApi,
+  type IdeaStatus,
+} from '@/features/ideas/model/idea.types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { toast } from 'sonner';
 
+import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import { ROUTES } from '@/shared/config/paths';
+import { type LocalIdea } from '@/shared/offline/db';
+import {
+  createIdea as createLocalIdea,
+  publishIdea as publishLocalIdea,
+  updateIdea as updateLocalIdea,
+} from '@/shared/offline/repositories';
+import { drain } from '@/shared/offline/sync-engine';
+
+type IdeaEditInput = {
+  values: IdeaCreateFormValues;
+  payload: ReturnType<typeof formValuesToSavePayload>;
+};
+
+function toUpdateIdeaInput({ values, payload }: IdeaEditInput) {
+  return {
+    title: payload.title ?? undefined,
+    description: payload.description ?? undefined,
+    stage: payload.stage ?? undefined,
+    problemIds: payload.problemIds,
+    tagLabels: payload.tagLabels,
+    mainImage: values.mainImage ?? null,
+    attachments: values.files,
+  };
+}
+
+function requireAuthorId(): string {
+  const authorId = useAuthSessionStore.getState().user?.id;
+  if (!authorId) throw new Error('No authenticated user');
+  return authorId;
+}
+
+function localIdeaToIdeaApi(local: LocalIdea): IdeaApi {
+  return {
+    id: local.localId,
+    authorId: local.authorId,
+    status: local.status as IdeaStatus,
+    stage: local.stage as ApiStage | null,
+    title: local.title,
+    description: (local.snapshot.description as string | null) ?? null,
+    publishedAt: local.status === IDEA_STATUS.PUBLISHED ? local.updatedAt : null,
+    createdAt: local.updatedAt,
+    updatedAt: local.updatedAt,
+  };
+}
 
 export const ideaMutationKeys = {
   all: ['ideas'] as const,
@@ -73,23 +115,28 @@ export function useSaveIdeaDraftMutation() {
     mutationFn: async ({ values, ideaId }: SaveIdeaDraftVariables) => {
       const payload = formValuesToSavePayload(values);
 
-      const idea = ideaId
-        ? await updateIdeaDraft(ideaId, payload)
-        : await createIdeaDraft(payload);
-
-      if (values.mainImage) {
-        await uploadIdeaMainImage(idea.id, values.mainImage);
+      if (!ideaId) {
+        const local = await createLocalIdea({
+          authorId: requireAuthorId(),
+          isPublished: false,
+          title: payload.title ?? undefined,
+          description: payload.description ?? undefined,
+          stage: payload.stage ?? undefined,
+          problemIds: payload.problemIds,
+          tagLabels: payload.tagLabels,
+          mainImage: values.mainImage ?? null,
+          attachments: values.files,
+        });
+        void drain();
+        return localIdeaToIdeaApi(local);
       }
 
-      if (values.files && values.files.length > 0) {
-        await Promise.all(
-          values.files.map(file =>
-            uploadIdeaMedia(idea.id, { file, kind: 'attachment' }),
-          ),
-        );
-      }
-
-      return fetchIdeaById(idea.id);
+      const local = await updateLocalIdea(
+        ideaId,
+        toUpdateIdeaInput({ values, payload }),
+      );
+      void drain();
+      return localIdeaToIdeaApi(local);
     },
     onSuccess: () => {
       toast.success('Draft saved', {
@@ -134,7 +181,17 @@ export function useUpdateIdeaMutation(ideaId: string) {
 
   return useMutation({
     mutationKey: [...ideaMutationKeys.all, 'update', ideaId],
-    mutationFn: (payload: UpdateIdeaPayload) => updateIdea(ideaId, payload),
+    mutationFn: async (payload: UpdateIdeaPayload) => {
+      const local = await updateLocalIdea(ideaId, {
+        title: payload.title ?? undefined,
+        description: payload.description ?? undefined,
+        stage: payload.stage ?? undefined,
+        problemIds: payload.problemIds,
+        tagLabels: payload.tagLabels,
+      });
+      void drain();
+      return localIdeaToIdeaApi(local);
+    },
     onSuccess: idea => {
       invalidateIdeaQueries(queryClient, idea.id);
       toast.success('🎉 You earned +15 points', {
@@ -173,20 +230,6 @@ type PublishIdeaVariables = {
   ideaStatus: IdeaStatus;
 };
 
-async function uploadIdeaFiles(ideaId: string, values: IdeaCreateFormValues) {
-  if (values.mainImage) {
-    await uploadIdeaMainImage(ideaId, values.mainImage);
-  }
-
-  if (values.files && values.files.length > 0) {
-    await Promise.all(
-      values.files.map(file =>
-        uploadIdeaMedia(ideaId, { file, kind: 'attachment' }),
-      ),
-    );
-  }
-}
-
 export function usePublishIdeaMutation() {
   const queryClient = useQueryClient();
 
@@ -201,29 +244,36 @@ export function usePublishIdeaMutation() {
       const isPublishedIdea = ideaStatus === IDEA_STATUS.PUBLISHED;
 
       if (ideaId && isPublishedIdea) {
-        await updatePublishedIdea(ideaId, payload);
-        await uploadIdeaFiles(ideaId, values);
-        return {
-          idea: await fetchIdeaById(ideaId),
-          action: 'update' as const,
-        };
+        const local = await updateLocalIdea(
+          ideaId,
+          toUpdateIdeaInput({ values, payload }),
+        );
+        void drain();
+        return { idea: localIdeaToIdeaApi(local), action: 'update' as const };
       }
 
-      let idea: Awaited<ReturnType<typeof fetchIdeaById>>;
-
-      if (ideaId) {
-        await updateIdeaDraft(ideaId, payload);
-        await uploadIdeaFiles(ideaId, values);
-        idea = await publishIdea(ideaId);
-      } else {
-        idea = await createPublishedIdea(payload);
-        await uploadIdeaFiles(idea.id, values);
+      if (!ideaId) {
+        const local = await createLocalIdea({
+          authorId: requireAuthorId(),
+          isPublished: true,
+          title: payload.title ?? undefined,
+          description: payload.description ?? undefined,
+          stage: payload.stage ?? undefined,
+          problemIds: payload.problemIds,
+          tagLabels: payload.tagLabels,
+          mainImage: values.mainImage ?? null,
+          attachments: values.files,
+        });
+        void drain();
+        return { idea: localIdeaToIdeaApi(local), action: 'publish' as const };
       }
 
-      return {
-        idea: await fetchIdeaById(idea.id),
-        action: 'publish' as const,
-      };
+      const local = await publishLocalIdea(
+        ideaId,
+        toUpdateIdeaInput({ values, payload }),
+      );
+      void drain();
+      return { idea: localIdeaToIdeaApi(local), action: 'publish' as const };
     },
     onSuccess: ({ idea, action }) => {
       invalidateIdeaQueries(queryClient, idea.id, {

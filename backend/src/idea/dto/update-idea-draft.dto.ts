@@ -5,11 +5,11 @@ import {
   IsEnum,
   IsOptional,
   IsString,
-  IsUUID,
   MaxLength,
   MinLength,
 } from 'class-validator';
 
+import { IsUuid } from '../../shared/validators/is-uuid-v7.validator';
 import { Stage } from '../enum/stage.enum';
 
 /**
@@ -54,7 +54,7 @@ export class UpdateIdeaDraftDto {
   @IsOptional()
   @IsArray()
   @ArrayMaxSize(10)
-  @IsUUID('4', { each: true })
+  @IsUuid({ each: true })
   problemIds?: string[];
 
   @ApiPropertyOptional({
@@ -66,7 +66,7 @@ export class UpdateIdeaDraftDto {
   @IsOptional()
   @IsArray()
   @ArrayMaxSize(20)
-  @IsUUID('4', { each: true })
+  @IsUuid({ each: true })
   tagIds?: string[];
 
   @ApiPropertyOptional({

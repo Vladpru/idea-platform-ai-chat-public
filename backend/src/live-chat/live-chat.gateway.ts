@@ -191,14 +191,17 @@ export class LiveChatGateway
           }
         : null;
 
-      const message = await this.liveChatService.sendMessage(
+      const { message, isDuplicate } = await this.liveChatService.sendMessage(
         payload.roomId,
         userId,
         payload.content,
+        payload.clientMessageId,
         attachment,
       );
 
-      this.server.to(this.roomName(payload.roomId)).emit('message', message);
+      if (!isDuplicate) {
+        this.server.to(this.roomName(payload.roomId)).emit('message', message);
+      }
 
       return { ok: true, message };
     } catch (error) {

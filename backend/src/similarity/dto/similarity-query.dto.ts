@@ -5,7 +5,6 @@ import {
   IsInt,
   IsOptional,
   IsString,
-  IsUUID,
   Max,
   MaxLength,
   Min,
@@ -13,6 +12,7 @@ import {
   Validate,
 } from 'class-validator';
 
+import { IsUuid } from '../../shared/validators/is-uuid-v7.validator';
 import { SourceXorTextConstraint } from '../validators/source-xor-text.constraint';
 
 export class SimilarityQueryDto {
@@ -31,7 +31,7 @@ export class SimilarityQueryDto {
 
   @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()
-  @IsUUID('4')
+  @IsUuid()
   @Validate(SourceXorTextConstraint)
   sourceId?: string;
 
