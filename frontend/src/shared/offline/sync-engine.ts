@@ -36,31 +36,31 @@ function computeBackoffMs(attempts: number): number {
   return exp + jitter;
 }
 
-let draining = false;
-
 export async function drain(): Promise<void> {
-  if (draining) return;
-  draining = true;
-  try {
-    await db.outbox
-      .where('status')
-      .equals('inflight')
-      .modify({ status: 'queued' });
+  await navigator.locks.request(
+    'outbox-drain',
+    { ifAvailable: true },
+    async (lock: Lock | null) => {
+      if (!lock) return;
 
-    const now = new Date().toISOString();
-    const queued = await db.outbox.where('status').equals('queued').toArray();
-    const eligible = queued
-      .filter(entry => entry.nextAttemptAt <= now)
-      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+      await db.outbox
+        .where('status')
+        .equals('inflight')
+        .modify({ status: 'queued' });
 
-    for (const entry of eligible) {
-      const fresh = await db.outbox.get(entry.id);
-      if (!fresh || fresh.status !== 'queued') continue;
-      await processEntry(fresh);
-    }
-  } finally {
-    draining = false;
-  }
+      const now = new Date().toISOString();
+      const queued = await db.outbox.where('status').equals('queued').toArray();
+      const eligible = queued
+        .filter(entry => entry.nextAttemptAt <= now)
+        .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+
+      for (const entry of eligible) {
+        const fresh = await db.outbox.get(entry.id);
+        if (!fresh || fresh.status !== 'queued') continue;
+        await processEntry(fresh);
+      }
+    },
+  );
 }
 
 async function processEntry(entry: OutboxEntry): Promise<void> {
