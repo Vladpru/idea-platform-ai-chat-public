@@ -45,12 +45,14 @@ export function getVirtualRowGridClassName(columnCount: number): string {
 
 export function getVirtualRowGridStyle(
   columnCount: number,
+  isCompactLayout = false,
 ): CSSProperties | undefined {
   if (columnCount <= 3) {
     return undefined;
   }
+  const minCardWidth = isCompactLayout ? 160 : 280;
   return {
-    gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`,
+    gridTemplateColumns: `repeat(${columnCount}, minmax(${minCardWidth}px, 1fr))`,
   };
 }
 

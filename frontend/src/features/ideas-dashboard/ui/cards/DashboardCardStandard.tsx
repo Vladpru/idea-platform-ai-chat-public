@@ -13,6 +13,7 @@ import { LinkedItemsSection } from '@/shared/dashboard/ui/linked-items/LinkedIte
 import { entityDescriptionPreviewClass } from '@/shared/lib/entity-description-classes';
 import { cn } from '@/shared/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
+import { MarkdownRenderer } from '@/shared/ui/rich-text-editor';
 import { StageChevronBadge } from '@/shared/ui/stage-chevron-badge';
 
 export type DashboardCardStandardProps<
@@ -163,14 +164,16 @@ function DashboardCardStandardInner<
                 ) : null}
               </div>
 
-              <p
-                className={cn(
-                  entityDescriptionPreviewClass,
-                  'text-brand-gray-600 line-clamp-3',
-                )}
-              >
-                {card.description?.trim() || emptyDescriptionText}
-              </p>
+              {card.description?.trim() ? (
+                <MarkdownRenderer
+                  content={card.description.trim()}
+                  className={cn(entityDescriptionPreviewClass, 'text-brand-gray-600 line-clamp-3')}
+                />
+              ) : (
+                <p className={cn(entityDescriptionPreviewClass, 'text-brand-gray-600 line-clamp-3')}>
+                  {emptyDescriptionText}
+                </p>
+              )}
             </div>
           </Link>
 

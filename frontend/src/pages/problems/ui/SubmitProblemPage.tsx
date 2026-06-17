@@ -1,8 +1,9 @@
 import { SubmitProblemForm } from '@/features/problems/ui/submit-problem';
 import type { ProblemDocumentAutoFillControls } from '@/features/problems/ui/submit-problem/SubmitProblemForm';
-import { useSearch } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useState } from 'react';
 
+import { DEFAULT_PROBLEMS_DASHBOARD_SEARCH } from '@/features/problems-dashboard/lib/constants';
 import { ROUTES } from '@/shared/config/paths';
 import { DocumentAutoFillControl } from '@/shared/ui/document-auto-fill-control';
 import { CreationPageTemplate } from '@/shared/ui/pages/CreationPageTemplate';
@@ -12,6 +13,7 @@ const SUBMIT_PROBLEM_QUOTE =
 
 export function SubmitProblemPage() {
   const { problemId } = useSearch({ from: '/_auth/problems/new' });
+  const navigate = useNavigate();
   const [documentAutoFillControls, setDocumentAutoFillControls] =
     useState<ProblemDocumentAutoFillControls | null>(null);
 
@@ -19,7 +21,16 @@ export function SubmitProblemPage() {
     <CreationPageTemplate
       title={problemId ? 'Edit Problem' : 'Submit Problem'}
       quote={SUBMIT_PROBLEM_QUOTE}
-      backTo={problemId ? ROUTES.problemDetail(problemId) : undefined}
+      onBackClick={
+        problemId
+          ? () =>
+              void navigate({
+                to: ROUTES.problems,
+                search: DEFAULT_PROBLEMS_DASHBOARD_SEARCH,
+                replace: true,
+              })
+          : undefined
+      }
       loadingOverlay={documentAutoFillControls?.isScanning}
       loadingMessage="Scanning document and populating fields…"
       headerAction={

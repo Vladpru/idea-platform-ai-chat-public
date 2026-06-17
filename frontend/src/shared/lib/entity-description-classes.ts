@@ -4,7 +4,7 @@ export const entityDescriptionFontClass = 'font-description';
 
 export const entityDescriptionTextClass = cn(
   entityDescriptionFontClass,
-  'text-brand-gray-800 text-sm leading-relaxed whitespace-pre-wrap sm:text-base',
+  'text-brand-gray-800 text-sm leading-relaxed sm:text-base',
 );
 
 export const entityDescriptionDetailClass = cn(
@@ -14,5 +14,5 @@ export const entityDescriptionDetailClass = cn(
 
 export const entityDescriptionPreviewClass = cn(
   entityDescriptionFontClass,
-  'text-brand-black text-sm leading-relaxed whitespace-pre-wrap sm:text-base',
+  'text-brand-black text-sm leading-relaxed sm:text-base',
 );

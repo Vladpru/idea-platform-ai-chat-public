@@ -1,14 +1,13 @@
 'use client';
 
-import commentsIcon from '@/assets/svg/comments.svg';
-import likeIcon from '@/assets/svg/like.svg';
-import viewsIcon from '@/assets/svg/views.svg';
+import { CommentsIcon } from '@/assets/svg/comments';
+import { LikeIcon } from '@/assets/svg/like';
+import { ViewsIcon } from '@/assets/svg/views';
 import { Link } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 
 import { ROUTES } from '@/shared/config/paths';
 import { cn } from '@/shared/lib/utils';
-import { StatIcon } from '@/shared/ui/icons/stat-icon';
 import { LikeButton } from '@/shared/ui/LikeButton';
 
 import type { DashboardEngagementStats } from '@/shared/dashboard/model/dashboard.types';
@@ -49,7 +48,7 @@ export function DashboardCardStats({
       )}
     >
       <span className="inline-flex items-center gap-1">
-        <StatIcon src={viewsIcon} className={iconClassName} />
+        <ViewsIcon className={iconClassName} />
         <span className="tabular-nums">{stats.views}</span>
       </span>
 
@@ -63,12 +62,12 @@ export function DashboardCardStats({
             event.stopPropagation();
           }}
         >
-          <StatIcon src={commentsIcon} className={iconClassName} />
+          <CommentsIcon className={iconClassName} />
           <span className="tabular-nums">{stats.comments}</span>
         </Link>
       ) : (
         <span className="inline-flex items-center gap-1">
-          <StatIcon src={commentsIcon} className={iconClassName} />
+          <CommentsIcon className={iconClassName} />
           <span className="tabular-nums">{stats.comments}</span>
         </span>
       )}
@@ -85,7 +84,7 @@ export function DashboardCardStats({
           />
         ) : (
           <span className="inline-flex items-center gap-1">
-            <StatIcon src={likeIcon} className={iconClassName} />
+            <LikeIcon className={iconClassName} />
             <span className="tabular-nums">{stats.likes}</span>
           </span>
         ))}

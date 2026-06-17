@@ -49,6 +49,7 @@ import {
 import { ROUTES } from '@/shared/config/paths';
 import { entityDescriptionDetailClass } from '@/shared/lib/entity-description-classes';
 import { SyncWarningBanner } from '@/shared/offline/SyncWarningBanner';
+import { MarkdownRenderer } from '@/shared/ui/rich-text-editor';
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
 import { ConfirmModal } from '@/shared/ui/confirm-modal';
@@ -236,6 +237,26 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
     exitEditMode();
   };
 
+  const applyTabChange = useCallback(
+    (tab: IdeaTabId) => {
+      setActiveTab(tab);
+
+      if (replyToCommentId || searchTab === 'discussion') {
+        void navigate({
+          to: ROUTES.ideaDetail(ideaId),
+          search: previous => {
+            const next = { ...previous };
+            delete next.tab;
+            delete next.replyTo;
+            return next;
+          },
+          replace: true,
+        });
+      }
+    },
+    [ideaId, navigate, replyToCommentId, searchTab],
+  );
+
   const handleConfirmIdeaDiscard = () => {
     const action = pendingDiscardAction;
     const tab = pendingTab;
@@ -254,7 +275,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
     if (action === 'navigate-back') {
       router.history.back();
     } else if (action === 'tab-switch' && tab) {
-      setActiveTab(tab);
+      applyTabChange(tab);
     }
   };
 
@@ -307,15 +328,15 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
         return;
       }
 
-      setActiveTab(tab);
+      applyTabChange(tab);
     },
-    [visibleTab, hasUnsavedIdeaEdits, isEditingDirty],
+    [visibleTab, hasUnsavedIdeaEdits, isEditingDirty, applyTabChange],
   );
 
   const handleConfirmDiscussionTabDiscard = () => {
     discardAllUnsaved();
     if (pendingTab) {
-      setActiveTab(pendingTab);
+      applyTabChange(pendingTab);
     }
     setPendingTab(null);
     setShowDiscussionDiscardModal(false);
@@ -538,9 +559,7 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
                     summaryStatus={idea.summaryStatus}
                   />
                   {idea.description ? (
-                    <p className={entityDescriptionDetailClass}>
-                      {idea.description}
-                    </p>
+                    <MarkdownRenderer content={idea.description} className={entityDescriptionDetailClass} />
                   ) : (
                     <p className="text-brand-gray-500 text-sm italic">
                       No description provided yet.

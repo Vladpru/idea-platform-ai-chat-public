@@ -1,5 +1,5 @@
 import type { ProblemDetails } from '@/features/problem-details/model/problem-details.types';
-import fileImageSvg from '@/assets/svg/file-image.svg';
+import { FileImageIcon } from '@/assets/svg/file-image';
 import { cn } from '@/shared/lib/utils';
 
 type ProblemAttachmentsTabProps = {
@@ -21,7 +21,6 @@ export function ProblemAttachmentsTab({
     <ul className="flex flex-col gap-5 pt-4">
       {attachments.map(attachment => {
         const isImage = attachment.mimeType?.startsWith('image/');
-        const imgSrc = isImage ? attachment.url : fileImageSvg;
 
         return (
           <li key={attachment.id}>
@@ -35,15 +34,15 @@ export function ProblemAttachmentsTab({
               )}
             >
               <div className="flex w-16 shrink-0 items-center justify-center">
-                <img
-                  src={imgSrc}
-                  alt={attachment.filename}
-                  className={cn(
-                    isImage
-                      ? 'h-11 w-full rounded object-cover shadow-sm'
-                      : 'h-11 w-auto object-contain',
-                  )}
-                />
+                {isImage ? (
+                  <img
+                    src={attachment.url}
+                    alt={attachment.filename}
+                    className="h-11 w-full rounded object-cover shadow-sm"
+                  />
+                ) : (
+                  <FileImageIcon className="h-11 w-auto" />
+                )}
               </div>
               <span className="truncate text-sm text-black group-hover:underline">
                 {attachment.filename}
