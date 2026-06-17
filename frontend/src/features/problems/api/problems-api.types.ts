@@ -19,6 +19,7 @@ export type ProblemFormMember = {
 
 export type ProblemForm = {
   id: string;
+  version?: number;
   status: ProblemStatus;
   stage: ProblemStage | null;
   title: string;

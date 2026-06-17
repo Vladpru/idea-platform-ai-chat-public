@@ -1,14 +1,13 @@
 import {
+  type CreateProblemDraftPayload,
   type CreateProblemPayload,
   type UpdateProblemPayload,
   type UploadProblemAttachmentPayload,
-  createProblem,
-  createProblemDraft,
   deleteProblem,
   deleteProblemMedia,
   joinProblem,
   leaveProblem,
-  updateProblem,
+  localProblemToProblemForm,
   uploadProblemAttachment,
 } from '@/features/problems/api/problems.api';
 import {
@@ -21,17 +20,19 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { toast } from 'sonner';
 
+import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import { ROUTES } from '@/shared/config/paths';
+import {
+  createProblem as createLocalProblem,
+  updateProblem as updateLocalProblem,
+} from '@/shared/offline/repositories';
+import { drain } from '@/shared/offline/sync-engine';
 
-async function uploadProblemFiles(
-  problemId: string,
-  files: File[] | undefined,
-) {
-  if (!files?.length) return;
-  await Promise.all(
-    files.map(file => uploadProblemAttachment(problemId, { file })),
-  );
+function requireAuthorId(): string {
+  const authorId = useAuthSessionStore.getState().user?.id;
+  if (!authorId) throw new Error('No authenticated user');
+  return authorId;
 }
 
 export const problemMutationKeys = {
@@ -72,7 +73,24 @@ export function useCreateProblemMutation() {
 
   return useMutation({
     mutationKey: [...problemMutationKeys.all, 'create'],
-    mutationFn: (payload: CreateProblemPayload) => createProblem(payload),
+    mutationFn: async (payload: CreateProblemPayload) => {
+      const local = await createLocalProblem({
+        authorId: requireAuthorId(),
+        isPublished: payload.isPublished,
+        title: payload.title,
+        description: payload.description,
+        stage: payload.stage,
+        valueProposition: payload.valueProposition,
+        costBenefit: payload.costBenefit,
+        category: payload.category,
+        impact: payload.impact,
+        ideaIds: payload.ideaIds,
+        tagIds: payload.tagIds,
+        tagLabels: payload.tagLabels,
+      });
+      void drain();
+      return localProblemToProblemForm(local);
+    },
     onSuccess: (problem, variables) => {
       invalidateProblemQueries(queryClient, problem.id);
       toast.success(
@@ -97,18 +115,31 @@ export function usePublishProblemMutation() {
     mutationKey: [...problemMutationKeys.all, 'publish'],
     mutationFn: async ({ values, problemId }: PublishProblemVariables) => {
       if (problemId) {
-        const problem = await updateProblem(
-          problemId,
-          formValuesToUpdateProblemPayload(values),
-        );
-        await uploadProblemFiles(problemId, values.files);
-        return problem;
+        const local = await updateLocalProblem(problemId, {
+          ...formValuesToUpdateProblemPayload(values),
+          attachments: values.files,
+        });
+        void drain();
+        return localProblemToProblemForm(local);
       }
 
       const payload = formValuesToCreateProblemPayload(values, true);
-      const problem = await createProblem(payload);
-      await uploadProblemFiles(problem.id, values.files);
-      return problem;
+      const local = await createLocalProblem({
+        authorId: requireAuthorId(),
+        isPublished: true,
+        title: payload.title,
+        description: payload.description,
+        stage: payload.stage,
+        valueProposition: payload.valueProposition,
+        costBenefit: payload.costBenefit,
+        category: payload.category,
+        impact: payload.impact,
+        ideaIds: payload.ideaIds,
+        tagIds: payload.tagIds,
+        tagLabels: payload.tagLabels,
+      });
+      void drain();
+      return localProblemToProblemForm(local);
     },
     onSuccess: (problem, variables) => {
       invalidateProblemQueries(queryClient, problem.id, {
@@ -116,7 +147,8 @@ export function usePublishProblemMutation() {
       });
       if (variables.problemId) {
         toast.success('🎉 You earned +15 points', {
-          description: 'Progress shared — your updates keep the project moving.',
+          description:
+            'Progress shared — your updates keep the project moving.',
         });
       } else {
         toast.success('🎉 You earned +50 points', {
@@ -137,7 +169,17 @@ export function useCreateProblemDraftMutation() {
 
   return useMutation({
     mutationKey: [...problemMutationKeys.all, 'create-draft'],
-    mutationFn: createProblemDraft,
+    networkMode: 'offlineFirst',
+    mutationFn: async (payload: CreateProblemDraftPayload) => {
+      const local = await createLocalProblem({
+        authorId: requireAuthorId(),
+        isPublished: false,
+        title: payload.title,
+        description: payload.description,
+      });
+      void drain();
+      return localProblemToProblemForm(local);
+    },
     onSuccess: problem => {
       invalidateProblemQueries(queryClient, problem.id);
       toast.success('Draft saved', {
@@ -163,8 +205,11 @@ export function useUpdateProblemMutation(problemId: string) {
 
   return useMutation({
     mutationKey: [...problemMutationKeys.all, 'update', problemId],
-    mutationFn: (payload: UpdateProblemPayload) =>
-      updateProblem(problemId, payload),
+    mutationFn: async (payload: UpdateProblemPayload) => {
+      const local = await updateLocalProblem(problemId, payload);
+      void drain();
+      return localProblemToProblemForm(local);
+    },
     onSuccess: problem => {
       invalidateProblemQueries(queryClient, problem.id);
       toast.success('🎉 You earned +15 points', {
