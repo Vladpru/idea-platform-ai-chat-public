@@ -23,10 +23,12 @@ import {
   ApiBody,
   ApiConsumes,
   ApiCreatedResponse,
+  ApiHeader,
   ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiPreconditionFailedResponse,
   ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
@@ -35,6 +37,7 @@ import {
 import type { Request } from 'express';
 import { memoryStorage } from 'multer';
 
+import { IfMatch } from '../shared/decorators/if-match.decorator';
 import { JwtAuth } from '../shared/decorators/jwt-auth.decorator';
 import { MyIdeasQueryDto } from './dto';
 import { CreateIdeaDto } from './dto/create-idea.dto';
@@ -147,17 +150,26 @@ export class IdeaController {
   @Patch(':id')
   @JwtAuth()
   @ApiBearerAuth()
+  @ApiHeader({
+    name: 'If-Match',
+    required: true,
+    description: 'Current entity version for optimistic concurrency',
+  })
   @ApiOperation({ summary: 'Save idea draft (partial update)' })
   @ApiBody({ type: UpdateIdeaDraftDto })
   @ApiOkResponse({ description: 'Draft idea updated' })
   @ApiNotFoundResponse({ description: 'Idea not found' })
+  @ApiPreconditionFailedResponse({
+    description: 'Version conflict — current entity returned',
+  })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   updateDraft(
     @Param('id', ParseUUIDPipe) id: string,
+    @IfMatch() expectedVersion: number,
     @Body() dto: UpdateIdeaDraftDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.ideaService.updateDraft(id, req.user.id, dto);
+    return this.ideaService.updateDraft(id, req.user.id, expectedVersion, dto);
   }
 
   @Put(':id/main-image')
@@ -282,18 +294,32 @@ export class IdeaController {
   @Patch(':id/publish')
   @JwtAuth()
   @ApiBearerAuth()
+  @ApiHeader({
+    name: 'If-Match',
+    required: true,
+    description: 'Current entity version for optimistic concurrency',
+  })
   @ApiOperation({ summary: 'Update a published idea (strict validation)' })
   @ApiBody({ type: UpdatePublishedIdeaDto })
   @ApiOkResponse({ description: 'Published idea updated' })
   @ApiNotFoundResponse({ description: 'Idea not found' })
+  @ApiPreconditionFailedResponse({
+    description: 'Version conflict — current entity returned',
+  })
   @ApiUnprocessableEntityResponse({ description: 'Update validation failed' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   updatePublished(
     @Param('id', ParseUUIDPipe) id: string,
+    @IfMatch() expectedVersion: number,
     @Body() dto: UpdatePublishedIdeaDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.ideaService.updatePublished(id, req.user.id, dto);
+    return this.ideaService.updatePublished(
+      id,
+      req.user.id,
+      expectedVersion,
+      dto,
+    );
   }
 
   @Post(':id/join')

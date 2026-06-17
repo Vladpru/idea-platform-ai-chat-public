@@ -106,6 +106,7 @@ export function toIdeaFormResponse(
 
   return {
     id: idea.id,
+    version: idea.version,
     status: idea.status,
     stage: idea.stage,
     title: idea.title,
