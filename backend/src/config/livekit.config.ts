@@ -18,17 +18,11 @@ export default registerAs('livekit', () => {
   const webhookSecret = process.env.LIVEKIT_WEBHOOK_SECRET?.trim();
   const url = process.env.LIVEKIT_URL?.trim();
 
-  if (!apiKey || !apiSecret || !webhookSecret || !url) {
-    throw new Error(
-      'LIVEKIT_API_KEY, LIVEKIT_API_SECRET, LIVEKIT_WEBHOOK_SECRET, and LIVEKIT_URL are required',
-    );
-  }
-
   return {
     apiKey,
     apiSecret,
     webhookSecret,
     url,
-    httpUrl: resolveHttpUrl(url),
+    httpUrl: url ? resolveHttpUrl(url) : undefined,
   };
 });

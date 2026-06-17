@@ -142,7 +142,7 @@ export function SubmitProblemForm({
 
   const navigateAfterSave = (wasEditing: boolean, problemId: string) => {
     if (wasEditing) {
-      void navigate({ to: ROUTES.problemDetail(problemId) });
+      void navigate({ to: ROUTES.problemDetail(problemId), replace: true });
       return;
     }
     navigateToProblems();

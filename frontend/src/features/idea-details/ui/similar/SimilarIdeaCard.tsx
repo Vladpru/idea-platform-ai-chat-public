@@ -5,6 +5,7 @@ import { Eye, MessageCircle } from 'lucide-react';
 import { ROUTES } from '@/shared/config/paths';
 import { entityDescriptionPreviewClass } from '@/shared/lib/entity-description-classes';
 import { cn } from '@/shared/lib/utils';
+import { MarkdownRenderer } from '@/shared/ui/rich-text-editor';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { LikeButton } from '@/shared/ui/LikeButton';
 import { StageChevronBadge } from '@/shared/ui/stage-chevron-badge';
@@ -64,9 +65,16 @@ function SimilarIdeaCardContent({ card }: SimilarIdeaCardProps) {
             <StageChevronBadge stage={card.stage} stageText={false} />
           </div>
 
-          <p className={cn(entityDescriptionPreviewClass, 'line-clamp-3')}>
-            {card.description || 'No description available for this idea.'}
-          </p>
+          {card.description ? (
+            <MarkdownRenderer
+              content={card.description}
+              className={cn(entityDescriptionPreviewClass, 'line-clamp-3')}
+            />
+          ) : (
+            <p className={cn(entityDescriptionPreviewClass, 'line-clamp-3')}>
+              No description available for this idea.
+            </p>
+          )}
         </div>
 
         <div className="mt-4 flex flex-col gap-3 border-t border-gray-50 pt-3 sm:flex-row sm:items-end sm:justify-between sm:border-t-0 sm:pt-0 md:items-center">

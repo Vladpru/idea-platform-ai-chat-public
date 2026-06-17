@@ -1,25 +1,25 @@
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
-import {
-  COMMENTS_PAGE_SIZE,
-  createComment,
-  type CreateCommentPayload,
-} from '@/features/discussion/api/comments.api';
 import type {
   CommentAttachmentDto,
   CommentDto,
   DiscussionEntityType,
   PaginatedCommentsResponse,
 } from '@/features/discussion/api/comments-api.types';
+import {
+  COMMENTS_PAGE_SIZE,
+  type CreateCommentPayload,
+  createComment,
+} from '@/features/discussion/api/comments.api';
 import { commentQueryKeys } from '@/features/discussion/hooks/comment-query-keys';
 import {
+  type CommentInfiniteQueriesSnapshot,
   adjustEntityDiscussionCountInCache,
   snapshotCommentInfiniteQuery,
-  type CommentInfiniteQueriesSnapshot,
 } from '@/features/discussion/lib/sync-comment-mutation-cache';
 import {
+  type InfiniteData,
   useMutation,
   useQueryClient,
-  type InfiniteData,
 } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -322,10 +322,20 @@ export function useCreateCommentMutation(
 
       const isRetry = Boolean(retryableFailed);
       if (!isRetry) {
-        adjustEntityDiscussionCountInCache(queryClient, entityType, entityId, 1);
+        adjustEntityDiscussionCountInCache(
+          queryClient,
+          entityType,
+          entityId,
+          1,
+        );
       }
 
-      return { previousData, optimisticAttachments, optimisticCommentId, isRetry };
+      return {
+        previousData,
+        optimisticAttachments,
+        optimisticCommentId,
+        isRetry,
+      };
     },
     onSuccess: (realComment, _variables, context) => {
       queryClient.setQueriesData<InfiniteData<PaginatedCommentsResponse>>(
@@ -349,14 +359,24 @@ export function useCreateCommentMutation(
       );
 
       if (context?.isRetry) {
-        adjustEntityDiscussionCountInCache(queryClient, entityType, entityId, 1);
+        adjustEntityDiscussionCountInCache(
+          queryClient,
+          entityType,
+          entityId,
+          1,
+        );
       }
     },
     onError: (_error, variables, context) => {
-      toast.error('Could not post comment');
+      toast.error('Could not post comment, please wait a little');
 
       if (!context?.isRetry) {
-        adjustEntityDiscussionCountInCache(queryClient, entityType, entityId, -1);
+        adjustEntityDiscussionCountInCache(
+          queryClient,
+          entityType,
+          entityId,
+          -1,
+        );
       }
 
       if (!context?.optimisticCommentId) {

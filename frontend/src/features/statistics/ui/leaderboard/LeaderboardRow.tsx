@@ -67,8 +67,9 @@ export function LeaderboardRow({ rank, entry }: LeaderboardRowProps) {
       </TooltipTrigger>
       {breakdownItems.length > 0 ? (
         <TooltipContent
-          side="right"
-          align="start"
+          side="top"
+          align="center"
+          collisionPadding={16}
           className="border-brand-gray-200 bg-card text-brand-black min-w-44 rounded-md border px-3 py-2.5 shadow-lg"
         >
           <ul className="space-y-1.5 text-sm">

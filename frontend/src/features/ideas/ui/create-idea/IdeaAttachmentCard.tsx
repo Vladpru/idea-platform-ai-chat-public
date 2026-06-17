@@ -1,4 +1,4 @@
-import fileImageSvg from '@/assets/svg/file-image.svg';
+import { FileImageIcon } from '@/assets/svg/file-image';
 import {
   getAttachmentFileKey,
   isImageAttachment,
@@ -61,12 +61,7 @@ export function IdeaAttachmentCard({
               />
             ) : (
               <div className="flex size-full items-center justify-center">
-                <img
-                  src={fileImageSvg}
-                  alt=""
-                  className="size-11 shrink-0"
-                  aria-hidden
-                />
+                <FileImageIcon />
               </div>
             )}
           </button>

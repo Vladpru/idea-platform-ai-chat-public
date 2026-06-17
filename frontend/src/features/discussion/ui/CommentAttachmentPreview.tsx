@@ -1,6 +1,6 @@
 'use client';
 
-import fileImageSvg from '@/assets/svg/file-image.svg';
+import { FileImageIcon } from '@/assets/svg/file-image';
 import type { CommentAttachmentDto } from '@/features/discussion/api/comments-api.types';
 
 import { cn } from '@/shared/lib/utils';
@@ -44,12 +44,7 @@ export function CommentAttachmentPreview({
           <img src={attachment.url} alt="" className="size-full object-cover" />
         ) : (
           <div className="flex size-full items-center justify-center">
-            <img
-              src={fileImageSvg}
-              alt=""
-              className="size-11 shrink-0"
-              aria-hidden
-            />
+            <FileImageIcon />
           </div>
         )}
       </div>

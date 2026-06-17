@@ -7,7 +7,6 @@ import {
   outlineBtnClass,
   publishBtnClass,
   selectClass,
-  textareaClass,
 } from '@/features/ideas/lib/styles';
 import { SuggestedTagsField } from '@/features/tags/ui/SuggestedTagsField';
 import { useNavigate } from '@tanstack/react-router';
@@ -28,6 +27,7 @@ import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
 import { ConfirmModal } from '@/shared/ui/confirm-modal';
 import { Input } from '@/shared/ui/input';
+import { RichTextEditor } from '@/shared/ui/rich-text-editor';
 import { SaveProgressBeforeLeavingModal } from '@/shared/ui/save-progress-before-leaving-modal';
 import {
   Select,
@@ -62,12 +62,14 @@ type IdeaCreateFormProps = {
   onDocumentAutoFillControlsChange?: (
     controls: IdeaDocumentAutoFillControls,
   ) => void;
+  onCancelReady?: (handleCancel: () => void) => void;
 };
 
 export function IdeaCreateForm({
   aiDraftPrefill,
   onAiDraftPrefillApplied,
   onDocumentAutoFillControlsChange,
+  onCancelReady,
 }: IdeaCreateFormProps) {
   const navigate = useNavigate();
   const formId = useId();
@@ -200,11 +202,28 @@ export function IdeaCreateForm({
     },
   });
 
+  const onCancelReadyRef = useRef(onCancelReady);
+
+  useEffect(() => {
+    onCancelReadyRef.current = onCancelReady;
+  }, [onCancelReady]);
+
   const handleCancel = () => {
     requestLeave(() => {
-      void navigate({ to: ROUTES.ideas, search: { sort: 'newest' } });
+      if (isEditing) {
+        void navigate({ to: ROUTES.profileIdeas, search: { tab: 'drafts' } });
+      } else {
+        void navigate({ to: ROUTES.ideas, search: { sort: 'newest' } });
+      }
     });
   };
+
+  const handleCancelRef = useRef(handleCancel);
+  handleCancelRef.current = handleCancel;
+
+  useEffect(() => {
+    onCancelReadyRef.current?.(() => handleCancelRef.current());
+  }, []);
 
   const navigateToIdeaDetail = (
     ideaId: string,
@@ -378,14 +397,19 @@ export function IdeaCreateForm({
                 : 'Write description with AI prompt'}
             </IdeaCreateAiAssistLink>
           </div>
-          <textarea
-            id={`${formId}-description`}
-            className={cn(textareaClass, 'mt-2')}
-            placeholder="Enter a description of the idea..."
-            aria-invalid={!!errors.description}
-            disabled={formBusy}
-            maxLength={5000}
-            {...register('description')}
+          <Controller
+            name="description"
+            control={control}
+            render={({ field }) => (
+              <RichTextEditor
+                id={`${formId}-description`}
+                value={field.value ?? ''}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                disabled={formBusy}
+                aria-invalid={!!errors.description}
+              />
+            )}
           />
           <div className="flex items-start justify-between gap-4 pt-1">
             <FieldError message={errors.description?.message} />

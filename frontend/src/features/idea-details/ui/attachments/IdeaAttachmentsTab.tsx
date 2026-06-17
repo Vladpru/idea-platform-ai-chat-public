@@ -1,6 +1,6 @@
 import type { IdeaDetails } from '@/features/idea-details/model/idea-details.types';
 import { cn } from '@/shared/lib/utils';
-import fileImageSvg from '@/assets/svg/file-image.svg';
+import { FileImageIcon } from '@/assets/svg/file-image';
 
 type IdeaAttachmentsTabProps = {
   attachments: IdeaDetails['attachments'];
@@ -19,7 +19,6 @@ export function IdeaAttachmentsTab({ attachments }: IdeaAttachmentsTabProps) {
     <ul className="flex flex-col gap-5 pt-4">
       {attachments.map(attachment => {
         const isImage = attachment.mimeType?.startsWith('image/');
-        const imgSrc = isImage ? attachment.url : fileImageSvg;
 
         return (
           <li key={attachment.id}>
@@ -33,15 +32,15 @@ export function IdeaAttachmentsTab({ attachments }: IdeaAttachmentsTabProps) {
               )}
             >
               <div className="flex w-16 shrink-0 items-center justify-center">
-                <img
-                  src={imgSrc}
-                  alt={attachment.filename}
-                  className={cn(
-                    isImage
-                      ? 'h-11 w-full rounded object-cover shadow-sm'
-                      : 'h-11 w-auto object-contain',
-                  )}
-                />
+                {isImage ? (
+                  <img
+                    src={attachment.url}
+                    alt={attachment.filename}
+                    className="h-11 w-full rounded object-cover shadow-sm"
+                  />
+                ) : (
+                  <FileImageIcon className="h-11 w-auto" />
+                )}
               </div>
               <span className="text-aria-label truncate text-sm text-black group-hover:underline">
                 {attachment.filename}

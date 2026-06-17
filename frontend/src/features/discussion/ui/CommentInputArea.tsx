@@ -16,12 +16,7 @@ import { useReplyContext } from '@/features/discussion/ui/reply-context';
 import { getAttachmentFileKey } from '@/features/ideas/lib/create-idea/attachments';
 import { IdeaAttachmentCard } from '@/features/ideas/ui/create-idea/IdeaAttachmentCard';
 import { useBlocker } from '@tanstack/react-router';
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { MouseEvent } from 'react';
 
 import { useFileHandler } from '@/shared/hooks/use-file-handler';

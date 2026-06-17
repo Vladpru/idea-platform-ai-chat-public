@@ -112,7 +112,7 @@ function DashboardGridInner<TCard extends DashboardCardBase>({
     effectiveColumnCount,
     isCompactLayout,
   );
-  const rowGridStyle = getVirtualRowGridStyle(effectiveColumnCount);
+  const rowGridStyle = getVirtualRowGridStyle(effectiveColumnCount, isCompactLayout);
 
   const desktopMinWidth =
     viewport === 'desktop'

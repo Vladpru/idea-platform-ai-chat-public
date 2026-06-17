@@ -73,7 +73,7 @@ function ProblemDashboardCardCompactInner({
   ) : null;
 
   return (
-    <article className="group border-brand-gray-200 bg-card relative flex h-full min-h-[200px] flex-col overflow-hidden rounded-lg border transition-shadow hover:shadow-md">
+    <article className="group border-brand-gray-200 bg-card relative flex h-full min-h-[260px] flex-col overflow-hidden rounded-lg border transition-shadow hover:shadow-md">
       <Link
         to={detailHref}
         aria-label={card.title}

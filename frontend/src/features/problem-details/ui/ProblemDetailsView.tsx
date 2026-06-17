@@ -9,6 +9,7 @@ import {
   useProblemDetailsQuery,
   useSimilarProblemsQuery,
 } from '@/features/problem-details/lib/use-problem-details-queries';
+import { ProblemTeamModal } from '@/features/problem-details/modals/ProblemTeamModal';
 import type { ProblemTabId } from '@/features/problem-details/model/problem-details.types';
 import { DEFAULT_PROBLEMS_DASHBOARD_SEARCH } from '@/features/problems-dashboard/lib/constants';
 import {
@@ -27,8 +28,6 @@ import { SyncWarningBanner } from '@/shared/offline/SyncWarningBanner';
 import { cn } from '@/shared/lib/utils';
 import { AnimatedPanel, AnimatedPanelSwitch } from '@/shared/ui/motion';
 import { SuccessModal } from '@/shared/ui/success-modal';
-
-import { ProblemTeamModal } from '@/features/problem-details/modals/ProblemTeamModal';
 
 import { ProblemHeader } from './ProblemHeader';
 import { ProblemInfoCards } from './ProblemInfoCards';
@@ -94,6 +93,26 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
     event.preventDefault();
     router.history.back();
   };
+
+  const applyTabChange = useCallback(
+    (tab: ProblemTabId) => {
+      setActiveTab(tab);
+
+      if (replyToCommentId || searchTab === 'discussion') {
+        void navigate({
+          to: ROUTES.problemDetail(problemId),
+          search: previous => {
+            const next = { ...previous };
+            delete next.tab;
+            delete next.replyTo;
+            return next;
+          },
+          replace: true,
+        });
+      }
+    },
+    [navigate, problemId, replyToCommentId, searchTab],
+  );
 
   const handleReplyToConsumed = useCallback(() => {
     setActiveTab('discussion');
@@ -187,7 +206,7 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
           ) : null}
         </AnimatePresence>
 
-        <div className="bg-card sticky top-[56px] z-30 -mx-4 px-4 py-3 shadow-none transition-all duration-300 sm:-mx-6 sm:px-6">
+        <div className="bg-card sticky top-14 z-2 -mx-4 px-4 py-3 shadow-none transition-all duration-300 sm:-mx-6 sm:px-6">
           <ProblemHeader
             problem={problem}
             isAuthor={isAuthor}
@@ -206,7 +225,7 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
           <div className="pt-1">
             <ProblemTabs
               activeTab={visibleTab}
-              onChange={setActiveTab}
+              onChange={applyTabChange}
               commentCount={problem.commentCount}
               counts={{
                 attachments: problem.attachments.length,
