@@ -125,8 +125,6 @@ function offlineIdeasMeta(total: number): IdeasFeedMeta {
 export async function fetchIdeas(
   params?: IdeasListParams,
 ): Promise<IdeasFeedResponse> {
-  // Public feed: no offline fallback — let it throw so the UI shows an offline
-  // state instead of stale cached data.
   const { data } = await api.get<IdeasFeedResponse>(IDEAS_ROUTES.root, {
     params,
   });
@@ -219,8 +217,6 @@ export async function fetchIdeaFormById(
     const local = await db.ideas.get(ideaId);
 
     if (notFound) {
-      // Read-your-writes race: trust the local copy only if it never reached the
-      // server. A synced row + a server 404 means it was deleted upstream.
       if (
         local &&
         (local.serverId === null || local.syncStatus === 'pending')
@@ -236,7 +232,6 @@ export async function fetchIdeaFormById(
 }
 
 export async function createIdea(payload: CreateIdeaPayload): Promise<IdeaApi> {
-  // Backend requires a client-generated UUID v7 `id` (local-first idempotency).
   const { data } = await api.post<IdeaApi>(IDEAS_ROUTES.root, {
     id: uuidv7(),
     ...payload,

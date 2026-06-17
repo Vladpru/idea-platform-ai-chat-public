@@ -459,8 +459,6 @@ export class IdeaService {
     authorId: string,
     dto: CreateIdeaDto,
   ): Promise<IdeaFormResponse> {
-    // Idempotency fast-path: a replayed offline create returns the existing row
-    // and re-runs no side-effects (notifications, summaries, achievements).
     const replay = await this.findIdempotentIdea(dto.id, authorId);
     if (replay) {
       return replay;
@@ -648,9 +646,6 @@ export class IdeaService {
     try {
       txResult = await pendingCreate;
     } catch (error) {
-      // Concurrent replay race: if the row now exists and we own it, return it;
-      // if it belongs to another user, findIdempotentIdea throws 409; if no row
-      // with this id exists, the P2002 came from a different constraint — rethrow.
       if (isUniqueConstraintError(error)) {
         const raced = await this.findIdempotentIdea(dto.id, authorId);
         if (raced) {
@@ -744,8 +739,6 @@ export class IdeaService {
           throw new NotFoundException(IDEA_NOT_FOUND);
         }
 
-        // Optimistic concurrency: bump the version only if it still matches the
-        // client's If-Match value. The CAS predicate also enforces ownership.
         const bumped = await tx.idea.updateMany({
           where: { id, authorId, version: expectedVersion },
           data: { version: { increment: 1 } },
@@ -759,8 +752,6 @@ export class IdeaService {
           if (!current || current.authorId !== authorId) {
             throw new NotFoundException(IDEA_NOT_FOUND);
           }
-          // Ideas are hard-deleted today, so there is no 410 path. With a future
-          // soft-delete column add: if (current.deletedAt) throw GoneException.
           throw new PreconditionFailedException({
             code: 'VERSION_CONFLICT',
             current: toIdeaFormResponse(current, authorId),
@@ -855,8 +846,6 @@ export class IdeaService {
           );
         }
 
-        // Optimistic concurrency: bump the version only if it still matches the
-        // client's If-Match value. The CAS predicate also enforces ownership.
         const bumped = await tx.idea.updateMany({
           where: { id, authorId, version: expectedVersion },
           data: { version: { increment: 1 } },
