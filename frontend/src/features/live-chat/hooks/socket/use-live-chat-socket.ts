@@ -10,6 +10,12 @@ import type {
 import { liveChatQueryKeys } from '@/features/live-chat/lib/live-chat-query-keys';
 import { appendLiveChatMessage } from '@/features/live-chat/lib/merge-live-chat-message-cache';
 import {
+  getPendingMessages,
+  localMessageToDto,
+  saveOutgoingMessage,
+  saveSyncedMessage,
+} from '@/features/live-chat/lib/offline-chat-queue';
+import {
   applyCallCancelled,
   applyCallEnded,
   applyCallScheduled,
@@ -18,6 +24,7 @@ import {
 } from '@/features/live-chat/lib/merge-video-call-cache';
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import { getStoredAuthToken } from '@/shared/lib/auth-token';
+import { uuidv7 } from '@/shared/offline/id';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef } from 'react';
 import { io, type Socket } from 'socket.io-client';
@@ -30,6 +37,15 @@ type JoinRoomResponse = { ok: true } | { ok: false; error: string };
 type SendMessageResponse =
   | { ok: true; message: LiveChatMessageDto }
   | { ok: false; error: string };
+
+type SendMessagePayload = {
+  roomId: string;
+  clientMessageId: string;
+  content: string;
+  attachmentUrl?: string;
+  attachmentName?: string;
+  attachmentMimeType?: string;
+};
 
 function getSocketBaseUrl(): string {
   const base = import.meta.env.VITE_API_URL;
@@ -67,6 +83,47 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
   const accessToken = useAuthSessionStore(state => state.accessToken);
   const socketRef = useRef<Socket | null>(null);
   const joinedRoomIdRef = useRef<string | null>(null);
+  const flushingRef = useRef(false);
+
+  const flushPending = useCallback(async () => {
+    const socket = socketRef.current;
+    if (!socket?.connected || !roomId || flushingRef.current) {
+      return;
+    }
+
+    flushingRef.current = true;
+    try {
+      const pending = await getPendingMessages(roomId);
+      for (const row of pending) {
+        const dto = localMessageToDto(row);
+        const payload: SendMessagePayload = {
+          roomId: row.roomId,
+          clientMessageId: row.clientMessageId,
+          content: row.content,
+        };
+        if (dto.attachmentUrl) {
+          payload.attachmentUrl = dto.attachmentUrl;
+          payload.attachmentName = dto.attachmentName ?? undefined;
+          payload.attachmentMimeType = dto.attachmentMimeType ?? undefined;
+        }
+
+        const response = await emitWithAck<
+          SendMessagePayload,
+          SendMessageResponse
+        >(socket, 'send_message', payload);
+
+        if (response?.ok) {
+          await saveSyncedMessage(response.message);
+          queryClient.setQueryData<LiveChatMessagesCache>(
+            liveChatQueryKeys.messages(row.roomId),
+            cache => appendLiveChatMessage(cache, response.message),
+          );
+        }
+      }
+    } finally {
+      flushingRef.current = false;
+    }
+  }, [queryClient, roomId]);
 
   const joinRoom = useCallback(async (socket: Socket, nextRoomId: string) => {
     const response = await emitWithAck<{ roomId: string }, JoinRoomResponse>(
@@ -117,6 +174,11 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
         liveChatQueryKeys.messages(message.roomId),
         cache => appendLiveChatMessage(cache, message),
       );
+      void saveSyncedMessage(message);
+    };
+
+    const handleConnect = () => {
+      void flushPending();
     };
 
     const patchVideoCalls = (
@@ -185,6 +247,7 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
       void joinRoom(socket, roomId);
     };
 
+    socket.on('connect', handleConnect);
     socket.on('connection_ready', handleConnectionReady);
     socket.on('message', handleMessage);
     socket.on('call_scheduled', handleCallScheduled);
@@ -198,6 +261,7 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
       if (joinedRoomId) {
         void leaveRoom(socket, joinedRoomId);
       }
+      socket.off('connect', handleConnect);
       socket.off('connection_ready', handleConnectionReady);
       socket.off('message', handleMessage);
       socket.off('call_scheduled', handleCallScheduled);
@@ -210,54 +274,54 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
       }
       joinedRoomIdRef.current = null;
     };
-  }, [accessToken, enabled, joinRoom, leaveRoom, queryClient, roomId]);
+  }, [accessToken, enabled, flushPending, joinRoom, leaveRoom, queryClient, roomId]);
 
   const sendMessage = useCallback(
     async (content: string, attachment?: LiveChatAttachmentPayload | null) => {
-      const socket = socketRef.current;
-      if (!socket || !roomId) {
+      if (!roomId) {
         toast.error('Live chat connection is not ready');
         return null;
       }
 
-      if (!socket.connected) {
-        toast.error('Live chat connection is not ready');
+      const user = useAuthSessionStore.getState().user;
+      if (!user) {
+        toast.error('You must be signed in to send messages');
         return null;
       }
 
-      const payload: {
-        roomId: string;
-        content: string;
-        attachmentUrl?: string;
-        attachmentName?: string;
-        attachmentMimeType?: string;
-      } = { roomId, content };
+      const clientMessageId = uuidv7();
+      const optimistic: LiveChatMessageDto = {
+        id: clientMessageId,
+        roomId,
+        clientMessageId,
+        content,
+        attachmentUrl: attachment?.url ?? null,
+        attachmentName: attachment?.name ?? null,
+        attachmentMimeType: attachment?.mimeType ?? null,
+        author: {
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          avatarUrl: user.picture,
+        },
+        createdAt: new Date().toISOString(),
+      };
 
-      if (attachment) {
-        payload.attachmentUrl = attachment.url;
-        payload.attachmentName = attachment.name;
-        payload.attachmentMimeType = attachment.mimeType;
-      }
-
-      const response = await emitWithAck<typeof payload, SendMessageResponse>(
-        socket,
-        'send_message',
-        payload,
-      );
-
-      if (!response?.ok) {
-        toast.error(response?.error ?? 'Could not send message');
-        return null;
-      }
-
+      // Durable optimistic write first; delivery is best-effort from here.
+      await saveOutgoingMessage(optimistic);
       queryClient.setQueryData<LiveChatMessagesCache>(
         liveChatQueryKeys.messages(roomId),
-        cache => appendLiveChatMessage(cache, response.message),
+        cache => appendLiveChatMessage(cache, optimistic),
       );
 
-      return response.message;
+      const socket = socketRef.current;
+      if (socket?.connected && navigator.onLine) {
+        void flushPending();
+      }
+
+      return optimistic;
     },
-    [queryClient, roomId],
+    [flushPending, queryClient, roomId],
   );
 
   return { sendMessage };

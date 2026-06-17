@@ -6,11 +6,11 @@ import {
 import type { LiveChatAttachmentPayload } from '@/features/live-chat/api/live-chat-api.types';
 import { uploadLiveChatAttachment } from '@/features/live-chat/api/live-chat.api';
 import { LIVE_CHAT_MESSAGE_MAX_LENGTH } from '@/features/live-chat/lib/live-chat-message-schema';
-import { compressImage } from '@/shared/lib/compress-image';
+import { compressImage } from '@/shared/offline/media-utils';
 import { useFileHandler } from '@/shared/hooks/use-file-handler';
 import { cn } from '@/shared/lib/utils';
 import { MessageComposer } from '@/shared/ui/message-composer';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { type ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Paperclip, X } from 'lucide-react';
 
@@ -37,7 +37,18 @@ export function LiveChatInput({
   const [isUploading, setIsUploading] = useState(false);
   const [pendingAttachment, setPendingAttachment] =
     useState<LiveChatAttachmentPayload | null>(null);
+  const [isOnline, setIsOnline] = useState(() => navigator.onLine);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const updateOnlineStatus = () => setIsOnline(navigator.onLine);
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    return () => {
+      window.removeEventListener('online', updateOnlineStatus);
+      window.removeEventListener('offline', updateOnlineStatus);
+    };
+  }, []);
 
   const { handleFileChange, files, clearFiles, accept } = useFileHandler({
     maxFiles: 1,
@@ -58,7 +69,15 @@ export function LiveChatInput({
 
       try {
         const fileToUpload = latestValidFile.type.startsWith('image/')
-          ? await compressImage(latestValidFile).catch(() => latestValidFile)
+          ? await compressImage(latestValidFile)
+              .then(blob =>
+                blob instanceof File
+                  ? blob
+                  : new File([blob], latestValidFile.name, {
+                      type: blob.type || latestValidFile.type,
+                    }),
+              )
+              .catch(() => latestValidFile)
           : latestValidFile;
 
         const result = await uploadLiveChatAttachment(roomId, fileToUpload);
@@ -125,6 +144,23 @@ export function LiveChatInput({
     setContent(value.slice(0, LIVE_CHAT_MESSAGE_MAX_LENGTH));
   };
 
+  const handleAttachClick = () => {
+    if (!navigator.onLine) {
+      toast.error('File uploads in chat are not supported offline');
+      return;
+    }
+    fileInputRef.current?.click();
+  };
+
+  const handleAttachSelect = (event: ChangeEvent<HTMLInputElement>) => {
+    if (!navigator.onLine) {
+      toast.error('File uploads in chat are not supported offline');
+      event.target.value = '';
+      return;
+    }
+    handleFileChange(event);
+  };
+
   const attachmentsPreview = pendingAttachment ? (
     <div className="border-border bg-muted/50 flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm">
       <Paperclip
@@ -152,8 +188,8 @@ export function LiveChatInput({
         type="file"
         accept={accept}
         className="hidden"
-        disabled={disabled || isUploading}
-        onChange={handleFileChange}
+        disabled={disabled || isUploading || !isOnline}
+        onChange={handleAttachSelect}
       />
       <MessageComposer
         content={content}
@@ -165,9 +201,9 @@ export function LiveChatInput({
         inputId="live-chat-message-input"
         className={cn(className)}
         showAttachButton
-        attachDisabled={isUploading}
+        attachDisabled={isUploading || !isOnline}
         isAttachLoading={isUploading}
-        onAttachClick={() => fileInputRef.current?.click()}
+        onAttachClick={handleAttachClick}
         attachmentsPreview={attachmentsPreview}
       />
     </>

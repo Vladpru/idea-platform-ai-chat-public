@@ -46,7 +46,7 @@ export function LiveChatRoomPanel({
     [sendMessage],
   );
 
-  if (isLoading) {
+  if (isLoading && messages.length === 0) {
     return (
       <div
         className={cn(
@@ -59,7 +59,7 @@ export function LiveChatRoomPanel({
     );
   }
 
-  if (isError) {
+  if (isError && messages.length === 0) {
     return (
       <div
         className={cn('text-brand-orange py-12 text-center text-sm', className)}
