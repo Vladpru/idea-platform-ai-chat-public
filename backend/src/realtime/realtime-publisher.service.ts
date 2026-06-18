@@ -10,6 +10,7 @@ import {
   EDGE_DOWNSTREAM_MAXLEN,
   EDGE_DOWNSTREAM_STREAM,
   RealtimeOutboundEvent,
+  RealtimeSocketTarget,
   RealtimeTarget,
   RealtimeTransport,
   realtimeOutboundEventName,
@@ -69,15 +70,59 @@ export class RealtimePublisherService {
     this.eventEmitter.emit(realtimeOutboundEventName(target.namespace), outbound);
   }
 
+  /**
+   * Publish a control event to a single edge-owned socket (e.g.
+   * room:join_approved). Sid targeting only exists once sockets live on the
+   * FastAPI edge, so this requires the redis transport.
+   */
+  publishToSocket(
+    target: RealtimeSocketTarget,
+    event: string,
+    payload: unknown,
+  ): void {
+    if (this.transport !== RealtimeTransport.Redis) {
+      this.logger.warn(
+        `publishToSocket "${event}" requires the redis transport; ignored in direct mode`,
+      );
+      return;
+    }
+
+    void this.writeDownstream(
+      target.namespace,
+      { type: 'sid', sid: target.sid },
+      event,
+      payload,
+    ).catch(error => {
+      this.logger.error(
+        `Failed to publish "${event}" to ${EDGE_DOWNSTREAM_STREAM}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+    });
+  }
+
   private async publishToRedis(
     target: RealtimeTarget,
     event: string,
     payload: unknown,
   ): Promise<void> {
+    await this.writeDownstream(
+      target.namespace,
+      { type: 'room', room: target.room },
+      event,
+      payload,
+    );
+  }
+
+  private async writeDownstream(
+    namespace: DownstreamEnvelope['namespace'],
+    target: DownstreamEnvelope['target'],
+    event: string,
+    payload: unknown,
+  ): Promise<void> {
     const envelope: DownstreamEnvelope = {
       v: 1,
-      namespace: target.namespace,
-      target: { type: 'room', room: target.room },
+      namespace,
+      target,
       event,
       payload,
       meta: {

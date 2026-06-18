@@ -32,6 +32,12 @@ export interface RealtimeTarget {
   room: string;
 }
 
+/** A single-socket destination, for control events such as room:join_approved. */
+export interface RealtimeSocketTarget {
+  namespace: RealtimeNamespace;
+  sid: string;
+}
+
 /**
  * Internal EventEmitter2 event name used by the `direct` transport to hand a
  * broadcast back to the gateway that owns the matching namespace server.
@@ -59,8 +65,43 @@ export const EDGE_DOWNSTREAM_MAXLEN = 100_000;
 export interface DownstreamEnvelope {
   v: 1;
   namespace: RealtimeNamespace;
-  target: { type: 'room'; room: string };
+  target: { type: 'room'; room: string } | { type: 'sid'; sid: string };
   event: string;
   payload: unknown;
   meta: { id: string; ts: string; source: 'monolith' };
+}
+
+/** Redis stream of client-originated events flowing edge -> monolith. */
+export const EDGE_UPSTREAM_STREAM = 'edge:upstream';
+export const EDGE_UPSTREAM_DLQ_STREAM = 'edge:upstream:dlq';
+export const EDGE_UPSTREAM_MAXLEN = 100_000;
+
+/** Consumer group the monolith uses to read {@link EDGE_UPSTREAM_STREAM}. */
+export const MONOLITH_CONSUMER_GROUP = 'monolith';
+
+/** Upstream event names produced by the edge. */
+export const UPSTREAM_EVENTS = {
+  ROOM_REQUEST_JOIN: 'room:request_join',
+  MESSAGE_SEND: 'message:send',
+} as const;
+
+/** Control events the monolith sends downstream, targeted at a single sid. */
+export const ROOM_CONTROL_EVENTS = {
+  JOIN_APPROVED: 'room:join_approved',
+  JOIN_DENIED: 'room:join_denied',
+} as const;
+
+/**
+ * Envelope read from {@link EDGE_UPSTREAM_STREAM}. `userId` is stamped by the
+ * edge from the verified JWT and is authoritative — any identity embedded in
+ * `payload` must be ignored.
+ */
+export interface UpstreamEnvelope {
+  v: number;
+  event: string;
+  userId: string;
+  sid?: string;
+  clientMsgId: string;
+  payload: unknown;
+  meta?: { id: string; ts: string; source: string; worker?: string };
 }
