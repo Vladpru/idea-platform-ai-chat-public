@@ -14,7 +14,7 @@ import {
   getChannelPreferences,
   parseNotificationPreferences,
 } from './lib/notification-preferences.util';
-import { NotificationGateway } from './notification.gateway';
+import { NotificationRealtimeService } from './notification-realtime.service';
 
 @Injectable()
 export class NotificationDispatchService {
@@ -22,7 +22,7 @@ export class NotificationDispatchService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly gateway: NotificationGateway,
+    private readonly realtime: NotificationRealtimeService,
     @InjectQueue(NOTIFICATION_EMAIL_QUEUE)
     private readonly emailQueue: Queue<NotificationEmailJobData>,
   ) {}
@@ -69,7 +69,7 @@ export class NotificationDispatchService {
               payload,
             },
           });
-          this.gateway.notifyUser(user.id);
+          this.realtime.notifyUser(user.id);
         }
       } catch (error) {
         this.logger.error(

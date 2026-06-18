@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '../../generated/prisma/client';
 import { NOTIFICATION_EVENTS } from '../notification/events/notification-event-names';
 import { resolveActorDisplayName } from '../notification/lib/notification-integration.util';
-import { NotificationGateway } from '../notification/notification.gateway';
+import { NotificationRealtimeService } from '../notification/notification-realtime.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 type NewPublicationEntityType = 'idea' | 'problem';
@@ -12,7 +12,7 @@ type NewPublicationEntityType = 'idea' | 'problem';
 export class SubscriberNotificationService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly gateway: NotificationGateway,
+    private readonly realtime: NotificationRealtimeService,
   ) {}
 
   async getFollowingIds(followerId: string): Promise<string[]> {
@@ -73,7 +73,7 @@ export class SubscriberNotificationService {
     });
 
     for (const follower of followers) {
-      this.gateway.notifyUser(follower.followerId);
+      this.realtime.notifyUser(follower.followerId);
     }
   }
 }

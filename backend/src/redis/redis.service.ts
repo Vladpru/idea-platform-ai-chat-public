@@ -31,4 +31,25 @@ export class RedisService implements OnModuleDestroy {
   async del(key: string): Promise<void> {
     await this.client.del(key);
   }
+
+  /**
+   * Append an entry to a Redis stream. When `maxLen` is provided the stream is
+   * capped with approximate trimming (`MAXLEN ~`) to keep memory bounded.
+   */
+  async xadd(
+    stream: string,
+    fields: Record<string, string>,
+    maxLen?: number,
+  ): Promise<void> {
+    const entries = Object.entries(fields).flatMap(([key, value]) => [
+      key,
+      value,
+    ]);
+    const args: (string | number)[] =
+      maxLen && maxLen > 0
+        ? ['MAXLEN', '~', maxLen, '*', ...entries]
+        : ['*', ...entries];
+
+    await this.client.call('XADD', stream, ...args);
+  }
 }

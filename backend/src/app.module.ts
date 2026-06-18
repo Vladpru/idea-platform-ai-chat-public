@@ -19,6 +19,7 @@ import { NotificationModule } from './notification/notification.module';
 import { PasswordResetModule } from './password-reset/password-reset.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProblemModule } from './problem/problem.module';
+import { RealtimeModule } from './realtime/realtime.module';
 import { RedisModule } from './redis/redis.module';
 import { SearchModule } from './search/search.module';
 import { SimilarityModule } from './similarity/similarity.module';
@@ -53,6 +54,7 @@ import { UserModule } from './user/user.module';
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
     RedisModule,
+    RealtimeModule,
     SubscriptionModule,
     UserModule,
     AiModule,

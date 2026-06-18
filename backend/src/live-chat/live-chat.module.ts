@@ -5,6 +5,7 @@ import { EntityVisibilityModule } from '../entity-visibility/entity-visibility.m
 import { LivekitModule } from '../livekit/livekit.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { TokenModule } from '../token/token.module';
+import { WsAuthModule } from '../ws-auth/ws-auth.module';
 import { LiveChatRateLimitService } from './live-chat-rate-limit.service';
 import { LiveChatController } from './live-chat.controller';
 import { LiveChatGateway } from './live-chat.gateway';
@@ -19,6 +20,7 @@ import { VideoCallService } from './video-call.service';
     PrismaModule,
     EntityVisibilityModule,
     TokenModule,
+    WsAuthModule,
     LivekitModule,
     CloudinaryModule,
   ],
