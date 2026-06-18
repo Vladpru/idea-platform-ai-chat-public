@@ -24,6 +24,7 @@ import { type MouseEvent, useCallback, useEffect, useState } from 'react';
 
 import { ROUTES } from '@/shared/config/paths';
 import { entityDescriptionDetailClass } from '@/shared/lib/entity-description-classes';
+import { SyncWarningBanner } from '@/shared/offline/SyncWarningBanner';
 import { cn } from '@/shared/lib/utils';
 import { AnimatedPanel, AnimatedPanelSwitch } from '@/shared/ui/motion';
 import { SuccessModal } from '@/shared/ui/success-modal';
@@ -182,6 +183,7 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
   return (
     <main className="bg-brand-neutral min-h-[calc(100vh-56px)] px-4 md:px-8 lg:px-12">
       <div className="bg-card mx-auto max-w-5xl space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-8">
+        <SyncWarningBanner entity="problem" localId={problemId} />
         <AnimatePresence>
           {!isScrolled ? (
             <motion.div

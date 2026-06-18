@@ -1,8 +1,10 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   Logger,
   NotFoundException,
+  PreconditionFailedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -40,6 +42,7 @@ import {
   findProblemTagIds,
 } from '../prisma/problem-tag.queries';
 import { buildStatusPublicationUpdate } from '../shared/lib/publication.util';
+import { isUniqueConstraintError } from '../shared/utils/is-unique-error.util';
 import { SubscriberNotificationService } from '../subscription/subscriber-notification.service';
 import { CreateProblemDto } from './dto/create-problem.dto';
 import { GetProblemsQueryDto } from './dto/get-problems-query.dto';
@@ -456,112 +459,153 @@ export class ProblemService {
     this.eventEmitter.emit(NOTIFICATION_EVENTS.STATUS_CHANGED, event);
   }
 
+  private async findIdempotentProblem(
+    id: string,
+    authorId: string,
+  ): Promise<ProblemFormResponse | null> {
+    const existing = await this.prisma.problem.findUnique({
+      where: { id },
+      include: PROBLEM_FORM_INCLUDE,
+    });
+
+    if (!existing) {
+      return null;
+    }
+
+    if (existing.authorId !== authorId) {
+      throw new ConflictException('Problem id already in use');
+    }
+
+    return toProblemFormResponse(existing, authorId);
+  }
+
   async create(
     authorId: string,
     dto: CreateProblemDto,
   ): Promise<ProblemFormResponse> {
+    const replay = await this.findIdempotentProblem(dto.id, authorId);
+    if (replay) {
+      return replay;
+    }
+
     const { isPublished, ...updateDto } = dto;
 
-    const { problem, shouldRequestSummary, publishLifecycle, shouldNotify } =
-      await this.prisma.$transaction(async tx => {
-        let shouldNotify = false;
-        if (!isPublished) {
-          const currentDraftsCount = await tx.problem.count({
-            where: { authorId, status: ProblemStatus.DRAFT },
-          });
-
-          if (currentDraftsCount >= MAX_PROBLEM_DRAFTS_PER_USER) {
-            throw new BadRequestException(
-              `Maximum limit of ${MAX_PROBLEM_DRAFTS_PER_USER} drafts reached. Publish or delete existing drafts.`,
-            );
-          }
-        }
-
-        const initialStage = dto.stage ?? null;
-
-        const created = await tx.problem.create({
-          data: {
-            authorId,
-            status: ProblemStatus.DRAFT,
-            title: dto.title ?? '',
-            description: dto.description ?? '',
-            ...(dto.stage !== undefined ? { stage: dto.stage } : {}),
-            ...(dto.valueProposition !== undefined
-              ? { valueProposition: dto.valueProposition || null }
-              : {}),
-            ...(dto.category !== undefined
-              ? { category: dto.category || null }
-              : {}),
-            ...(dto.impact !== undefined ? { impact: dto.impact || null } : {}),
-            ...('costBenefit' in dto
-              ? { costBenefit: this.parseCostBenefit(dto.costBenefit) }
-              : {}),
-          },
-          include: PROBLEM_FORM_INCLUDE,
+    const pendingCreate = this.prisma.$transaction(async tx => {
+      let shouldNotify = false;
+      if (!isPublished) {
+        const currentDraftsCount = await tx.problem.count({
+          where: { authorId, status: ProblemStatus.DRAFT },
         });
 
-        await this.applyProblemUpdates(
-          tx,
-          created.id,
+        if (currentDraftsCount >= MAX_PROBLEM_DRAFTS_PER_USER) {
+          throw new BadRequestException(
+            `Maximum limit of ${MAX_PROBLEM_DRAFTS_PER_USER} drafts reached. Publish or delete existing drafts.`,
+          );
+        }
+      }
+
+      const initialStage = dto.stage ?? null;
+
+      const created = await tx.problem.create({
+        data: {
+          id: dto.id,
           authorId,
-          updateDto,
-          false,
-          false,
-        );
+          status: ProblemStatus.DRAFT,
+          title: dto.title ?? '',
+          description: dto.description ?? '',
+          ...(dto.stage !== undefined ? { stage: dto.stage } : {}),
+          ...(dto.valueProposition !== undefined
+            ? { valueProposition: dto.valueProposition || null }
+            : {}),
+          ...(dto.category !== undefined
+            ? { category: dto.category || null }
+            : {}),
+          ...(dto.impact !== undefined ? { impact: dto.impact || null } : {}),
+          ...('costBenefit' in dto
+            ? { costBenefit: this.parseCostBenefit(dto.costBenefit) }
+            : {}),
+        },
+        include: PROBLEM_FORM_INCLUDE,
+      });
 
-        let results = await tx.problem.findUnique({
-          where: { id: created.id },
-          include: PROBLEM_FORM_INCLUDE,
+      await this.applyProblemUpdates(
+        tx,
+        created.id,
+        authorId,
+        updateDto,
+        false,
+        false,
+      );
+
+      let results = await tx.problem.findUnique({
+        where: { id: created.id },
+        include: PROBLEM_FORM_INCLUDE,
+      });
+
+      if (!results) {
+        throw new NotFoundException(PROBLEM_NOT_FOUND);
+      }
+
+      const requestSummary =
+        isPublished &&
+        hasSummarizableContent({
+          entityType: 'problem',
+          title: results.title,
+          description: results.description,
+          valueProposition: results.valueProposition,
+          category: results.category,
+          impact: results.impact,
         });
 
-        if (!results) {
-          throw new NotFoundException(PROBLEM_NOT_FOUND);
+      if (isPublished) {
+        const errors = this.collectPublishValidationErrors(results);
+
+        if (errors.length > 0) {
+          throw new UnprocessableEntityException(results);
         }
 
-        const requestSummary =
-          isPublished &&
-          hasSummarizableContent({
-            entityType: 'problem',
-            title: results.title,
-            description: results.description,
-            valueProposition: results.valueProposition,
-            category: results.category,
-            impact: results.impact,
-          });
+        const publication = buildStatusPublicationUpdate({
+          publishedAt: results.publishedAt ?? null,
+          requestSummary,
+          status: ProblemStatus.PUBLISHED,
+        });
+        shouldNotify = publication.shouldNotifySubscribers;
 
-        if (isPublished) {
-          const errors = this.collectPublishValidationErrors(results);
+        results = await tx.problem.update({
+          where: { id: created.id },
+          data: publication.data,
+          include: PROBLEM_FORM_INCLUDE,
+        });
+      }
 
-          if (errors.length > 0) {
-            throw new UnprocessableEntityException(results);
-          }
+      return {
+        problem: results,
+        shouldRequestSummary: requestSummary,
+        shouldNotify,
+        publishLifecycle: isPublished
+          ? {
+              previousStatus: ProblemStatus.DRAFT,
+              previousStage: initialStage,
+            }
+          : null,
+      };
+    });
 
-          const publication = buildStatusPublicationUpdate({
-            publishedAt: results.publishedAt ?? null,
-            requestSummary,
-            status: ProblemStatus.PUBLISHED,
-          });
-          shouldNotify = publication.shouldNotifySubscribers;
-
-          results = await tx.problem.update({
-            where: { id: created.id },
-            data: publication.data,
-            include: PROBLEM_FORM_INCLUDE,
-          });
+    let txResult: Awaited<typeof pendingCreate>;
+    try {
+      txResult = await pendingCreate;
+    } catch (error) {
+      if (isUniqueConstraintError(error)) {
+        const raced = await this.findIdempotentProblem(dto.id, authorId);
+        if (raced) {
+          return raced;
         }
+      }
+      throw error;
+    }
 
-        return {
-          problem: results,
-          shouldRequestSummary: requestSummary,
-          shouldNotify,
-          publishLifecycle: isPublished
-            ? {
-                previousStatus: ProblemStatus.DRAFT,
-                previousStage: initialStage,
-              }
-            : null,
-        };
-      });
+    const { problem, shouldRequestSummary, publishLifecycle, shouldNotify } =
+      txResult;
 
     this.eventEmitter.emit('entity.mutated', {
       entityType: 'problem',
@@ -770,6 +814,7 @@ export class ProblemService {
   async update(
     id: string,
     authorId: string,
+    expectedVersion: number,
     dto: UpdateProblemDraftDto,
   ): Promise<ProblemFormResponse> {
     const { updated, shouldResetSummary, existing } =
@@ -794,6 +839,26 @@ export class ProblemService {
 
         if (existing.status === ProblemStatus.ARCHIVED) {
           throw new BadRequestException('Archived problems cannot be updated');
+        }
+
+        const bumped = await tx.problem.updateMany({
+          where: { id, authorId, version: expectedVersion },
+          data: { version: { increment: 1 } },
+        });
+
+        if (bumped.count === 0) {
+          const current = await tx.problem.findUnique({
+            where: { id },
+            include: PROBLEM_FORM_INCLUDE,
+          });
+          if (!current || current.authorId !== authorId) {
+            throw new NotFoundException(PROBLEM_NOT_FOUND);
+          }
+
+          throw new PreconditionFailedException({
+            code: 'VERSION_CONFLICT',
+            current: toProblemFormResponse(current, authorId),
+          });
         }
 
         const resetSummary = hasSubstantialContentChanges(

@@ -23,6 +23,7 @@ type LastMessageRow = {
   attachmentUrl: string | null;
   attachmentName: string | null;
   attachmentMimeType: string | null;
+  clientMessageId: string;
   createdAt: Date;
   authorUserId: string;
   authorFirstName: string | null;
@@ -158,6 +159,7 @@ export class LiveChatRepository {
         m.attachment_url AS "attachmentUrl",
         m.attachment_name AS "attachmentName",
         m.attachment_mime_type AS "attachmentMimeType",
+        m.client_message_id AS "clientMessageId",
         m.created_at AS "createdAt",
         u.id AS "authorUserId",
         u.first_name AS "authorFirstName",
@@ -177,6 +179,7 @@ export class LiveChatRepository {
       attachmentUrl: row.attachmentUrl,
       attachmentName: row.attachmentName,
       attachmentMimeType: row.attachmentMimeType,
+      clientMessageId: row.clientMessageId,
       createdAt: row.createdAt,
       author: {
         id: row.authorUserId,
@@ -215,6 +218,7 @@ export class LiveChatRepository {
   createMessage(data: {
     roomId: string;
     authorId: string;
+    clientMessageId: string;
     content: string;
     attachmentUrl?: string | null;
     attachmentName?: string | null;
@@ -225,6 +229,7 @@ export class LiveChatRepository {
         data: {
           roomId: data.roomId,
           authorId: data.authorId,
+          clientMessageId: data.clientMessageId,
           content: data.content,
           attachmentUrl: data.attachmentUrl ?? null,
           attachmentName: data.attachmentName ?? null,
@@ -239,6 +244,16 @@ export class LiveChatRepository {
       });
 
       return created;
+    });
+  }
+
+  findByClientMessageId(
+    authorId: string,
+    clientMessageId: string,
+  ): Promise<LiveChatMessageRecord | null> {
+    return this.prisma.liveChatMessage.findFirst({
+      where: { authorId, clientMessageId },
+      include: liveChatMessageInclude,
     });
   }
 

@@ -61,6 +61,7 @@ export function toLiveChatMessageResponse(
   return {
     id: message.id,
     roomId: message.roomId,
+    clientMessageId: message.clientMessageId,
     content: message.content,
     attachmentUrl: message.attachmentUrl,
     attachmentName: message.attachmentName,

@@ -59,6 +59,7 @@ export type IdeaEngagementMetrics = {
 
 export type IdeaFormResponse = {
   id: string;
+  version: number;
   status: IdeaStatus;
   stage: Stage | null;
   title: string | null;

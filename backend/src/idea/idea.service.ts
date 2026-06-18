@@ -1,8 +1,10 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   Logger,
   NotFoundException,
+  PreconditionFailedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -30,6 +32,7 @@ import {
 } from '../notification/lib/notification-integration.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { buildStatusPublicationUpdate } from '../shared/lib/publication.util';
+import { isUniqueConstraintError } from '../shared/utils/is-unique-error.util';
 import { SubscriberNotificationService } from '../subscription/subscriber-notification.service';
 import { CreateIdeaDto } from './dto/create-idea.dto';
 import { UpdateIdeaDraftDto } from './dto/update-idea-draft.dto';
@@ -432,20 +435,38 @@ export class IdeaService {
     this.eventEmitter.emit(NOTIFICATION_EVENTS.STATUS_CHANGED, event);
   }
 
+  private async findIdempotentIdea(
+    id: string,
+    authorId: string,
+  ): Promise<IdeaFormResponse | null> {
+    const existing = await this.prisma.idea.findUnique({
+      where: { id },
+      include: IDEA_FORM_INCLUDE,
+    });
+
+    if (!existing) {
+      return null;
+    }
+
+    if (existing.authorId !== authorId) {
+      throw new ConflictException('Idea id already in use');
+    }
+
+    return toIdeaFormResponse(existing, authorId);
+  }
+
   async create(
     authorId: string,
     dto: CreateIdeaDto,
   ): Promise<IdeaFormResponse> {
+    const replay = await this.findIdempotentIdea(dto.id, authorId);
+    if (replay) {
+      return replay;
+    }
+
     const { isPublished, ...updateDto } = dto;
 
-    const {
-      idea,
-      shouldRequestSummary,
-      publishedProblems,
-      publishLifecycle,
-      shouldNotifyIdea,
-      problemsToNotify,
-    } = await this.prisma.$transaction(async tx => {
+    const pendingCreate = this.prisma.$transaction(async tx => {
       const problemsToNotify: Array<{ id: string; title: string }> = [];
       let shouldNotifyIdea = false;
       if (!isPublished) {
@@ -464,6 +485,7 @@ export class IdeaService {
 
       let created = await tx.idea.create({
         data: {
+          id: dto.id,
           authorId,
           status: IdeaStatus.DRAFT,
           ...(dto.stage !== undefined ? { stage: dto.stage } : {}),
@@ -620,6 +642,28 @@ export class IdeaService {
       };
     });
 
+    let txResult: Awaited<typeof pendingCreate>;
+    try {
+      txResult = await pendingCreate;
+    } catch (error) {
+      if (isUniqueConstraintError(error)) {
+        const raced = await this.findIdempotentIdea(dto.id, authorId);
+        if (raced) {
+          return raced;
+        }
+      }
+      throw error;
+    }
+
+    const {
+      idea,
+      shouldRequestSummary,
+      publishedProblems,
+      publishLifecycle,
+      shouldNotifyIdea,
+      problemsToNotify,
+    } = txResult;
+
     this.eventEmitter.emit('entity.mutated', {
       entityType: 'idea',
       id: idea.id,
@@ -675,6 +719,7 @@ export class IdeaService {
   async updateDraft(
     id: string,
     authorId: string,
+    expectedVersion: number,
     dto: UpdateIdeaDraftDto,
   ): Promise<IdeaFormResponse> {
     const { updated, shouldResetSummary, existing, completingNow } =
@@ -692,6 +737,25 @@ export class IdeaService {
 
         if (!existing) {
           throw new NotFoundException(IDEA_NOT_FOUND);
+        }
+
+        const bumped = await tx.idea.updateMany({
+          where: { id, authorId, version: expectedVersion },
+          data: { version: { increment: 1 } },
+        });
+
+        if (bumped.count === 0) {
+          const current = await tx.idea.findUnique({
+            where: { id },
+            include: IDEA_FORM_INCLUDE,
+          });
+          if (!current || current.authorId !== authorId) {
+            throw new NotFoundException(IDEA_NOT_FOUND);
+          }
+          throw new PreconditionFailedException({
+            code: 'VERSION_CONFLICT',
+            current: toIdeaFormResponse(current, authorId),
+          });
         }
 
         const resetSummary = hasSubstantialContentChanges(
@@ -762,6 +826,7 @@ export class IdeaService {
   async updatePublished(
     id: string,
     authorId: string,
+    expectedVersion: number,
     dto: UpdatePublishedIdeaDto,
   ): Promise<IdeaFormResponse> {
     const { updated, shouldResetSummary, existing, completingNow } =
@@ -779,6 +844,25 @@ export class IdeaService {
           throw new BadRequestException(
             'Only published ideas can be updated via this endpoint',
           );
+        }
+
+        const bumped = await tx.idea.updateMany({
+          where: { id, authorId, version: expectedVersion },
+          data: { version: { increment: 1 } },
+        });
+
+        if (bumped.count === 0) {
+          const current = await tx.idea.findUnique({
+            where: { id },
+            include: IDEA_FORM_INCLUDE,
+          });
+          if (!current || current.authorId !== authorId) {
+            throw new NotFoundException(IDEA_NOT_FOUND);
+          }
+          throw new PreconditionFailedException({
+            code: 'VERSION_CONFLICT',
+            current: toIdeaFormResponse(current, authorId),
+          });
         }
 
         const resetSummary = hasSubstantialContentChanges(

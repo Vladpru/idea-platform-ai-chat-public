@@ -8,8 +8,13 @@ import {
   prependOlderLiveChatMessages,
   toMessagesCacheFromResponse,
 } from '@/features/live-chat/lib/merge-live-chat-message-cache';
+import {
+  mergeChatMessages,
+  saveSyncedMessages,
+  useRoomChatMessages,
+} from '@/features/live-chat/lib/offline-chat-queue';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 type UseLiveChatMessagesQueryOptions = {
   enabled?: boolean;
@@ -26,6 +31,7 @@ export function useLiveChatMessagesQuery(
     queryKey: liveChatQueryKeys.messages(roomId),
     queryFn: async () => {
       const response = await fetchLiveChatMessages({ roomId });
+      void saveSyncedMessages(response.data);
       return toMessagesCacheFromResponse(
         response.data,
         response.meta.hasOlder,
@@ -34,6 +40,13 @@ export function useLiveChatMessagesQuery(
     },
     enabled: Boolean(roomId) && (options?.enabled ?? true),
   });
+
+  const localMessages = useRoomChatMessages(roomId);
+
+  const messages = useMemo(
+    () => mergeChatMessages(query.data?.messages ?? [], localMessages),
+    [query.data, localMessages],
+  );
 
   const loadOlderMessages = useCallback(async () => {
     const cache = queryClient.getQueryData<LiveChatMessagesCache>(
@@ -51,6 +64,7 @@ export function useLiveChatMessagesQuery(
         cursor: cache.nextCursor,
         limit: LIVE_CHAT_MESSAGES_PAGE_SIZE,
       });
+      void saveSyncedMessages(response.data);
 
       queryClient.setQueryData<LiveChatMessagesCache>(
         liveChatQueryKeys.messages(roomId),
@@ -73,7 +87,7 @@ export function useLiveChatMessagesQuery(
 
   return {
     ...query,
-    messages: query.data?.messages ?? [],
+    messages,
     hasOlder: query.data?.hasOlder ?? false,
     loadOlderMessages,
     isLoadingOlder,

@@ -36,6 +36,7 @@ export type LiveChatMessageRecord = {
   attachmentUrl: string | null;
   attachmentName: string | null;
   attachmentMimeType: string | null;
+  clientMessageId: string;
   createdAt: Date;
   author: LiveChatAuthorRecord;
 };

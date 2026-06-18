@@ -4,6 +4,7 @@ import { QueryClient } from '@tanstack/react-query';
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
+      networkMode: 'offlineFirst',
       staleTime: 60_000,
       refetchOnWindowFocus: false,
       retry(failureCount, error) {
@@ -13,6 +14,9 @@ export const queryClient = new QueryClient({
         }
         return failureCount < 2;
       },
+    },
+    mutations: {
+      networkMode: 'offlineFirst',
     },
   },
 });

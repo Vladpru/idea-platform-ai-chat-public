@@ -10,6 +10,7 @@ export type LiveChatAuthorDto = {
 export type LiveChatMessageDto = {
   id: string;
   roomId: string;
+  clientMessageId: string;
   content: string;
   attachmentUrl: string | null;
   attachmentName: string | null;

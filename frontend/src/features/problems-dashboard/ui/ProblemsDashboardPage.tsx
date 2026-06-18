@@ -110,6 +110,19 @@ const ProblemsDashboardBody = memo(function ProblemsDashboardBody({
   }
 
   if (isError) {
+    if (!navigator.onLine) {
+      return (
+        <div className="border-brand-gray-200 bg-card rounded-lg border px-6 py-10 text-center">
+          <p className="text-brand-gray-900 mb-1 text-base font-semibold">
+            No Internet Connection
+          </p>
+          <p className="text-brand-gray-600 text-sm">
+            You can still access and create your drafts in your profile.
+          </p>
+        </div>
+      );
+    }
+
     return (
       <div className="border-brand-gray-200 bg-card rounded-lg border px-6 py-10 text-center">
         <p className="text-brand-gray-700 mb-4 text-sm">
