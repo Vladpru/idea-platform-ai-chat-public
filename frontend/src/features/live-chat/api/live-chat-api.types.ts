@@ -17,6 +17,11 @@ export type LiveChatMessageDto = {
   attachmentMimeType: string | null;
   author: LiveChatAuthorDto;
   createdAt: string;
+  /**
+   * Client-only flag: true while an optimistic message awaits its authoritative
+   * server broadcast. Cleared when reconciled (the server copy omits it).
+   */
+  pending?: boolean;
 };
 
 export type LiveChatAttachmentPayload = {

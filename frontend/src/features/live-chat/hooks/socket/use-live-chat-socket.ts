@@ -30,14 +30,6 @@ import { useCallback, useEffect, useRef } from 'react';
 import { io, type Socket } from 'socket.io-client';
 import { toast } from 'sonner';
 
-type SocketAck<T> = T | undefined;
-
-type JoinRoomResponse = { ok: true } | { ok: false; error: string };
-
-type SendMessageResponse =
-  | { ok: true; message: LiveChatMessageDto }
-  | { ok: false; error: string };
-
 type SendMessagePayload = {
   roomId: string;
   clientMessageId: string;
@@ -45,6 +37,13 @@ type SendMessagePayload = {
   attachmentUrl?: string;
   attachmentName?: string;
   attachmentMimeType?: string;
+};
+
+// Async control events the monolith returns through the edge (no socket acks).
+type RoomJoinResult = {
+  roomId: string;
+  clientMsgId?: string;
+  reason?: string;
 };
 
 function getSocketBaseUrl(): string {
@@ -60,34 +59,29 @@ function disconnectSocket(socket: Socket): void {
   socket.disconnect();
 }
 
-function emitWithAck<TPayload, TResponse>(
-  socket: Socket,
-  event: string,
-  payload: TPayload,
-): Promise<SocketAck<TResponse>> {
-  return new Promise(resolve => {
-    socket
-      .timeout(10_000)
-      .emit(event, payload, (error: Error | null, response: TResponse) => {
-        if (error) {
-          resolve(undefined);
-          return;
-        }
-        resolve(response);
-      });
-  });
-}
-
 export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
   const queryClient = useQueryClient();
   const accessToken = useAuthSessionStore(state => state.accessToken);
   const socketRef = useRef<Socket | null>(null);
   const joinedRoomIdRef = useRef<string | null>(null);
+  // True only once the monolith has approved the join (room:join_approved). We
+  // hold sends until then so their `message` broadcast is delivered back to us.
+  const joinApprovedRef = useRef(false);
   const flushingRef = useRef(false);
 
+  // Fire-and-forget flush of locally-queued messages. There is no ack: the
+  // authoritative copy (real id + timestamp) returns asynchronously on the
+  // `message` broadcast and reconciles the optimistic entry by clientMessageId.
+  // The monolith dedupes by clientMessageId, so re-emitting a still-pending
+  // message is idempotent.
   const flushPending = useCallback(async () => {
     const socket = socketRef.current;
-    if (!socket?.connected || !roomId || flushingRef.current) {
+    if (
+      !socket?.connected ||
+      !roomId ||
+      !joinApprovedRef.current ||
+      flushingRef.current
+    ) {
       return;
     }
 
@@ -107,48 +101,12 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
           payload.attachmentMimeType = dto.attachmentMimeType ?? undefined;
         }
 
-        const response = await emitWithAck<
-          SendMessagePayload,
-          SendMessageResponse
-        >(socket, 'send_message', payload);
-
-        if (response?.ok) {
-          await saveSyncedMessage(response.message);
-          queryClient.setQueryData<LiveChatMessagesCache>(
-            liveChatQueryKeys.messages(row.roomId),
-            cache => appendLiveChatMessage(cache, response.message),
-          );
-        }
+        socket.emit('send_message', payload);
       }
     } finally {
       flushingRef.current = false;
     }
-  }, [queryClient, roomId]);
-
-  const joinRoom = useCallback(async (socket: Socket, nextRoomId: string) => {
-    const response = await emitWithAck<{ roomId: string }, JoinRoomResponse>(
-      socket,
-      'join_room',
-      { roomId: nextRoomId },
-    );
-
-    if (!response?.ok) {
-      toast.error(response?.error ?? 'Could not join live chat room');
-      return false;
-    }
-
-    joinedRoomIdRef.current = nextRoomId;
-    return true;
-  }, []);
-
-  const leaveRoom = useCallback(async (socket: Socket, currentRoomId: string) => {
-    await emitWithAck<{ roomId: string }, { ok: true }>(socket, 'leave_room', {
-      roomId: currentRoomId,
-    });
-    if (joinedRoomIdRef.current === currentRoomId) {
-      joinedRoomIdRef.current = null;
-    }
-  }, []);
+  }, [roomId]);
 
   useEffect(() => {
     const activeSocket = socketRef.current;
@@ -156,6 +114,7 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
       disconnectSocket(activeSocket);
       socketRef.current = null;
       joinedRoomIdRef.current = null;
+      joinApprovedRef.current = false;
     }
 
     if (!enabled || !accessToken || !roomId) {
@@ -163,13 +122,16 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
     }
 
     const token = getStoredAuthToken() ?? accessToken;
+    // Websocket-only: the edge rejects HTTP long-polling.
     const socket = io(`${getSocketBaseUrl()}/live-chat`, {
       withCredentials: true,
       auth: { token },
-      transports: ['websocket', 'polling'],
+      transports: ['websocket'],
     });
 
     const handleMessage = (message: LiveChatMessageDto) => {
+      // Reconcile: replace the optimistic (pending) message matched by
+      // clientMessageId with the authoritative server copy (clears pending).
       queryClient.setQueryData<LiveChatMessagesCache>(
         liveChatQueryKeys.messages(message.roomId),
         cache => appendLiveChatMessage(cache, message),
@@ -177,8 +139,27 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
       void saveSyncedMessage(message);
     };
 
-    const handleConnect = () => {
+    // Joins are authorized asynchronously: request on connection_ready, then
+    // act on room:join_approved / room:join_denied (no synchronous ack).
+    const handleConnectionReady = () => {
+      joinApprovedRef.current = false;
+      socket.emit('join_room', { roomId });
+      joinedRoomIdRef.current = roomId;
+    };
+
+    const handleJoinApproved = () => {
+      joinApprovedRef.current = true;
       void flushPending();
+    };
+
+    const handleJoinDenied = (result: RoomJoinResult) => {
+      joinApprovedRef.current = false;
+      joinedRoomIdRef.current = null;
+      toast.error(result?.reason ?? 'Could not join live chat room');
+    };
+
+    const handleDisconnect = () => {
+      joinApprovedRef.current = false;
     };
 
     const patchVideoCalls = (
@@ -243,12 +224,10 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
       );
     };
 
-    const handleConnectionReady = () => {
-      void joinRoom(socket, roomId);
-    };
-
-    socket.on('connect', handleConnect);
     socket.on('connection_ready', handleConnectionReady);
+    socket.on('room:join_approved', handleJoinApproved);
+    socket.on('room:join_denied', handleJoinDenied);
+    socket.on('disconnect', handleDisconnect);
     socket.on('message', handleMessage);
     socket.on('call_scheduled', handleCallScheduled);
     socket.on('call_started', handleCallStarted);
@@ -259,10 +238,12 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
     return () => {
       const joinedRoomId = joinedRoomIdRef.current;
       if (joinedRoomId) {
-        void leaveRoom(socket, joinedRoomId);
+        socket.emit('leave_room', { roomId: joinedRoomId });
       }
-      socket.off('connect', handleConnect);
       socket.off('connection_ready', handleConnectionReady);
+      socket.off('room:join_approved', handleJoinApproved);
+      socket.off('room:join_denied', handleJoinDenied);
+      socket.off('disconnect', handleDisconnect);
       socket.off('message', handleMessage);
       socket.off('call_scheduled', handleCallScheduled);
       socket.off('call_started', handleCallStarted);
@@ -273,8 +254,9 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
         socketRef.current = null;
       }
       joinedRoomIdRef.current = null;
+      joinApprovedRef.current = false;
     };
-  }, [accessToken, enabled, flushPending, joinRoom, leaveRoom, queryClient, roomId]);
+  }, [accessToken, enabled, flushPending, queryClient, roomId]);
 
   const sendMessage = useCallback(
     async (content: string, attachment?: LiveChatAttachmentPayload | null) => {
@@ -305,17 +287,20 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
           avatarUrl: user.picture,
         },
         createdAt: new Date().toISOString(),
+        pending: true,
       };
 
-      // Durable optimistic write first; delivery is best-effort from here.
+      // Optimistic, durable write first; the broadcast reconciles it later.
       await saveOutgoingMessage(optimistic);
       queryClient.setQueryData<LiveChatMessagesCache>(
         liveChatQueryKeys.messages(roomId),
         cache => appendLiveChatMessage(cache, optimistic),
       );
 
+      // Fire-and-forget. If the join isn't approved yet (or we're offline), the
+      // message stays queued and is flushed on room:join_approved / reconnect.
       const socket = socketRef.current;
-      if (socket?.connected && navigator.onLine) {
+      if (socket?.connected && navigator.onLine && joinApprovedRef.current) {
         void flushPending();
       }
 

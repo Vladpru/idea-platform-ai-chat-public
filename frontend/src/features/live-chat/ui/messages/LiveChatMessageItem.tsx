@@ -8,7 +8,7 @@ import {
 import { cn } from '@/shared/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { ImageLightbox } from '@/shared/ui/image-lightbox';
-import { Paperclip } from 'lucide-react';
+import { Loader2, Paperclip } from 'lucide-react';
 import { useState } from 'react';
 
 type LiveChatMessageItemProps = {
@@ -107,20 +107,28 @@ export function LiveChatMessageItem({ message }: LiveChatMessageItemProps) {
             )}
           >
             <span className="text-brand-dark-blue font-medium">{authorName}</span>
-            <time
-              className="text-brand-gray-500"
-              dateTime={message.createdAt}
-            >
-              {formatLiveChatMessageTime(message.createdAt)}
-            </time>
+            {message.pending ? (
+              <span className="text-brand-gray-500 flex items-center gap-1">
+                <Loader2 className="size-3 animate-spin" aria-hidden />
+                Sending…
+              </span>
+            ) : (
+              <time
+                className="text-brand-gray-500"
+                dateTime={message.createdAt}
+              >
+                {formatLiveChatMessageTime(message.createdAt)}
+              </time>
+            )}
           </div>
 
           <div
             className={cn(
-              'flex max-w-full flex-col rounded-lg px-3 py-2 text-sm',
+              'flex max-w-full flex-col rounded-lg px-3 py-2 text-sm transition-opacity',
               isOwnMessage
                 ? 'bg-brand-orange text-white'
                 : 'bg-white text-brand-black',
+              message.pending && 'opacity-70',
             )}
           >
             {hasAttachment && message.attachmentUrl && (
