@@ -3,10 +3,11 @@ import { outlineBtnClass, pageTitleClass } from '@/features/ideas/lib/styles';
 import { EntityLiveChatAction } from '@/features/live-chat/ui/EntityLiveChatAction';
 import type { ProblemDetails } from '@/features/problem-details/model/problem-details.types';
 import { ProblemProjectActions } from '@/features/problem-details/ui/ProblemProjectActions';
+import { useExportProblemPdfMutation } from '@/features/problems/hooks/use-export-problem-pdf';
 import { useDeleteProblemMutation } from '@/features/problems/hooks/use-problem-mutations';
 import { useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
-import { ArrowLeft, ChevronDown } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Download } from 'lucide-react';
 import { type MouseEvent, useState } from 'react';
 
 import { ROUTES } from '@/shared/config/paths';
@@ -53,6 +54,7 @@ function ManageDropdown({
   problemId,
   onScheduleConference,
   onDeleteClick,
+  onExportPdf,
 }: {
   isAuthor: boolean;
   isCompact: boolean;
@@ -60,6 +62,7 @@ function ManageDropdown({
   problemId: string;
   onScheduleConference?: () => void;
   onDeleteClick: () => void;
+  onExportPdf?: () => void;
 }) {
   const navigate = useNavigate();
   const isMobile = useMediaQuery('(max-width: 768px)');
@@ -126,6 +129,19 @@ function ManageDropdown({
         <DropdownMenuSeparator className="my-0" />
 
         <DropdownMenuItem
+          className="focus:bg-brand-blue-700/10 hover:bg-brand-blue-700/10 cursor-pointer px-3 py-2 text-sm font-normal"
+          onSelect={event => {
+            event.preventDefault();
+            onExportPdf?.();
+          }}
+        >
+          <Download className="mr-2 size-4" />
+          Export as PDF
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator className="my-0" />
+
+        <DropdownMenuItem
           className="focus:bg-brand-orange/10 hover:bg-brand-orange/10 cursor-pointer px-3 py-2 text-sm font-normal text-amber-600 focus:text-amber-600"
           onSelect={event => {
             event.preventDefault();
@@ -150,6 +166,7 @@ export function ProblemHeader({
 }: ProblemHeaderProps) {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const deleteMutation = useDeleteProblemMutation();
+  const exportPdf = useExportProblemPdfMutation();
   const isDraft = problem.status === 'DRAFT';
   const title = problem.title || 'Untitled problem';
 
@@ -192,6 +209,7 @@ export function ProblemHeader({
           problemId={problem.id}
           onScheduleConference={onScheduleConference}
           onDeleteClick={() => setDeleteModalOpen(true)}
+          onExportPdf={() => exportPdf.mutate(problem.id)}
         />
       </motion.div>
 
@@ -271,6 +289,22 @@ export function ProblemHeader({
                         viewer={problem.viewer}
                       />
                     ) : null}
+                    {!isAuthor ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className={cn(
+                          outlineBtnClass,
+                          'h-10 shrink-0 gap-1.5 rounded-sm border px-3 text-xs font-bold uppercase tracking-wide',
+                        )}
+                        disabled={exportPdf.isPending}
+                        isLoading={exportPdf.isPending}
+                        onClick={() => exportPdf.mutate(problem.id)}
+                      >
+                        <Download className="size-4" />
+                        Export PDF
+                      </Button>
+                    ) : null}
                     <EntityLiveChatAction
                       entityKind="PROBLEM"
                       entityId={problem.id}
@@ -286,6 +320,7 @@ export function ProblemHeader({
                       problemId={problem.id}
                       onScheduleConference={onScheduleConference}
                       onDeleteClick={() => setDeleteModalOpen(true)}
+                      onExportPdf={() => exportPdf.mutate(problem.id)}
                     />
                   </div>
                 </div>

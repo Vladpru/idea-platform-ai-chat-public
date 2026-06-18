@@ -1,4 +1,4 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
+import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 
@@ -90,5 +90,21 @@ export class PdfProcessor extends WorkerHost {
         `PDF ready for user ${userId}: ${entityType} ${entityId}`,
       );
     });
+  }
+
+  @OnWorkerEvent('failed')
+  onFailed(job: Job<PdfExportJobData>): void {
+    const maxAttempts = job.opts.attempts ?? 1;
+    if (job.attemptsMade < maxAttempts) {
+      return;
+    }
+
+    const { entityType, entityId, userId } = job.data;
+
+    this.logger.warn(
+      `PDF export permanently failed for user ${userId}: ${entityType} ${entityId}`,
+    );
+
+    this.gateway.notifyPdfFailed(userId, entityType);
   }
 }

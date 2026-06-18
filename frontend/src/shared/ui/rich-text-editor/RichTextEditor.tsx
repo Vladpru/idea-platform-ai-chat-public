@@ -28,7 +28,7 @@ export function RichTextEditor({
   id,
 }: RichTextEditorProps) {
   const editor = useEditor({
-    extensions: [StarterKit],
+    extensions: [StarterKit.configure({ heading: { levels: [2, 3, 4, 5, 6] } })],
     content: markdownToHtml(value),
     editable: !disabled,
     onUpdate: ({ editor }) => {

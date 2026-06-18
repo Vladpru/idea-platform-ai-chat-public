@@ -9,9 +9,16 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bullmq';
 
-import { IdeaStatus, MediaKind, ProblemStatus } from '../../../generated/prisma/client';
+import {
+  IdeaStatus,
+  MediaKind,
+  ProblemStatus,
+} from '../../../generated/prisma/client';
 import { PrismaService } from '../../core/prisma/prisma.service';
-import { PDF_EXPORT_JOB_OPTIONS, PDF_EXPORT_QUEUE } from './constants/pdf-queue.constants';
+import {
+  PDF_EXPORT_JOB_OPTIONS,
+  PDF_EXPORT_QUEUE,
+} from './constants/pdf-queue.constants';
 import type {
   PdfExportJobData,
   PdfGeneratePayload,
@@ -63,7 +70,8 @@ export class PdfService {
 
     if (
       !problem ||
-      (problem.authorId !== userId && problem.status !== ProblemStatus.PUBLISHED)
+      (problem.authorId !== userId &&
+        problem.status !== ProblemStatus.PUBLISHED)
     ) {
       throw new NotFoundException('Problem not found');
     }
@@ -200,9 +208,13 @@ export class PdfService {
     };
   }
 
-  async callPdfService(payload: PdfGeneratePayload): Promise<PdfServiceResponse> {
+  async callPdfService(
+    payload: PdfGeneratePayload,
+  ): Promise<PdfServiceResponse> {
     const pdfServiceUrl = this.config.getOrThrow<string>('PDF_SERVICE_URL');
-    const pdfInternalSecret = this.config.getOrThrow<string>('PDF_INTERNAL_SECRET');
+    const pdfInternalSecret = this.config.getOrThrow<string>(
+      'PDF_INTERNAL_SECRET',
+    );
 
     let response: Response;
     try {

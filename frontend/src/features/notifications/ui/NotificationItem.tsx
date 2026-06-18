@@ -41,6 +41,14 @@ export function NotificationItem({
       markAsRead.mutate(notification.id);
     }
 
+    if (notification.type === 'PDF_READY') {
+      const downloadUrl = notification.payload['download_url'];
+      if (typeof downloadUrl === 'string') {
+        window.open(downloadUrl, '_blank', 'noopener,noreferrer');
+      }
+      return;
+    }
+
     if (target) {
       onNavigate?.();
       if (target.to === '/live-chats/$roomId') {
@@ -73,7 +81,7 @@ export function NotificationItem({
       className={cn(
         'group relative flex w-full items-start gap-3 px-4 py-3 text-left transition-colors',
         isUnread ? 'bg-brand-light-blue/20' : 'hover:bg-muted/60',
-        target && 'cursor-pointer',
+        (target || notification.type === 'PDF_READY') && 'cursor-pointer',
       )}
     >
       <button

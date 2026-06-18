@@ -8,8 +8,8 @@ import {
   Req,
 } from '@nestjs/common';
 import {
-  ApiBearerAuth,
   ApiAcceptedResponse,
+  ApiBearerAuth,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOperation,
@@ -49,7 +49,9 @@ export class PdfController {
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({ summary: 'Trigger PDF export for a problem' })
   @ApiAcceptedResponse({ description: 'PDF generation queued' })
-  @ApiForbiddenResponse({ description: 'Export not available for this problem' })
+  @ApiForbiddenResponse({
+    description: 'Export not available for this problem',
+  })
   @ApiNotFoundResponse({ description: 'Problem not found' })
   async exportProblem(
     @Param('id', ParseUUIDPipe) id: string,

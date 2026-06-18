@@ -11,4 +11,5 @@ export const IDEAS_ROUTES = {
     `/ideas/${ideaId}/media/${mediaId}`,
   join: (ideaId: string) => `/ideas/${ideaId}/join`,
   leave: (ideaId: string) => `/ideas/${ideaId}/leave`,
+  exportPdf: (ideaId: string) => `/ideas/${ideaId}/export-pdf`,
 } as const;

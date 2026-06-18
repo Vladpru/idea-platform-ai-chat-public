@@ -29,6 +29,14 @@ type AchievementBadgePayload = {
   iconPath: string;
 };
 
+type PdfReadyPayload = {
+  download_url: string;
+  expires_at: string;
+  entity_type: 'idea' | 'problem';
+  entity_id: string;
+  title: string;
+};
+
 export function useNotificationSocket(): void {
   const queryClient = useQueryClient();
   const accessToken = useAuthSessionStore(state => state.accessToken);
@@ -75,13 +83,36 @@ export function useNotificationSocket(): void {
       void queryClient.invalidateQueries({ queryKey: ['statistics'] });
     };
 
+    const handlePdfReady = (payload: PdfReadyPayload) => {
+      toast.success(`Your PDF is ready: "${payload.title}"`, {
+        duration: 10000,
+        action: {
+          label: 'Download',
+          onClick: () => {
+            window.open(payload.download_url, '_blank', 'noopener,noreferrer');
+          },
+        },
+      });
+    };
+
+    const handlePdfFailed = (payload: { entity_type: string }) => {
+      toast.error(
+        `PDF generation failed for your ${payload.entity_type}. Please try again later.`,
+        { duration: 8000 },
+      );
+    };
+
     socket.on('notification', handleNotification);
     socket.on('achievement_unlocked', handleAchievementUnlocked);
+    socket.on('pdf:ready', handlePdfReady);
+    socket.on('pdf:failed', handlePdfFailed);
     socketRef.current = socket;
 
     return () => {
       socket.off('notification', handleNotification);
       socket.off('achievement_unlocked', handleAchievementUnlocked);
+      socket.off('pdf:ready', handlePdfReady);
+      socket.off('pdf:failed', handlePdfFailed);
       disconnectSocket(socket);
       if (socketRef.current === socket) {
         socketRef.current = null;

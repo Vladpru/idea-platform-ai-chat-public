@@ -95,6 +95,12 @@ export class NotificationGateway
     this.server.to(this.userRoom(userId)).emit('pdf:ready', payload);
   }
 
+  notifyPdfFailed(userId: string, entityType: string): void {
+    this.server
+      .to(this.userRoom(userId))
+      .emit('pdf:failed', { entity_type: entityType });
+  }
+
   @OnEvent(NOTIFICATION_EVENTS.ACHIEVEMENT_UNLOCKED)
   handleAchievementUnlocked(event: AchievementUnlockedEvent): void {
     this.server

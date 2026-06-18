@@ -127,6 +127,16 @@ export function NotificationMessage({ type, payload }: NotificationMessageProps)
           published a new problem &quot;{problemTitle || title}&quot;.
         </>,
       );
+    case 'PDF_READY': {
+      const pdfTitle = readString(payload, 'title');
+      const entityKind = readString(payload, 'entity_type');
+      const label = pdfTitle ? `"${pdfTitle}"` : `your ${entityKind || 'item'}`;
+      return (
+        <>
+          Your PDF for {label} is ready. Click to download before it expires.
+        </>
+      );
+    }
     default:
       return <>You have a new notification.</>;
   }
