@@ -362,9 +362,17 @@ export class LiveChatService {
 
   /**
    * Transport-agnostic entry point for an inbound `send_message` socket frame.
-   * Persists the message via {@link sendMessage} and, when it is not a dedup
-   * replay, broadcasts it to the room through the realtime publisher. The
-   * gateway only forwards the validated payload and returns the ack.
+   * Persists the message via {@link sendMessage} (idempotent on
+   * clientMessageId) and ALWAYS broadcasts it to the room.
+   *
+   * The broadcast is the *sole* delivery channel on the async edge transport —
+   * the synchronous send_message ack was removed. The frontend re-flushes every
+   * still-pending message on each reconnect/join, so a re-sent message reaches
+   * us as a clientMessageId duplicate. Dedup must guard persistence and
+   * notifications (handled inside {@link sendMessage}), NOT delivery: suppressing
+   * the broadcast for a duplicate strands the client's optimistic copy in
+   * "pending" forever. Clients reconcile idempotently by clientMessageId, so
+   * re-broadcasting a duplicate is safe.
    */
   async processInboundMessage(
     userId: string,
@@ -378,7 +386,7 @@ export class LiveChatService {
         }
       : null;
 
-    const { message, isDuplicate } = await this.sendMessage(
+    const { message } = await this.sendMessage(
       payload.roomId,
       userId,
       payload.content,
@@ -386,16 +394,14 @@ export class LiveChatService {
       attachment,
     );
 
-    if (!isDuplicate) {
-      this.realtimePublisher.publish(
-        {
-          namespace: REALTIME_NAMESPACES.LIVE_CHAT,
-          room: liveChatRoomName(payload.roomId),
-        },
-        'message',
-        message,
-      );
-    }
+    this.realtimePublisher.publish(
+      {
+        namespace: REALTIME_NAMESPACES.LIVE_CHAT,
+        room: liveChatRoomName(payload.roomId),
+      },
+      'message',
+      message,
+    );
 
     return message;
   }
