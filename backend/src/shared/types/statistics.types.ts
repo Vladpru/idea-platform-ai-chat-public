@@ -1,4 +1,4 @@
-import type { UserAchievementDto } from '../../achievement/dto/user-achievement.dto';
+import type { UserAchievementDto } from '../../modules/achievement/dto/user-achievement.dto';
 
 export type StatisticsPeriod =
   | 'day'
