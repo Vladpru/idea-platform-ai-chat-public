@@ -64,9 +64,11 @@ function DashboardGridInner<TCard extends DashboardCardBase>({
   renderStandardCard,
 }: DashboardGridProps<TCard>) {
   const gridRef = useRef<HTMLDivElement>(null);
-  const scrollContainerRef = useRef<HTMLElement | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const onLoadMoreRef = useRef(onLoadMore);
+  const [scrollContainer, setScrollContainer] = useState<HTMLElement | null>(
+    null,
+  );
   const [gridOffset, setGridOffset] = useState(0);
 
   useEffect(() => {
@@ -105,7 +107,7 @@ function DashboardGridInner<TCard extends DashboardCardBase>({
     count: chunkedRows.length,
     estimateSize: () => estimatedRowHeight,
     gap: DASHBOARD_VIRTUAL_ROW_GAP_PX,
-    getScrollElement: () => scrollContainerRef.current,
+    getScrollElement: () => scrollContainer,
     scrollMargin: gridOffset,
     overscan: 2,
   });
@@ -151,39 +153,37 @@ function DashboardGridInner<TCard extends DashboardCardBase>({
   );
 
   useLayoutEffect(() => {
-    if (!scrollContainerRef.current) {
-      let el = gridRef.current?.parentElement;
-      while (el) {
-        const { overflowY } = getComputedStyle(el);
-        if (overflowY === 'auto' || overflowY === 'scroll') {
-          scrollContainerRef.current = el as HTMLElement;
-          break;
-        }
-        el = el.parentElement;
+    let el = gridRef.current?.parentElement;
+    while (el) {
+      const { overflowY } = getComputedStyle(el);
+      if (overflowY === 'auto' || overflowY === 'scroll') {
+        setScrollContainer(el as HTMLElement);
+        break;
       }
+      el = el.parentElement;
     }
+  }, []);
 
+  useLayoutEffect(() => {
     const updateGridOffset = () => {
       const grid = gridRef.current;
-      const container = scrollContainerRef.current;
-      if (grid && container) {
+      if (grid && scrollContainer) {
         setGridOffset(
           grid.getBoundingClientRect().top -
-            container.getBoundingClientRect().top +
-            container.scrollTop,
+            scrollContainer.getBoundingClientRect().top +
+            scrollContainer.scrollTop,
         );
       }
     };
 
     updateGridOffset();
-    const container = scrollContainerRef.current;
-    container?.addEventListener('scroll', updateGridOffset);
+    scrollContainer?.addEventListener('scroll', updateGridOffset);
     window.addEventListener('resize', updateGridOffset);
     return () => {
-      container?.removeEventListener('scroll', updateGridOffset);
+      scrollContainer?.removeEventListener('scroll', updateGridOffset);
       window.removeEventListener('resize', updateGridOffset);
     };
-  }, [chunkedRows.length, effectiveColumnCount, viewport]);
+  }, [scrollContainer, chunkedRows.length, effectiveColumnCount, viewport]);
 
   useEffect(() => {
     const sentinel = sentinelRef.current;

@@ -2,6 +2,7 @@ export type PdfExportJobData = {
   entityType: 'idea' | 'problem';
   entityId: string;
   userId: string;
+  title: string;
 };
 
 export type PdfAuthorPayload = {
@@ -54,6 +55,12 @@ export type PdfServiceResponse = {
 export type PdfReadySocketPayload = {
   download_url: string;
   expires_at: string;
+  entity_type: 'idea' | 'problem';
+  entity_id: string;
+  title: string;
+};
+
+export type PdfFailedSocketPayload = {
   entity_type: 'idea' | 'problem';
   entity_id: string;
   title: string;

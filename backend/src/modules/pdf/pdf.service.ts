@@ -1,6 +1,5 @@
 import { InjectQueue } from '@nestjs/bullmq';
 import {
-  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -51,13 +50,9 @@ export class PdfService {
       throw new NotFoundException('Idea not found');
     }
 
-    if (idea.status === IdeaStatus.DRAFT && idea.authorId !== userId) {
-      throw new ForbiddenException('PDF export not available for this idea');
-    }
-
     await this.pdfQueue.add(
       'idea',
-      { entityType: 'idea', entityId: ideaId, userId },
+      { entityType: 'idea', entityId: ideaId, userId, title: idea.title ?? '' },
       PDF_EXPORT_JOB_OPTIONS,
     );
   }
@@ -76,13 +71,14 @@ export class PdfService {
       throw new NotFoundException('Problem not found');
     }
 
-    if (problem.status === ProblemStatus.DRAFT && problem.authorId !== userId) {
-      throw new ForbiddenException('PDF export not available for this problem');
-    }
-
     await this.pdfQueue.add(
       'problem',
-      { entityType: 'problem', entityId: problemId, userId },
+      {
+        entityType: 'problem',
+        entityId: problemId,
+        userId,
+        title: problem.title ?? '',
+      },
       PDF_EXPORT_JOB_OPTIONS,
     );
   }

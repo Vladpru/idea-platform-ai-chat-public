@@ -55,6 +55,7 @@ function ManageDropdown({
   onScheduleConference,
   onDeleteClick,
   onExportPdf,
+  isExportPending,
 }: {
   isAuthor: boolean;
   isCompact: boolean;
@@ -63,6 +64,7 @@ function ManageDropdown({
   onScheduleConference?: () => void;
   onDeleteClick: () => void;
   onExportPdf?: () => void;
+  isExportPending?: boolean;
 }) {
   const navigate = useNavigate();
   const isMobile = useMediaQuery('(max-width: 768px)');
@@ -129,7 +131,8 @@ function ManageDropdown({
         <DropdownMenuSeparator className="my-0" />
 
         <DropdownMenuItem
-          className="focus:bg-brand-blue-700/10 hover:bg-brand-blue-700/10 cursor-pointer px-3 py-2 text-sm font-normal"
+          className="focus:bg-brand-blue-700/10 hover:bg-brand-blue-700/10 px-3 py-2 text-sm font-normal disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={isExportPending}
           onSelect={event => {
             event.preventDefault();
             onExportPdf?.();
@@ -210,6 +213,7 @@ export function ProblemHeader({
           onScheduleConference={onScheduleConference}
           onDeleteClick={() => setDeleteModalOpen(true)}
           onExportPdf={() => exportPdf.mutate(problem.id)}
+          isExportPending={exportPdf.isPending}
         />
       </motion.div>
 
@@ -321,6 +325,7 @@ export function ProblemHeader({
                       onScheduleConference={onScheduleConference}
                       onDeleteClick={() => setDeleteModalOpen(true)}
                       onExportPdf={() => exportPdf.mutate(problem.id)}
+          isExportPending={exportPdf.isPending}
                     />
                   </div>
                 </div>

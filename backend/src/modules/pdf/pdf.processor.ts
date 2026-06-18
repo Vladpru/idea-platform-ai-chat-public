@@ -93,7 +93,12 @@ export class PdfProcessor extends WorkerHost {
   }
 
   @OnWorkerEvent('failed')
-  onFailed(job: Job<PdfExportJobData>): void {
+  onFailed(job: Job<PdfExportJobData> | undefined, error: Error): void {
+    if (!job) {
+      this.logger.error('PDF export job failed before deserialization', error);
+      return;
+    }
+
     const maxAttempts = job.opts.attempts ?? 1;
     if (job.attemptsMade < maxAttempts) {
       return;
@@ -103,8 +108,13 @@ export class PdfProcessor extends WorkerHost {
 
     this.logger.warn(
       `PDF export permanently failed for user ${userId}: ${entityType} ${entityId}`,
+      error,
     );
 
-    this.gateway.notifyPdfFailed(userId, entityType);
+    this.gateway.notifyPdfFailed(userId, {
+      entity_type: entityType,
+      entity_id: entityId,
+      title: job.data.title,
+    });
   }
 }
