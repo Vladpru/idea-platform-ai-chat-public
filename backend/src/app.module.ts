@@ -16,6 +16,7 @@ import { IdeaModule } from './modules/idea/idea.module';
 import { LiveChatModule } from './modules/live-chat/live-chat.module';
 import { MailModule } from './core/mail/mail.module';
 import { NotificationModule } from './modules/notification/notification.module';
+import { PdfModule } from './modules/pdf/pdf.module';
 import { PasswordResetModule } from './modules/password-reset/password-reset.module';
 import { PrismaModule } from './core/prisma/prisma.module';
 import { ProblemModule } from './modules/problem/problem.module';
@@ -69,6 +70,7 @@ import { UserModule } from './modules/user/user.module';
     TokenModule,
     MailModule,
     NotificationModule,
+    PdfModule,
     SearchModule,
     SimilarityModule,
     StatisticsModule,

@@ -15,6 +15,7 @@ import { NOTIFICATION_EVENTS } from './events/notification-event-names';
 import type { AchievementUnlockedEvent } from './events/notification.events';
 import { resolveUserIdFromSocket } from './lib/ws-auth.util';
 import type { NotificationSignalEvent } from './types/notification.types';
+import type { PdfReadySocketPayload } from '../pdf/types/pdf.types';
 
 export interface AuthenticatedSocket extends Socket {
   data: {
@@ -88,6 +89,10 @@ export class NotificationGateway
   notifyUser(userId: string): void {
     const payload: NotificationSignalEvent = { type: 'NOTIFICATION_NEW' };
     this.server.to(this.userRoom(userId)).emit('notification', payload);
+  }
+
+  notifyPdfReady(userId: string, payload: PdfReadySocketPayload): void {
+    this.server.to(this.userRoom(userId)).emit('pdf:ready', payload);
   }
 
   @OnEvent(NOTIFICATION_EVENTS.ACHIEVEMENT_UNLOCKED)
