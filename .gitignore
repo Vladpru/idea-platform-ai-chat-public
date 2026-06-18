@@ -63,9 +63,6 @@ CLAUDE.md
 /docs
 
 .codegraph
-<<<<<<< HEAD
 /graphify-out
-=======
 # Claude Code local session data
 .claude/
->>>>>>> 739065aaa4f15758cf98294fbe492c69ea86f7cd
