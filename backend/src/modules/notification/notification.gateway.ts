@@ -11,6 +11,10 @@ import {
 import type { Server, Socket } from 'socket.io';
 
 import { PrismaService } from '../../core/prisma/prisma.service';
+import type {
+  PdfFailedSocketPayload,
+  PdfReadySocketPayload,
+} from '../pdf/types/pdf.types';
 import { NOTIFICATION_EVENTS } from './events/notification-event-names';
 import type { AchievementUnlockedEvent } from './events/notification.events';
 import { resolveUserIdFromSocket } from './lib/ws-auth.util';
@@ -88,6 +92,14 @@ export class NotificationGateway
   notifyUser(userId: string): void {
     const payload: NotificationSignalEvent = { type: 'NOTIFICATION_NEW' };
     this.server.to(this.userRoom(userId)).emit('notification', payload);
+  }
+
+  notifyPdfReady(userId: string, payload: PdfReadySocketPayload): void {
+    this.server.to(this.userRoom(userId)).emit('pdf:ready', payload);
+  }
+
+  notifyPdfFailed(userId: string, payload: PdfFailedSocketPayload): void {
+    this.server.to(this.userRoom(userId)).emit('pdf:failed', payload);
   }
 
   @OnEvent(NOTIFICATION_EVENTS.ACHIEVEMENT_UNLOCKED)

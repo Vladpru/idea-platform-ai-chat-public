@@ -185,7 +185,7 @@ export function ProblemsDashboardPage() {
   } = useProblemsDashboardPreferences();
 
   return (
-    <main className="bg-brand-neutral min-h-[calc(100vh-56px)]">
+    <main className="bg-brand-neutral min-h-[calc(100vh-100px)]">
       <div className="mx-auto max-w-[1600px] px-4 sm:px-8 lg:px-12">
         <ProblemsDashboardHeader
           activeFilter={activeFilter}

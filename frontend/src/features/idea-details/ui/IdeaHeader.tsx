@@ -2,6 +2,7 @@ import { getInitials } from '@/features/idea-details/lib/get-initials';
 import type { IdeaDetails } from '@/features/idea-details/model/idea-details.types';
 import { IdeaProjectActions } from '@/features/idea-details/ui/IdeaProjectActions';
 import { useDeleteIdea } from '@/features/ideas/hooks/use-delete-idea';
+import { useExportIdeaPdfMutation } from '@/features/ideas/hooks/use-export-idea-pdf';
 import {
   IDEA_DELETE_CONFIRM_DESCRIPTION,
   IDEA_DELETE_CONFIRM_TITLE,
@@ -9,9 +10,16 @@ import {
 import { outlineBtnClass, pageTitleClass } from '@/features/ideas/lib/styles';
 import { EntityLiveChatAction } from '@/features/live-chat/ui/EntityLiveChatAction';
 import { motion } from 'framer-motion';
-import { ArrowLeft, ChevronDown, Video } from 'lucide-react';
+import {
+  ArrowLeft,
+  ChevronDown,
+  Download,
+  SquarePen,
+  Video,
+} from 'lucide-react';
 import { type MouseEvent, useState } from 'react';
 
+import { useMediaQuery } from '@/shared/hooks/use-media-query';
 import { cn } from '@/shared/lib/utils';
 import {
   Avatar,
@@ -29,7 +37,6 @@ import {
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
 import { StageChevronBadge } from '@/shared/ui/stage-chevron-badge';
-import { useMediaQuery } from '@/shared/hooks/use-media-query';
 
 type IdeaHeaderProps = {
   idea: IdeaDetails;
@@ -51,6 +58,7 @@ function ManageDropdown({
   isAuthor,
   isEditing,
   isCompact,
+  ideaId,
   onStartEdit,
   onScheduleConference,
   onDeleteClick,
@@ -58,12 +66,14 @@ function ManageDropdown({
   isAuthor: boolean;
   isEditing: boolean;
   isCompact: boolean;
+  ideaId: string;
   onStartEdit?: () => void;
   onScheduleConference?: () => void;
   onDeleteClick: () => void;
 }) {
   const isMobile = useMediaQuery('(max-width: 768px)');
   const [open, setOpen] = useState(false);
+  const exportPdf = useExportIdeaPdfMutation();
 
   if (!isAuthor) {
     return null;
@@ -105,6 +115,7 @@ function ManageDropdown({
               onStartEdit?.();
             }}
           >
+            <SquarePen className="mr-2 size-4" />
             Edit idea
           </DropdownMenuItem>
         ) : null}
@@ -124,7 +135,21 @@ function ManageDropdown({
           </>
         ) : null}
 
-        {!isEditing ? <DropdownMenuSeparator className="my-0" /> : null}
+        <DropdownMenuSeparator className="my-0" />
+
+        <DropdownMenuItem
+          className="focus:bg-brand-blue-700/10 hover:bg-brand-blue-700/10 cursor-pointer px-3 py-2 text-sm font-normal"
+          disabled={exportPdf.isPending}
+          onSelect={event => {
+            event.preventDefault();
+            exportPdf.mutate(ideaId);
+          }}
+        >
+          <Download className="mr-2 size-4" />
+          Export as PDF
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator className="my-0" />
 
         <DropdownMenuItem
           className="focus:bg-brand-orange/10 hover:bg-brand-orange/10 cursor-pointer px-3 py-2 text-sm font-normal text-amber-600 focus:text-amber-600"
@@ -154,6 +179,7 @@ export function IdeaHeader({
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
   const { deleteIdea, isPending: isDeletePending } = useDeleteIdea();
+  const exportPdf = useExportIdeaPdfMutation();
 
   const handleConfirmDelete = () => {
     deleteIdea(idea.id, {
@@ -199,6 +225,7 @@ export function IdeaHeader({
           isAuthor={isAuthor}
           isEditing={isEditing}
           isCompact={true}
+          ideaId={idea.id}
           onStartEdit={onStartEdit}
           onScheduleConference={onScheduleConference}
           onDeleteClick={() => setDeleteModalOpen(true)}
@@ -291,18 +318,35 @@ export function IdeaHeader({
                       isAuthor={isAuthor}
                       isEditing={isEditing}
                       isCompact={false}
+                      ideaId={idea.id}
                       onStartEdit={onStartEdit}
                       onScheduleConference={onScheduleConference}
                       onDeleteClick={() => setDeleteModalOpen(true)}
                     />
                   </div>
 
-                  <div className="mdContext order-2 flex w-full justify-stretch gap-2 *:w-full md:order-1 md:w-auto">
+                  <div className="mdContext order-2 flex w-full gap-2 *:flex-1 md:order-1 md:w-auto">
                     {showProjectActions ? (
                       <IdeaProjectActions
                         ideaId={idea.id}
                         viewer={idea.viewer}
                       />
+                    ) : null}
+                    {!isAuthor ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className={cn(
+                          outlineBtnClass,
+                          'h-10 shrink-0 gap-1.5 rounded-sm border px-3 text-xs font-bold tracking-wide uppercase',
+                        )}
+                        disabled={exportPdf.isPending}
+                        isLoading={exportPdf.isPending}
+                        onClick={() => exportPdf.mutate(idea.id)}
+                      >
+                        <Download className="size-4" />
+                        Export PDF
+                      </Button>
                     ) : null}
                     <EntityLiveChatAction
                       entityKind="IDEA"
