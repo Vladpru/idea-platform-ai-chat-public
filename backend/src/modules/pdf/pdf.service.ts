@@ -109,7 +109,9 @@ export class PdfService {
           orderBy: { createdAt: 'desc' },
           take: PDF_COMMENT_LIMIT,
           include: {
-            author: { select: { firstName: true, lastName: true } },
+            author: {
+              select: { firstName: true, lastName: true, avatarUrl: true },
+            },
           },
         },
       },
@@ -117,6 +119,19 @@ export class PdfService {
 
     if (!idea) {
       throw new NotFoundException('Idea not found');
+    }
+
+    const seenContributorIds = new Set<string>();
+    const contributors: { name: string; avatar_url: string | null }[] = [];
+    for (const c of idea.comments) {
+      const commentAuthorId = c.authorId;
+      if (commentAuthorId === idea.authorId) continue;
+      if (seenContributorIds.has(commentAuthorId)) continue;
+      seenContributorIds.add(commentAuthorId);
+      contributors.push({
+        name: `${c.author.firstName} ${c.author.lastName}`.trim(),
+        avatar_url: c.author.avatarUrl,
+      });
     }
 
     return {
@@ -129,6 +144,7 @@ export class PdfService {
         name: `${idea.author.firstName} ${idea.author.lastName}`.trim(),
         avatar_url: idea.author.avatarUrl,
       },
+      contributors,
       status: idea.status,
       stage: idea.stage,
       tags: idea.tags.map(t => t.tag.name),
@@ -167,7 +183,9 @@ export class PdfService {
           orderBy: { createdAt: 'desc' },
           take: PDF_COMMENT_LIMIT,
           include: {
-            author: { select: { firstName: true, lastName: true } },
+            author: {
+              select: { firstName: true, lastName: true, avatarUrl: true },
+            },
           },
         },
       },
@@ -175,6 +193,19 @@ export class PdfService {
 
     if (!problem) {
       throw new NotFoundException('Problem not found');
+    }
+
+    const seenContributorIds = new Set<string>();
+    const contributors: { name: string; avatar_url: string | null }[] = [];
+    for (const c of problem.comments) {
+      const commentAuthorId = c.authorId;
+      if (commentAuthorId === problem.authorId) continue;
+      if (seenContributorIds.has(commentAuthorId)) continue;
+      seenContributorIds.add(commentAuthorId);
+      contributors.push({
+        name: `${c.author.firstName} ${c.author.lastName}`.trim(),
+        avatar_url: c.author.avatarUrl,
+      });
     }
 
     return {
@@ -187,6 +218,7 @@ export class PdfService {
         name: `${problem.author.firstName} ${problem.author.lastName}`.trim(),
         avatar_url: problem.author.avatarUrl,
       },
+      contributors,
       status: problem.status,
       stage: problem.stage,
       tags: problem.tags.map(t => t.tag.name),

@@ -9,6 +9,11 @@ export type PdfAuthorPayload = {
   avatar_url: string | null;
 };
 
+export type PdfContributorPayload = {
+  name: string;
+  avatar_url: string | null;
+};
+
 export type PdfLinkedEntityPayload = {
   id: string;
   title: string;
@@ -28,6 +33,7 @@ export type PdfGeneratePayload = {
   description: string;
   ai_summary: string | null;
   author: PdfAuthorPayload;
+  contributors: PdfContributorPayload[];
   status: string;
   stage: string | null;
   tags: string[];
