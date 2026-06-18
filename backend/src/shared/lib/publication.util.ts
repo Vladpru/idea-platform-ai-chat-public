@@ -1,4 +1,4 @@
-import { buildSummaryResetData } from '../../ai-summary/summary-reset.util';
+import { buildSummaryResetData } from '../../modules/ai-summary/summary-reset.util';
 
 export function isFirstPublication(
   publishedAt: Date | null | undefined,

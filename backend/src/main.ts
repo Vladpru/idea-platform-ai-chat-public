@@ -5,7 +5,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 
-import { RedisIoAdapter } from './adapters/redis-io.adapter';
+import { RedisIoAdapter } from './core/adapters/redis-io.adapter';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
