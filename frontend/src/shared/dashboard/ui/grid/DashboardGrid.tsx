@@ -1,4 +1,4 @@
-import { useWindowVirtualizer } from '@tanstack/react-virtual';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   type CSSProperties,
   type MutableRefObject,
@@ -64,6 +64,7 @@ function DashboardGridInner<TCard extends DashboardCardBase>({
   renderStandardCard,
 }: DashboardGridProps<TCard>) {
   const gridRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLElement | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const onLoadMoreRef = useRef(onLoadMore);
   const [gridOffset, setGridOffset] = useState(0);
@@ -100,10 +101,11 @@ function DashboardGridInner<TCard extends DashboardCardBase>({
     [isCompactLayout, linkedItemsExpanded, standardCardLayout],
   );
 
-  const virtualizer = useWindowVirtualizer({
+  const virtualizer = useVirtualizer({
     count: chunkedRows.length,
     estimateSize: () => estimatedRowHeight,
     gap: DASHBOARD_VIRTUAL_ROW_GAP_PX,
+    getScrollElement: () => scrollContainerRef.current,
     scrollMargin: gridOffset,
     overscan: 2,
   });
@@ -112,7 +114,10 @@ function DashboardGridInner<TCard extends DashboardCardBase>({
     effectiveColumnCount,
     isCompactLayout,
   );
-  const rowGridStyle = getVirtualRowGridStyle(effectiveColumnCount, isCompactLayout);
+  const rowGridStyle = getVirtualRowGridStyle(
+    effectiveColumnCount,
+    isCompactLayout,
+  );
 
   const desktopMinWidth =
     viewport === 'desktop'
@@ -146,15 +151,38 @@ function DashboardGridInner<TCard extends DashboardCardBase>({
   );
 
   useLayoutEffect(() => {
+    if (!scrollContainerRef.current) {
+      let el = gridRef.current?.parentElement;
+      while (el) {
+        const { overflowY } = getComputedStyle(el);
+        if (overflowY === 'auto' || overflowY === 'scroll') {
+          scrollContainerRef.current = el as HTMLElement;
+          break;
+        }
+        el = el.parentElement;
+      }
+    }
+
     const updateGridOffset = () => {
-      if (gridRef.current) {
-        setGridOffset(gridRef.current.offsetTop);
+      const grid = gridRef.current;
+      const container = scrollContainerRef.current;
+      if (grid && container) {
+        setGridOffset(
+          grid.getBoundingClientRect().top -
+            container.getBoundingClientRect().top +
+            container.scrollTop,
+        );
       }
     };
 
     updateGridOffset();
+    const container = scrollContainerRef.current;
+    container?.addEventListener('scroll', updateGridOffset);
     window.addEventListener('resize', updateGridOffset);
-    return () => window.removeEventListener('resize', updateGridOffset);
+    return () => {
+      container?.removeEventListener('scroll', updateGridOffset);
+      window.removeEventListener('resize', updateGridOffset);
+    };
   }, [chunkedRows.length, effectiveColumnCount, viewport]);
 
   useEffect(() => {
@@ -197,7 +225,9 @@ function DashboardGridInner<TCard extends DashboardCardBase>({
     <div
       ref={gridRef}
       className="relative w-full"
-      style={{ height: `${virtualizer.getTotalSize()}px` }}
+      style={{
+        height: `${virtualizer.getTotalSize()}px`,
+      }}
     >
       {virtualizer.getVirtualItems().map(virtualRow => {
         const rowCards = chunkedRows[virtualRow.index];
