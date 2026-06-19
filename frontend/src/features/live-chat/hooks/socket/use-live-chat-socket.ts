@@ -39,24 +39,19 @@ type SendMessagePayload = {
   attachmentMimeType?: string;
 };
 
-// Async control events the monolith returns through the edge (no socket acks).
 type RoomJoinResult = {
   roomId: string;
   clientMsgId?: string;
   reason?: string;
 };
 
-function getSocketBaseUrl(): string {
-  const base = import.meta.env.VITE_API_URL;
+function getRealtimeEdgeUrl(): string {
+  const base =
+    import.meta.env.VITE_REALTIME_EDGE_URL ?? import.meta.env.VITE_API_URL;
   if (typeof base !== 'string' || base.length === 0) {
-    throw new Error('VITE_API_URL is not set');
+    throw new Error('VITE_REALTIME_EDGE_URL (or VITE_API_URL) is not set');
   }
   return base.replace(/\/$/, '');
-}
-
-function disconnectSocket(socket: Socket): void {
-  socket.removeAllListeners();
-  socket.disconnect();
 }
 
 export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
@@ -64,21 +59,20 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
   const accessToken = useAuthSessionStore(state => state.accessToken);
   const socketRef = useRef<Socket | null>(null);
   const joinedRoomIdRef = useRef<string | null>(null);
-  // True only once the monolith has approved the join (room:join_approved). We
-  // hold sends until then so their `message` broadcast is delivered back to us.
   const joinApprovedRef = useRef(false);
   const flushingRef = useRef(false);
+  const roomIdRef = useRef<string | null>(roomId);
 
-  // Fire-and-forget flush of locally-queued messages. There is no ack: the
-  // authoritative copy (real id + timestamp) returns asynchronously on the
-  // `message` broadcast and reconciles the optimistic entry by clientMessageId.
-  // The monolith dedupes by clientMessageId, so re-emitting a still-pending
-  // message is idempotent.
+  useEffect(() => {
+    roomIdRef.current = roomId;
+  }, [roomId]);
+
   const flushPending = useCallback(async () => {
     const socket = socketRef.current;
+    const currentRoomId = roomIdRef.current;
     if (
       !socket?.connected ||
-      !roomId ||
+      !currentRoomId ||
       !joinApprovedRef.current ||
       flushingRef.current
     ) {
@@ -87,7 +81,7 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
 
     flushingRef.current = true;
     try {
-      const pending = await getPendingMessages(roomId);
+      const pending = await getPendingMessages(currentRoomId);
       for (const row of pending) {
         const dto = localMessageToDto(row);
         const payload: SendMessagePayload = {
@@ -100,38 +94,40 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
           payload.attachmentName = dto.attachmentName ?? undefined;
           payload.attachmentMimeType = dto.attachmentMimeType ?? undefined;
         }
-
         socket.emit('send_message', payload);
       }
     } finally {
       flushingRef.current = false;
     }
-  }, [roomId]);
+  }, []);
 
   useEffect(() => {
-    const activeSocket = socketRef.current;
-    if (activeSocket) {
-      disconnectSocket(activeSocket);
-      socketRef.current = null;
-      joinedRoomIdRef.current = null;
-      joinApprovedRef.current = false;
-    }
-
     if (!enabled || !accessToken || !roomId) {
+      if (socketRef.current?.connected) {
+        socketRef.current.disconnect();
+      }
       return;
     }
 
-    const token = getStoredAuthToken() ?? accessToken;
-    // Websocket-only: the edge rejects HTTP long-polling.
-    const socket = io(`${getSocketBaseUrl()}/live-chat`, {
-      withCredentials: true,
-      auth: { token },
-      transports: ['websocket'],
-    });
+    if (!socketRef.current) {
+      socketRef.current = io(`${getRealtimeEdgeUrl()}/live-chat`, {
+        autoConnect: false,
+        withCredentials: true,
+        auth: (cb: (data: object) => void) => {
+          cb({
+            token:
+              getStoredAuthToken() ??
+              useAuthSessionStore.getState().accessToken ??
+              '',
+          });
+        },
+        transports: ['websocket'],
+      });
+    }
+
+    const socket = socketRef.current;
 
     const handleMessage = (message: LiveChatMessageDto) => {
-      // Reconcile: replace the optimistic (pending) message matched by
-      // clientMessageId with the authoritative server copy (clears pending).
       queryClient.setQueryData<LiveChatMessagesCache>(
         liveChatQueryKeys.messages(message.roomId),
         cache => appendLiveChatMessage(cache, message),
@@ -139,8 +135,6 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
       void saveSyncedMessage(message);
     };
 
-    // Joins are authorized asynchronously: request on connection_ready, then
-    // act on room:join_approved / room:join_denied (no synchronous ack).
     const handleConnectionReady = () => {
       joinApprovedRef.current = false;
       socket.emit('join_room', { roomId });
@@ -189,36 +183,24 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
     };
 
     const handleCallScheduled = (call: VideoCallDto) => {
-      if (call.roomId !== roomId) {
-        return;
-      }
-
+      if (call.roomId !== roomId) return;
       patchVideoCalls(call.roomId, cache => applyCallScheduled(cache, call));
     };
 
     const handleCallStarted = (call: VideoCallDto) => {
-      if (call.roomId !== roomId) {
-        return;
-      }
-
+      if (call.roomId !== roomId) return;
       patchVideoCalls(call.roomId, cache => applyCallStarted(cache, call));
       patchHubRoomActiveCall(call.roomId, call);
     };
 
     const handleCallEnded = (payload: VideoCallLifecyclePayload) => {
-      if (payload.roomId !== roomId) {
-        return;
-      }
-
+      if (payload.roomId !== roomId) return;
       patchVideoCalls(payload.roomId, cache => applyCallEnded(cache, payload));
       patchHubRoomActiveCall(payload.roomId, null);
     };
 
     const handleCallCancelled = (payload: VideoCallLifecyclePayload) => {
-      if (payload.roomId !== roomId) {
-        return;
-      }
-
+      if (payload.roomId !== roomId) return;
       patchVideoCalls(payload.roomId, cache =>
         applyCallCancelled(cache, payload),
       );
@@ -233,11 +215,18 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
     socket.on('call_started', handleCallStarted);
     socket.on('call_ended', handleCallEnded);
     socket.on('call_cancelled', handleCallCancelled);
-    socketRef.current = socket;
+
+    if (socket.connected) {
+      joinApprovedRef.current = false;
+      socket.emit('join_room', { roomId });
+      joinedRoomIdRef.current = roomId;
+    } else {
+      socket.connect();
+    }
 
     return () => {
       const joinedRoomId = joinedRoomIdRef.current;
-      if (joinedRoomId) {
+      if (joinedRoomId && socket.connected) {
         socket.emit('leave_room', { roomId: joinedRoomId });
       }
       socket.off('connection_ready', handleConnectionReady);
@@ -249,10 +238,7 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
       socket.off('call_started', handleCallStarted);
       socket.off('call_ended', handleCallEnded);
       socket.off('call_cancelled', handleCallCancelled);
-      disconnectSocket(socket);
-      if (socketRef.current === socket) {
-        socketRef.current = null;
-      }
+      socket.disconnect();
       joinedRoomIdRef.current = null;
       joinApprovedRef.current = false;
     };
@@ -290,15 +276,12 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
         pending: true,
       };
 
-      // Optimistic, durable write first; the broadcast reconciles it later.
       await saveOutgoingMessage(optimistic);
       queryClient.setQueryData<LiveChatMessagesCache>(
         liveChatQueryKeys.messages(roomId),
         cache => appendLiveChatMessage(cache, optimistic),
       );
 
-      // Fire-and-forget. If the join isn't approved yet (or we're offline), the
-      // message stays queued and is flushed on room:join_approved / reconnect.
       const socket = socketRef.current;
       if (socket?.connected && navigator.onLine && joinApprovedRef.current) {
         void flushPending();
