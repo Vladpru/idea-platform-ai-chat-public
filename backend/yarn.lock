@@ -1350,6 +1350,18 @@
   resolved "https://registry.npmjs.org/@pkgr/core/-/core-0.2.9.tgz"
   integrity sha512-QNqXyfVS2wm9hweSYD2O7F0G06uurj9kZ96TRQE5Y9hU7+tgdZwIkbAKc5Ocy1HxEY2kuDQa6cQ1WRs/O5LFKA==
 
+"@posthog/core@^1.35.2":
+  version "1.35.2"
+  resolved "https://registry.yarnpkg.com/@posthog/core/-/core-1.35.2.tgz#5c3af22b4939202c6e93993c7b91f09aa6eebc89"
+  integrity sha512-aV6nkkKCF//NnR9SyQD00+sPg0A4v1m3Xk/fcsnYs+z3qCRXgjwOhfQX2lceAKWlru3o5l9Yn/480GovLOnqKA==
+  dependencies:
+    "@posthog/types" "^1.390.0"
+
+"@posthog/types@^1.390.0":
+  version "1.390.1"
+  resolved "https://registry.yarnpkg.com/@posthog/types/-/types-1.390.1.tgz#7409edfe7db291f920dfc8f3a61d909339d94a5a"
+  integrity sha512-GPyZY8eOa/c/EKFLW0Aa1ECVysa1TFLenGPgYbRz/PX/nrzd1IiQPlHAYLkeifE6oBVxHiv5AwkTyzX/fdOYSA==
+
 "@prisma/adapter-pg@^7.8.0":
   version "7.8.0"
   resolved "https://registry.npmjs.org/@prisma/adapter-pg/-/adapter-pg-7.8.0.tgz"
@@ -6008,6 +6020,13 @@ postgres@3.4.7:
   version "3.4.7"
   resolved "https://registry.npmjs.org/postgres/-/postgres-3.4.7.tgz"
   integrity sha512-Jtc2612XINuBjIl/QTWsV5UvE8UHuNblcO3vVADSrKsrc6RqGX6lOW1cEo3CM2v0XG4Nat8nI+YM7/f26VxXLw==
+
+posthog-node@^5.38.1:
+  version "5.38.1"
+  resolved "https://registry.yarnpkg.com/posthog-node/-/posthog-node-5.38.1.tgz#869cb0144bedf0246a51a5fe75cd59f77cba79ec"
+  integrity sha512-qjcy8pGrgcycDjUOHv8xOPBJ/5PdjqmeB3LhwDt428LEwMgjLWjUdK6n+g0mjSXhLD9WO6NKFMZH85z4ukKM+w==
+  dependencies:
+    "@posthog/core" "^1.35.2"
 
 prelude-ls@^1.2.1:
   version "1.2.1"

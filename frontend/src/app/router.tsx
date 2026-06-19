@@ -13,6 +13,10 @@ export const router = createRouter({
   },
 });
 
+router.subscribe('onBeforeLoad', () => {
+  posthog.capture('$pageleave');
+});
+
 router.subscribe('onResolved', () => {
   posthog.capture('$pageview');
 });

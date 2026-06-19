@@ -9,6 +9,7 @@ import {
 import { ConfigType } from '@nestjs/config';
 
 import embeddingConfig from '../../core/config/embedding.config';
+import { AnalyticsService } from '../../core/analytics/analytics.service';
 
 @Injectable()
 export class EmbeddingService {
@@ -21,6 +22,7 @@ export class EmbeddingService {
   constructor(
     @Inject(embeddingConfig.KEY)
     private readonly embeddingCfg: ConfigType<typeof embeddingConfig>,
+    private readonly analytics: AnalyticsService,
   ) {
     this.client = new GoogleGenAI({
       apiKey: this.embeddingCfg.apiKey,
@@ -32,6 +34,7 @@ export class EmbeddingService {
 
   async embedText(text: string): Promise<number[]> {
     let timerId: ReturnType<typeof setTimeout> | undefined;
+    const callStart = Date.now();
 
     const timeoutPromise = new Promise<never>((_, reject) => {
       timerId = setTimeout(() => {
@@ -58,7 +61,18 @@ export class EmbeddingService {
         );
       }
 
+      this.analytics.captureAiEmbedding({
+        model: this.model,
+        latencyMs: Date.now() - callStart,
+      });
       return values;
+    } catch (error) {
+      this.analytics.captureAiEmbedding({
+        model: this.model,
+        latencyMs: Date.now() - callStart,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
     } finally {
       if (timerId !== undefined) {
         clearTimeout(timerId);
