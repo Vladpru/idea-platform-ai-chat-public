@@ -57,7 +57,7 @@ export function LogoutConfirmDialog({
             variant="outline"
             className={outlineActionClass}
             onClick={() => {
-              posthog.capture('user_logged_out');
+              posthog.capture('user_logged_out', {}, { send_instantly: true });
               posthog.reset();
               logout();
             }}
