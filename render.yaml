@@ -76,6 +76,8 @@ services:
         sync: false
       - key: VITE_POSTHOG_API_HOST
         value: https://idea-platform-team-2-develop.onrender.com/ingest
+      - key: VITE_PUBLIC_POSTHOG_PROJECT_TOKEN
+        sync: false
 
   - type: static
     name: idea-platform-team-2-frontend-staging
@@ -92,3 +94,5 @@ services:
         sync: false
       - key: VITE_POSTHOG_API_HOST
         value: https://idea-platform-team-2-staging.onrender.com/ingest
+      - key: VITE_PUBLIC_POSTHOG_PROJECT_TOKEN
+        sync: false
