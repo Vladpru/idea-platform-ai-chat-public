@@ -3,8 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import type { Socket } from 'socket.io';
 
-import { resolveUserIdFromSocket } from '../notification/lib/ws-auth.util';
-import { PrismaService } from '../prisma/prisma.service';
+import { resolveUserIdFromSocket } from '../modules/notification/lib/ws-auth.util';
+import { PrismaService } from '../core/prisma/prisma.service';
 
 /**
  * Shared WebSocket connection authentication, extracted from the live-chat and

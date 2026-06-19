@@ -6,29 +6,30 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
-import { AiImageModule } from './ai-image/ai-image.module';
-import { AiSummaryModule } from './ai-summary/ai-summary.module';
-import { AiModule } from './ai/ai.module';
-import { AuthModule } from './auth/auth.module';
-import { CommentModule } from './comment/comment.module';
-import { ConferenceModule } from './conference/conference.module';
-import { IdeaModule } from './idea/idea.module';
-import { LiveChatModule } from './live-chat/live-chat.module';
-import { MailModule } from './mail/mail.module';
-import { NotificationModule } from './notification/notification.module';
-import { PasswordResetModule } from './password-reset/password-reset.module';
-import { PrismaModule } from './prisma/prisma.module';
-import { ProblemModule } from './problem/problem.module';
+import { AiImageModule } from './modules/ai-image/ai-image.module';
+import { AiSummaryModule } from './modules/ai-summary/ai-summary.module';
+import { AiModule } from './modules/ai/ai.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { CommentModule } from './modules/comment/comment.module';
+import { ConferenceModule } from './modules/conference/conference.module';
+import { IdeaModule } from './modules/idea/idea.module';
+import { LiveChatModule } from './modules/live-chat/live-chat.module';
+import { MailModule } from './core/mail/mail.module';
+import { NotificationModule } from './modules/notification/notification.module';
+import { PdfModule } from './modules/pdf/pdf.module';
+import { PasswordResetModule } from './modules/password-reset/password-reset.module';
+import { PrismaModule } from './core/prisma/prisma.module';
+import { ProblemModule } from './modules/problem/problem.module';
 import { RealtimeModule } from './realtime/realtime.module';
-import { RedisModule } from './redis/redis.module';
-import { SearchModule } from './search/search.module';
-import { SimilarityModule } from './similarity/similarity.module';
-import { AchievementModule } from './achievement/achievement.module';
-import { StatisticsModule } from './statistics/statistics.module';
-import { SubscriptionModule } from './subscription/subscription.module';
-import { TagModule } from './tag/tag.module';
-import { TokenModule } from './token/token.module';
-import { UserModule } from './user/user.module';
+import { RedisModule } from './core/redis/redis.module';
+import { SearchModule } from './modules/search/search.module';
+import { SimilarityModule } from './modules/similarity/similarity.module';
+import { AchievementModule } from './modules/achievement/achievement.module';
+import { StatisticsModule } from './modules/statistics/statistics.module';
+import { SubscriptionModule } from './modules/subscription/subscription.module';
+import { TagModule } from './modules/tag/tag.module';
+import { TokenModule } from './modules/token/token.module';
+import { UserModule } from './modules/user/user.module';
 
 @Module({
   imports: [
@@ -71,6 +72,7 @@ import { UserModule } from './user/user.module';
     TokenModule,
     MailModule,
     NotificationModule,
+    PdfModule,
     SearchModule,
     SimilarityModule,
     StatisticsModule,

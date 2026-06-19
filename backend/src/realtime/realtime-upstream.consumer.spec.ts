@@ -1,7 +1,7 @@
 import type { ConfigService } from '@nestjs/config';
 
-import type { LiveChatService } from '../live-chat/live-chat.service';
-import type { RedisService, RedisStreamEntry } from '../redis/redis.service';
+import type { LiveChatService } from '../modules/live-chat/live-chat.service';
+import type { RedisService, RedisStreamEntry } from '../core/redis/redis.service';
 import type { RealtimePublisherService } from './realtime-publisher.service';
 import { RealtimeUpstreamConsumer } from './realtime-upstream.consumer';
 

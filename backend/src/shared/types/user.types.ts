@@ -1,5 +1,5 @@
 import type { ThemePreference } from '../../../generated/prisma/client';
-import type { NotificationPreferencesMap } from '../../notification/events/notification.events';
+import type { NotificationPreferencesMap } from '../../modules/notification/events/notification.events';
 
 export interface IGoogleUser {
   email: string;

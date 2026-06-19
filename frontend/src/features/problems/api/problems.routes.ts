@@ -8,4 +8,5 @@ export const PROBLEMS_ROUTES = {
     `/problems/${problemId}/media/${mediaId}`,
   join: (problemId: string) => `/problems/${problemId}/join`,
   leave: (problemId: string) => `/problems/${problemId}/leave`,
+  exportPdf: (problemId: string) => `/problems/${problemId}/export-pdf`,
 } as const;

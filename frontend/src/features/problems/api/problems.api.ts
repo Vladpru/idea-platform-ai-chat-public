@@ -276,6 +276,10 @@ export async function leaveProblem(problemId: string): Promise<void> {
   await api.delete(PROBLEMS_ROUTES.leave(problemId));
 }
 
+export async function exportProblemPdf(problemId: string): Promise<void> {
+  await api.post(PROBLEMS_ROUTES.exportPdf(problemId));
+}
+
 export async function uploadProblemAttachment(
   problemId: string,
   { file }: UploadProblemAttachmentPayload,

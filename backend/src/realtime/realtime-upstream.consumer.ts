@@ -9,9 +9,9 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { hostname } from 'node:os';
 
-import type { SendLiveChatMessagePayloadDto } from '../live-chat/dto/send-live-chat-message.dto';
-import { LiveChatService } from '../live-chat/live-chat.service';
-import { RedisService, type RedisStreamEntry } from '../redis/redis.service';
+import type { SendLiveChatMessagePayloadDto } from '../modules/live-chat/dto/send-live-chat-message.dto';
+import { LiveChatService } from '../modules/live-chat/live-chat.service';
+import { RedisService, type RedisStreamEntry } from '../core/redis/redis.service';
 import { RealtimePublisherService } from './realtime-publisher.service';
 import {
   EDGE_UPSTREAM_DLQ_STREAM,

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 
-import { TokenModule } from '../token/token.module';
+import { TokenModule } from '../modules/token/token.module';
 import { WsAuthService } from './ws-auth.service';
 
 /**

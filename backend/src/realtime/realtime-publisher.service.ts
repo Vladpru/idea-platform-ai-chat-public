@@ -4,7 +4,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
-import { RedisService } from '../redis/redis.service';
+import { RedisService } from '../core/redis/redis.service';
 import {
   DownstreamEnvelope,
   EDGE_DOWNSTREAM_MAXLEN,

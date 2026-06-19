@@ -350,6 +350,10 @@ export async function leaveIdea(ideaId: string): Promise<void> {
   await api.delete(IDEAS_ROUTES.leave(ideaId));
 }
 
+export async function exportIdeaPdf(ideaId: string): Promise<void> {
+  await api.post(IDEAS_ROUTES.exportPdf(ideaId));
+}
+
 export async function uploadIdeaMedia(
   ideaId: string,
   { file }: UploadIdeaMediaPayload,
