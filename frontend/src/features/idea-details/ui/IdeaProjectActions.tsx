@@ -1,4 +1,5 @@
 import type { IdeaDetailsViewer } from '@/features/idea-details/model/idea-details.types';
+import { usePostHog } from '@posthog/react';
 import {
   IDEA_JOIN_CONFIRM_DESCRIPTION,
   IDEA_JOIN_CONFIRM_TITLE,
@@ -34,6 +35,7 @@ export function IdeaProjectActions({
 }: IdeaProjectActionsProps) {
   const [joinModalOpen, setJoinModalOpen] = useState(false);
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
+  const posthog = usePostHog();
 
   const joinMutation = useJoinIdeaMutation(ideaId);
   const leaveMutation = useLeaveIdeaMutation(ideaId);
@@ -53,13 +55,19 @@ export function IdeaProjectActions({
 
   const handleConfirmJoin = () => {
     joinMutation.mutate(undefined, {
-      onSuccess: () => setJoinModalOpen(false),
+      onSuccess: () => {
+        posthog.capture('idea_joined', { idea_id: ideaId });
+        setJoinModalOpen(false);
+      },
     });
   };
 
   const handleConfirmLeave = () => {
     leaveMutation.mutate(undefined, {
-      onSuccess: () => setLeaveModalOpen(false),
+      onSuccess: () => {
+        posthog.capture('idea_left', { idea_id: ideaId });
+        setLeaveModalOpen(false);
+      },
     });
   };
 

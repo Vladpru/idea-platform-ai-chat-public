@@ -8,6 +8,8 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
+import { AnalyticsService } from '../../core/analytics/analytics.service';
+
 import type { EntitySummaryContent } from '../ai-summary/summary.types';
 import {
   DEFAULT_EMBEDDING_MODEL,
@@ -72,7 +74,10 @@ export class GeminiService implements AiProvider {
   private readonly summaryEnabled: boolean;
   private readonly isDevelopment: boolean;
 
-  constructor(private readonly config: ConfigService) {
+  constructor(
+    private readonly config: ConfigService,
+    private readonly analytics: AnalyticsService,
+  ) {
     const apiKey = this.config.getOrThrow<string>('GEMINI_API_KEY').trim();
     this.client = new GoogleGenAI({ apiKey });
     this.configuredModel =
@@ -224,6 +229,7 @@ export class GeminiService implements AiProvider {
   }
 
   async generateEmbedding(text: string): Promise<number[] | null> {
+    const callStart = Date.now();
     try {
       const response = await this.client.models.embedContent({
         model: DEFAULT_EMBEDDING_MODEL,
@@ -236,8 +242,17 @@ export class GeminiService implements AiProvider {
         return null;
       }
 
+      this.analytics.captureAiEmbedding({
+        model: DEFAULT_EMBEDDING_MODEL,
+        latencyMs: Date.now() - callStart,
+      });
       return values;
     } catch (error) {
+      this.analytics.captureAiEmbedding({
+        model: DEFAULT_EMBEDDING_MODEL,
+        latencyMs: Date.now() - callStart,
+        error: error instanceof Error ? error.message : String(error),
+      });
       this.logger.error('Failed to generate embedding', error as Error);
       return null;
     }
@@ -321,6 +336,7 @@ export class GeminiService implements AiProvider {
     prompt: string,
     signal: AbortSignal,
   ): Promise<string | null> {
+    const callStart = Date.now();
     const response = await generateGeminiJsonContent({
       client: this.client,
       model,
@@ -330,6 +346,13 @@ export class GeminiService implements AiProvider {
     });
 
     if (!response.ok) {
+      this.analytics.captureAiGeneration({
+        model,
+        operation: 'entity-summary',
+        latencyMs: Date.now() - callStart,
+        error: response.message,
+        httpStatus: response.status,
+      });
       this.logger.error(
         `Gemini entity-summary failed (model=${model}, status=${response.status}): ${response.message}`,
       );
@@ -347,6 +370,13 @@ export class GeminiService implements AiProvider {
       return null;
     }
 
+    this.analytics.captureAiGeneration({
+      model,
+      operation: 'entity-summary',
+      latencyMs: Date.now() - callStart,
+      inputTokens: response.inputTokens,
+      outputTokens: response.outputTokens,
+    });
     this.logSuccessfulGeneration('entity-summary', model);
     return text;
   }
@@ -449,6 +479,7 @@ export class GeminiService implements AiProvider {
     let retryAfterSeconds: number | undefined;
 
     for (const attempt of attempts) {
+      const callStart = Date.now();
       const response = await generateGeminiJsonContent({
         client: this.client,
         model,
@@ -465,6 +496,13 @@ export class GeminiService implements AiProvider {
         }
 
         const parsed = parseGeminiJsonResponse(response.text);
+        this.analytics.captureAiGeneration({
+          model,
+          operation: 'document-extract',
+          latencyMs: Date.now() - callStart,
+          inputTokens: response.inputTokens,
+          outputTokens: response.outputTokens,
+        });
         this.logSuccessfulGeneration('document-extract', model, {
           jsonMode: attempt.jsonMode,
         });
@@ -484,6 +522,13 @@ export class GeminiService implements AiProvider {
 
       lastProviderMessage = response.message;
       lastStatus = response.status;
+      this.analytics.captureAiGeneration({
+        model,
+        operation: 'document-extract',
+        latencyMs: Date.now() - callStart,
+        error: response.message,
+        httpStatus: response.status,
+      });
       this.logger.error(
         `Gemini request failed (model=${model}, jsonMode=${attempt.jsonMode}, status=${response.status}): ${lastProviderMessage}`,
       );
@@ -611,6 +656,7 @@ export class GeminiService implements AiProvider {
     const retryAfterSeconds = state.retryAfterSeconds;
 
     for (const attempt of attempts) {
+      const callStart = Date.now();
       const response = await generateGeminiPrefillContent({
         client: this.client,
         model,
@@ -627,6 +673,13 @@ export class GeminiService implements AiProvider {
         }
 
         const parsed = parseGeminiJsonResponse(response.text);
+        this.analytics.captureAiGeneration({
+          model,
+          operation: 'idea-prefill',
+          latencyMs: Date.now() - callStart,
+          inputTokens: response.inputTokens,
+          outputTokens: response.outputTokens,
+        });
         this.logSuccessfulGeneration('idea-prefill', model, {
           jsonMode: attempt.jsonMode,
         });
@@ -638,6 +691,13 @@ export class GeminiService implements AiProvider {
 
       lastProviderMessage = response.message;
       lastStatus = response.status;
+      this.analytics.captureAiGeneration({
+        model,
+        operation: 'idea-prefill',
+        latencyMs: Date.now() - callStart,
+        error: response.message,
+        httpStatus: response.status,
+      });
       this.logger.error(
         `Gemini request failed (model=${model}, jsonMode=${attempt.jsonMode}, status=${response.status}): ${lastProviderMessage}`,
       );
@@ -672,6 +732,7 @@ export class GeminiService implements AiProvider {
     signal: AbortSignal;
   }): Promise<string[] | null> {
     for (const jsonMode of [true, false]) {
+      const callStart = Date.now();
       const response = await generateGeminiJsonContent({
         client: this.client,
         model,
@@ -681,6 +742,13 @@ export class GeminiService implements AiProvider {
       });
 
       if (!response.ok) {
+        this.analytics.captureAiGeneration({
+          model,
+          operation: 'tag-suggestions',
+          latencyMs: Date.now() - callStart,
+          error: response.message,
+          httpStatus: response.status,
+        });
         if (response.status === 404) {
           break;
         }
@@ -697,6 +765,13 @@ export class GeminiService implements AiProvider {
       try {
         const parsed = parseGeminiJsonResponse(response.text);
         const tags = normalizeSuggestedTagsResponse(parsed);
+        this.analytics.captureAiGeneration({
+          model,
+          operation: 'tag-suggestions',
+          latencyMs: Date.now() - callStart,
+          inputTokens: response.inputTokens,
+          outputTokens: response.outputTokens,
+        });
         this.logSuccessfulGeneration('tag-suggestions', model, {
           jsonMode,
           tagCount: tags.length,

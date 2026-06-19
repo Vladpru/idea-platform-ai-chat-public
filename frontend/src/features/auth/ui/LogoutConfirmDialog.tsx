@@ -1,4 +1,5 @@
 import { useLogout } from '@/features/auth/lib/use-logout';
+import { usePostHog } from '@posthog/react';
 import { X } from 'lucide-react';
 
 import { cn } from '@/shared/lib/utils';
@@ -25,6 +26,7 @@ export function LogoutConfirmDialog({
   onOpenChange,
 }: LogoutConfirmDialogProps) {
   const logout = useLogout();
+  const posthog = usePostHog();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -55,6 +57,8 @@ export function LogoutConfirmDialog({
             variant="outline"
             className={outlineActionClass}
             onClick={() => {
+              posthog.capture('user_logged_out', {}, { send_instantly: true });
+              posthog.reset();
               logout();
             }}
           >

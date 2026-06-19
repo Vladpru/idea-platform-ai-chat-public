@@ -61,7 +61,7 @@ services:
       - key: SENDGRID_FROM_EMAIL
         sync: false
 
-  - type: static
+  - type: static 
     name: idea-platform-team-2-frontend-develop
     rootDir: frontend
     branch: develop
@@ -74,6 +74,8 @@ services:
         value: https://idea-platform-team-2-develop.onrender.com
       - key: VITE_GOOGLE_CLIENT_ID
         sync: false
+      - key: VITE_POSTHOG_API_HOST
+        value: https://idea-platform-team-2-develop.onrender.com/ingest
 
   - type: static
     name: idea-platform-team-2-frontend-staging
@@ -88,3 +90,5 @@ services:
         value: https://idea-platform-team-2-staging.onrender.com
       - key: VITE_GOOGLE_CLIENT_ID
         sync: false
+      - key: VITE_POSTHOG_API_HOST
+        value: https://idea-platform-team-2-staging.onrender.com/ingest

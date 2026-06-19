@@ -10,6 +10,7 @@ import {
 } from '@/features/ideas/lib/styles';
 import { SuggestedTagsField } from '@/features/tags/ui/SuggestedTagsField';
 import { useNavigate } from '@tanstack/react-router';
+import { usePostHog } from '@posthog/react';
 import { Upload } from 'lucide-react';
 import { useEffect, useId, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
@@ -72,6 +73,7 @@ export function IdeaCreateForm({
   onCancelReady,
 }: IdeaCreateFormProps) {
   const navigate = useNavigate();
+  const posthog = usePostHog();
   const formId = useId();
   const problemSelectRef = useRef<ProblemSelectHandle>(null);
 
@@ -132,6 +134,7 @@ export function IdeaCreateForm({
     });
 
   const formBusy = isBusy || isScanning;
+  const formOpenedAtRef = useRef(Date.now());
   const allowNextLeaveRef = useRef<(continueLeave: () => void) => void>(
     () => {},
   );
@@ -166,6 +169,27 @@ export function IdeaCreateForm({
   });
 
   allowNextLeaveRef.current = allowNextLeave;
+
+  const getFilledFields = () => {
+    const values = form.getValues();
+    const filled: string[] = [];
+    if (values.stage) filled.push('stage');
+    if (values.problemId) filled.push('problem');
+    if (values.title?.trim()) filled.push('title');
+    if (values.description?.trim()) filled.push('description');
+    if (values.mainImage) filled.push('main_image');
+    if (values.tags?.trim()) filled.push('tags');
+    if (values.files?.length) filled.push('files');
+    return filled;
+  };
+
+  const handleDiscardWithTracking = () => {
+    posthog.capture('idea_creation_abandoned', {
+      fields_filled: getFilledFields(),
+      time_spent_seconds: Math.round((Date.now() - formOpenedAtRef.current) / 1000),
+    });
+    handleDiscard();
+  };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
@@ -242,6 +266,8 @@ export function IdeaCreateForm({
     const result = await onSaveDraft();
     if (!result.success) return false;
 
+    posthog.capture('idea_draft_saved', { idea_id: result.ideaId, is_editing: wasEditing });
+
     if (wasEditing) {
       navigateToIdeaDetail(result.ideaId);
       return true;
@@ -266,6 +292,8 @@ export function IdeaCreateForm({
       }
       return;
     }
+
+    posthog.capture('idea_published', { idea_id: publishResult.ideaId, is_editing: wasEditing, action: publishResult.action });
 
     if (wasEditing) {
       navigateToIdeaDetail(publishResult.ideaId, {
@@ -359,7 +387,12 @@ export function IdeaCreateForm({
             <IdeaCreateAiAssistLink
               disabled={!canRegenerateTitle}
               onClick={
-                canRegenerateTitle ? () => openAssistModal('title') : undefined
+                canRegenerateTitle
+                  ? () => {
+                      posthog.capture('idea_ai_assist_used', { tool: 'title' });
+                      openAssistModal('title');
+                    }
+                  : undefined
               }
             >
               {titleValue
@@ -390,7 +423,10 @@ export function IdeaCreateForm({
               Description
             </FieldLabel>
             <IdeaCreateAiAssistLink
-              onClick={() => openAssistModal('description')}
+              onClick={() => {
+                posthog.capture('idea_ai_assist_used', { tool: 'description' });
+                openAssistModal('description');
+              }}
             >
               {descriptionValue
                 ? 'Edit description with AI prompt'
@@ -431,7 +467,12 @@ export function IdeaCreateForm({
             <IdeaCreateAiAssistLink
               disabled={!canGenerateImage}
               onClick={
-                canGenerateImage ? () => openAssistModal('image') : undefined
+                canGenerateImage
+                  ? () => {
+                      posthog.capture('idea_ai_assist_used', { tool: 'image' });
+                      openAssistModal('image');
+                    }
+                  : undefined
               }
             >
               Generate image from title &amp; description
@@ -547,7 +588,7 @@ export function IdeaCreateForm({
       <SaveProgressBeforeLeavingModal
         open={!isEditing && leaveModalOpen}
         onOpenChange={handleLeaveModalOpenChange}
-        onDiscard={handleDiscard}
+        onDiscard={handleDiscardWithTracking}
         onSaveAsDraft={() => void handleLeaveSaveAsDraft()}
         isSaving={isSavingDraft}
         description={SAVE_IDEA_PROGRESS_DESCRIPTION}

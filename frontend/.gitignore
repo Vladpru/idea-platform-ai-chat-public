@@ -28,3 +28,4 @@ dist-ssr
 !.env.example
 # PWA dev build output
 dev-dist/
+.env.development
