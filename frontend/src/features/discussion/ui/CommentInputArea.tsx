@@ -16,6 +16,7 @@ import { useReplyContext } from '@/features/discussion/ui/reply-context';
 import { getAttachmentFileKey } from '@/features/ideas/lib/create-idea/attachments';
 import { IdeaAttachmentCard } from '@/features/ideas/ui/create-idea/IdeaAttachmentCard';
 import { useBlocker } from '@tanstack/react-router';
+import { usePostHog } from '@posthog/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { MouseEvent } from 'react';
 
@@ -47,6 +48,7 @@ export function CommentInputArea({
   className,
 }: CommentInputAreaProps) {
   const { replyTo, clearReply, setReplyTo } = useReplyContext();
+  const posthog = usePostHog();
   const [content, setContent] = useState('');
 
   const [cachedQuote, setCachedQuote] = useState<ReturnType<
@@ -117,6 +119,13 @@ export function CommentInputArea({
     const payloadParentId = replyTo?.id;
     const payloadAttachments = [...files];
     const payloadReplyTo = replyTo;
+
+    posthog.capture('comment_submitted', {
+      entity_type: entityType,
+      entity_id: entityId,
+      is_reply: Boolean(payloadParentId),
+      has_attachments: payloadAttachments.length > 0,
+    });
 
     resetInput();
 

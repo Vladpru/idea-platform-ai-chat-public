@@ -1,7 +1,8 @@
 import { DashboardCardStandard } from '@/features/ideas-dashboard';
 import { useNavigate, useSearch } from '@tanstack/react-router';
+import { usePostHog } from '@posthog/react';
 import { SearchIcon, XIcon } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useInView } from 'react-intersection-observer';
 
 import { ROUTES } from '@/shared/config/paths';
@@ -156,6 +157,8 @@ export function GlobalSearchPage() {
   const navigate = useNavigate();
   const { dismissSearch } = useSearchNavigation();
   const isMobile = useMediaQuery('(max-width: 768px)');
+  const posthog = usePostHog();
+  const lastCapturedQuery = useRef('');
 
   const [localQuery, setLocalQuery] = useState(q);
   const [lastSyncedQ, setLastSyncedQ] = useState(q);
@@ -187,11 +190,16 @@ export function GlobalSearchPage() {
           search: { q: localQuery, t: activeTab },
           replace: true,
         });
+        const trimmed = localQuery.trim();
+        if (trimmed.length >= 3 && trimmed !== lastCapturedQuery.current) {
+          lastCapturedQuery.current = trimmed;
+          posthog.capture('search_performed', { query: trimmed, tab: activeTab });
+        }
       }
     }, 300);
 
     return () => clearTimeout(handler);
-  }, [localQuery, q, activeTab, navigate, error]);
+  }, [localQuery, q, activeTab, navigate, error, posthog]);
 
   const {
     data,
