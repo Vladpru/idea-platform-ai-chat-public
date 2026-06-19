@@ -5,16 +5,6 @@ import { liveChatRoomName } from './live-chat.constants';
 import { LiveChatService } from './live-chat.service';
 import type { LiveChatMessageDto } from './types/live-chat.types';
 
-/**
- * Regression guard for the async-edge delivery contract.
- *
- * On the Redis edge transport the room broadcast is the ONLY way a `message`
- * reaches the client (the synchronous send_message ack was removed). The
- * frontend re-flushes every still-pending message on each reconnect/join, so a
- * re-sent message arrives at the monolith as a clientMessageId duplicate. If a
- * duplicate is persisted-but-not-broadcast, the optimistic copy is stranded in
- * "pending" forever. Dedup must guard persistence/notifications, NOT delivery.
- */
 describe('LiveChatService.processInboundMessage', () => {
   const roomId = '11111111-1111-1111-1111-111111111111';
   const userId = 'user-1';

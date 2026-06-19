@@ -360,20 +360,6 @@ export class LiveChatService {
     await this.getAccessibleRoom(roomId, userId);
   }
 
-  /**
-   * Transport-agnostic entry point for an inbound `send_message` socket frame.
-   * Persists the message via {@link sendMessage} (idempotent on
-   * clientMessageId) and ALWAYS broadcasts it to the room.
-   *
-   * The broadcast is the *sole* delivery channel on the async edge transport —
-   * the synchronous send_message ack was removed. The frontend re-flushes every
-   * still-pending message on each reconnect/join, so a re-sent message reaches
-   * us as a clientMessageId duplicate. Dedup must guard persistence and
-   * notifications (handled inside {@link sendMessage}), NOT delivery: suppressing
-   * the broadcast for a duplicate strands the client's optimistic copy in
-   * "pending" forever. Clients reconcile idempotently by clientMessageId, so
-   * re-broadcasting a duplicate is safe.
-   */
   async processInboundMessage(
     userId: string,
     payload: SendLiveChatMessagePayloadDto,

@@ -6,18 +6,6 @@ import type { Socket } from 'socket.io';
 import { resolveUserIdFromSocket } from '../modules/notification/lib/ws-auth.util';
 import { PrismaService } from '../core/prisma/prisma.service';
 
-/**
- * Shared WebSocket connection authentication, extracted from the live-chat and
- * notification gateways so neither has to know about Prisma.
- *
- * Returns the authenticated user id, or `null` when the handshake should be
- * rejected.
- *
- * NOTE (strangler caveat): the Prisma existence check below is a Phase-0
- * relocation only. The future FastAPI edge validates the JWT cryptographically
- * with zero DB access, so this lookup is slated for removal at cutover
- * (decode-and-trust). Do not build new behaviour on it.
- */
 @Injectable()
 export class WsAuthService {
   constructor(

@@ -16,19 +16,6 @@ import {
   realtimeOutboundEventName,
 } from './realtime.types';
 
-/**
- * Single seam for all outbound realtime broadcasts. Replaces direct
- * `server.to(room).emit()` calls scattered across the gateways and services.
- *
- * - `direct` (default): emits an in-process EventEmitter2 event that the owning
- *   gateway turns into a real socket emit. Keeps the Socket.IO `Server` handle
- *   confined to the gateways and avoids a publisher↔gateway circular dependency.
- * - `redis`: appends a {@link DownstreamEnvelope} to the `edge:downstream`
- *   stream for the future FastAPI edge. Dark until that edge exists.
- *
- * Fire-and-forget, mirroring the original `server.emit()` semantics (callers
- * never awaited the broadcast).
- */
 @Injectable()
 export class RealtimePublisherService {
   private readonly logger = new Logger(RealtimePublisherService.name);
@@ -70,11 +57,6 @@ export class RealtimePublisherService {
     this.eventEmitter.emit(realtimeOutboundEventName(target.namespace), outbound);
   }
 
-  /**
-   * Publish a control event to a single edge-owned socket (e.g.
-   * room:join_approved). Sid targeting only exists once sockets live on the
-   * FastAPI edge, so this requires the redis transport.
-   */
   publishToSocket(
     target: RealtimeSocketTarget,
     event: string,

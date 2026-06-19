@@ -1,6 +1,5 @@
 import { Prisma } from '../../../generated/prisma/client';
 
-/** Socket.IO room name for a live-chat room within the `live-chat` namespace. */
 export const liveChatRoomName = (roomId: string): string =>
   `live-chat:${roomId}`;
 

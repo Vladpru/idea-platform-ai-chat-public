@@ -12,11 +12,6 @@ import type { AchievementUnlockedEvent } from './events/notification.events';
 import { userRoom } from './lib/notification-room.util';
 import type { NotificationSignalEvent } from './types/notification.types';
 
-/**
- * Maps notification domain signals to outbound realtime broadcasts via the
- * publisher. Extracted from NotificationGateway so the gateway no longer holds
- * business-facing methods or listens to domain events directly.
- */
 @Injectable()
 export class NotificationRealtimeService {
   constructor(private readonly publisher: RealtimePublisherService) {}

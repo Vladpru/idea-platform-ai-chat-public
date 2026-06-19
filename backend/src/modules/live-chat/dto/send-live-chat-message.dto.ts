@@ -28,11 +28,6 @@ export class SendLiveChatMessageDto {
   content!: string;
 }
 
-/**
- * Inbound `send_message` socket frame. Transport-frame validation lives here
- * (and is applied by the gateway's ValidationPipe); it is shared with
- * LiveChatService.processInboundMessage so the service has a typed contract.
- */
 export class SendLiveChatMessagePayloadDto extends SendLiveChatMessageDto {
   @IsUUID()
   roomId!: string;
