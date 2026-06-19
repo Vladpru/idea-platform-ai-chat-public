@@ -6,6 +6,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
+import { AnalyticsModule } from './core/analytics/analytics.module';
 import { AiImageModule } from './modules/ai-image/ai-image.module';
 import { AiSummaryModule } from './modules/ai-summary/ai-summary.module';
 import { AiModule } from './modules/ai/ai.module';
@@ -56,6 +57,7 @@ import { UserModule } from './modules/user/user.module';
     ScheduleModule.forRoot(),
     RedisModule,
     RealtimeModule,
+    AnalyticsModule,
     SubscriptionModule,
     UserModule,
     AiModule,

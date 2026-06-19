@@ -12,7 +12,7 @@ export type GeminiGenerateContentRequest = {
 };
 
 export type GeminiGenerateContentResult =
-  | { ok: true; text: string }
+  | { ok: true; text: string; inputTokens?: number; outputTokens?: number }
   | { ok: false; status: number; message: string };
 
 export async function generateGeminiJsonContent({
@@ -38,7 +38,12 @@ export async function generateGeminiJsonContent({
       },
     });
 
-    return { ok: true, text: response.text?.trim() ?? '' };
+    return {
+      ok: true,
+      text: response.text?.trim() ?? '',
+      inputTokens: response.usageMetadata?.promptTokenCount,
+      outputTokens: response.usageMetadata?.candidatesTokenCount,
+    };
   } catch (error) {
     if (error instanceof ApiError) {
       return { ok: false, status: error.status, message: error.message };
@@ -64,7 +69,12 @@ export async function generateGeminiPrefillContent({
       },
     });
 
-    return { ok: true, text: response.text?.trim() ?? '' };
+    return {
+      ok: true,
+      text: response.text?.trim() ?? '',
+      inputTokens: response.usageMetadata?.promptTokenCount,
+      outputTokens: response.usageMetadata?.candidatesTokenCount,
+    };
   } catch (error) {
     if (error instanceof ApiError) {
       return { ok: false, status: error.status, message: error.message };

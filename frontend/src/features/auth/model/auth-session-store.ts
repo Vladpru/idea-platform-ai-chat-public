@@ -1,3 +1,4 @@
+import posthog from 'posthog-js';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
@@ -95,6 +96,10 @@ export const useAuthSessionStore = create<AuthSessionState>()(
       onRehydrateStorage: () => state => {
         if (state?.accessToken && state.user?.id) {
           setStoredAuthToken(state.accessToken);
+          posthog.identify(state.user.id, {
+            email: state.user.email,
+            name: state.user.name,
+          });
         } else if (state) {
           clearStoredAuthToken();
           _set({ user: null, accessToken: null });

@@ -1,0 +1,77 @@
+[
+  {
+    "event_name": "user_signed_up",
+    "event_description": "Fired when a user successfully completes registration with email or Google OAuth.",
+    "file": "src/features/auth/ui/RegisterForm.tsx"
+  },
+  {
+    "event_name": "user_logged_in",
+    "event_description": "Fired when a user successfully logs in via email or Google OAuth.",
+    "file": "src/features/auth/ui/LoginForm.tsx"
+  },
+  {
+    "event_name": "user_logged_out",
+    "event_description": "Fired when a user confirms logout and the session is cleared.",
+    "file": "src/features/auth/ui/LogoutConfirmDialog.tsx"
+  },
+  {
+    "event_name": "idea_published",
+    "event_description": "Fired when a user publishes or updates a published idea.",
+    "file": "src/features/ideas/ui/create-idea/IdeaCreateForm.tsx"
+  },
+  {
+    "event_name": "idea_draft_saved",
+    "event_description": "Fired when a user saves an idea as a draft.",
+    "file": "src/features/ideas/ui/create-idea/IdeaCreateForm.tsx"
+  },
+  {
+    "event_name": "idea_creation_abandoned",
+    "event_description": "Fired when a user discards an idea creation form with fields already filled in.",
+    "file": "src/features/ideas/ui/create-idea/IdeaCreateForm.tsx"
+  },
+  {
+    "event_name": "idea_ai_assist_used",
+    "event_description": "Fired when a user triggers AI assistance for title, description, or image generation on an idea.",
+    "file": "src/features/ideas/ui/create-idea/IdeaCreateForm.tsx"
+  },
+  {
+    "event_name": "problem_published",
+    "event_description": "Fired when a user publishes or updates a published problem.",
+    "file": "src/features/problems/ui/submit-problem/SubmitProblemForm.tsx"
+  },
+  {
+    "event_name": "problem_draft_saved",
+    "event_description": "Fired when a user saves a problem as a draft.",
+    "file": "src/features/problems/ui/submit-problem/SubmitProblemForm.tsx"
+  },
+  {
+    "event_name": "idea_joined",
+    "event_description": "Fired when a user joins an idea project as a contributor.",
+    "file": "src/features/idea-details/ui/IdeaProjectActions.tsx"
+  },
+  {
+    "event_name": "idea_left",
+    "event_description": "Fired when a user leaves an idea project they were contributing to.",
+    "file": "src/features/idea-details/ui/IdeaProjectActions.tsx"
+  },
+  {
+    "event_name": "entity_liked",
+    "event_description": "Fired when a user likes an idea or problem (not fired on unlike).",
+    "file": "src/shared/ui/LikeButton.tsx"
+  },
+  {
+    "event_name": "comment_submitted",
+    "event_description": "Fired when a user submits a comment or reply on an idea or problem.",
+    "file": "src/features/discussion/ui/CommentInputArea.tsx"
+  },
+  {
+    "event_name": "search_performed",
+    "event_description": "Fired when a user types a search query of at least 3 characters in the global search.",
+    "file": "src/features/search/ui/GlobalSearchPage.tsx"
+  },
+  {
+    "event_name": "$pageview",
+    "event_description": "Fired on every route navigation via TanStack Router's onResolved event.",
+    "file": "src/app/router.tsx"
+  }
+]

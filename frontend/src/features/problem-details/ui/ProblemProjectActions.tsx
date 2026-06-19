@@ -10,6 +10,7 @@ import {
   useJoinProblemMutation,
   useLeaveProblemMutation,
 } from '@/features/problems/hooks/use-problem-mutations';
+import { usePostHog } from '@posthog/react';
 import { useState } from 'react';
 
 import { cn } from '@/shared/lib/utils';
@@ -34,6 +35,7 @@ export function ProblemProjectActions({
 }: ProblemProjectActionsProps) {
   const [joinModalOpen, setJoinModalOpen] = useState(false);
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
+  const posthog = usePostHog();
 
   const joinMutation = useJoinProblemMutation(problemId);
   const leaveMutation = useLeaveProblemMutation(problemId);
@@ -53,13 +55,19 @@ export function ProblemProjectActions({
 
   const handleConfirmJoin = () => {
     joinMutation.mutate(undefined, {
-      onSuccess: () => setJoinModalOpen(false),
+      onSuccess: () => {
+        posthog.capture('problem_joined', { problem_id: problemId });
+        setJoinModalOpen(false);
+      },
     });
   };
 
   const handleConfirmLeave = () => {
     leaveMutation.mutate(undefined, {
-      onSuccess: () => setLeaveModalOpen(false),
+      onSuccess: () => {
+        posthog.capture('problem_left', { problem_id: problemId });
+        setLeaveModalOpen(false);
+      },
     });
   };
 

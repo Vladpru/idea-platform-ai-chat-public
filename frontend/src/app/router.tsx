@@ -1,4 +1,5 @@
 import { createRouter } from '@tanstack/react-router';
+import posthog from 'posthog-js';
 
 import { routeTree } from '../routeTree.gen';
 import { NotFoundPage } from '@/pages/not-found';
@@ -10,6 +11,14 @@ export const router = createRouter({
   context: {
     isAuthenticated: false,
   },
+});
+
+router.subscribe('onBeforeLoad', () => {
+  posthog.capture('$pageleave');
+});
+
+router.subscribe('onResolved', () => {
+  posthog.capture('$pageview');
 });
 
 declare module '@tanstack/react-router' {

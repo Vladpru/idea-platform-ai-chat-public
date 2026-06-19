@@ -4,6 +4,7 @@ import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 
 import { RedisIoAdapter } from './core/adapters/redis-io.adapter';
 import { AppModule } from './app.module';
@@ -14,6 +15,35 @@ async function bootstrap() {
   });
 
   const config = app.get(ConfigService);
+
+  const posthogHost = 'https://eu.i.posthog.com';
+  const posthogAssetsHost = 'https://eu-assets.i.posthog.com';
+  const rewriteIngest = (path: string) => path.replace(/^\/ingest/, '');
+
+  app.use(
+    '/ingest/static',
+    createProxyMiddleware({
+      target: posthogAssetsHost,
+      changeOrigin: true,
+      pathRewrite: rewriteIngest,
+    }),
+  );
+  app.use(
+    '/ingest/array',
+    createProxyMiddleware({
+      target: posthogAssetsHost,
+      changeOrigin: true,
+      pathRewrite: rewriteIngest,
+    }),
+  );
+  app.use(
+    '/ingest',
+    createProxyMiddleware({
+      target: posthogHost,
+      changeOrigin: true,
+      pathRewrite: rewriteIngest,
+    }),
+  );
 
   const redisIoAdapter = new RedisIoAdapter(app);
   const redisUrl = config.getOrThrow<string>('REDIS_URL');

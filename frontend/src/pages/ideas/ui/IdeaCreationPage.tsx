@@ -7,7 +7,8 @@ import type { IdeaDocumentAutoFillControls } from '@/features/ideas/ui/create-id
 import { SparklesIcon } from '@/features/ideas/ui/icons/SparklesIcon';
 import { GenerateDraftModal } from '@/features/ideas/ui/modals/GenerateDraftModal';
 import { useSearch } from '@tanstack/react-router';
-import { useCallback, useState } from 'react';
+import { usePostHog } from '@posthog/react';
+import { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { getApiErrorMessage } from '@/shared/api/api-error';
@@ -18,6 +19,14 @@ import { CreationPageTemplate } from '@/shared/ui/pages/CreationPageTemplate';
 
 export function IdeaCreationPage() {
   const { ideaId } = useSearch({ from: '/_auth/ideas/new' });
+  const posthog = usePostHog();
+  const startFiredRef = useRef(false);
+  if (!startFiredRef.current && !ideaId) {
+    startFiredRef.current = true;
+    posthog.capture('idea_creation_started', {
+      source: document.referrer.includes('/problems/') ? 'problem_page' : 'direct',
+    });
+  }
   const [cancelHandler, setCancelHandler] = useState<(() => void) | null>(null);
   const [generateDraftOpen, setGenerateDraftOpen] = useState(false);
   const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
@@ -59,7 +68,10 @@ export function IdeaCreationPage() {
           <Button
             type="button"
             className={cn(primaryBtnClass, 'w-full')}
-            onClick={() => setGenerateDraftOpen(true)}
+            onClick={() => {
+              posthog.capture('idea_ai_assist_used', { tool: 'full_draft' });
+              setGenerateDraftOpen(true);
+            }}
           >
             <SparklesIcon className="size-5" />
             Generate draft

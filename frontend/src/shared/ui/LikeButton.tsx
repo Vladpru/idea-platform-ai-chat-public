@@ -1,3 +1,4 @@
+import { usePostHog } from '@posthog/react';
 import { ThumbsUp } from 'lucide-react';
 import { useCallback, useState } from 'react';
 
@@ -29,6 +30,7 @@ export function LikeButton({
 }: LikeButtonProps) {
   const [hasInteracted, setHasInteracted] = useState(false);
   const { mutate } = useEntityLikeToggle(entityType);
+  const posthog = usePostHog();
 
   const onCommit = useCallback(
     (nextState: LikeOptimisticState, onSettled: () => void) => {
@@ -47,6 +49,9 @@ export function LikeButton({
     e.preventDefault();
     e.stopPropagation();
     if (!hasInteracted) setHasInteracted(true);
+    if (!optimistic.isLiked) {
+      posthog.capture('entity_liked', { entity_id: entityId, entity_type: entityType });
+    }
     toggle();
   };
 

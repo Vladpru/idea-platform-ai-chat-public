@@ -16,6 +16,7 @@ import {
 } from '@/features/problems/lib/submit-problem';
 import { SaveDraftButton } from '@/features/problems/ui/tooltips';
 import { useNavigate, useSearch } from '@tanstack/react-router';
+import { usePostHog } from '@posthog/react';
 import { useEffect, useId } from 'react';
 import { Controller } from 'react-hook-form';
 
@@ -63,6 +64,7 @@ export function SubmitProblemForm({
   onDocumentAutoFillControlsChange,
 }: SubmitProblemFormProps) {
   const navigate = useNavigate();
+  const posthog = usePostHog();
   const { problemId: editingProblemId } = useSearch({
     from: '/_auth/problems/new',
   });
@@ -175,6 +177,7 @@ export function SubmitProblemForm({
     const wasEditing = isEditing;
     const problemId = await onSaveDraft();
     if (!problemId) return;
+    posthog.capture('problem_draft_saved', { problem_id: problemId, is_editing: wasEditing });
     navigateAfterSave(wasEditing, problemId);
   };
 
@@ -182,6 +185,7 @@ export function SubmitProblemForm({
     const wasEditing = isEditing;
     const problemId = await onPublish();
     if (!problemId) return;
+    posthog.capture('problem_published', { problem_id: problemId, is_editing: wasEditing });
     void navigate({
       to: ROUTES.problemDetail(problemId),
       search: wasEditing ? { updated: true } : undefined,

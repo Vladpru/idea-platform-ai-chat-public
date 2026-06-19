@@ -7,6 +7,7 @@ import {
   createRootRouteWithContext,
 } from '@tanstack/react-router';
 import { isAxiosError } from 'axios';
+import { PostHogProvider } from '@posthog/react';
 
 export type RouterContext = {
   isAuthenticated: boolean;
@@ -14,10 +15,24 @@ export type RouterContext = {
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   component: () => (
-    <>
+    <PostHogProvider
+      apiKey={import.meta.env.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN!}
+      options={{
+        api_host: import.meta.env.VITE_POSTHOG_API_HOST ?? '/ingest',
+        ui_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST || 'https://eu.posthog.com',
+        defaults: '2026-01-30',
+        capture_pageview: false,
+        capture_exceptions: true,
+        debug: import.meta.env.DEV,
+        session_recording: {
+          maskAllInputs: true,
+          maskTextSelector: '[data-ph-mask]',
+        },
+      }}
+    >
       <HeadContent />
       <Outlet />
-    </>
+    </PostHogProvider>
   ),
   head: () => pageDocumentHead(''),
   notFoundComponent: () => <NotFoundPage />,

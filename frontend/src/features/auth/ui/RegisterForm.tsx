@@ -7,6 +7,8 @@ import { getApiErrorMessage } from '@/shared/api/api-error';
 import { passwordMaxLengthRule } from '@/shared/lib/password-rules';
 import { Button, Input, Label, Separator } from '@/shared/ui';
 
+import { usePostHog } from '@posthog/react';
+
 import { useAuthSessionStore } from '../model/auth-session-store';
 import { register as registerUser } from '../api/auth';
 import { type RegisterValues, registerSchema } from '../model/register-schema';
@@ -18,6 +20,7 @@ export function RegisterForm() {
   const navigate = useNavigate();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [passwordsVisible, setPasswordsVisible] = useState(false);
+  const posthog = usePostHog();
 
   const {
     register,
@@ -39,6 +42,11 @@ export function RegisterForm() {
     setSubmitError(null);
     try {
       await registerUser({ email: data.email, password: data.password });
+      const user = useAuthSessionStore.getState().user;
+      if (user) {
+        posthog.identify(user.id, { email: user.email, name: user.name });
+        posthog.capture('user_signed_up', { method: 'email' });
+      }
       await navigate({ to: '/profile', replace: true });
     } catch (e) {
       useAuthSessionStore.getState().clearSession();
