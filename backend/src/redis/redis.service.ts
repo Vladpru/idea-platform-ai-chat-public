@@ -1,8 +1,9 @@
+import { EventEmitter } from 'node:events';
+
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Redis } from 'ioredis';
 
-/** A single entry read from a Redis stream. */
 export interface RedisStreamEntry {
   id: string;
   fields: Record<string, string>;
@@ -11,15 +12,45 @@ export interface RedisStreamEntry {
 @Injectable()
 export class RedisService implements OnModuleDestroy {
   private readonly client: Redis;
-  // Dedicated connection for blocking stream reads. A blocking XREADGROUP holds
-  // its connection for the whole BLOCK duration, so it must never share the
-  // main client or it would stall every other Redis op in the app.
   private streamClient?: Redis;
+  private ready = false;
+  private streamReady = false;
+  private readonly statusEmitter = new EventEmitter();
 
   constructor(private readonly config: ConfigService) {
     this.client = new Redis(this.config.getOrThrow<string>('REDIS_URL'), {
       maxRetriesPerRequest: null,
+      keepAlive: 5_000,
     });
+    this.trackConnectionState(this.client);
+  }
+
+  get isReady(): boolean {
+    return this.ready && this.streamReady;
+  }
+
+  onReady(listener: () => void): () => void {
+    this.statusEmitter.on('ready', listener);
+    return () => {
+      this.statusEmitter.off('ready', listener);
+    };
+  }
+
+  private trackConnectionState(client: Redis, isStream = false): void {
+    const setReady = (value: boolean) => {
+      if (isStream) {
+        this.streamReady = value;
+      } else {
+        this.ready = value;
+      }
+      if (value) {
+        this.statusEmitter.emit('ready');
+      }
+    };
+    client.on('ready', () => setReady(true));
+    client.on('reconnecting', () => setReady(false));
+    client.on('close', () => setReady(false));
+    client.on('end', () => setReady(false));
   }
 
   async onModuleDestroy(): Promise<void> {
@@ -45,10 +76,6 @@ export class RedisService implements OnModuleDestroy {
     await this.client.del(key);
   }
 
-  /**
-   * Append an entry to a Redis stream. When `maxLen` is provided the stream is
-   * capped with approximate trimming (`MAXLEN ~`) to keep memory bounded.
-   */
   async xadd(
     stream: string,
     fields: Record<string, string>,
@@ -66,11 +93,6 @@ export class RedisService implements OnModuleDestroy {
     await this.client.call('XADD', stream, ...args);
   }
 
-  /**
-   * Create a stream consumer group (idempotent), creating the stream itself
-   * with MKSTREAM if it does not yet exist. `startId` defaults to `0` so a
-   * freshly created group consumes any messages already buffered in the stream.
-   */
   async ensureConsumerGroup(
     stream: string,
     group: string,
@@ -93,10 +115,6 @@ export class RedisService implements OnModuleDestroy {
     }
   }
 
-  /**
-   * Blocking XREADGROUP for new (`>`) messages, on the dedicated connection.
-   * Returns an empty array on timeout.
-   */
   async readGroup(
     group: string,
     consumer: string,
@@ -120,7 +138,6 @@ export class RedisService implements OnModuleDestroy {
     return parseStreamReply(reply);
   }
 
-  /** Acknowledge one or more processed stream entries. */
   async ackMessages(
     stream: string,
     group: string,
@@ -136,12 +153,12 @@ export class RedisService implements OnModuleDestroy {
   private streamConnection(): Redis {
     if (!this.streamClient) {
       this.streamClient = this.client.duplicate();
+      this.trackConnectionState(this.streamClient, true);
     }
     return this.streamClient;
   }
 }
 
-/** Parse an ioredis XREADGROUP reply ([[stream, [[id, [f, v, ...]], ...]]]). */
 function parseStreamReply(reply: unknown): RedisStreamEntry[] {
   if (!Array.isArray(reply)) {
     return [];

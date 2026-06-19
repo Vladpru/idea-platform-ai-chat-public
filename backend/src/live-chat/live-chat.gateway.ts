@@ -14,8 +14,9 @@ import type { Server, Socket } from 'socket.io';
 
 import {
   REALTIME_NAMESPACES,
-  realtimeOutboundEventName,
+  ROOM_CONTROL_EVENTS,
   type RealtimeOutboundEvent,
+  realtimeOutboundEventName,
 } from '../realtime/realtime.types';
 import { WsAuthService } from '../ws-auth/ws-auth.service';
 import { SendLiveChatMessagePayloadDto } from './dto/send-live-chat-message.dto';
@@ -87,19 +88,28 @@ export class LiveChatGateway
   async handleJoinRoom(
     @ConnectedSocket() client: AuthenticatedLiveChatSocket,
     @MessageBody() payload: JoinLiveChatRoomDto,
-  ): Promise<{ ok: true } | { ok: false; error: string }> {
+  ): Promise<void> {
     const userId = client.data.userId;
     if (!userId) {
-      return { ok: false, error: 'Unauthorized' };
+      client.emit(ROOM_CONTROL_EVENTS.JOIN_DENIED, {
+        roomId: payload.roomId,
+        reason: 'Unauthorized',
+      });
+      return;
     }
 
     try {
       await this.liveChatService.assertRoomAccess(payload.roomId, userId);
-      await client.join(liveChatRoomName(payload.roomId));
-      return { ok: true };
     } catch {
-      return { ok: false, error: 'Room not found' };
+      client.emit(ROOM_CONTROL_EVENTS.JOIN_DENIED, {
+        roomId: payload.roomId,
+        reason: 'Access denied',
+      });
+      return;
     }
+
+    await client.join(liveChatRoomName(payload.roomId));
+    client.emit(ROOM_CONTROL_EVENTS.JOIN_APPROVED, { roomId: payload.roomId });
   }
 
   @SubscribeMessage('leave_room')
@@ -150,11 +160,6 @@ export class LiveChatGateway
     }
   }
 
-  /**
-   * Outbound bridge for the `direct` transport: turns a published broadcast
-   * into a socket emit on the live-chat namespace server. This is the only
-   * place this gateway touches `this.server`.
-   */
   @OnEvent(realtimeOutboundEventName(REALTIME_NAMESPACES.LIVE_CHAT))
   handleOutbound(event: RealtimeOutboundEvent): void {
     this.server.to(event.room).emit(event.event, event.payload);

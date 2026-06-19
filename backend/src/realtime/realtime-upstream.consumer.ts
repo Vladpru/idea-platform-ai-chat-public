@@ -1,5 +1,3 @@
-import { hostname } from 'node:os';
-
 import {
   BadRequestException,
   HttpException,
@@ -9,6 +7,7 @@ import {
   OnApplicationShutdown,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { hostname } from 'node:os';
 
 import type { SendLiveChatMessagePayloadDto } from '../live-chat/dto/send-live-chat-message.dto';
 import { LiveChatService } from '../live-chat/live-chat.service';
@@ -27,14 +26,8 @@ import {
 } from './realtime.types';
 
 const READ_COUNT = 50;
-const BLOCK_MS = 5000;
+const BLOCK_MS = 2000;
 
-/**
- * Consumes client-originated events from the `edge:upstream` Redis stream and
- * applies them through the existing business services. Active only when
- * REALTIME_TRANSPORT=redis (otherwise the edge is not deployed and there is
- * nothing to consume).
- */
 @Injectable()
 export class RealtimeUpstreamConsumer
   implements OnApplicationBootstrap, OnApplicationShutdown
@@ -43,6 +36,7 @@ export class RealtimeUpstreamConsumer
   private readonly consumerName = `${hostname()}-${process.pid}`;
   private running = false;
   private loop?: Promise<void>;
+  private resume?: () => void;
 
   constructor(
     private readonly redis: RedisService,
@@ -60,11 +54,7 @@ export class RealtimeUpstreamConsumer
       return;
     }
 
-    await this.redis.ensureConsumerGroup(
-      EDGE_UPSTREAM_STREAM,
-      MONOLITH_CONSUMER_GROUP,
-      '0',
-    );
+    await this.ensureGroup();
     this.running = true;
     this.loop = this.consume();
     this.logger.log(
@@ -74,6 +64,7 @@ export class RealtimeUpstreamConsumer
 
   async onApplicationShutdown(): Promise<void> {
     this.running = false;
+    this.resume?.();
     if (this.loop) {
       await this.loop.catch(() => undefined);
     }
@@ -81,6 +72,11 @@ export class RealtimeUpstreamConsumer
 
   private async consume(): Promise<void> {
     while (this.running) {
+      if (!this.redis.isReady) {
+        await this.waitForReady();
+        continue;
+      }
+
       let entries: RedisStreamEntry[];
       try {
         entries = await this.redis.readGroup(
@@ -91,8 +87,33 @@ export class RealtimeUpstreamConsumer
           BLOCK_MS,
         );
       } catch (error) {
-        this.logger.error('XREADGROUP failed; backing off 1s', error as Error);
-        await delay(1000);
+        const msg = error instanceof Error ? error.message.toLowerCase() : '';
+        if (msg.includes('nogroup')) {
+          this.logger.warn('Upstream consumer group missing; recreating it');
+          try {
+            await this.ensureGroup();
+          } catch (recreateError) {
+            this.logger.error(
+              'Failed to recreate upstream consumer group; backing off 1 s',
+              recreateError as Error,
+            );
+            await new Promise<void>(r => setTimeout(r, 1_000));
+          }
+          continue;
+        }
+        const isTransient =
+          msg.includes('connection is closed') ||
+          msg.includes('econnreset') ||
+          msg.includes('etimedout') ||
+          msg.includes('stream timeout') ||
+          msg.includes('socket closed unexpectedly');
+        if (!isTransient) {
+          this.logger.error(
+            'XREADGROUP failed; backing off 1 s',
+            error as Error,
+          );
+          await new Promise<void>(r => setTimeout(r, 1_000));
+        }
         continue;
       }
 
@@ -100,6 +121,37 @@ export class RealtimeUpstreamConsumer
         await this.handleEntry(entry.id, entry.fields);
       }
     }
+  }
+
+  private async ensureGroup(): Promise<void> {
+    await this.redis.ensureConsumerGroup(
+      EDGE_UPSTREAM_STREAM,
+      MONOLITH_CONSUMER_GROUP,
+      '0',
+    );
+  }
+
+  private waitForReady(): Promise<void> {
+    return new Promise<void>(resolve => {
+      if (this.redis.isReady || !this.running) {
+        resolve();
+        return;
+      }
+
+      let settled = false;
+      const settle = (unsubscribe: () => void): void => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        this.resume = undefined;
+        unsubscribe();
+        resolve();
+      };
+
+      const unsubscribe = this.redis.onReady(() => settle(unsubscribe));
+      this.resume = () => settle(unsubscribe);
+    });
   }
 
   private async handleEntry(
@@ -110,7 +162,9 @@ export class RealtimeUpstreamConsumer
     try {
       envelope = parseUpstreamEnvelope(fields.payload);
     } catch (error) {
-      this.logger.warn(`Poison upstream message ${id} -> DLQ: ${String(error)}`);
+      this.logger.warn(
+        `Poison upstream message ${id} -> DLQ: ${String(error)}`,
+      );
       await this.toDlq(fields.payload, error);
       await this.ack(id);
       return;
@@ -120,8 +174,6 @@ export class RealtimeUpstreamConsumer
       await this.dispatch(envelope);
     } catch (error) {
       if (error instanceof HttpException) {
-        // Permanent business rejection: it will never succeed on retry, so DLQ
-        // and ack instead of blocking the group forever.
         this.logger.warn(
           `Rejected upstream "${envelope.event}" (${id}): ${error.message}`,
         );
@@ -129,7 +181,6 @@ export class RealtimeUpstreamConsumer
         await this.ack(id);
         return;
       }
-      // Transient/unexpected failure: leave unacked (pending) for later reclaim.
       this.logger.error(
         `Processing failed for ${id}; leaving pending`,
         error as Error,
@@ -166,7 +217,7 @@ export class RealtimeUpstreamConsumer
       await this.liveChat.assertRoomAccess(roomId, userId);
     } catch (error) {
       if (!(error instanceof HttpException)) {
-        throw error; // transient -> leave pending for retry
+        throw error;
       }
       this.publisher.publishToSocket(
         { namespace: REALTIME_NAMESPACES.LIVE_CHAT, sid },
@@ -198,7 +249,10 @@ export class RealtimeUpstreamConsumer
     );
   }
 
-  private async toDlq(payload: string | undefined, error: unknown): Promise<void> {
+  private async toDlq(
+    payload: string | undefined,
+    error: unknown,
+  ): Promise<void> {
     await this.redis.xadd(
       EDGE_UPSTREAM_DLQ_STREAM,
       {
@@ -216,7 +270,9 @@ function parseUpstreamEnvelope(raw: string | undefined): UpstreamEnvelope {
   }
   const parsed = JSON.parse(raw) as Partial<UpstreamEnvelope>;
   if (typeof parsed.event !== 'string' || typeof parsed.userId !== 'string') {
-    throw new Error('invalid upstream envelope (event and userId are required)');
+    throw new Error(
+      'invalid upstream envelope (event and userId are required)',
+    );
   }
   return {
     v: typeof parsed.v === 'number' ? parsed.v : 1,
@@ -238,8 +294,4 @@ function readRoomId(payload: unknown): string | undefined {
     }
   }
   return undefined;
-}
-
-function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
 }
