@@ -8,6 +8,8 @@ import {
 } from '@tanstack/react-router';
 import { isAxiosError } from 'axios';
 import { PostHogProvider } from '@posthog/react';
+import * as Sentry from '@sentry/react';
+import posthog, { SentryIntegration } from 'posthog-js';
 
 export type RouterContext = {
   isAuthenticated: boolean;
@@ -28,10 +30,23 @@ export const Route = createRootRouteWithContext<RouterContext>()({
           maskAllInputs: true,
           maskTextSelector: '[data-ph-mask]',
         },
+        integrations: import.meta.env.VITE_SENTRY_DSN
+          ? [new SentryIntegration(posthog, 'polycoders', parseInt(import.meta.env.VITE_SENTRY_PROJECT_ID || '0'))]
+          : [],
       }}
     >
       <HeadContent />
-      <Outlet />
+      <Sentry.ErrorBoundary
+        fallback={
+          <div className="flex min-h-svh flex-col items-center justify-center">
+            <p className="text-muted-foreground text-sm">
+              Something went wrong. Please try refreshing the page.
+            </p>
+          </div>
+        }
+      >
+        <Outlet />
+      </Sentry.ErrorBoundary>
     </PostHogProvider>
   ),
   head: () => pageDocumentHead(''),
