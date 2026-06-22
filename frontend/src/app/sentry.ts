@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/react';
+import posthog from 'posthog-js';
 
 export function initSentry() {
   if (!import.meta.env.VITE_SENTRY_DSN) return;
@@ -18,22 +19,9 @@ export function initSentry() {
     replaysOnErrorSampleRate: 1.0,
     tracePropagationTargets: [/\/api\//],
     beforeSend(event) {
-      try {
-        const w = window as unknown as {
-          posthog?: {
-            get_session_replay_url?: (opts: {
-              withTimestamp: boolean;
-            }) => string;
-          };
-        };
-        const sessionUrl = w.posthog?.get_session_replay_url?.({
-          withTimestamp: true,
-        });
-        if (sessionUrl) {
-          event.tags = { ...event.tags, posthog_session_url: sessionUrl };
-        }
-      } catch {
-        // posthog not available, skip
+      const sessionUrl = posthog.get_session_replay_url?.({ withTimestamp: true });
+      if (sessionUrl) {
+        event.tags = { ...event.tags, posthog_session_url: sessionUrl };
       }
       return event;
     },

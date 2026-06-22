@@ -65,7 +65,7 @@ export default defineConfig({
     }),
   ],
   build: {
-    sourcemap: true,
+    sourcemap: 'hidden',
   },
   resolve: {
     alias: {
