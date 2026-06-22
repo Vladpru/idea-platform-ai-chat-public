@@ -7,11 +7,16 @@ import {
   OnApplicationShutdown,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 import { hostname } from 'node:os';
 
-import type { SendLiveChatMessagePayloadDto } from '../modules/live-chat/dto/send-live-chat-message.dto';
+import {
+  RedisService,
+  type RedisStreamEntry,
+} from '../core/redis/redis.service';
+import { SendLiveChatMessagePayloadDto } from '../modules/live-chat/dto/send-live-chat-message.dto';
 import { LiveChatService } from '../modules/live-chat/live-chat.service';
-import { RedisService, type RedisStreamEntry } from '../core/redis/redis.service';
 import { RealtimePublisherService } from './realtime-publisher.service';
 import {
   EDGE_UPSTREAM_DLQ_STREAM,
@@ -107,7 +112,9 @@ export class RealtimeUpstreamConsumer
           msg.includes('etimedout') ||
           msg.includes('stream timeout') ||
           msg.includes('socket closed unexpectedly');
-        if (!isTransient) {
+        if (isTransient) {
+          await new Promise<void>(r => setTimeout(r, 50));
+        } else {
           this.logger.error(
             'XREADGROUP failed; backing off 1 s',
             error as Error,
@@ -235,10 +242,15 @@ export class RealtimeUpstreamConsumer
   }
 
   private async handleMessageSend(envelope: UpstreamEnvelope): Promise<void> {
-    await this.liveChat.processInboundMessage(
-      envelope.userId,
-      envelope.payload as SendLiveChatMessagePayloadDto,
+    const dto = plainToInstance(
+      SendLiveChatMessagePayloadDto,
+      envelope.payload,
     );
+    const errors = await validate(dto);
+    if (errors.length > 0) {
+      throw new BadRequestException('Invalid message:send payload');
+    }
+    await this.liveChat.processInboundMessage(envelope.userId, dto);
   }
 
   private async ack(id: string): Promise<void> {

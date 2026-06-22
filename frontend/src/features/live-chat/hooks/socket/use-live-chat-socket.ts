@@ -11,7 +11,6 @@ import { liveChatQueryKeys } from '@/features/live-chat/lib/live-chat-query-keys
 import { appendLiveChatMessage } from '@/features/live-chat/lib/merge-live-chat-message-cache';
 import {
   getPendingMessages,
-  localMessageToDto,
   saveOutgoingMessage,
   saveSyncedMessage,
 } from '@/features/live-chat/lib/offline-chat-queue';
@@ -83,16 +82,27 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
     try {
       const pending = await getPendingMessages(currentRoomId);
       for (const row of pending) {
-        const dto = localMessageToDto(row);
+        const attachmentUrl = row.snapshot.attachmentUrl as
+          | string
+          | null
+          | undefined;
+        const attachmentName = row.snapshot.attachmentName as
+          | string
+          | null
+          | undefined;
+        const attachmentMimeType = row.snapshot.attachmentMimeType as
+          | string
+          | null
+          | undefined;
         const payload: SendMessagePayload = {
           roomId: row.roomId,
           clientMessageId: row.clientMessageId,
           content: row.content,
         };
-        if (dto.attachmentUrl) {
-          payload.attachmentUrl = dto.attachmentUrl;
-          payload.attachmentName = dto.attachmentName ?? undefined;
-          payload.attachmentMimeType = dto.attachmentMimeType ?? undefined;
+        if (attachmentUrl) {
+          payload.attachmentUrl = attachmentUrl;
+          payload.attachmentName = attachmentName ?? undefined;
+          payload.attachmentMimeType = attachmentMimeType ?? undefined;
         }
         socket.emit('send_message', payload);
       }
@@ -138,11 +148,11 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
     const handleConnectionReady = () => {
       joinApprovedRef.current = false;
       socket.emit('join_room', { roomId });
-      joinedRoomIdRef.current = roomId;
     };
 
     const handleJoinApproved = () => {
       joinApprovedRef.current = true;
+      joinedRoomIdRef.current = roomId;
       void flushPending();
     };
 
@@ -219,7 +229,6 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
     if (socket.connected) {
       joinApprovedRef.current = false;
       socket.emit('join_room', { roomId });
-      joinedRoomIdRef.current = roomId;
     } else {
       socket.connect();
     }
@@ -239,6 +248,7 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
       socket.off('call_ended', handleCallEnded);
       socket.off('call_cancelled', handleCallCancelled);
       socket.disconnect();
+      socketRef.current = null;
       joinedRoomIdRef.current = null;
       joinApprovedRef.current = false;
     };

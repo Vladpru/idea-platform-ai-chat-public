@@ -14,7 +14,7 @@ export class RedisService implements OnModuleDestroy {
   private readonly client: Redis;
   private streamClient?: Redis;
   private ready = false;
-  private streamReady = false;
+  private streamReady = true;
   private readonly statusEmitter = new EventEmitter();
 
   constructor(private readonly config: ConfigService) {

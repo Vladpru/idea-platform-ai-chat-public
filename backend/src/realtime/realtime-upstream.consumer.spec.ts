@@ -107,7 +107,7 @@ describe('RealtimeUpstreamConsumer Redis backpressure', () => {
     await tick();
     expect(redis.readGroup).toHaveBeenCalledTimes(1);
 
-    await tick();
+    await new Promise(resolve => setTimeout(resolve, 70));
     expect(redis.readGroup).toHaveBeenCalledTimes(1);
 
     redis.emitReady();

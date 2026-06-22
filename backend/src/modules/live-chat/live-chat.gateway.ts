@@ -1,4 +1,9 @@
-import { Logger, UsePipes, ValidationPipe } from '@nestjs/common';
+import {
+  Logger,
+  NotFoundException,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import {
   ConnectedSocket,
@@ -100,10 +105,12 @@ export class LiveChatGateway
 
     try {
       await this.liveChatService.assertRoomAccess(payload.roomId, userId);
-    } catch {
+    } catch (error) {
+      const reason =
+        error instanceof NotFoundException ? 'Room not found' : 'Access denied';
       client.emit(ROOM_CONTROL_EVENTS.JOIN_DENIED, {
         roomId: payload.roomId,
-        reason: 'Access denied',
+        reason,
       });
       return;
     }

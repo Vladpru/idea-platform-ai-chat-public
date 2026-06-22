@@ -67,15 +67,11 @@ describe('RedisService connection state', () => {
     resetInstances();
   });
 
-  it('is not ready until both the main and stream connections are ready', async () => {
+  it('is ready once the main client is ready without waiting for the stream connection', () => {
     const service = new RedisService(config);
     expect(service.isReady).toBe(false);
 
     clientAt(0).emit('ready');
-    expect(service.isReady).toBe(false);
-
-    await service.ensureConsumerGroup('edge:upstream', 'monolith');
-    clientAt(1).emit('ready');
     expect(service.isReady).toBe(true);
   });
 
