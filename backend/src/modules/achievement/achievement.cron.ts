@@ -25,19 +25,15 @@ export class AchievementCronService {
       nowUtc.getUTCMonth() === 0 ? 11 : nowUtc.getUTCMonth() - 1;
 
     const start = new Date(Date.UTC(prevYear, prevMonthIndex, 1));
-    const end = new Date(
-      Date.UTC(prevYear, prevMonthIndex + 1, 1) - 1,
-    );
+    const end = new Date(Date.UTC(prevYear, prevMonthIndex + 1, 1) - 1);
 
     const month = `${prevYear}-${String(prevMonthIndex + 1).padStart(2, '0')}`;
 
     this.logger.log(`Awarding Top Contributor for ${month}`);
 
-    const entries = await this.scoringRepo.queryLeaderboardEntries(
-      start,
-      end,
-      1,
-    );
+    const entries = await this.scoringRepo.queryLeaderboardEntries(start, end, {
+      take: 1,
+    });
     if (entries.length === 0) {
       this.logger.log(`No contributors found for ${month}`);
       return;

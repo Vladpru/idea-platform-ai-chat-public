@@ -19,10 +19,15 @@ export async function fetchStatisticsSnapshot(
 
 export async function fetchStatisticsLeaderboard(
   period: StatisticsPeriod,
+  page: number,
+  limit: number,
   timeZone = getClientTimeZone(),
 ): Promise<LeaderboardResponse> {
-  const { data } = await api.get<LeaderboardResponse>('/statistics/leaderboard', {
-    params: { period, timeZone },
-  });
+  const { data } = await api.get<LeaderboardResponse>(
+    '/statistics/leaderboard',
+    {
+      params: { period, timeZone, page, limit },
+    },
+  );
   return data;
 }

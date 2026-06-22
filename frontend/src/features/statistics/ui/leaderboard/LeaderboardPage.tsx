@@ -1,22 +1,24 @@
-import { Link } from '@tanstack/react-router';
+import { Link, getRouteApi } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
-import { useState } from 'react';
 
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import { ROUTES } from '@/shared/config/paths';
 import { Card } from '@/shared/ui';
 import { Button } from '@/shared/ui/button';
+import { Pagination } from '@/shared/ui/pagination';
 import { Skeleton } from '@/shared/ui/skeleton';
 
-import { useStatisticsLeaderboard } from '../../hooks/use-statistics-leaderboard';
+import {
+  LEADERBOARD_PAGE_SIZE,
+  useStatisticsLeaderboard,
+} from '../../hooks/use-statistics-leaderboard';
+import { useStatisticsStore } from '../../model/statistics-store';
 import type { StatisticsPeriod } from '../../model/statistics.types';
 import { StatisticsTimeRangeSelect } from '../StatisticsTimeRangeSelect';
 import { statisticsPageTitleClass } from '../statistics-classes';
 import { LeaderboardRow } from './LeaderboardRow';
 
-type LeaderboardPageProps = {
-  initialPeriod?: StatisticsPeriod;
-};
+const leaderboardRoute = getRouteApi('/_auth/statistic/leaderboard');
 
 function LeaderboardSkeleton() {
   return (
@@ -36,12 +38,22 @@ function LeaderboardSkeleton() {
   );
 }
 
-export function LeaderboardPage({
-  initialPeriod = 'year_to_date',
-}: LeaderboardPageProps) {
-  const [period, setPeriod] = useState<StatisticsPeriod>(initialPeriod);
+export function LeaderboardPage() {
+  const { page } = leaderboardRoute.useSearch();
+  const navigate = leaderboardRoute.useNavigate();
+  const period = useStatisticsStore(s => s.period);
+  const setPeriod = useStatisticsStore(s => s.setPeriod);
   const { data, isLoading, isError, error, refetch, isFetching } =
-    useStatisticsLeaderboard(period);
+    useStatisticsLeaderboard(page);
+
+  const goToPage = (next: number) => {
+    void navigate({ search: prev => ({ ...prev, page: next }) });
+  };
+
+  const handlePeriodChange = (next: StatisticsPeriod) => {
+    setPeriod(next);
+    void navigate({ search: prev => ({ ...prev, page: 1 }) });
+  };
 
   return (
     <main className="bg-brand-neutral min-h-[calc(100vh-56px)] px-4 md:px-8 lg:px-12">
@@ -63,7 +75,10 @@ export function LeaderboardPage({
                 frame
               </p>
             </div>
-            <StatisticsTimeRangeSelect value={period} onChange={setPeriod} />
+            <StatisticsTimeRangeSelect
+              value={period}
+              onChange={handlePeriodChange}
+            />
           </div>
 
           {isLoading ? (
@@ -82,18 +97,32 @@ export function LeaderboardPage({
                 Try again
               </Button>
             </div>
-          ) : data.entries.length === 0 ? (
+          ) : data.data.length === 0 ? (
             <p className="text-brand-gray-500 mt-8 text-sm">
               No contributor activity for this time range yet.
             </p>
           ) : (
-            <ul
-              className={`border-brand-gray-200 mt-8 overflow-hidden rounded-lg border ${isFetching ? 'opacity-70' : ''}`}
-            >
-              {data.entries.map((entry, index) => (
-                <LeaderboardRow key={entry.id} rank={index + 1} entry={entry} />
-              ))}
-            </ul>
+            <>
+              <ul
+                className={`border-brand-gray-200 mt-8 overflow-hidden rounded-lg border ${isFetching ? 'opacity-70' : ''}`}
+              >
+                {data.data.map((entry, index) => (
+                  <LeaderboardRow
+                    key={entry.id}
+                    rank={
+                      (data.currentPage - 1) * LEADERBOARD_PAGE_SIZE + index + 1
+                    }
+                    entry={entry}
+                  />
+                ))}
+              </ul>
+
+              <Pagination
+                currentPage={data.currentPage}
+                totalPages={data.totalPages}
+                onPageChange={goToPage}
+              />
+            </>
           )}
         </Card>
       </div>

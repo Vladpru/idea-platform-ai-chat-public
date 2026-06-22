@@ -65,7 +65,10 @@ export interface LeaderboardEntry {
 }
 
 export interface LeaderboardResponse {
-  entries: LeaderboardEntry[];
+  data: LeaderboardEntry[];
+  totalCount: number;
+  currentPage: number;
+  totalPages: number;
 }
 
 export interface MyScoreCategory {

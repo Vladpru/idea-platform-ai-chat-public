@@ -115,7 +115,7 @@ export class StatisticsScoringRepository {
     start: Date,
     end: Date,
   ): Promise<StatisticsContributor[]> {
-    const entries = await this.queryLeaderboardEntries(start, end, 5);
+    const entries = await this.queryLeaderboardEntries(start, end, { take: 5 });
 
     return entries.map(({ id, name, points, avatarUrl, achievements }) => ({
       id,
@@ -126,15 +126,37 @@ export class StatisticsScoringRepository {
     }));
   }
 
+  async countLeaderboardEntries(start: Date, end: Date): Promise<number> {
+    const weights = DEFAULT_SCORING_WEIGHTS;
+    const activityCte = buildScoreActivityCte(start, end, weights);
+
+    const rows = await this.prisma.$queryRaw<{ total: bigint }[]>`
+      WITH activity AS (${activityCte})
+      SELECT COUNT(*)::bigint AS total
+      FROM (
+        SELECT user_id
+        FROM activity
+        GROUP BY user_id
+        HAVING SUM(points) > 0
+      ) ranked
+    `;
+
+    return Number(rows[0]?.total ?? 0);
+  }
+
   async queryLeaderboardEntries(
     start: Date,
     end: Date,
-    limit?: number,
+    options?: { take?: number; skip?: number },
   ): Promise<LeaderboardEntry[]> {
     const weights = DEFAULT_SCORING_WEIGHTS;
     const activityCte = buildScoreActivityCte(start, end, weights);
+    const take = options?.take;
+    const skip = options?.skip ?? 0;
     const limitSql =
-      typeof limit === 'number' ? Prisma.sql`LIMIT ${limit}` : Prisma.empty;
+      typeof take === 'number'
+        ? Prisma.sql`LIMIT ${take} OFFSET ${skip}`
+        : Prisma.empty;
 
     const ranked = await this.prisma.$queryRaw<LeaderboardScoreRow[]>`
       WITH activity AS (${activityCte})

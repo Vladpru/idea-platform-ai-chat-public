@@ -57,7 +57,10 @@ export type LeaderboardEntry = {
 };
 
 export type LeaderboardResponse = {
-  entries: LeaderboardEntry[];
+  data: LeaderboardEntry[];
+  totalCount: number;
+  currentPage: number;
+  totalPages: number;
 };
 
 export type StatisticsCharts = {
