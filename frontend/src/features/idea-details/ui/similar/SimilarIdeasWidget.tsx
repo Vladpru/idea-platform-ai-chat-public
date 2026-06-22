@@ -7,6 +7,8 @@ import { Globe } from 'lucide-react';
 
 import { useState } from 'react';
 
+import { ROUTES } from '@/shared/config/paths';
+
 import { cn } from '@/shared/lib/utils';
 
 import { StarsIcon } from '@/shared/ui/icons';
@@ -15,7 +17,7 @@ import { AnimatedTabUnderline } from '@/shared/ui/motion';
 
 import { SimilarIdeasRowSkeleton } from '../skeletons/SimilarIdeasRowSkeleton';
 
-import { SimilarIdeaCard as SimilarIdeaCardUi } from './SimilarIdeaCard';
+import { SimilarEntityCard } from './SimilarEntityCard';
 
 type SimilarIdeasWidgetProps = {
   ideaId: string;
@@ -166,7 +168,12 @@ export function SimilarIdeasWidget({
       ) : (
         <div className="flex flex-col gap-4">
           {similarIdeas.map(card => (
-            <SimilarIdeaCardUi key={card.id} card={card} />
+            <SimilarEntityCard
+              key={card.id}
+              card={card}
+              entityType="IDEA"
+              detailRoute={ROUTES.ideaDetail}
+            />
           ))}
         </div>
       )}

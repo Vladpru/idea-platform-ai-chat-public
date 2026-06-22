@@ -1,42 +1,75 @@
-import type { SimilarIdeaCard as SimilarIdeaCardModel } from '@/features/idea-details/model/idea-details.types';
 import { Link } from '@tanstack/react-router';
 import { Eye, MessageCircle } from 'lucide-react';
 
-import { ROUTES } from '@/shared/config/paths';
+import { getInitials } from '@/features/idea-details/lib/get-initials';
 import { entityDescriptionPreviewClass } from '@/shared/lib/entity-description-classes';
 import { cn } from '@/shared/lib/utils';
-import { MarkdownRenderer } from '@/shared/ui/rich-text-editor';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { LikeButton } from '@/shared/ui/LikeButton';
+import { MarkdownRenderer } from '@/shared/ui/rich-text-editor';
 import { StageChevronBadge } from '@/shared/ui/stage-chevron-badge';
+
 import { IdeaTagCloud } from '../IdeaTagCloud';
 
-import { getInitials } from '@/features/idea-details/lib/get-initials';
+export type SimilarEntityCardData = {
+  id: string;
+  title: string;
+  description: string | null;
+  imageUrl?: string | null;
+  authorName: string;
+  authorAvatarUrl: string | null;
+  stage: string;
+  tags: string[];
+  stats: {
+    views: number;
+    comments: number;
+    likes: number;
+  };
+  isLiked?: boolean;
+  externalUrl?: string;
+};
 
-type SimilarIdeaCardProps = {
-  card: SimilarIdeaCardModel;
+type SimilarEntityCardProps = {
+  card: SimilarEntityCardData;
+  entityType: 'IDEA' | 'PROBLEM';
+  detailRoute: (id: string) => string;
+  showImage?: boolean;
   className?: string;
+};
+
+type SimilarEntityCardContentProps = {
+  card: SimilarEntityCardData;
+  entityType: 'IDEA' | 'PROBLEM';
+  showImage: boolean;
 };
 
 const cardSurfaceClass =
   'group flex w-full flex-col overflow-hidden rounded-lg border border-brand-gray-200 bg-card text-left shadow-sm transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-brand-dark-blue focus-visible:ring-offset-2 focus-visible:outline-none lg:flex-row';
 
-function SimilarIdeaCardContent({ card }: SimilarIdeaCardProps) {
+function SimilarEntityCardContent({
+  card,
+  entityType,
+  showImage,
+}: SimilarEntityCardContentProps) {
+  const entityNoun = entityType === 'IDEA' ? 'idea' : 'problem';
+
   return (
     <>
-      <div className="bg-brand-gray-100 relative aspect-[16/10] w-full shrink-0 overflow-hidden lg:h-[226px] lg:w-[400px]">
-        {card.imageUrl ? (
-          <img
-            src={card.imageUrl}
-            alt=""
-            className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.01]"
-          />
-        ) : (
-          <div className="text-brand-gray-400 flex size-full items-center justify-center text-xs font-semibold uppercase">
-            No image
-          </div>
-        )}
-      </div>
+      {showImage ? (
+        <div className="bg-brand-gray-100 relative aspect-[16/10] w-full shrink-0 overflow-hidden lg:h-[226px] lg:w-[400px]">
+          {card.imageUrl ? (
+            <img
+              src={card.imageUrl}
+              alt=""
+              className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.01]"
+            />
+          ) : (
+            <div className="text-brand-gray-400 flex size-full items-center justify-center text-xs font-semibold uppercase">
+              No image
+            </div>
+          )}
+        </div>
+      ) : null}
 
       <div className="flex flex-1 flex-col justify-between p-4 sm:p-5 lg:p-6">
         <div className="space-y-2 sm:space-y-3">
@@ -72,7 +105,7 @@ function SimilarIdeaCardContent({ card }: SimilarIdeaCardProps) {
             />
           ) : (
             <p className={cn(entityDescriptionPreviewClass, 'line-clamp-3')}>
-              No description available for this idea.
+              No description available for this {entityNoun}.
             </p>
           )}
         </div>
@@ -95,7 +128,7 @@ function SimilarIdeaCardContent({ card }: SimilarIdeaCardProps) {
             </span>
             <LikeButton
               entityId={card.id}
-              entityType="IDEA"
+              entityType={entityType}
               isLiked={card.isLiked ?? false}
               likeCount={card.stats?.likes ?? 0}
               className="cursor-pointer px-0 py-0 text-xs font-semibold hover:bg-transparent"
@@ -108,7 +141,13 @@ function SimilarIdeaCardContent({ card }: SimilarIdeaCardProps) {
   );
 }
 
-export function SimilarIdeaCard({ card, className }: SimilarIdeaCardProps) {
+export function SimilarEntityCard({
+  card,
+  entityType,
+  detailRoute,
+  showImage = true,
+  className,
+}: SimilarEntityCardProps) {
   if (card.externalUrl) {
     return (
       <a
@@ -117,17 +156,22 @@ export function SimilarIdeaCard({ card, className }: SimilarIdeaCardProps) {
         rel="noopener noreferrer"
         className={cn(cardSurfaceClass, className)}
       >
-        <SimilarIdeaCardContent card={card} />
+        <SimilarEntityCardContent
+          card={card}
+          entityType={entityType}
+          showImage={showImage}
+        />
       </a>
     );
   }
 
   return (
-    <Link
-      to={ROUTES.ideaDetail(card.id)}
-      className={cn(cardSurfaceClass, className)}
-    >
-      <SimilarIdeaCardContent card={card} />
+    <Link to={detailRoute(card.id)} className={cn(cardSurfaceClass, className)}>
+      <SimilarEntityCardContent
+        card={card}
+        entityType={entityType}
+        showImage={showImage}
+      />
     </Link>
   );
 }
