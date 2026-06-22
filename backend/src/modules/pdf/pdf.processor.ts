@@ -4,7 +4,7 @@ import { Job } from 'bullmq';
 
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { runInBackgroundJobContext } from '../../shared/context/request-context';
-import { NotificationGateway } from '../notification/notification.gateway';
+import { NotificationRealtimeService } from '../notification/notification-realtime.service';
 import { PDF_EXPORT_QUEUE } from './constants/pdf-queue.constants';
 import { PdfService } from './pdf.service';
 import type { PdfExportJobData } from './types/pdf.types';
@@ -18,7 +18,7 @@ export class PdfProcessor extends WorkerHost {
   constructor(
     private readonly pdfService: PdfService,
     private readonly prisma: PrismaService,
-    private readonly gateway: NotificationGateway,
+    private readonly realtime: NotificationRealtimeService,
   ) {
     super();
   }
@@ -76,7 +76,7 @@ export class PdfProcessor extends WorkerHost {
             payload: notificationPayload,
           },
         });
-        this.gateway.notifyUser(userId);
+        this.realtime.notifyUser(userId);
       } catch (error) {
         this.logger.error(
           `Failed to create PDF_READY notification for user ${userId}`,
@@ -84,7 +84,7 @@ export class PdfProcessor extends WorkerHost {
         );
       }
 
-      this.gateway.notifyPdfReady(userId, notificationPayload);
+      this.realtime.notifyPdfReady(userId, notificationPayload);
 
       this.logger.log(
         `PDF ready for user ${userId}: ${entityType} ${entityId}`,
@@ -111,7 +111,7 @@ export class PdfProcessor extends WorkerHost {
       error,
     );
 
-    this.gateway.notifyPdfFailed(userId, {
+    this.realtime.notifyPdfFailed(userId, {
       entity_type: entityType,
       entity_id: entityId,
       title: job.data.title,

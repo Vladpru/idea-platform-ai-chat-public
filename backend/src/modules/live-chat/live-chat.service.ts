@@ -11,8 +11,11 @@ import { EntityTarget } from '../entity-visibility/entity-target.enum';
 import { EntityVisibilityService } from '../entity-visibility/entity-visibility.service';
 import { NOTIFICATION_EVENTS } from '../notification/events/notification-event-names';
 import type { DirectMessageReceivedNotificationEvent } from '../notification/events/notification.events';
+import { RealtimePublisherService } from '../../realtime/realtime-publisher.service';
+import { REALTIME_NAMESPACES } from '../../realtime/realtime.types';
 import { isUniqueConstraintError } from '../../shared/utils/is-unique-error.util';
 import { GetLiveChatMessagesQueryDto } from './dto/get-live-chat-messages-query.dto';
+import { SendLiveChatMessagePayloadDto } from './dto/send-live-chat-message.dto';
 import { buildDirectPairKey } from './live-chat-direct.util';
 import { LiveChatRateLimitService } from './live-chat-rate-limit.service';
 import {
@@ -22,6 +25,7 @@ import {
   LIVE_CHAT_MESSAGE_LIST_MAX,
   LIVE_CHAT_ROOM_NOT_FOUND,
   LIVE_CHAT_USER_NOT_FOUND,
+  liveChatRoomName,
 } from './live-chat.constants';
 import {
   formatAuthorDisplayName,
@@ -59,6 +63,7 @@ export class LiveChatService {
     private readonly rateLimit: LiveChatRateLimitService,
     private readonly eventEmitter: EventEmitter2,
     private readonly cloudinary: CloudinaryService,
+    private readonly realtimePublisher: RealtimePublisherService,
   ) {}
 
   async listRooms(userId: string): Promise<LiveChatRoomListResponse> {
@@ -353,6 +358,38 @@ export class LiveChatService {
 
   async assertRoomAccess(roomId: string, userId: string): Promise<void> {
     await this.getAccessibleRoom(roomId, userId);
+  }
+
+  async processInboundMessage(
+    userId: string,
+    payload: SendLiveChatMessagePayloadDto,
+  ): Promise<LiveChatMessageDto> {
+    const attachment: LiveChatAttachmentPayload | null = payload.attachmentUrl
+      ? {
+          url: payload.attachmentUrl,
+          name: payload.attachmentName ?? payload.attachmentUrl,
+          mimeType: payload.attachmentMimeType ?? 'application/octet-stream',
+        }
+      : null;
+
+    const { message } = await this.sendMessage(
+      payload.roomId,
+      userId,
+      payload.content,
+      payload.clientMessageId,
+      attachment,
+    );
+
+    this.realtimePublisher.publish(
+      {
+        namespace: REALTIME_NAMESPACES.LIVE_CHAT,
+        room: liveChatRoomName(payload.roomId),
+      },
+      'message',
+      message,
+    );
+
+    return message;
   }
 
   private async toRoomDto(

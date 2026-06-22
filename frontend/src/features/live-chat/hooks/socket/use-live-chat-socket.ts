@@ -11,7 +11,6 @@ import { liveChatQueryKeys } from '@/features/live-chat/lib/live-chat-query-keys
 import { appendLiveChatMessage } from '@/features/live-chat/lib/merge-live-chat-message-cache';
 import {
   getPendingMessages,
-  localMessageToDto,
   saveOutgoingMessage,
   saveSyncedMessage,
 } from '@/features/live-chat/lib/offline-chat-queue';
@@ -30,14 +29,6 @@ import { useCallback, useEffect, useRef } from 'react';
 import { io, type Socket } from 'socket.io-client';
 import { toast } from 'sonner';
 
-type SocketAck<T> = T | undefined;
-
-type JoinRoomResponse = { ok: true } | { ok: false; error: string };
-
-type SendMessageResponse =
-  | { ok: true; message: LiveChatMessageDto }
-  | { ok: false; error: string };
-
 type SendMessagePayload = {
   roomId: string;
   clientMessageId: string;
@@ -47,35 +38,19 @@ type SendMessagePayload = {
   attachmentMimeType?: string;
 };
 
-function getSocketBaseUrl(): string {
-  const base = import.meta.env.VITE_API_URL;
+type RoomJoinResult = {
+  roomId: string;
+  clientMsgId?: string;
+  reason?: string;
+};
+
+function getRealtimeEdgeUrl(): string {
+  const base =
+    import.meta.env.VITE_REALTIME_EDGE_URL ?? import.meta.env.VITE_API_URL;
   if (typeof base !== 'string' || base.length === 0) {
-    throw new Error('VITE_API_URL is not set');
+    throw new Error('VITE_REALTIME_EDGE_URL (or VITE_API_URL) is not set');
   }
   return base.replace(/\/$/, '');
-}
-
-function disconnectSocket(socket: Socket): void {
-  socket.removeAllListeners();
-  socket.disconnect();
-}
-
-function emitWithAck<TPayload, TResponse>(
-  socket: Socket,
-  event: string,
-  payload: TPayload,
-): Promise<SocketAck<TResponse>> {
-  return new Promise(resolve => {
-    socket
-      .timeout(10_000)
-      .emit(event, payload, (error: Error | null, response: TResponse) => {
-        if (error) {
-          resolve(undefined);
-          return;
-        }
-        resolve(response);
-      });
-  });
 }
 
 export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
@@ -83,91 +58,84 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
   const accessToken = useAuthSessionStore(state => state.accessToken);
   const socketRef = useRef<Socket | null>(null);
   const joinedRoomIdRef = useRef<string | null>(null);
+  const joinApprovedRef = useRef(false);
   const flushingRef = useRef(false);
+  const roomIdRef = useRef<string | null>(roomId);
+
+  useEffect(() => {
+    roomIdRef.current = roomId;
+  }, [roomId]);
 
   const flushPending = useCallback(async () => {
     const socket = socketRef.current;
-    if (!socket?.connected || !roomId || flushingRef.current) {
+    const currentRoomId = roomIdRef.current;
+    if (
+      !socket?.connected ||
+      !currentRoomId ||
+      !joinApprovedRef.current ||
+      flushingRef.current
+    ) {
       return;
     }
 
     flushingRef.current = true;
     try {
-      const pending = await getPendingMessages(roomId);
+      const pending = await getPendingMessages(currentRoomId);
       for (const row of pending) {
-        const dto = localMessageToDto(row);
+        const attachmentUrl = row.snapshot.attachmentUrl as
+          | string
+          | null
+          | undefined;
+        const attachmentName = row.snapshot.attachmentName as
+          | string
+          | null
+          | undefined;
+        const attachmentMimeType = row.snapshot.attachmentMimeType as
+          | string
+          | null
+          | undefined;
         const payload: SendMessagePayload = {
           roomId: row.roomId,
           clientMessageId: row.clientMessageId,
           content: row.content,
         };
-        if (dto.attachmentUrl) {
-          payload.attachmentUrl = dto.attachmentUrl;
-          payload.attachmentName = dto.attachmentName ?? undefined;
-          payload.attachmentMimeType = dto.attachmentMimeType ?? undefined;
+        if (attachmentUrl) {
+          payload.attachmentUrl = attachmentUrl;
+          payload.attachmentName = attachmentName ?? undefined;
+          payload.attachmentMimeType = attachmentMimeType ?? undefined;
         }
-
-        const response = await emitWithAck<
-          SendMessagePayload,
-          SendMessageResponse
-        >(socket, 'send_message', payload);
-
-        if (response?.ok) {
-          await saveSyncedMessage(response.message);
-          queryClient.setQueryData<LiveChatMessagesCache>(
-            liveChatQueryKeys.messages(row.roomId),
-            cache => appendLiveChatMessage(cache, response.message),
-          );
-        }
+        socket.emit('send_message', payload);
       }
     } finally {
       flushingRef.current = false;
     }
-  }, [queryClient, roomId]);
-
-  const joinRoom = useCallback(async (socket: Socket, nextRoomId: string) => {
-    const response = await emitWithAck<{ roomId: string }, JoinRoomResponse>(
-      socket,
-      'join_room',
-      { roomId: nextRoomId },
-    );
-
-    if (!response?.ok) {
-      toast.error(response?.error ?? 'Could not join live chat room');
-      return false;
-    }
-
-    joinedRoomIdRef.current = nextRoomId;
-    return true;
-  }, []);
-
-  const leaveRoom = useCallback(async (socket: Socket, currentRoomId: string) => {
-    await emitWithAck<{ roomId: string }, { ok: true }>(socket, 'leave_room', {
-      roomId: currentRoomId,
-    });
-    if (joinedRoomIdRef.current === currentRoomId) {
-      joinedRoomIdRef.current = null;
-    }
   }, []);
 
   useEffect(() => {
-    const activeSocket = socketRef.current;
-    if (activeSocket) {
-      disconnectSocket(activeSocket);
-      socketRef.current = null;
-      joinedRoomIdRef.current = null;
-    }
-
     if (!enabled || !accessToken || !roomId) {
+      if (socketRef.current?.connected) {
+        socketRef.current.disconnect();
+      }
       return;
     }
 
-    const token = getStoredAuthToken() ?? accessToken;
-    const socket = io(`${getSocketBaseUrl()}/live-chat`, {
-      withCredentials: true,
-      auth: { token },
-      transports: ['websocket', 'polling'],
-    });
+    if (!socketRef.current) {
+      socketRef.current = io(`${getRealtimeEdgeUrl()}/live-chat`, {
+        autoConnect: false,
+        withCredentials: true,
+        auth: (cb: (data: object) => void) => {
+          cb({
+            token:
+              getStoredAuthToken() ??
+              useAuthSessionStore.getState().accessToken ??
+              '',
+          });
+        },
+        transports: ['websocket'],
+      });
+    }
+
+    const socket = socketRef.current;
 
     const handleMessage = (message: LiveChatMessageDto) => {
       queryClient.setQueryData<LiveChatMessagesCache>(
@@ -177,8 +145,25 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
       void saveSyncedMessage(message);
     };
 
-    const handleConnect = () => {
+    const handleConnectionReady = () => {
+      joinApprovedRef.current = false;
+      socket.emit('join_room', { roomId });
+    };
+
+    const handleJoinApproved = () => {
+      joinApprovedRef.current = true;
+      joinedRoomIdRef.current = roomId;
       void flushPending();
+    };
+
+    const handleJoinDenied = (result: RoomJoinResult) => {
+      joinApprovedRef.current = false;
+      joinedRoomIdRef.current = null;
+      toast.error(result?.reason ?? 'Could not join live chat room');
+    };
+
+    const handleDisconnect = () => {
+      joinApprovedRef.current = false;
     };
 
     const patchVideoCalls = (
@@ -208,73 +193,66 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
     };
 
     const handleCallScheduled = (call: VideoCallDto) => {
-      if (call.roomId !== roomId) {
-        return;
-      }
-
+      if (call.roomId !== roomId) return;
       patchVideoCalls(call.roomId, cache => applyCallScheduled(cache, call));
     };
 
     const handleCallStarted = (call: VideoCallDto) => {
-      if (call.roomId !== roomId) {
-        return;
-      }
-
+      if (call.roomId !== roomId) return;
       patchVideoCalls(call.roomId, cache => applyCallStarted(cache, call));
       patchHubRoomActiveCall(call.roomId, call);
     };
 
     const handleCallEnded = (payload: VideoCallLifecyclePayload) => {
-      if (payload.roomId !== roomId) {
-        return;
-      }
-
+      if (payload.roomId !== roomId) return;
       patchVideoCalls(payload.roomId, cache => applyCallEnded(cache, payload));
       patchHubRoomActiveCall(payload.roomId, null);
     };
 
     const handleCallCancelled = (payload: VideoCallLifecyclePayload) => {
-      if (payload.roomId !== roomId) {
-        return;
-      }
-
+      if (payload.roomId !== roomId) return;
       patchVideoCalls(payload.roomId, cache =>
         applyCallCancelled(cache, payload),
       );
     };
 
-    const handleConnectionReady = () => {
-      void joinRoom(socket, roomId);
-    };
-
-    socket.on('connect', handleConnect);
     socket.on('connection_ready', handleConnectionReady);
+    socket.on('room:join_approved', handleJoinApproved);
+    socket.on('room:join_denied', handleJoinDenied);
+    socket.on('disconnect', handleDisconnect);
     socket.on('message', handleMessage);
     socket.on('call_scheduled', handleCallScheduled);
     socket.on('call_started', handleCallStarted);
     socket.on('call_ended', handleCallEnded);
     socket.on('call_cancelled', handleCallCancelled);
-    socketRef.current = socket;
+
+    if (socket.connected) {
+      joinApprovedRef.current = false;
+      socket.emit('join_room', { roomId });
+    } else {
+      socket.connect();
+    }
 
     return () => {
       const joinedRoomId = joinedRoomIdRef.current;
-      if (joinedRoomId) {
-        void leaveRoom(socket, joinedRoomId);
+      if (joinedRoomId && socket.connected) {
+        socket.emit('leave_room', { roomId: joinedRoomId });
       }
-      socket.off('connect', handleConnect);
       socket.off('connection_ready', handleConnectionReady);
+      socket.off('room:join_approved', handleJoinApproved);
+      socket.off('room:join_denied', handleJoinDenied);
+      socket.off('disconnect', handleDisconnect);
       socket.off('message', handleMessage);
       socket.off('call_scheduled', handleCallScheduled);
       socket.off('call_started', handleCallStarted);
       socket.off('call_ended', handleCallEnded);
       socket.off('call_cancelled', handleCallCancelled);
-      disconnectSocket(socket);
-      if (socketRef.current === socket) {
-        socketRef.current = null;
-      }
+      socket.disconnect();
+      socketRef.current = null;
       joinedRoomIdRef.current = null;
+      joinApprovedRef.current = false;
     };
-  }, [accessToken, enabled, flushPending, joinRoom, leaveRoom, queryClient, roomId]);
+  }, [accessToken, enabled, flushPending, queryClient, roomId]);
 
   const sendMessage = useCallback(
     async (content: string, attachment?: LiveChatAttachmentPayload | null) => {
@@ -305,9 +283,9 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
           avatarUrl: user.picture,
         },
         createdAt: new Date().toISOString(),
+        pending: true,
       };
 
-      // Durable optimistic write first; delivery is best-effort from here.
       await saveOutgoingMessage(optimistic);
       queryClient.setQueryData<LiveChatMessagesCache>(
         liveChatQueryKeys.messages(roomId),
@@ -315,7 +293,7 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
       );
 
       const socket = socketRef.current;
-      if (socket?.connected && navigator.onLine) {
+      if (socket?.connected && navigator.onLine && joinApprovedRef.current) {
         void flushPending();
       }
 

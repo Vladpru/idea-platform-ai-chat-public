@@ -1,14 +1,12 @@
-
 import { BADGE_EARNED_MESSAGES } from '@/features/achievements/lib/badge-icons';
 import { BadgeToast } from '@/features/achievements/ui/BadgeToast';
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import { notificationQueryKeys } from '@/features/notifications/lib/notification-query-keys';
+import { getStoredAuthToken } from '@/shared/lib/auth-token';
 import { useQueryClient } from '@tanstack/react-query';
 import { createElement, useEffect, useRef } from 'react';
 import { type Socket, io } from 'socket.io-client';
 import { toast } from 'sonner';
-
-import { getStoredAuthToken } from '@/shared/lib/auth-token';
 
 function getSocketBaseUrl(): string {
   const base = import.meta.env.VITE_API_URL;
@@ -16,11 +14,6 @@ function getSocketBaseUrl(): string {
     throw new Error('VITE_API_URL is not set');
   }
   return base.replace(/\/$/, '');
-}
-
-function disconnectSocket(socket: Socket): void {
-  socket.removeAllListeners();
-  socket.disconnect();
 }
 
 type AchievementBadgePayload = {
@@ -43,22 +36,28 @@ export function useNotificationSocket(): void {
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    const activeSocket = socketRef.current;
-    if (activeSocket) {
-      disconnectSocket(activeSocket);
-      socketRef.current = null;
-    }
-
     if (!accessToken) {
+      socketRef.current?.disconnect();
       return;
     }
 
-    const token = getStoredAuthToken() ?? accessToken;
-    const socket = io(getSocketBaseUrl(), {
-      withCredentials: true,
-      auth: { token },
-      transports: ['websocket', 'polling'],
-    });
+    if (!socketRef.current) {
+      socketRef.current = io(getSocketBaseUrl(), {
+        autoConnect: false,
+        withCredentials: true,
+        auth: (cb: (data: object) => void) => {
+          cb({
+            token:
+              getStoredAuthToken() ??
+              useAuthSessionStore.getState().accessToken ??
+              '',
+          });
+        },
+        transports: ['websocket', 'polling'],
+      });
+    }
+
+    const socket = socketRef.current;
 
     const handleNotification = () => {
       void queryClient.invalidateQueries({
@@ -106,17 +105,15 @@ export function useNotificationSocket(): void {
     socket.on('achievement_unlocked', handleAchievementUnlocked);
     socket.on('pdf:ready', handlePdfReady);
     socket.on('pdf:failed', handlePdfFailed);
-    socketRef.current = socket;
+
+    socket.connect();
 
     return () => {
       socket.off('notification', handleNotification);
       socket.off('achievement_unlocked', handleAchievementUnlocked);
       socket.off('pdf:ready', handlePdfReady);
       socket.off('pdf:failed', handlePdfFailed);
-      disconnectSocket(socket);
-      if (socketRef.current === socket) {
-        socketRef.current = null;
-      }
+      socket.disconnect();
     };
   }, [accessToken, queryClient]);
 }

@@ -1,5 +1,8 @@
 import { Prisma } from '../../../generated/prisma/client';
 
+export const liveChatRoomName = (roomId: string): string =>
+  `live-chat:${roomId}`;
+
 export const LIVE_CHAT_ROOM_NOT_FOUND = 'Live chat room not found';
 export const LIVE_CHAT_MESSAGE_CONTENT_MAX_LENGTH = 2000;
 export const LIVE_CHAT_MESSAGE_LIST_MAX = 50;

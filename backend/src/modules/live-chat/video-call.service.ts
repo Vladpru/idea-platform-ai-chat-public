@@ -9,15 +9,18 @@ import {
 import { VideoCallStatus } from '../../../generated/prisma/client';
 import { LivekitRoomService } from '../../core/livekit/livekit-room.service';
 import { LivekitTokenService } from '../../core/livekit/livekit-token.service';
+import { RealtimePublisherService } from '../../realtime/realtime-publisher.service';
+import { REALTIME_NAMESPACES } from '../../realtime/realtime.types';
 import { isUniqueConstraintError } from '../../shared/utils/is-unique-error.util';
 import type { VideoCallUpdateAction } from './dto/update-video-call.dto';
-import { LiveChatGateway } from './live-chat.gateway';
+import { liveChatRoomName } from './live-chat.constants';
 import { formatAuthorDisplayName } from './live-chat.mapper';
 import type { LiveChatAuthorRecord } from './live-chat.records';
 import { LiveChatService } from './live-chat.service';
 import type {
   JoinVideoCallResponse,
   VideoCallDto,
+  VideoCallLifecyclePayload,
   VideoCallListResponse,
 } from './types/video-call.types';
 import {
@@ -41,10 +44,25 @@ export class VideoCallService {
   constructor(
     private readonly videoCallRepository: VideoCallRepository,
     private readonly liveChatService: LiveChatService,
-    private readonly liveChatGateway: LiveChatGateway,
+    private readonly realtimePublisher: RealtimePublisherService,
     private readonly livekitTokenService: LivekitTokenService,
     private readonly livekitRoomService: LivekitRoomService,
   ) {}
+
+  private publishRoomEvent(
+    roomId: string,
+    event: string,
+    payload: VideoCallDto | VideoCallLifecyclePayload,
+  ): void {
+    this.realtimePublisher.publish(
+      {
+        namespace: REALTIME_NAMESPACES.LIVE_CHAT,
+        room: liveChatRoomName(roomId),
+      },
+      event,
+      payload,
+    );
+  }
 
   async listCalls(
     roomId: string,
@@ -168,7 +186,7 @@ export class VideoCallService {
       },
     );
 
-    this.liveChatGateway.emitCallEnded(updatedCall.roomId, {
+    this.publishRoomEvent(updatedCall.roomId, 'call_ended', {
       callId: updatedCall.id,
       roomId: updatedCall.roomId,
     });
@@ -197,7 +215,7 @@ export class VideoCallService {
     });
 
     const response = toVideoCallResponse(call);
-    this.liveChatGateway.emitCallScheduled(roomId, response);
+    this.publishRoomEvent(roomId, 'call_scheduled', response);
     return response;
   }
 
@@ -254,7 +272,7 @@ export class VideoCallService {
     }
 
     const response = toVideoCallResponse(call);
-    this.liveChatGateway.emitCallStarted(roomId, response);
+    this.publishRoomEvent(roomId, 'call_started', response);
     return response;
   }
 
@@ -316,7 +334,7 @@ export class VideoCallService {
     }
 
     const response = toVideoCallResponse(updatedCall);
-    this.liveChatGateway.emitCallStarted(roomId, response);
+    this.publishRoomEvent(roomId, 'call_started', response);
     return response;
   }
 
@@ -347,7 +365,7 @@ export class VideoCallService {
     );
 
     const response = toVideoCallResponse(updatedCall);
-    this.liveChatGateway.emitCallEnded(updatedCall.roomId, {
+    this.publishRoomEvent(updatedCall.roomId, 'call_ended', {
       callId: updatedCall.id,
       roomId: updatedCall.roomId,
     });
@@ -375,7 +393,7 @@ export class VideoCallService {
     );
 
     const response = toVideoCallResponse(updatedCall);
-    this.liveChatGateway.emitCallCancelled(updatedCall.roomId, {
+    this.publishRoomEvent(updatedCall.roomId, 'call_cancelled', {
       callId: updatedCall.id,
       roomId: updatedCall.roomId,
     });

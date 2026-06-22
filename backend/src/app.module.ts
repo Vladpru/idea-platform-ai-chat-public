@@ -21,6 +21,7 @@ import { PdfModule } from './modules/pdf/pdf.module';
 import { PasswordResetModule } from './modules/password-reset/password-reset.module';
 import { PrismaModule } from './core/prisma/prisma.module';
 import { ProblemModule } from './modules/problem/problem.module';
+import { RealtimeModule } from './realtime/realtime.module';
 import { RedisModule } from './core/redis/redis.module';
 import { SearchModule } from './modules/search/search.module';
 import { SimilarityModule } from './modules/similarity/similarity.module';
@@ -55,6 +56,7 @@ import { UserModule } from './modules/user/user.module';
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
     RedisModule,
+    RealtimeModule,
     AnalyticsModule,
     SubscriptionModule,
     UserModule,

@@ -5,6 +5,7 @@ import { MailModule } from '../../core/mail/mail.module';
 import { PrismaModule } from '../../core/prisma/prisma.module';
 import { SimilarityModule } from '../similarity/similarity.module';
 import { TokenModule } from '../token/token.module';
+import { WsAuthModule } from '../../ws-auth/ws-auth.module';
 import {
   NOTIFICATION_EMAIL_JOB_OPTIONS,
   NOTIFICATION_EMAIL_QUEUE,
@@ -12,6 +13,7 @@ import {
 import { FollowUpCronService } from './follow-up-cron.service';
 import { NotificationDispatchService } from './notification-dispatch.service';
 import { NotificationEmailProcessor } from './notification-email.processor';
+import { NotificationRealtimeService } from './notification-realtime.service';
 import { NotificationSimilarityListener } from './notification-similarity.listener';
 import { NotificationController } from './notification.controller';
 import { NotificationGateway } from './notification.gateway';
@@ -22,6 +24,7 @@ import { NotificationService } from './notification.service';
   imports: [
     PrismaModule,
     TokenModule,
+    WsAuthModule,
     MailModule,
     SimilarityModule,
     BullModule.registerQueue({
@@ -33,6 +36,7 @@ import { NotificationService } from './notification.service';
   providers: [
     NotificationService,
     NotificationDispatchService,
+    NotificationRealtimeService,
     NotificationListener,
     NotificationSimilarityListener,
     NotificationEmailProcessor,
@@ -42,6 +46,7 @@ import { NotificationService } from './notification.service';
   exports: [
     NotificationService,
     NotificationDispatchService,
+    NotificationRealtimeService,
     NotificationGateway,
   ],
 })

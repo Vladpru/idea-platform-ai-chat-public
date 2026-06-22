@@ -1,6 +1,10 @@
-import { Logger, UsePipes, ValidationPipe } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
+import {
+  Logger,
+  NotFoundException,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
+import { OnEvent } from '@nestjs/event-emitter';
 import {
   ConnectedSocket,
   MessageBody,
@@ -10,24 +14,20 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import {
-  IsOptional,
-  IsString,
-  IsUUID,
-  IsUrl,
-  MaxLength,
-} from 'class-validator';
+import { IsUUID } from 'class-validator';
 import type { Server, Socket } from 'socket.io';
 
-import { resolveUserIdFromSocket } from '../notification/lib/ws-auth.util';
-import { PrismaService } from '../../core/prisma/prisma.service';
-import { SendLiveChatMessageDto } from './dto/send-live-chat-message.dto';
+import {
+  REALTIME_NAMESPACES,
+  ROOM_CONTROL_EVENTS,
+  type RealtimeOutboundEvent,
+  realtimeOutboundEventName,
+} from '../../realtime/realtime.types';
+import { WsAuthService } from '../../ws-auth/ws-auth.service';
+import { SendLiveChatMessagePayloadDto } from './dto/send-live-chat-message.dto';
+import { liveChatRoomName } from './live-chat.constants';
 import { LiveChatService } from './live-chat.service';
 import type { LiveChatMessageDto } from './types/live-chat.types';
-import type {
-  VideoCallDto,
-  VideoCallLifecyclePayload,
-} from './types/video-call.types';
 
 export interface AuthenticatedLiveChatSocket extends Socket {
   data: {
@@ -43,26 +43,6 @@ class JoinLiveChatRoomDto {
 class LeaveLiveChatRoomDto {
   @IsUUID()
   roomId!: string;
-}
-
-class SendLiveChatMessagePayloadDto extends SendLiveChatMessageDto {
-  @IsUUID()
-  roomId!: string;
-
-  @IsOptional()
-  @IsString()
-  @IsUrl()
-  attachmentUrl?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(512)
-  attachmentName?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  attachmentMimeType?: string;
 }
 
 @WebSocketGateway({
@@ -81,33 +61,14 @@ export class LiveChatGateway
   private server!: Server;
 
   constructor(
-    private readonly jwt: JwtService,
-    private readonly config: ConfigService,
-    private readonly prisma: PrismaService,
+    private readonly wsAuth: WsAuthService,
     private readonly liveChatService: LiveChatService,
   ) {}
 
   async handleConnection(client: AuthenticatedLiveChatSocket): Promise<void> {
-    const refreshCookieName =
-      this.config.get<string>('TOKEN_COOKIE_NAME') ?? 'refreshToken';
-
-    const userId = await resolveUserIdFromSocket(
-      client,
-      this.jwt,
-      refreshCookieName,
-    );
+    const userId = await this.wsAuth.authenticate(client);
 
     if (!userId) {
-      client.disconnect(true);
-      return;
-    }
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true },
-    });
-
-    if (!user) {
       client.disconnect(true);
       return;
     }
@@ -132,19 +93,30 @@ export class LiveChatGateway
   async handleJoinRoom(
     @ConnectedSocket() client: AuthenticatedLiveChatSocket,
     @MessageBody() payload: JoinLiveChatRoomDto,
-  ): Promise<{ ok: true } | { ok: false; error: string }> {
+  ): Promise<void> {
     const userId = client.data.userId;
     if (!userId) {
-      return { ok: false, error: 'Unauthorized' };
+      client.emit(ROOM_CONTROL_EVENTS.JOIN_DENIED, {
+        roomId: payload.roomId,
+        reason: 'Unauthorized',
+      });
+      return;
     }
 
     try {
       await this.liveChatService.assertRoomAccess(payload.roomId, userId);
-      await client.join(this.roomName(payload.roomId));
-      return { ok: true };
-    } catch {
-      return { ok: false, error: 'Room not found' };
+    } catch (error) {
+      const reason =
+        error instanceof NotFoundException ? 'Room not found' : 'Access denied';
+      client.emit(ROOM_CONTROL_EVENTS.JOIN_DENIED, {
+        roomId: payload.roomId,
+        reason,
+      });
+      return;
     }
+
+    await client.join(liveChatRoomName(payload.roomId));
+    client.emit(ROOM_CONTROL_EVENTS.JOIN_APPROVED, { roomId: payload.roomId });
   }
 
   @SubscribeMessage('leave_room')
@@ -159,7 +131,7 @@ export class LiveChatGateway
     @ConnectedSocket() client: AuthenticatedLiveChatSocket,
     @MessageBody() payload: LeaveLiveChatRoomDto,
   ): Promise<{ ok: true }> {
-    await client.leave(this.roomName(payload.roomId));
+    await client.leave(liveChatRoomName(payload.roomId));
     return { ok: true };
   }
 
@@ -183,26 +155,10 @@ export class LiveChatGateway
     }
 
     try {
-      const attachment = payload.attachmentUrl
-        ? {
-            url: payload.attachmentUrl,
-            name: payload.attachmentName ?? payload.attachmentUrl,
-            mimeType: payload.attachmentMimeType ?? 'application/octet-stream',
-          }
-        : null;
-
-      const { message, isDuplicate } = await this.liveChatService.sendMessage(
-        payload.roomId,
+      const message = await this.liveChatService.processInboundMessage(
         userId,
-        payload.content,
-        payload.clientMessageId,
-        attachment,
+        payload,
       );
-
-      if (!isDuplicate) {
-        this.server.to(this.roomName(payload.roomId)).emit('message', message);
-      }
-
       return { ok: true, message };
     } catch (error) {
       const message =
@@ -211,23 +167,8 @@ export class LiveChatGateway
     }
   }
 
-  emitCallScheduled(roomId: string, call: VideoCallDto): void {
-    this.server.to(this.roomName(roomId)).emit('call_scheduled', call);
-  }
-
-  emitCallStarted(roomId: string, call: VideoCallDto): void {
-    this.server.to(this.roomName(roomId)).emit('call_started', call);
-  }
-
-  emitCallEnded(roomId: string, payload: VideoCallLifecyclePayload): void {
-    this.server.to(this.roomName(roomId)).emit('call_ended', payload);
-  }
-
-  emitCallCancelled(roomId: string, payload: VideoCallLifecyclePayload): void {
-    this.server.to(this.roomName(roomId)).emit('call_cancelled', payload);
-  }
-
-  private roomName(roomId: string): string {
-    return `live-chat:${roomId}`;
+  @OnEvent(realtimeOutboundEventName(REALTIME_NAMESPACES.LIVE_CHAT))
+  handleOutbound(event: RealtimeOutboundEvent): void {
+    this.server.to(event.room).emit(event.event, event.payload);
   }
 }

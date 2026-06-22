@@ -17,6 +17,7 @@ export type LiveChatMessageDto = {
   attachmentMimeType: string | null;
   author: LiveChatAuthorDto;
   createdAt: string;
+  pending?: boolean;
 };
 
 export type LiveChatAttachmentPayload = {
