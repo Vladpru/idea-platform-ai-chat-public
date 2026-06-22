@@ -20,7 +20,13 @@ import { NotFoundPage } from '@/pages/not-found';
 import { useNavigate, useRouter, useSearch } from '@tanstack/react-router';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
-import { type MouseEvent, useCallback, useEffect, useState } from 'react';
+import {
+  type MouseEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import { ROUTES } from '@/shared/config/paths';
 import { entityDescriptionDetailClass } from '@/shared/lib/entity-description-classes';
@@ -69,6 +75,7 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
   const [prevShowUpdatedSuccess, setPrevShowUpdatedSuccess] =
     useState(showUpdatedSuccess);
   const userId = useAuthSessionStore(s => s.user?.id);
+  const mainRef = useRef<HTMLElement>(null);
 
   if (showUpdatedSuccess !== prevShowUpdatedSuccess) {
     setPrevShowUpdatedSuccess(showUpdatedSuccess);
@@ -145,12 +152,15 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
   }, [navigate, problemId, showUpdatedSuccess]);
 
   useEffect(() => {
+    const scrollEl = mainRef.current?.parentElement;
+    if (!scrollEl) return;
+
     let ticking = false;
 
     const handleScroll = () => {
       if (!ticking) {
         window.requestAnimationFrame(() => {
-          const scrollY = window.scrollY;
+          const scrollY = scrollEl.scrollTop;
           setIsScrolled(prev => {
             if (scrollY > 150 && !prev) return true;
             if (scrollY < 80 && prev) return false;
@@ -163,9 +173,9 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
     };
 
     handleScroll();
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    scrollEl.addEventListener('scroll', handleScroll, { passive: true });
+    return () => scrollEl.removeEventListener('scroll', handleScroll);
+  }, [isPending]);
 
   if (isPending) {
     return <ProblemDetailsPageSkeleton />;
@@ -181,7 +191,7 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
   const visibleIdeas = problem.linkedIdeas;
 
   return (
-    <main className="bg-brand-neutral min-h-[calc(100vh-56px)] px-4 md:px-8 lg:px-12">
+    <main ref={mainRef} className="bg-brand-neutral min-h-[calc(100vh-56px)] px-4 md:px-8 lg:px-12">
       <div className="bg-card mx-auto max-w-5xl space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-8">
         <SyncWarningBanner entity="problem" localId={problemId} />
         <AnimatePresence>
@@ -206,7 +216,7 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
           ) : null}
         </AnimatePresence>
 
-        <div className="bg-card sticky top-14 z-2 -mx-4 px-4 py-3 shadow-none transition-all duration-300 sm:-mx-6 sm:px-6">
+        <div className="bg-card sticky top-0 z-30 -mx-4 px-4 py-3 shadow-none transition-all duration-300 sm:-mx-6 sm:px-6">
           <ProblemHeader
             problem={problem}
             isAuthor={isAuthor}
