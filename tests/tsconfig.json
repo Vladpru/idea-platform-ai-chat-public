@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "lib": ["ES2022"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "outDir": "./dist",
+    "rootDir": ".",
+    "ignoreDeprecations": "6.0",
+    "baseUrl": ".",
+    "types": ["jest", "node"],
+    "paths": {
+      "@helpers/*": ["./helpers/*"]
+    }
+  },
+  "include": ["./**/*.ts"],
+  "exclude": ["node_modules", "dist", "allure-results", "allure-report"]
+}
