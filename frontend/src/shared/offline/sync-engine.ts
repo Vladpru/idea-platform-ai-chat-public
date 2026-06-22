@@ -126,11 +126,13 @@ async function publishEntry(
 ): Promise<ServerIdea> {
   const serverId = idea.serverId as string;
   const fields = (entry.payload ?? {}) as UpdateIdeaBody;
+  let baseVersion = idea.version;
   if (Object.keys(fields).length > 0) {
-    const saved = await updateIdeaDraft(serverId, idea.version, fields);
+    const saved = await updateIdeaDraft(serverId, baseVersion, fields);
+    baseVersion = saved.version;
     await db.ideas.update(entry.entityLocalId, { version: saved.version });
   }
-  return publishIdea(serverId);
+  return publishIdea(serverId, baseVersion);
 }
 
 async function callApi(

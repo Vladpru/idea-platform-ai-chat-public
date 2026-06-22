@@ -139,8 +139,15 @@ export async function uploadIdeaAttachment(
   });
 }
 
-export async function publishIdea(serverId: string): Promise<ServerIdea> {
-  const { data } = await api.post<ServerIdea>(`/ideas/${serverId}/publish`);
+export async function publishIdea(
+  serverId: string,
+  baseVersion: number,
+): Promise<ServerIdea> {
+  const { data } = await api.post<ServerIdea>(
+    `/ideas/${serverId}/publish`,
+    undefined,
+    ifMatch(baseVersion),
+  );
   return data;
 }
 

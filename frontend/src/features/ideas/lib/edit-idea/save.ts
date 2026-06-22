@@ -41,11 +41,12 @@ async function updateIdeaMetadata(
   ideaId: string,
   status: IdeaStatus,
   payload: UpdateIdeaPayload,
+  expectedVersion?: number,
 ): Promise<void> {
   if (status === IDEA_STATUS.PUBLISHED) {
-    await updatePublishedIdea(ideaId, payload);
+    await updatePublishedIdea(ideaId, payload, expectedVersion);
   } else {
-    await updateIdea(ideaId, payload);
+    await updateIdea(ideaId, payload, expectedVersion);
   }
 }
 
@@ -55,7 +56,8 @@ export async function saveEditedIdea(
   values: IdeaEditFormValues,
 ): Promise<IdeaFormResponseDto> {
   const payload = editFormValuesToPayload(values);
-  await updateIdeaMetadata(ideaId, status, payload);
+  const current = await fetchIdeaFormById(ideaId);
+  await updateIdeaMetadata(ideaId, status, payload, current.version);
   await applyEditMediaChanges(ideaId, values);
   return fetchIdeaFormById(ideaId);
 }

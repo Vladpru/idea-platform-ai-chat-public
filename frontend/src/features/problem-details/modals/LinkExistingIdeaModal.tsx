@@ -7,6 +7,7 @@ import {
 } from '@/features/ideas/lib/styles';
 import { ArrowLink } from '@/features/ideas/ui/icons/ArrowLink';
 import { useLinkIdeasToProblemMutation } from '@/features/problem-details/lib/use-problem-idea-link-mutations';
+import { fetchProblemById } from '@/features/problems/api/problems.api';
 import { cancelOutlineBtn } from '@/features/profile/ui/shared/profile-view-classes';
 import { Link } from '@tanstack/react-router';
 import { Check, ChevronDown, Search, X } from 'lucide-react';
@@ -49,6 +50,7 @@ export function LinkExistingIdeaModal({
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedIdeaIds, setSelectedIdeaIds] = useState<string[]>([]);
+  const [problemVersion, setProblemVersion] = useState<number | null>(null);
   const closeDropdown = () => {
     setDropdownOpen(false);
   };
@@ -101,6 +103,31 @@ export function LinkExistingIdeaModal({
       });
   }, [dropdownOpen]);
 
+  useEffect(() => {
+    if (!open) {
+      setProblemVersion(null);
+      return;
+    }
+
+    let active = true;
+
+    fetchProblemById(problemId)
+      .then(problem => {
+        if (active) {
+          setProblemVersion(problem.version ?? null);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setProblemVersion(null);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [open, problemId]);
+
   const handleToggleIdea = (ideaId: string) => {
     setSelectedIdeaIds(previous =>
       previous.includes(ideaId)
@@ -112,11 +139,17 @@ export function LinkExistingIdeaModal({
   const handleSave = () => {
     if (selectedIdeaIds.length === 0) return;
 
-    linkMutation.mutate(selectedIdeaIds, {
-      onSuccess: () => {
-        handleOpenChange(false);
+    linkMutation.mutate(
+      {
+        ideaIds: selectedIdeaIds,
+        expectedVersion: problemVersion ?? undefined,
       },
-    });
+      {
+        onSuccess: () => {
+          handleOpenChange(false);
+        },
+      },
+    );
   };
 
   const canSave = selectedIdeaIds.length > 0 && !linkMutation.isPending;
