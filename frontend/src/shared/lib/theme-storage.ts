@@ -100,11 +100,11 @@ export function resolveActiveTheme(
   themePreference?: ThemePreference | null,
 ): Theme {
   if (userId) {
-    const stored = readStoredTheme(userId);
-    if (stored) return stored;
     if (themePreference) {
       return preferenceToTheme(themePreference);
     }
+    const stored = readStoredTheme(userId);
+    if (stored) return stored;
     return 'system';
   }
 
