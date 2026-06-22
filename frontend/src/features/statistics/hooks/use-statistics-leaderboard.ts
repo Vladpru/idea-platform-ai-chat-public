@@ -2,9 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 
 import { fetchStatisticsLeaderboard } from '../api/statistics.api';
 import { getClientTimeZone } from '../lib/client-time-zone';
-import type { StatisticsPeriod } from '../model/statistics.types';
+import { useStatisticsStore } from '../model/statistics-store';
 
-export function useStatisticsLeaderboard(period: StatisticsPeriod) {
+export function useStatisticsLeaderboard() {
+  const period = useStatisticsStore(s => s.period);
   const timeZone = getClientTimeZone();
 
   return useQuery({

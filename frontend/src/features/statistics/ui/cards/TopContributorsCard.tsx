@@ -1,5 +1,5 @@
-import { getInitials } from '@/features/idea-details/lib/get-initials';
 import { BadgePill } from '@/features/achievements';
+import { getInitials } from '@/features/idea-details/lib/get-initials';
 import { Link } from '@tanstack/react-router';
 import { ArrowRight, Star } from 'lucide-react';
 
@@ -8,10 +8,7 @@ import { cn } from '@/shared/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 
 import { formatContributorPoints } from '../../lib/format-statistics-values';
-import type {
-  StatisticsPeriod,
-  TopContributor,
-} from '../../model/statistics.types';
+import type { TopContributor } from '../../model/statistics.types';
 import {
   statisticsCardClass,
   statisticsIconTileClass,
@@ -19,7 +16,6 @@ import {
 
 type TopContributorsCardProps = {
   contributors: TopContributor[];
-  period: StatisticsPeriod;
   isFetching?: boolean;
 };
 
@@ -84,7 +80,6 @@ function ContributorEntry({
 
 export function TopContributorsCard({
   contributors,
-  period,
   isFetching = false,
 }: TopContributorsCardProps) {
   const leftColumn = contributors.slice(0, 3);
@@ -136,7 +131,6 @@ export function TopContributorsCard({
       <div className="mt-6 flex justify-end">
         <Link
           to={ROUTES.statisticsLeaderboard}
-          search={{ period }}
           className="text-brand-dark-blue hover:text-brand-dark-blue/80 inline-flex items-center gap-2 text-xs font-bold tracking-wide uppercase transition-colors"
         >
           View full leaderboard
