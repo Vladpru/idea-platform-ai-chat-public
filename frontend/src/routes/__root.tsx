@@ -1,25 +1,28 @@
 import { NotFoundPage } from '@/pages/not-found';
 import { OfflinePage } from '@/pages/offline';
-import { pageDocumentHead } from '@/shared/lib/document-head';
+import { PostHogProvider } from '@posthog/react';
+import * as Sentry from '@sentry/react';
 import {
   HeadContent,
   Outlet,
   createRootRouteWithContext,
 } from '@tanstack/react-router';
 import { isAxiosError } from 'axios';
-import { PostHogProvider } from '@posthog/react';
+
+import { pageDocumentHead } from '@/shared/lib/document-head';
 
 export type RouterContext = {
   isAuthenticated: boolean;
 };
 
-export const Route = createRootRouteWithContext<RouterContext>()({
-  component: () => (
+function RootComponent() {
+  return (
     <PostHogProvider
       apiKey={import.meta.env.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN!}
       options={{
         api_host: import.meta.env.VITE_POSTHOG_API_HOST ?? '/ingest',
-        ui_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST || 'https://eu.posthog.com',
+        ui_host:
+          import.meta.env.VITE_PUBLIC_POSTHOG_HOST || 'https://eu.posthog.com',
         defaults: '2026-01-30',
         capture_pageview: false,
         capture_exceptions: true,
@@ -31,15 +34,28 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       }}
     >
       <HeadContent />
-      <Outlet />
+      <Sentry.ErrorBoundary
+        fallback={
+          <div className="flex min-h-svh flex-col items-center justify-center">
+            <p className="text-muted-foreground text-sm">
+              Something went wrong. Please try refreshing the page.
+            </p>
+          </div>
+        }
+      >
+        <Outlet />
+      </Sentry.ErrorBoundary>
     </PostHogProvider>
-  ),
+  );
+}
+
+export const Route = createRootRouteWithContext<RouterContext>()({
+  component: RootComponent,
   head: () => pageDocumentHead(''),
   notFoundComponent: () => <NotFoundPage />,
   errorComponent: ({ error }) => {
     const isNetworkError =
-      !navigator.onLine ||
-      (isAxiosError(error) && !error.response);
+      !navigator.onLine || (isAxiosError(error) && !error.response);
     if (isNetworkError) return <OfflinePage />;
     return (
       <div className="flex min-h-svh flex-col items-center justify-center">
