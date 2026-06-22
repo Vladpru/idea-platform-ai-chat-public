@@ -95,6 +95,27 @@ export class LiveChatRepository {
     });
   }
 
+  // ⚠️ DEBUG-ONLY: identify which database THIS process is actually bound to and
+  // whether the given room exists there. Used to prove/disprove that the realtime
+  // consumer queries a different DATABASE_URL than the REST API. REVERT BEFORE PRODUCTION.
+  async debugDatasourceProbe(roomId: string): Promise<string> {
+    try {
+      const rows = await this.prisma.$queryRaw<
+        Array<{ db: string; usr: string; host: string | null; total: bigint }>
+      >`SELECT current_database() AS db,
+               current_user AS usr,
+               host(inet_server_addr()) AS host,
+               (SELECT count(*) FROM live_chat_room) AS total`;
+      const info = rows[0];
+      const thisRoomCount = await this.prisma.liveChatRoom.count({
+        where: { id: roomId },
+      });
+      return `db=${info?.db} user=${info?.usr} host=${info?.host ?? 'local-socket'} totalRooms=${String(info?.total)} thisRoomCount=${thisRoomCount}`;
+    } catch (error) {
+      return `probe-failed: ${error instanceof Error ? error.message : String(error)}`;
+    }
+  }
+
   createRoom(data: {
     ideaId: string | null;
     problemId: string | null;
@@ -128,6 +149,18 @@ export class LiveChatRepository {
         select: { id: true },
       })
       .then(row => row !== null);
+  }
+
+  // ⚠️ DEBUG-ONLY: list the actual participant rows for a room so a failed
+  // direct-room membership check can be inspected. REVERT BEFORE PRODUCTION.
+  getParticipants(
+    roomId: string,
+  ): Promise<Array<{ userId: string; joinedAt: Date }>> {
+    return this.prisma.liveChatParticipant.findMany({
+      where: { roomId },
+      select: { userId: true, joinedAt: true },
+      orderBy: { joinedAt: 'asc' },
+    });
   }
 
   findUserById(userId: string): Promise<{ id: string } | null> {
