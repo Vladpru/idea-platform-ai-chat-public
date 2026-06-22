@@ -1,27 +1,28 @@
 import { NotFoundPage } from '@/pages/not-found';
 import { OfflinePage } from '@/pages/offline';
-import { pageDocumentHead } from '@/shared/lib/document-head';
+import { PostHogProvider } from '@posthog/react';
+import * as Sentry from '@sentry/react';
 import {
   HeadContent,
   Outlet,
   createRootRouteWithContext,
 } from '@tanstack/react-router';
 import { isAxiosError } from 'axios';
-import { PostHogProvider } from '@posthog/react';
-import * as Sentry from '@sentry/react';
-import posthog, { SentryIntegration } from 'posthog-js';
+
+import { pageDocumentHead } from '@/shared/lib/document-head';
 
 export type RouterContext = {
   isAuthenticated: boolean;
 };
 
-export const Route = createRootRouteWithContext<RouterContext>()({
-  component: () => (
+function RootComponent() {
+  return (
     <PostHogProvider
       apiKey={import.meta.env.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN!}
       options={{
         api_host: import.meta.env.VITE_POSTHOG_API_HOST ?? '/ingest',
-        ui_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST || 'https://eu.posthog.com',
+        ui_host:
+          import.meta.env.VITE_PUBLIC_POSTHOG_HOST || 'https://eu.posthog.com',
         defaults: '2026-01-30',
         capture_pageview: false,
         capture_exceptions: true,
@@ -30,9 +31,6 @@ export const Route = createRootRouteWithContext<RouterContext>()({
           maskAllInputs: true,
           maskTextSelector: '[data-ph-mask]',
         },
-        integrations: import.meta.env.VITE_SENTRY_DSN
-          ? [new SentryIntegration(posthog, 'polycoders', parseInt(import.meta.env.VITE_SENTRY_PROJECT_ID || '0'))]
-          : [],
       }}
     >
       <HeadContent />
@@ -48,13 +46,16 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         <Outlet />
       </Sentry.ErrorBoundary>
     </PostHogProvider>
-  ),
+  );
+}
+
+export const Route = createRootRouteWithContext<RouterContext>()({
+  component: RootComponent,
   head: () => pageDocumentHead(''),
   notFoundComponent: () => <NotFoundPage />,
   errorComponent: ({ error }) => {
     const isNetworkError =
-      !navigator.onLine ||
-      (isAxiosError(error) && !error.response);
+      !navigator.onLine || (isAxiosError(error) && !error.response);
     if (isNetworkError) return <OfflinePage />;
     return (
       <div className="flex min-h-svh flex-col items-center justify-center">
