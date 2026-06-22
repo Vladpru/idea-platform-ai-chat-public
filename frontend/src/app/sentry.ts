@@ -33,7 +33,7 @@ export function initSentry() {
           event.tags = { ...event.tags, posthog_session_url: sessionUrl };
         }
       } catch {
-        throw new Error('Posthog is not available');
+        // posthog not available, skip
       }
       return event;
     },

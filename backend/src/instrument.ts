@@ -1,5 +1,8 @@
 import * as Sentry from '@sentry/nestjs';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
+import * as dotenv from 'dotenv';
+
+dotenv.config({ path: `.env.${process.env.APP_ENV ?? 'development'}` });
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
