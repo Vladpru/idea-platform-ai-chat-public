@@ -1,6 +1,5 @@
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
-import { useState } from 'react';
 
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import { ROUTES } from '@/shared/config/paths';
@@ -9,14 +8,10 @@ import { Button } from '@/shared/ui/button';
 import { Skeleton } from '@/shared/ui/skeleton';
 
 import { useStatisticsLeaderboard } from '../../hooks/use-statistics-leaderboard';
-import type { StatisticsPeriod } from '../../model/statistics.types';
+import { useStatisticsStore } from '../../model/statistics-store';
 import { StatisticsTimeRangeSelect } from '../StatisticsTimeRangeSelect';
 import { statisticsPageTitleClass } from '../statistics-classes';
 import { LeaderboardRow } from './LeaderboardRow';
-
-type LeaderboardPageProps = {
-  initialPeriod?: StatisticsPeriod;
-};
 
 function LeaderboardSkeleton() {
   return (
@@ -36,12 +31,11 @@ function LeaderboardSkeleton() {
   );
 }
 
-export function LeaderboardPage({
-  initialPeriod = 'year_to_date',
-}: LeaderboardPageProps) {
-  const [period, setPeriod] = useState<StatisticsPeriod>(initialPeriod);
+export function LeaderboardPage() {
+  const period = useStatisticsStore(s => s.period);
+  const setPeriod = useStatisticsStore(s => s.setPeriod);
   const { data, isLoading, isError, error, refetch, isFetching } =
-    useStatisticsLeaderboard(period);
+    useStatisticsLeaderboard();
 
   return (
     <main className="bg-brand-neutral min-h-[calc(100vh-56px)] px-4 md:px-8 lg:px-12">

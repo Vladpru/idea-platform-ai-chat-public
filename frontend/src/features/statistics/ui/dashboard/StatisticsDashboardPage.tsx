@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import {
+  useAchievementToast,
+  useMyAchievements,
+} from '@/features/achievements';
 
-import { useMyAchievements, useAchievementToast } from '@/features/achievements';
 import { getApiErrorMessage } from '@/shared/api/api-error';
 import { Card } from '@/shared/ui';
 import { Button } from '@/shared/ui/button';
 import { SkeletonCard } from '@/shared/ui/skeleton';
 
 import { useStatisticsSnapshot } from '../../hooks/use-statistics-snapshot';
-import type { StatisticsPeriod } from '../../model/statistics.types';
+import { useStatisticsStore } from '../../model/statistics-store';
 import { StatisticsTimeRangeSelect } from '../StatisticsTimeRangeSelect';
 import { CostBenefitCard } from '../cards/CostBenefitCard';
 import { MyAchievementsCard } from '../cards/MyAchievementsCard';
@@ -35,9 +37,10 @@ function StatisticsChartsSkeleton() {
 }
 
 export function StatisticsDashboardPage() {
-  const [period, setPeriod] = useState<StatisticsPeriod>('year_to_date');
+  const period = useStatisticsStore(s => s.period);
+  const setPeriod = useStatisticsStore(s => s.setPeriod);
   const { data, isLoading, isError, error, refetch, isFetching } =
-    useStatisticsSnapshot(period);
+    useStatisticsSnapshot();
 
   const { data: achievements } = useMyAchievements();
   useAchievementToast(achievements);
@@ -100,7 +103,6 @@ export function StatisticsDashboardPage() {
                 <div className="lg:col-span-2">
                   <TopContributorsCard
                     contributors={data.topContributors}
-                    period={period}
                     isFetching={isFetching}
                   />
                 </div>
