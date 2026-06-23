@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 type ImageLightboxProps = {
   images: { url: string; alt: string }[];
@@ -65,9 +66,9 @@ export function ImageLightbox({
     };
   }, [handleNext, handlePrev, onClose, isMultiple]);
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80"
+      className="fixed inset-0 z-100 flex items-center justify-center bg-black/80"
       onClick={onClose}
     >
       <button
@@ -136,6 +137,7 @@ export function ImageLightbox({
           onClick={event => event.stopPropagation()}
         />
       </AnimatePresence>
-    </div>
+    </div>,
+    document.body,
   );
 }

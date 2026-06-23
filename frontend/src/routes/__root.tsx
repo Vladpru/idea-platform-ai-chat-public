@@ -25,8 +25,10 @@ function RootComponent() {
           import.meta.env.VITE_PUBLIC_POSTHOG_HOST || 'https://eu.posthog.com',
         defaults: '2026-01-30',
         capture_pageview: false,
-        capture_exceptions: true,
+        capture_exceptions: !import.meta.env.DEV,
         debug: import.meta.env.DEV,
+        opt_out_capturing_by_default: import.meta.env.DEV,
+        disable_session_recording: import.meta.env.DEV,
         session_recording: {
           maskAllInputs: true,
           maskTextSelector: '[data-ph-mask]',

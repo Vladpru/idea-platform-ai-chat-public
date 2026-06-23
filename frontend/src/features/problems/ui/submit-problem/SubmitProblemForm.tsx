@@ -15,14 +15,15 @@ import {
   sanitizeCostBenefitInput,
 } from '@/features/problems/lib/submit-problem';
 import { SaveDraftButton } from '@/features/problems/ui/tooltips';
-import { useNavigate, useSearch } from '@tanstack/react-router';
 import { usePostHog } from '@posthog/react';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useEffect, useId } from 'react';
 import { Controller } from 'react-hook-form';
 
 import { ROUTES } from '@/shared/config/paths';
 import { useCreateFormLeaveGuard } from '@/shared/hooks/use-create-form-leave-guard';
 import { useDocumentAutoFill } from '@/shared/hooks/use-document-auto-fill';
+import { useMediaQuery } from '@/shared/hooks/use-media-query';
 import {
   SAVE_PROBLEM_PROGRESS_DESCRIPTION,
   UNDO_CHANGES_DESCRIPTION,
@@ -46,7 +47,6 @@ import { IdeaSelect } from './IdeaSelect';
 import { ProblemFilesField } from './ProblemFilesField';
 import { ProblemTagsField } from './ProblemTagsField';
 import { SimilarProblemsSection } from './SimilarProblemsSection';
-import { useMediaQuery } from '@/shared/hooks/use-media-query';
 
 export type ProblemDocumentAutoFillControls = {
   isScanning: boolean;
@@ -170,14 +170,26 @@ export function SubmitProblemForm({
   });
 
   const handleCancel = () => {
-    requestLeave(navigateToProblems);
+    requestLeave(() => {
+      if (isEditing) {
+        void navigate({
+          to: ROUTES.profileProblems,
+          search: { tab: 'drafts' },
+        });
+      } else {
+        void navigate({ to: ROUTES.problems, search: { sort: 'newest' } });
+      }
+    });
   };
 
   const handleSaveDraft = async () => {
     const wasEditing = isEditing;
     const problemId = await onSaveDraft();
     if (!problemId) return;
-    posthog.capture('problem_draft_saved', { problem_id: problemId, is_editing: wasEditing });
+    posthog.capture('problem_draft_saved', {
+      problem_id: problemId,
+      is_editing: wasEditing,
+    });
     navigateAfterSave(wasEditing, problemId);
   };
 
@@ -185,7 +197,10 @@ export function SubmitProblemForm({
     const wasEditing = isEditing;
     const problemId = await onPublish();
     if (!problemId) return;
-    posthog.capture('problem_published', { problem_id: problemId, is_editing: wasEditing });
+    posthog.capture('problem_published', {
+      problem_id: problemId,
+      is_editing: wasEditing,
+    });
     void navigate({
       to: ROUTES.problemDetail(problemId),
       search: wasEditing ? { updated: true } : undefined,

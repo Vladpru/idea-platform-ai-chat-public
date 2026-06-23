@@ -4,7 +4,6 @@ import { Link } from '@tanstack/react-router';
 import { type ReactNode, memo, useCallback } from 'react';
 
 import {
-  DASHBOARD_CARD_TAG_TO_SHOW_COUNT,
   STATS_BELOW_TAGS_COLUMN_THRESHOLD,
 } from '@/shared/dashboard';
 import type { DashboardCardBase } from '@/shared/dashboard/model/dashboard.types';
@@ -29,7 +28,6 @@ export type DashboardCardStandardProps<
   layout: 'vertical' | 'horizontal';
   linkedItemsExpanded: boolean;
   onToggleLinkedItems?: (cardId: string) => void;
-  tagToShowCount?: number;
   isMobile: boolean;
   columnCount?: number;
   linkedItemEmptyImageText?: string;
@@ -51,7 +49,6 @@ function DashboardCardStandardInner<
   layout,
   linkedItemsExpanded,
   onToggleLinkedItems,
-  tagToShowCount = DASHBOARD_CARD_TAG_TO_SHOW_COUNT,
   isMobile,
   columnCount = 1,
   linkedItemEmptyImageText,
@@ -135,8 +132,8 @@ function DashboardCardStandardInner<
                 className={cn(
                   'text-brand-black group-hover:text-brand-dark-blue font-bold tracking-wide transition-colors',
                   isHorizontal
-                    ? 'line-clamp-2 text-sm sm:line-clamp-1 sm:text-base'
-                    : 'line-clamp-2 text-base',
+                    ? 'line-clamp-2 text-sm sm:line-clamp-1 sm:text-sm lg:text-[0.8rem] xl:text-base'
+                    : 'line-clamp-2 text-xs lg:text-[0.8rem] xl:text-base',
                 )}
               >
                 {card.title}
@@ -167,10 +164,18 @@ function DashboardCardStandardInner<
               {card.description?.trim() ? (
                 <MarkdownRenderer
                   content={card.description.trim()}
-                  className={cn(entityDescriptionPreviewClass, 'text-brand-gray-600 line-clamp-3')}
+                  className={cn(
+                    entityDescriptionPreviewClass,
+                    'text-brand-gray-600 line-clamp-3 text-xs lg:text-[0.7rem] xl:text-sm',
+                  )}
                 />
               ) : (
-                <p className={cn(entityDescriptionPreviewClass, 'text-brand-gray-600 line-clamp-3')}>
+                <p
+                  className={cn(
+                    entityDescriptionPreviewClass,
+                    'text-brand-gray-600 line-clamp-3 text-xs lg:text-[0.7rem] xl:text-sm',
+                  )}
+                >
                   {emptyDescriptionText}
                 </p>
               )}
@@ -186,17 +191,10 @@ function DashboardCardStandardInner<
                   : 'pt-4 sm:flex-row sm:items-center sm:justify-between'),
             )}
           >
-            <div
-              className={cn(
-                'min-w-0 flex-1 shrink overflow-hidden',
-                !stackStatsBelowTags &&
-                  '[mask-image:linear-gradient(to_right,black_90%,transparent_100%)]',
-              )}
-            >
+            <div className="min-w-0 flex-1 shrink overflow-hidden flex">
               <IdeaTagCloud
                 tags={card.tags}
                 compact={isMobile}
-                tagToShowCount={tagToShowCount}
               />
             </div>
 
@@ -259,7 +257,6 @@ function areDashboardCardStandardPropsEqual<
     prev.linkedItemsExpanded === next.linkedItemsExpanded &&
     prev.detailHref === next.detailHref &&
     prev.onToggleLinkedItems === next.onToggleLinkedItems &&
-    prev.tagToShowCount === next.tagToShowCount &&
     prev.isMobile === next.isMobile &&
     prev.columnCount === next.columnCount &&
     prev.hideLinkedItems === next.hideLinkedItems &&

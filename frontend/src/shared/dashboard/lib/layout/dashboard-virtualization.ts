@@ -51,8 +51,9 @@ export function getVirtualRowGridStyle(
     return undefined;
   }
   const minCardWidth = isCompactLayout ? 160 : 280;
+  const gapTotal = (columnCount - 1) * DASHBOARD_VIRTUAL_ROW_GAP_PX;
   return {
-    gridTemplateColumns: `repeat(${columnCount}, minmax(${minCardWidth}px, 1fr))`,
+    gridTemplateColumns: `repeat(${columnCount}, minmax(min(${minCardWidth}px, calc((100% - ${gapTotal}px) / ${columnCount})), 1fr))`,
   };
 }
 

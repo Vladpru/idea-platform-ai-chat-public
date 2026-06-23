@@ -3,7 +3,6 @@ import type { ProblemDocumentAutoFillControls } from '@/features/problems/ui/sub
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useState } from 'react';
 
-import { DEFAULT_PROBLEMS_DASHBOARD_SEARCH } from '@/features/problems-dashboard/lib/constants';
 import { ROUTES } from '@/shared/config/paths';
 import { DocumentAutoFillControl } from '@/shared/ui/document-auto-fill-control';
 import { CreationPageTemplate } from '@/shared/ui/pages/CreationPageTemplate';
@@ -25,9 +24,8 @@ export function SubmitProblemPage() {
         problemId
           ? () =>
               void navigate({
-                to: ROUTES.problems,
-                search: DEFAULT_PROBLEMS_DASHBOARD_SEARCH,
-                replace: true,
+                to: ROUTES.profileProblems,
+                search: { tab: 'drafts' },
               })
           : undefined
       }
