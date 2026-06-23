@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  HttpException,
   Injectable,
   NotFoundException,
   UnprocessableEntityException,
@@ -8,13 +7,13 @@ import {
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 import { CloudinaryService } from '../../core/cloudinary/cloudinary.service';
-import { RealtimePublisherService } from '../../realtime/realtime-publisher.service';
-import { REALTIME_NAMESPACES } from '../../realtime/realtime.types';
-import { isUniqueConstraintError } from '../../shared/utils/is-unique-error.util';
 import { EntityTarget } from '../entity-visibility/entity-target.enum';
 import { EntityVisibilityService } from '../entity-visibility/entity-visibility.service';
 import { NOTIFICATION_EVENTS } from '../notification/events/notification-event-names';
 import type { DirectMessageReceivedNotificationEvent } from '../notification/events/notification.events';
+import { RealtimePublisherService } from '../../realtime/realtime-publisher.service';
+import { REALTIME_NAMESPACES } from '../../realtime/realtime.types';
+import { isUniqueConstraintError } from '../../shared/utils/is-unique-error.util';
 import { GetLiveChatMessagesQueryDto } from './dto/get-live-chat-messages-query.dto';
 import { SendLiveChatMessagePayloadDto } from './dto/send-live-chat-message.dto';
 import { buildDirectPairKey } from './live-chat-direct.util';
@@ -491,112 +490,43 @@ export class LiveChatService {
     roomId: string,
     userId: string,
   ): Promise<LiveChatRoomRecord> {
-    // ⚠️ DEBUG-ONLY INSTRUMENTATION ⚠️
-    // Authorization diagnostics are embedded into the thrown HttpException
-    // message so they surface to the client in the room:join_denied "reason"
-    // field (server logs on Render are not accessible). This intentionally
-    // leaks room existence + membership state to the caller — an information
-    // disclosure. REVERT BEFORE PRODUCTION.
-    const ids =
-      `roomId="${roomId}" (len=${roomId?.length ?? 0}); ` +
-      `userId="${userId}" (len=${userId?.length ?? 0})`;
-
-    // Prisma query #1: liveChatRoom.findUnique({ where: { id: roomId } })
     const room = await this.liveChatRepository.findRoomById(roomId);
 
     if (!room) {
-      // Room "missing" — but it may exist in another DB. Probe THIS process's
-      // datasource to prove whether the consumer is bound to the same DB as REST.
-      const probe = await this.liveChatRepository.debugDatasourceProbe(roomId);
-      // Still deny — only the message is enriched.
-      throw new NotFoundException(
-        `${LIVE_CHAT_ROOM_NOT_FOUND} | DEBUG: ${ids}; findRoomById=null; PROBE ${probe}`,
-      );
+      throw new NotFoundException(LIVE_CHAT_ROOM_NOT_FOUND);
     }
 
-    const roomKind = room.ideaId
-      ? `idea(ideaId=${room.ideaId})`
-      : room.problemId
-        ? `problem(problemId=${room.problemId})`
-        : `direct(participants=${room.participants.length})`;
-    const found = `findRoomById=room(id=${room.id}, kind=${roomKind})`;
-
     if (room.ideaId) {
-      // idea.findUnique (visibility) + ideaMember.findFirst (membership)
-      try {
-        await this.entityVisibility.assertEntityParticipant(
-          EntityTarget.IDEA,
-          room.ideaId,
-          userId,
-        );
-      } catch (error) {
-        // Re-throw with diagnostics; status preserved so access stays blocked.
-        throw this.denyWithDiagnostics(
-          error,
-          `${ids}; ${found}; failedCheck=idea-member-check`,
-        );
-      }
+      await this.entityVisibility.assertEntityParticipant(
+        EntityTarget.IDEA,
+        room.ideaId,
+        userId,
+      );
       return room;
     }
 
     if (room.problemId) {
-      // problem.findUnique (visibility only — author or PUBLISHED)
-      try {
-        await this.entityVisibility.assertEntityLiveChatAccess(
-          EntityTarget.PROBLEM,
-          room.problemId,
-          userId,
-        );
-      } catch (error) {
-        throw this.denyWithDiagnostics(
-          error,
-          `${ids}; ${found}; failedCheck=problem-access-check`,
-        );
-      }
+      await this.entityVisibility.assertEntityLiveChatAccess(
+        EntityTarget.PROBLEM,
+        room.problemId,
+        userId,
+      );
       return room;
     }
 
     if (!room.ideaId && !room.problemId) {
-      // liveChatParticipant.findUnique on composite key roomId_userId
       const isParticipant = await this.liveChatRepository.isRoomParticipant(
         roomId,
         userId,
       );
 
       if (!isParticipant) {
-        throw new NotFoundException(
-          `DEBUG: roomId=${roomId}, userId=${userId}, isParticipant=${isParticipant}, result=${JSON.stringify(await this.liveChatRepository.getParticipants(roomId))}`,
-        );
+        throw new NotFoundException(LIVE_CHAT_ROOM_NOT_FOUND);
       }
 
       return room;
     }
 
-    throw new BadRequestException(
-      `${LIVE_CHAT_INVALID_ENTITY} | DEBUG: ${ids}; ${found}; failedCheck=invalid-entity`,
-    );
-  }
-
-  // ⚠️ DEBUG-ONLY: re-throw the original HttpException with diagnostics appended,
-  // preserving its HTTP status so the authorization decision is NOT bypassed.
-  // The original error class name reveals which gate fired:
-  //   NotFoundException  -> entity not visible (draft/archived/not found)
-  //   ForbiddenException -> visible but the user is not a member.
-  // REVERT BEFORE PRODUCTION.
-  private denyWithDiagnostics(
-    error: unknown,
-    diagnostics: string,
-  ): HttpException {
-    if (error instanceof HttpException) {
-      return new HttpException(
-        `${error.message} | DEBUG: ${diagnostics}; cause=${error.constructor.name}`,
-        error.getStatus(),
-      );
-    }
-    // Non-HTTP errors are unexpected (e.g. DB throw) — surface the type/message.
-    return new HttpException(
-      `Access denied | DEBUG: ${diagnostics}; cause=${error instanceof Error ? `${error.constructor.name}: ${error.message}` : String(error)}`,
-      403,
-    );
+    throw new BadRequestException(LIVE_CHAT_INVALID_ENTITY);
   }
 }

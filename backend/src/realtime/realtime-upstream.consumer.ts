@@ -229,9 +229,7 @@ export class RealtimeUpstreamConsumer
       this.publisher.publishToSocket(
         { namespace: REALTIME_NAMESPACES.LIVE_CHAT, sid },
         ROOM_CONTROL_EVENTS.JOIN_DENIED,
-        // ⚠️ DEBUG-ONLY: forward the enriched exception message to the client.
-        // Restore the hardcoded 'Access denied' before production.
-        { roomId, clientMsgId, reason: error.message },
+        { roomId, clientMsgId, reason: 'Access denied' },
       );
       return;
     }
