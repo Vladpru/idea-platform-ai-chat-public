@@ -79,32 +79,13 @@ export function DashboardControls<TSort extends string>({
       )}
 
       {showLinkedItemsToggle && (
-        <div className="flex items-center gap-4 text-[10px] xl:text-xs">
-          <button
-            type="button"
-            onClick={onExpandAll}
-            className={cn(
-              'cursor-pointer font-bold tracking-wide uppercase transition-colors',
-              linkedProblemsExpanded
-                ? 'text-brand-dark-blue'
-                : 'text-brand-gray-500 hover:text-brand-dark-blue',
-            )}
-          >
-            {expandAllLabel}
-          </button>
-          <button
-            type="button"
-            onClick={onCollapseAll}
-            className={cn(
-              'cursor-pointer font-bold tracking-wide uppercase transition-colors',
-              !linkedProblemsExpanded
-                ? 'text-brand-dark-blue'
-                : 'text-brand-gray-500 hover:text-brand-dark-blue',
-            )}
-          >
-            {collapseAllLabel}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={linkedProblemsExpanded ? onCollapseAll : onExpandAll}
+          className="text-brand-gray-500 hover:text-brand-dark-blue cursor-pointer text-[10px] font-bold tracking-wide uppercase transition-colors xl:text-xs"
+        >
+          {linkedProblemsExpanded ? collapseAllLabel : expandAllLabel}
+        </button>
       )}
 
       <div className="sm:hidden">
