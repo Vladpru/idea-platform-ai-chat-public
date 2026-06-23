@@ -1,10 +1,10 @@
 import type { SimilarProblemCard } from '@/features/problem-details/model/problem-details.types';
+import { SimilarEntityCard } from '@/features/idea-details/ui/similar/SimilarEntityCard';
 import { SimilarProblemsListSkeleton } from '@/features/problem-details/ui/skeletons/SimilarProblemsListSkeleton';
 
+import { ROUTES } from '@/shared/config/paths';
 import { cn } from '@/shared/lib/utils';
 import { StarsIcon } from '@/shared/ui/icons';
-
-import { SimilarProblemCard as SimilarProblemCardUi } from './SimilarProblemCard';
 
 type SimilarProblemsWidgetProps = {
   similarProblems: SimilarProblemCard[];
@@ -45,7 +45,22 @@ export function SimilarProblemsWidget({
       ) : (
         <div className="flex flex-col gap-4">
           {similarProblems.map(card => (
-            <SimilarProblemCardUi key={card.id} card={card} />
+            <SimilarEntityCard
+              key={card.id}
+              card={{
+                id: card.id,
+                title: card.title,
+                description: card.description,
+                authorName: card.authorName,
+                authorAvatarUrl: card.authorAvatarUrl,
+                stage: card.stage,
+                tags: card.tags,
+                stats: card.stats,
+              }}
+              entityType="PROBLEM"
+              detailRoute={ROUTES.problemDetail}
+              showImage={false}
+            />
           ))}
         </div>
       )}
