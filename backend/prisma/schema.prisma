@@ -633,7 +633,6 @@ model KnowledgeChunk {
   embedding Unsupported("vector(768)")?
   createdAt DateTime                    @default(now()) @map("created_at")
 
-  @@index([embedding], map: "knowledge_chunk_embedding_hnsw_idx")
   @@map("knowledge_chunk")
 }
 
