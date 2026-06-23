@@ -1,3 +1,6 @@
+import { initSentry } from '@/app/sentry';
+initSentry();
+
 import { hasValidSession, useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import { RouterProvider } from '@tanstack/react-router';
 import { StrictMode } from 'react';

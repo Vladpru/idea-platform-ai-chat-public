@@ -1,3 +1,4 @@
+import { sentryVitePlugin } from '@sentry/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackRouter } from '@tanstack/router-plugin/vite';
 import react from '@vitejs/plugin-react';
@@ -56,7 +57,16 @@ export default defineConfig({
         navigateFallback: '/index.html',
       },
     }),
+    sentryVitePlugin({
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      telemetry: false,
+    }),
   ],
+  build: {
+    sourcemap: 'hidden',
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

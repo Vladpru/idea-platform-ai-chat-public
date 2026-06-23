@@ -14,6 +14,8 @@ import {
 } from '../../hooks/use-statistics-leaderboard';
 import { useStatisticsStore } from '../../model/statistics-store';
 import type { StatisticsPeriod } from '../../model/statistics.types';
+import { useStatisticsLeaderboard } from '../../hooks/use-statistics-leaderboard';
+import { useStatisticsStore } from '../../model/statistics-store';
 import { StatisticsTimeRangeSelect } from '../StatisticsTimeRangeSelect';
 import { statisticsPageTitleClass } from '../statistics-classes';
 import { LeaderboardRow } from './LeaderboardRow';
@@ -54,6 +56,10 @@ export function LeaderboardPage() {
     setPeriod(next);
     void navigate({ search: prev => ({ ...prev, page: 1 }) });
   };
+  const period = useStatisticsStore(s => s.period);
+  const setPeriod = useStatisticsStore(s => s.setPeriod);
+  const { data, isLoading, isError, error, refetch, isFetching } =
+    useStatisticsLeaderboard();
 
   return (
     <main className="bg-brand-neutral min-h-[calc(100vh-56px)] px-4 md:px-8 lg:px-12">
