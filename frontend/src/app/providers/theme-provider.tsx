@@ -40,7 +40,10 @@ export function ThemeProvider({
   });
 
   const themeRef = useRef(theme);
-  themeRef.current = theme;
+
+  useEffect(() => {
+    themeRef.current = theme;
+  }, [theme]);
 
   useEffect(() => {
     const previousUserId = previousUserIdRef.current;
@@ -52,6 +55,11 @@ export function ThemeProvider({
     }
 
     const resolved = resolveActiveTheme(userId, themePreference);
+
+    if (userId && themePreference) {
+      writeStoredTheme(resolved, userId);
+    }
+
     setThemeState(resolved);
     applyThemeToDocument(resolved);
   }, [userId, themePreference]);
