@@ -4,7 +4,6 @@ import { Link } from '@tanstack/react-router';
 import { type ReactNode, memo, useCallback } from 'react';
 
 import {
-  DASHBOARD_CARD_TAG_TO_SHOW_COUNT,
   DashboardCardStats,
   LinkedItemsSection,
   STATS_BELOW_TAGS_COLUMN_THRESHOLD,
@@ -25,7 +24,6 @@ export type ProblemDashboardCardStandardProps = {
   getLinkedItemDetailHref: (id: string) => string;
   linkedItemsExpanded: boolean;
   onToggleLinkedItems?: (cardId: string) => void;
-  tagToShowCount?: number;
   isMobile: boolean;
   columnCount?: number;
   linkedItemEmptyImageText?: string;
@@ -43,7 +41,6 @@ function ProblemDashboardCardStandardInner({
   getLinkedItemDetailHref,
   linkedItemsExpanded,
   onToggleLinkedItems,
-  tagToShowCount = DASHBOARD_CARD_TAG_TO_SHOW_COUNT,
   isMobile,
   columnCount = 1,
   linkedItemEmptyImageText,
@@ -120,17 +117,10 @@ function ProblemDashboardCardStandardInner({
                 'pt-4 sm:flex-row sm:items-center sm:justify-between',
             )}
           >
-            <div
-              className={cn(
-                'min-w-0 flex-1 shrink overflow-hidden',
-                !stackStatsBelowTags &&
-                  '[mask-image:linear-gradient(to_right,black_90%,transparent_100%)]',
-              )}
-            >
+            <div className="min-w-0 flex-1 shrink overflow-hidden flex">
               <IdeaTagCloud
                 tags={card.tags}
                 compact={isMobile}
-                tagToShowCount={tagToShowCount}
               />
             </div>
 
@@ -185,7 +175,6 @@ function areProblemDashboardCardStandardPropsEqual(
     prev.linkedItemsExpanded === next.linkedItemsExpanded &&
     prev.detailHref === next.detailHref &&
     prev.onToggleLinkedItems === next.onToggleLinkedItems &&
-    prev.tagToShowCount === next.tagToShowCount &&
     prev.isMobile === next.isMobile &&
     prev.columnCount === next.columnCount &&
     prev.hideLinkedItems === next.hideLinkedItems &&
