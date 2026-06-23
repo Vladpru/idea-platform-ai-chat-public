@@ -119,6 +119,8 @@ model User {
   conferenceInvitesRecv   ConferenceInvite[]    @relation("ConferenceInviteRecipient")
 
   userAchievements UserAchievement[]
+  chatMessages     ChatMessage[]
+
   @@map("user")
 }
 
@@ -622,4 +624,29 @@ model LiveChatMessage {
   @@unique([authorId, clientMessageId], map: "live_chat_message_author_id_client_message_id_key")
   @@index([roomId, createdAt])
   @@map("live_chat_message")
+}
+
+model KnowledgeChunk {
+  id        String                      @id @default(uuid())
+  source    String
+  content   String                      @db.Text
+  embedding Unsupported("vector(768)")?
+  createdAt DateTime                    @default(now()) @map("created_at")
+
+  @@index([embedding], map: "knowledge_chunk_embedding_hnsw_idx")
+  @@map("knowledge_chunk")
+}
+
+model ChatMessage {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  role      String
+  content   String   @db.Text
+  sources   Json     @default("[]")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("chat_message")
 }
