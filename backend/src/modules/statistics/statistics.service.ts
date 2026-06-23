@@ -98,6 +98,8 @@ export class StatisticsService {
 
   async getLeaderboard(
     period: StatisticsPeriod,
+    page: number,
+    limit: number,
     timeZoneRaw?: string,
   ): Promise<LeaderboardResponse> {
     const timeZone = resolveStatisticsTimeZone(timeZoneRaw);
@@ -112,11 +114,16 @@ export class StatisticsService {
       allTimeStart ?? undefined,
     );
 
-    const entries = await this.scoring.queryLeaderboardEntries(
-      range.start,
-      range.end,
-    );
+    const [data, totalCount] = await Promise.all([
+      this.scoring.queryLeaderboardEntries(range.start, range.end, {
+        take: limit,
+        skip: (page - 1) * limit,
+      }),
+      this.scoring.countLeaderboardEntries(range.start, range.end),
+    ]);
 
-    return { entries };
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return { data, totalCount, currentPage: page, totalPages };
   }
 }

@@ -131,6 +131,7 @@ export function TopContributorsCard({
       <div className="mt-6 flex justify-end">
         <Link
           to={ROUTES.statisticsLeaderboard}
+          search={{ page: 1 }}
           className="text-brand-dark-blue hover:text-brand-dark-blue/80 inline-flex items-center gap-2 text-xs font-bold tracking-wide uppercase transition-colors"
         >
           View full leaderboard

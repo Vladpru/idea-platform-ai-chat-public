@@ -9,6 +9,7 @@ import {
 import type { Request } from 'express';
 
 import { JwtAuth } from '../../shared/decorators/jwt-auth.decorator';
+import { GetLeaderboardQueryDto } from '../../shared/dto/get-leaderboard-query.dto';
 import { GetStatisticsQueryDto } from '../../shared/dto/get-statistics-query.dto';
 import type {
   LeaderboardResponse,
@@ -52,8 +53,13 @@ export class StatisticsController {
   })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   getLeaderboard(
-    @Query() query: GetStatisticsQueryDto,
+    @Query() query: GetLeaderboardQueryDto,
   ): Promise<LeaderboardResponse> {
-    return this.statisticsService.getLeaderboard(query.period, query.timeZone);
+    return this.statisticsService.getLeaderboard(
+      query.period,
+      query.page,
+      query.limit,
+      query.timeZone,
+    );
   }
 }
