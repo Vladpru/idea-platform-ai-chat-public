@@ -80,7 +80,7 @@ export function LiveChatMessageItem({ message }: LiveChatMessageItemProps) {
       <div
         id={`live-chat-message-${message.id}`}
         className={cn(
-          'flex min-w-0 gap-3 scroll-mt-4',
+          'flex min-w-0 scroll-mt-4 gap-3',
           isOwnMessage ? 'flex-row-reverse' : 'flex-row',
         )}
       >
@@ -96,7 +96,7 @@ export function LiveChatMessageItem({ message }: LiveChatMessageItemProps) {
 
         <div
           className={cn(
-            'flex min-w-0 max-w-[min(100%,36rem)] flex-col gap-1',
+            'flex max-w-[min(100%,36rem)] min-w-0 flex-col gap-1',
             isOwnMessage ? 'items-end' : 'items-start',
           )}
         >
@@ -106,7 +106,9 @@ export function LiveChatMessageItem({ message }: LiveChatMessageItemProps) {
               isOwnMessage ? 'flex-row-reverse' : 'flex-row',
             )}
           >
-            <span className="text-brand-dark-blue font-medium">{authorName}</span>
+            <span className="text-brand-dark-blue font-medium">
+              {authorName}
+            </span>
             {message.pending ? (
               <span className="text-brand-gray-500 flex items-center gap-1">
                 <Loader2 className="size-3 animate-spin" aria-hidden />
@@ -127,7 +129,7 @@ export function LiveChatMessageItem({ message }: LiveChatMessageItemProps) {
               'flex max-w-full flex-col rounded-lg px-3 py-2 text-sm transition-opacity',
               isOwnMessage
                 ? 'bg-brand-orange text-white'
-                : 'bg-white text-brand-black',
+                : 'bg-card text-brand-black',
               message.pending && 'opacity-70',
             )}
           >
@@ -143,7 +145,7 @@ export function LiveChatMessageItem({ message }: LiveChatMessageItemProps) {
             {message.content.length > 0 && (
               <p
                 className={cn(
-                  '[overflow-wrap:anywhere] whitespace-pre-wrap break-words',
+                  '[overflow-wrap:anywhere] break-words whitespace-pre-wrap',
                   hasAttachment && 'mt-1',
                 )}
               >
@@ -156,7 +158,12 @@ export function LiveChatMessageItem({ message }: LiveChatMessageItemProps) {
 
       {lightboxOpen && message.attachmentUrl && isImageAttachment && (
         <ImageLightbox
-          images={[{ url: message.attachmentUrl, alt: message.attachmentName ?? 'Image' }]}
+          images={[
+            {
+              url: message.attachmentUrl,
+              alt: message.attachmentName ?? 'Image',
+            },
+          ]}
           initialIndex={0}
           onClose={() => setLightboxOpen(false)}
         />
