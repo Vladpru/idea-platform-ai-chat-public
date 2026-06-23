@@ -79,12 +79,12 @@ export function DashboardControls<TSort extends string>({
       )}
 
       {showLinkedItemsToggle && (
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 text-[10px] xl:text-xs">
           <button
             type="button"
             onClick={onExpandAll}
             className={cn(
-              'cursor-pointer text-xs font-bold tracking-wide uppercase transition-colors',
+              'cursor-pointer font-bold tracking-wide uppercase transition-colors',
               linkedProblemsExpanded
                 ? 'text-brand-dark-blue'
                 : 'text-brand-gray-500 hover:text-brand-dark-blue',
@@ -96,7 +96,7 @@ export function DashboardControls<TSort extends string>({
             type="button"
             onClick={onCollapseAll}
             className={cn(
-              'cursor-pointer text-xs font-bold tracking-wide uppercase transition-colors',
+              'cursor-pointer font-bold tracking-wide uppercase transition-colors',
               !linkedProblemsExpanded
                 ? 'text-brand-dark-blue'
                 : 'text-brand-gray-500 hover:text-brand-dark-blue',
@@ -183,7 +183,7 @@ export function DashboardControls<TSort extends string>({
         <button
           type="button"
           onClick={() => setIsDesktopSortOpen(!isDesktopSortOpen)}
-          className="border-brand-gray-200 text-brand-dark-blue bg-card flex min-w-[150px] cursor-pointer items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm font-semibold transition-opacity hover:opacity-80"
+          className="border-brand-gray-200 text-brand-dark-blue bg-card flex min-w-[100px] cursor-pointer items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-xs font-semibold transition-opacity hover:opacity-80 lg:min-w-[90px] xl:min-w-[130px] xl:px-3 xl:py-2 xl:text-sm"
         >
           <span className="truncate">{activeSort?.label}</span>
           <ChevronDown
@@ -241,7 +241,7 @@ export function DashboardControls<TSort extends string>({
           <button
             type="button"
             onClick={() => setIsColumnsOpen(!isColumnsOpen)}
-            className="border-brand-gray-200 text-brand-dark-blue bg-card flex min-w-[120px] cursor-pointer items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm font-semibold transition-opacity hover:opacity-80"
+            className="border-brand-gray-200 text-brand-dark-blue bg-card flex min-w-[90px] cursor-pointer items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-xs font-semibold transition-opacity hover:opacity-80 xl:min-w-[110px] xl:px-3 xl:py-2 xl:text-sm"
           >
             <span>Columns {columnCount}</span>
             <ChevronDown
@@ -259,7 +259,7 @@ export function DashboardControls<TSort extends string>({
                 onClick={() => setIsColumnsOpen(false)}
                 aria-hidden="true"
               />
-              <div className="bg-card absolute top-full right-0 z-50 mt-1 min-w-[120px] rounded-md py-2 shadow-lg ring-1 ring-black/5">
+              <div className="bg-card absolute top-full right-0 z-50 mt-1 min-w-[110px] rounded-md py-2 shadow-lg ring-1 ring-black/5">
                 <ul className="flex flex-col">
                   {columnOptions.map(count => (
                     <li key={count}>

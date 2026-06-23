@@ -135,8 +135,8 @@ function DashboardCardStandardInner<
                 className={cn(
                   'text-brand-black group-hover:text-brand-dark-blue font-bold tracking-wide transition-colors',
                   isHorizontal
-                    ? 'line-clamp-2 text-sm sm:line-clamp-1 sm:text-base'
-                    : 'line-clamp-2 text-base',
+                    ? 'line-clamp-2 text-sm sm:line-clamp-1 sm:text-sm lg:text-[0.8rem] xl:text-base'
+                    : 'line-clamp-2 text-xs lg:text-[0.8rem] xl:text-base',
                 )}
               >
                 {card.title}
@@ -167,10 +167,18 @@ function DashboardCardStandardInner<
               {card.description?.trim() ? (
                 <MarkdownRenderer
                   content={card.description.trim()}
-                  className={cn(entityDescriptionPreviewClass, 'text-brand-gray-600 line-clamp-3')}
+                  className={cn(
+                    entityDescriptionPreviewClass,
+                    'text-brand-gray-600 line-clamp-3 text-xs lg:text-[0.7rem] xl:text-sm',
+                  )}
                 />
               ) : (
-                <p className={cn(entityDescriptionPreviewClass, 'text-brand-gray-600 line-clamp-3')}>
+                <p
+                  className={cn(
+                    entityDescriptionPreviewClass,
+                    'text-brand-gray-600 line-clamp-3 text-xs lg:text-[0.7rem] xl:text-sm',
+                  )}
+                >
                   {emptyDescriptionText}
                 </p>
               )}

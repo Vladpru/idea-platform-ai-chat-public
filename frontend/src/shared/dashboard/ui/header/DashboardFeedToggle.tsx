@@ -9,9 +9,13 @@ type DashboardFeedToggleProps = {
 };
 
 const feedToggleSegmentClass =
-  'relative z-10 px-2.5 py-1 text-xs font-bold tracking-wide uppercase transition-colors duration-200';
+  'relative z-10 px-2.5 py-1 font-bold tracking-wide uppercase transition-colors duration-200 text-[10px] xl:text-xs';
 
-const feedToggleSpring = { type: 'spring' as const, stiffness: 400, damping: 32 };
+const feedToggleSpring = {
+  type: 'spring' as const,
+  stiffness: 400,
+  damping: 32,
+};
 
 export function DashboardFeedToggle({
   feedOnly,

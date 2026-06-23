@@ -1,8 +1,9 @@
-import { cn } from '@/shared/lib/utils';
-import { AnimatedTabUnderline } from '@/shared/ui';
 import { ChevronDown, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+
 import type { DashboardFilterTab } from '@/shared/dashboard/model/dashboard.types';
+import { cn } from '@/shared/lib/utils';
+import { AnimatedTabUnderline } from '@/shared/ui';
 
 type DashboardFilterProps<TFilter extends string> = {
   filters: DashboardFilterTab<TFilter>[];
@@ -54,7 +55,7 @@ export function DashboardFilter<TFilter extends string>({
             type="button"
             onClick={() => onFilterChange(tab.id)}
             className={cn(
-              'text-brand-dark-blue relative shrink-0 cursor-pointer pb-2 text-base font-normal tracking-wide uppercase transition-colors',
+              'text-brand-dark-blue relative shrink-0 cursor-pointer pb-2 text-xs font-normal tracking-wide uppercase transition-colors xl:text-base',
               isActive ? 'font-bold' : 'hover:text-brand-dark-blue',
             )}
           >
@@ -92,7 +93,7 @@ export function DashboardFilter<TFilter extends string>({
               type="button"
               onClick={() => onFilterChange(tab.id)}
               className={cn(
-                'text-brand-dark-blue relative cursor-pointer pb-2 text-base font-normal tracking-wide uppercase transition-colors',
+                'text-brand-dark-blue relative cursor-pointer pb-2 text-xs font-normal tracking-wide uppercase transition-colors xl:text-base',
                 isActive ? 'font-bold' : 'hover:text-brand-dark-blue',
               )}
             >
