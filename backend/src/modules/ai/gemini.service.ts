@@ -9,12 +9,11 @@ import {
 import { ConfigService } from '@nestjs/config';
 
 import { AnalyticsService } from '../../core/analytics/analytics.service';
-
-import type { EntitySummaryContent } from '../ai-summary/summary.types';
 import {
   DEFAULT_EMBEDDING_MODEL,
   EMBEDDING_DIMENSIONS,
 } from '../../core/config/embedding.config';
+import type { EntitySummaryContent } from '../ai-summary/summary.types';
 import { buildDocumentExtractPrompt } from './document/document-extract-prompt.util';
 import {
   normalizeIdeaDocumentExtractResponse,
@@ -378,6 +377,114 @@ export class GeminiService implements AiProvider {
       outputTokens: response.outputTokens,
     });
     this.logSuccessfulGeneration('entity-summary', model);
+    return text;
+  }
+
+  async generateChatAnswer(prompt: string): Promise<string> {
+    const models = buildModelsToTry(this.configuredModel);
+    const totalTimeoutMs = this.timeoutMs * models.length;
+
+    try {
+      const answer = await this.runWithAggregateTimeout(
+        aggregateSignal =>
+          this.runChatAnswerModelFallback(models, prompt, aggregateSignal),
+        totalTimeoutMs,
+      );
+      if (!answer) {
+        throw new InternalServerErrorException('AI returned an empty response');
+      }
+      return answer;
+    } catch (error) {
+      if (this.isKnownHttpError(error)) {
+        throw error;
+      }
+      if (this.isAbortError(error)) {
+        throw new GatewayTimeoutException('AI chat timed out');
+      }
+      this.logger.error('Gemini chat answer failed', error as Error);
+      throw new InternalServerErrorException('Unable to generate AI answer');
+    }
+  }
+
+  private async runChatAnswerModelFallback(
+    models: string[],
+    prompt: string,
+    aggregateSignal: AbortSignal,
+  ): Promise<string | null> {
+    for (const model of models) {
+      if (aggregateSignal.aborted) {
+        break;
+      }
+
+      this.logger.log(`Trying Gemini model for chat-answer: ${model}`);
+
+      try {
+        const answer = await this.runWithPerModelTimeout(
+          signal => this.tryChatAnswerForModel(model, prompt, signal),
+          { parentSignal: aggregateSignal },
+        );
+
+        if (answer) {
+          return answer;
+        }
+      } catch (error) {
+        if (this.isAbortError(error)) {
+          if (aggregateSignal.aborted) {
+            throw error;
+          }
+          this.logger.warn(
+            `Model ${model} timed out for chat-answer, trying next fallback`,
+          );
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    return null;
+  }
+
+  private async tryChatAnswerForModel(
+    model: string,
+    prompt: string,
+    signal: AbortSignal,
+  ): Promise<string | null> {
+    const callStart = Date.now();
+    const response = await generateGeminiJsonContent({
+      client: this.client,
+      model,
+      prompt,
+      jsonMode: false,
+      signal,
+    });
+
+    if (!response.ok) {
+      this.analytics.captureAiGeneration({
+        model,
+        operation: 'entity-summary',
+        latencyMs: Date.now() - callStart,
+        error: response.message,
+        httpStatus: response.status,
+      });
+      this.logger.error(
+        `Gemini chat-answer failed (model=${model}, status=${response.status}): ${response.message}`,
+      );
+      return null;
+    }
+
+    const text = response.text.trim();
+    if (!text) {
+      return null;
+    }
+
+    this.analytics.captureAiGeneration({
+      model,
+      operation: 'entity-summary',
+      latencyMs: Date.now() - callStart,
+      inputTokens: response.inputTokens,
+      outputTokens: response.outputTokens,
+    });
+    this.logger.log(`Gemini chat-answer succeeded (model=${model})`);
     return text;
   }
 
