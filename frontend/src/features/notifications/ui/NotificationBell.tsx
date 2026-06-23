@@ -47,7 +47,7 @@ export function NotificationBell() {
           : 'Notifications'
       }
       aria-expanded={open}
-      onClick={isMobile ? () => setOpen(true) : undefined}
+      onClick={isMobile ? () => setOpen(prev => !prev) : undefined}
     >
       <Bell size={22} strokeWidth={2} />
       {unreadCount > 0 ? (

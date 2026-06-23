@@ -3,7 +3,6 @@ import { ROUTES } from '@/shared/config/paths';
 import { useNavigate } from '@tanstack/react-router';
 import { MoreVertical } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
-import { flushSync } from 'react-dom';
 
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
@@ -134,16 +133,18 @@ export function NotificationDropdown({
     deleteAll.mutate();
   };
 
-  const handleNotificationSettingsClick = useCallback(() => {
-    flushSync(() => {
+  const handleNotificationSettingsClick = useCallback(
+    (event: Event) => {
+      event.preventDefault();
       setActionsMenuOpen(false);
       onClose?.();
-    });
-    void navigate({
-      to: ROUTES.settings,
-      search: { tab: 'notifications' },
-    });
-  }, [navigate, onClose]);
+      void navigate({
+        to: ROUTES.settings,
+        search: { tab: 'notifications' },
+      });
+    },
+    [navigate, onClose],
+  );
 
   const emptyStateMinHeight =
     variant === 'sheet' ? 'min-h-0 flex-1' : 'min-h-[400px]';
@@ -176,7 +177,11 @@ export function NotificationDropdown({
             />
           </nav>
 
-          <DropdownMenu open={actionsMenuOpen} onOpenChange={setActionsMenuOpen}>
+          <DropdownMenu
+            open={actionsMenuOpen}
+            onOpenChange={setActionsMenuOpen}
+            modal={false}
+          >
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
