@@ -20,7 +20,7 @@ import {
   type IdeaStatus,
 } from '@/features/ideas/model/idea.types';
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
-import { isAxiosError } from 'axios';
+import { type AxiosRequestConfig, isAxiosError } from 'axios';
 
 import { uuidv7 } from '@/shared/offline/id';
 
@@ -251,14 +251,24 @@ export async function createPublishedIdea(
   return createIdea({ isPublished: true, ...payload });
 }
 
+function ifMatchConfig(
+  expectedVersion?: number,
+): AxiosRequestConfig | undefined {
+  return typeof expectedVersion === 'number'
+    ? { headers: { 'If-Match': String(expectedVersion) } }
+    : undefined;
+}
+
 export async function updateIdea(
   ideaId: string,
   payload: UpdateIdeaPayload,
+  expectedVersion?: number,
 ): Promise<IdeaApi> {
   try {
     const { data } = await api.patch<IdeaApi>(
       IDEAS_ROUTES.byId(ideaId),
       payload,
+      ifMatchConfig(expectedVersion),
     );
     return data;
   } catch (error) {
@@ -318,22 +328,32 @@ export async function updateIdea(
 export async function updateIdeaDraft(
   ideaId: string,
   payload: SaveIdeaDraftPayload,
+  expectedVersion?: number,
 ): Promise<IdeaApi> {
-  return updateIdea(ideaId, payload);
+  return updateIdea(ideaId, payload, expectedVersion);
 }
 
-export async function publishIdea(ideaId: string): Promise<IdeaApi> {
-  const { data } = await api.post<IdeaApi>(IDEAS_ROUTES.publish(ideaId));
+export async function publishIdea(
+  ideaId: string,
+  expectedVersion?: number,
+): Promise<IdeaApi> {
+  const { data } = await api.post<IdeaApi>(
+    IDEAS_ROUTES.publish(ideaId),
+    undefined,
+    ifMatchConfig(expectedVersion),
+  );
   return data;
 }
 
 export async function updatePublishedIdea(
   ideaId: string,
   payload: SaveIdeaDraftPayload,
+  expectedVersion?: number,
 ): Promise<IdeaApi> {
   const { data } = await api.patch<IdeaApi>(
     IDEAS_ROUTES.publish(ideaId),
     payload,
+    ifMatchConfig(expectedVersion),
   );
   return data;
 }
@@ -413,9 +433,9 @@ async function updateIdeaProblemLinks(
   const payload = { problemIds };
 
   if (form.status === IDEA_STATUS.PUBLISHED) {
-    await updatePublishedIdea(ideaId, payload);
+    await updatePublishedIdea(ideaId, payload, form.version);
   } else {
-    await updateIdea(ideaId, payload);
+    await updateIdea(ideaId, payload, form.version);
   }
 
   return fetchIdeaFormById(ideaId);

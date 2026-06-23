@@ -17,16 +17,25 @@ function invalidateProblemDetail(
   });
 }
 
+type LinkIdeasToProblemInput = {
+  ideaIds: string[];
+  expectedVersion?: number;
+};
+
 export function useLinkIdeasToProblemMutation(problemId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationKey: [...problemMutationKeys.all, 'link-ideas', problemId],
-    mutationFn: async (ideaIds: string[]) => {
+    mutationFn: async ({ ideaIds, expectedVersion }: LinkIdeasToProblemInput) => {
       const form = await fetchProblemById(problemId);
       const existingIds = form.ideas.map(idea => idea.id);
       const mergedIds = [...new Set([...existingIds, ...ideaIds])];
-      return updateProblem(problemId, { ideaIds: mergedIds });
+      return updateProblem(
+        problemId,
+        { ideaIds: mergedIds },
+        expectedVersion ?? form.version,
+      );
     },
     onSuccess: () => {
       invalidateProblemDetail(queryClient, problemId);
@@ -48,7 +57,7 @@ export function useUnlinkIdeaFromProblemMutation(problemId: string) {
       const remainingIds = form.ideas
         .map(idea => idea.id)
         .filter(id => id !== ideaId);
-      return updateProblem(problemId, { ideaIds: remainingIds });
+      return updateProblem(problemId, { ideaIds: remainingIds }, form.version);
     },
     onSuccess: () => {
       invalidateProblemDetail(queryClient, problemId);

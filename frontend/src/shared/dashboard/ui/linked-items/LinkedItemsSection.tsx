@@ -1,4 +1,4 @@
-import { ChevronRight, ChevronUp } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { COMPACT_CARD_COLUMN_THRESHOLD } from '@/shared/dashboard/lib/config/constants';
@@ -17,6 +17,16 @@ function getScrollHintOffsetClass(
   if (!compact) return 'right-[-23px]';
   if (entityType === 'PROBLEM') return 'right-[-8px]';
   return 'right-[-15px]';
+}
+
+function getScrollHintLeftOffsetClass(
+  entityType: 'IDEA' | 'PROBLEM',
+  columnCount: number,
+): string {
+  const compact = columnCount >= COMPACT_CARD_COLUMN_THRESHOLD;
+  if (!compact) return 'left-[-23px]';
+  if (entityType === 'PROBLEM') return 'left-[-8px]';
+  return 'left-[-15px]';
 }
 
 type LinkedItemsSectionProps = {
@@ -45,6 +55,8 @@ export function LinkedItemsSection({
   linkedItemEmptyImageText,
 }: LinkedItemsSectionProps) {
   const [isScrollable, setIsScrollable] = useState(false);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
   const { scrollRef, isDragging, suppressClickRef, dragScrollProps } =
     useHorizontalDragScroll(isScrollable);
   const compact = !showToggle;
@@ -54,9 +66,15 @@ export function LinkedItemsSection({
     if (!scrollContainer || !expanded) return;
 
     const syncScrollable = () => {
-      setIsScrollable(
+      const scrollable =
         items.length > 1 &&
-          scrollContainer.scrollWidth > scrollContainer.clientWidth + 1,
+        scrollContainer.scrollWidth > scrollContainer.clientWidth + 1;
+      setIsScrollable(scrollable);
+      setCanScrollLeft(scrollable && scrollContainer.scrollLeft > 1);
+      setCanScrollRight(
+        scrollable &&
+          scrollContainer.scrollLeft + scrollContainer.clientWidth <
+            scrollContainer.scrollWidth - 1,
       );
     };
 
@@ -133,7 +151,26 @@ export function LinkedItemsSection({
             ))}
           </div>
 
-          {isScrollable ? (
+          {canScrollLeft ? (
+            <button
+              type="button"
+              aria-label="Scroll linked ideas left"
+              onClick={() =>
+                scrollRef.current?.scrollBy({ left: -160, behavior: 'smooth' })
+              }
+              className={cn(
+                'absolute inset-y-0 flex w-10 items-center justify-start pl-1.5',
+                'from-brand-white via-brand-white/80 bg-linear-to-r to-transparent',
+                'dark:from-card dark:via-card/80 dark:to-transparent',
+                'cursor-pointer',
+                getScrollHintLeftOffsetClass(entityType, columnCount),
+              )}
+            >
+              <ChevronLeft className="text-brand-dark-blue dark:text-brand-gray-400 size-4 shrink-0 opacity-80" />
+            </button>
+          ) : null}
+
+          {canScrollRight ? (
             <button
               type="button"
               aria-label="Scroll linked ideas right"

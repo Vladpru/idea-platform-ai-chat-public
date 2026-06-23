@@ -14,7 +14,8 @@ import { EntityGrid } from '@/features/profile/ui/user-profile/EntityGrid';
 import { ProfileDraftsTab } from '@/features/profile/ui/user-profile/ProfileDraftsTab';
 import { ProfileHeader } from '@/features/profile/ui/user-profile/ProfileHeader';
 import { TabsLayout } from '@/features/profile/ui/user-profile/TabsLayout';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { useNavigate, useRouter, useSearch } from '@tanstack/react-router';
+import { ArrowLeft } from 'lucide-react';
 import { useCallback, useEffect, useMemo } from 'react';
 
 import { getApiErrorMessage } from '@/shared/api/api-error';
@@ -29,6 +30,7 @@ export function UserProfileView({ profileId }: UserProfileViewProps) {
   const currentUserId = useAuthSessionStore(state => state.user?.id);
   const isOwner = Boolean(currentUserId && currentUserId === profileId);
   const navigate = useNavigate();
+  const router = useRouter();
   const { tab: searchTab } = useSearch({ from: '/_auth/profile/$profileId' });
 
   const profileQuery = useUserProfile(profileId);
@@ -132,6 +134,16 @@ export function UserProfileView({ profileId }: UserProfileViewProps) {
   return (
     <main className="bg-brand-neutral min-h-[calc(100vh-56px)]">
       <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-8 sm:py-8 lg:px-12">
+        <Button
+          variant="ghost"
+          size="sm"
+          leftIcon={<ArrowLeft className="size-4" />}
+          onClick={() => router.history.back()}
+          className="text-brand-gray-700 -ml-3 mb-4"
+        >
+          Back
+        </Button>
+
         <ProfileHeader
           profile={profileQuery.data}
           isOwner={isOwner}

@@ -16,6 +16,7 @@ import {
 } from '@/shared/ui/chart';
 
 import { getStatisticsSeriesColor } from '../../lib/chart-series-colors';
+import { formatStatisticsTooltipLabel } from '../../lib/format-tooltip-label';
 import type {
   StatisticsChartPanel,
   StatisticsPeriod,
@@ -157,7 +158,10 @@ export function StatisticsMultiLineChart({
               active={active}
               payload={payload?.filter(item => item.stroke !== 'none')}
               label={label}
-              labelKey="label"
+              labelFormatter={value =>
+                formatStatisticsTooltipLabel(String(value ?? ''), period)
+              }
+              labelClassName="text-foreground border-border/50 mb-1 border-b pb-1.5 font-semibold"
               indicator="dot"
             />
           )}

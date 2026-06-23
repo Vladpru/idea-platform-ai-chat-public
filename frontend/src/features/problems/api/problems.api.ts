@@ -256,10 +256,16 @@ export async function fetchProblemById(id: string): Promise<ProblemForm> {
 export async function updateProblem(
   id: string,
   payload: UpdateProblemPayload,
+  expectedVersion?: number,
 ): Promise<ProblemForm> {
+  const config =
+    typeof expectedVersion === 'number'
+      ? { headers: { 'If-Match': String(expectedVersion) } }
+      : undefined;
   const { data } = await api.patch<ProblemForm>(
     PROBLEMS_ROUTES.byId(id),
     payload,
+    config,
   );
   return data;
 }

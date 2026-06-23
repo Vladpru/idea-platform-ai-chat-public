@@ -42,8 +42,10 @@ export default defineConfig({
       },
 
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,ttf,eot}'],
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        globPatterns: [
+          '**/*.{js,css,html,ico,png,svg,jpg,jpeg,gif,webp,avif,woff,woff2,ttf,eot,json,webmanifest,wasm}',
+        ],
+        maximumFileSizeToCacheInBytes: 3145728,
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//, /^\/assets\//],
         runtimeCaching: [],
@@ -66,6 +68,43 @@ export default defineConfig({
   ],
   build: {
     sourcemap: 'hidden',
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (!id.includes('node_modules')) {
+            return undefined;
+          }
+          if (id.includes('livekit')) {
+            return 'livekit-client';
+          }
+          if (id.includes('@tiptap') || id.includes('prosemirror')) {
+            return 'tiptap';
+          }
+          if (id.includes('framer-motion')) {
+            return 'framer-motion';
+          }
+          if (id.includes('@sentry')) {
+            return '@sentry';
+          }
+          if (id.includes('socket.io')) {
+            return 'socket.io';
+          }
+          if (
+            id.includes('react') ||
+            id.includes('@tanstack') ||
+            id.includes('@hookform') ||
+            id.includes('radix-ui') ||
+            id.includes('scheduler') ||
+            id.includes('zustand') ||
+            id.includes('sonner') ||
+            id.includes('lucide')
+          ) {
+            return 'vendor-react';
+          }
+          return 'vendor';
+        },
+      },
+    },
   },
   resolve: {
     alias: {
