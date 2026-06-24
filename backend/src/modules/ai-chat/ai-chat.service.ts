@@ -4,6 +4,7 @@ import { PrismaService } from '../../core/prisma/prisma.service';
 import { GeminiService } from '../ai/gemini.service';
 import { KnowledgeRetrievalService } from '../rag/knowledge-retrieval.service';
 import type { ChatResponseDto } from './dto/chat-response.dto';
+import { UserContextService } from './user-context.service';
 
 const HISTORY_LIMIT = 10;
 const REFORMULATION_HISTORY_LIMIT = 4;
@@ -20,14 +21,12 @@ export class AiChatService {
     private readonly prisma: PrismaService,
     private readonly gemini: GeminiService,
     private readonly retrieval: KnowledgeRetrievalService,
+    private readonly userContextService: UserContextService,
   ) {}
 
   async sendMessage(userId: string, message: string): Promise<ChatResponseDto> {
-    const [user, history] = await Promise.all([
-      this.prisma.user.findUniqueOrThrow({
-        where: { id: userId },
-        select: { firstName: true, lastName: true, email: true },
-      }),
+    const [userContext, history] = await Promise.all([
+      this.userContextService.getContext(userId),
       this.prisma.chatMessage.findMany({
         where: { userId },
         orderBy: { createdAt: 'desc' },
@@ -46,10 +45,14 @@ export class AiChatService {
           )) ?? message)
         : message;
 
-    const ragChunks = await this.retrieval.retrieve(retrievalQuery, RAG_TOP_K);
+    const ragChunks = await this.retrieval.retrieve(
+      retrievalQuery,
+      RAG_TOP_K,
+      userContext.role,
+    );
 
     const prompt = this.buildPrompt({
-      user,
+      userContext,
       ragChunks,
       history: orderedHistory,
       message,
@@ -88,12 +91,17 @@ export class AiChatService {
   }
 
   private buildPrompt({
-    user,
+    userContext,
     ragChunks,
     history,
     message,
   }: {
-    user: { firstName: string | null; lastName: string | null; email: string };
+    userContext: {
+      name: string;
+      role: string;
+      memberSinceDays: number;
+      contributionScore: number;
+    };
     ragChunks: {
       source: string;
       content: string;
@@ -103,9 +111,6 @@ export class AiChatService {
     history: { role: string; content: string }[];
     message: string;
   }): string {
-    const name =
-      [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
-
     const knowledgeSection = ragChunks.length
       ? ragChunks
           .map((c, i) => {
@@ -129,7 +134,10 @@ export class AiChatService {
       'If the answer is not in the excerpts, say so clearly.',
       '',
       '== User ==',
-      `Name: ${name}`,
+      `Name: ${userContext.name}`,
+      `Role: ${userContext.role}`,
+      `Member for: ${userContext.memberSinceDays} days`,
+      `Contribution score: ${userContext.contributionScore}`,
       '',
       '== Knowledge Base ==',
       knowledgeSection,

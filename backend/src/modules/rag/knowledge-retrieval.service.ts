@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 
+import { Prisma } from '../../../generated/prisma/client';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { EmbeddingService } from '../embedding/embedding.service';
 import { toPgVectorLiteral } from '../embedding/vector.util';
@@ -24,7 +25,11 @@ export class KnowledgeRetrievalService {
     private readonly embeddingService: EmbeddingService,
   ) {}
 
-  async retrieve(query: string, topK = DEFAULT_TOP_K): Promise<ChunkResult[]> {
+  async retrieve(
+    query: string,
+    topK = DEFAULT_TOP_K,
+    role?: 'ADMIN' | 'MEMBER',
+  ): Promise<ChunkResult[]> {
     let vectorLiteral: string | null = null;
 
     try {
@@ -38,17 +43,23 @@ export class KnowledgeRetrievalService {
     }
 
     if (vectorLiteral) {
-      return this.retrieveHybrid(query, vectorLiteral, topK);
+      return this.retrieveHybrid(query, vectorLiteral, topK, role);
     }
 
-    return this.retrieveKeyword(query, topK);
+    return this.retrieveKeyword(query, topK, role);
   }
 
   private async retrieveHybrid(
     query: string,
     vectorLiteral: string,
     topK: number,
+    role?: 'ADMIN' | 'MEMBER',
   ): Promise<ChunkResult[]> {
+    const accessFilter =
+      role === 'MEMBER'
+        ? Prisma.sql`AND (metadata->>'access' IS NULL OR metadata->>'access' != 'admin')`
+        : Prisma.sql``;
+
     const rows = await this.prisma.$queryRaw<
       {
         source: string;
@@ -62,6 +73,7 @@ export class KnowledgeRetrievalService {
                ROW_NUMBER() OVER (ORDER BY embedding <=> ${vectorLiteral}::vector ASC) AS rank_row
         FROM knowledge_chunk
         WHERE embedding IS NOT NULL
+        ${accessFilter}
         LIMIT ${CANDIDATE_LIMIT}
       ),
       keyword_search AS (
@@ -69,6 +81,7 @@ export class KnowledgeRetrievalService {
                ROW_NUMBER() OVER (ORDER BY ts_rank(fts_vector, websearch_to_tsquery('simple', ${query})) DESC) AS rank_row
         FROM knowledge_chunk
         WHERE fts_vector @@ websearch_to_tsquery('simple', ${query})
+        ${accessFilter}
         LIMIT ${CANDIDATE_LIMIT}
       ),
       hybrid AS (
@@ -97,7 +110,13 @@ export class KnowledgeRetrievalService {
   private async retrieveKeyword(
     query: string,
     topK: number,
+    role?: 'ADMIN' | 'MEMBER',
   ): Promise<ChunkResult[]> {
+    const accessFilter =
+      role === 'MEMBER'
+        ? Prisma.sql`AND (metadata->>'access' IS NULL OR metadata->>'access' != 'admin')`
+        : Prisma.sql``;
+
     const rows = await this.prisma.$queryRaw<
       {
         source: string;
@@ -110,6 +129,7 @@ export class KnowledgeRetrievalService {
              ts_rank(fts_vector, websearch_to_tsquery('simple', ${query})) AS relevance
       FROM knowledge_chunk
       WHERE fts_vector @@ websearch_to_tsquery('simple', ${query})
+      ${accessFilter}
       ORDER BY relevance DESC
       LIMIT ${topK}
     `;
