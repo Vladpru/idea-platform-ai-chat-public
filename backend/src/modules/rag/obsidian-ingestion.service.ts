@@ -103,11 +103,41 @@ export class ObsidianIngestionService {
   }
 
   private chunkText(text: string): string[] {
-    const paragraphs = text
-      .split(/\n{2,}/)
-      .map(p => p.trim())
-      .filter(Boolean);
+    const sections = this.splitIntoSections(text);
+    const chunks: string[] = [];
 
+    for (const section of sections) {
+      if (section.length <= CHUNK_SIZE) {
+        chunks.push(section);
+      } else {
+        chunks.push(...this.splitSection(section));
+      }
+    }
+
+    return chunks;
+  }
+
+  private splitIntoSections(text: string): string[] {
+    const lines = text.split('\n');
+    const sections: string[] = [];
+    let current = '';
+
+    for (const line of lines) {
+      if (/^#{1,6}\s/.test(line) && current.trim()) {
+        sections.push(current.trimEnd());
+        current = line + '\n';
+      } else {
+        current += line + '\n';
+      }
+    }
+
+    if (current.trim()) sections.push(current.trimEnd());
+
+    return sections.filter(s => s.trim());
+  }
+
+  private splitSection(text: string): string[] {
+    const paragraphs = this.splitParagraphsRespectingCodeBlocks(text);
     const chunks: string[] = [];
     let current = '';
 
@@ -132,8 +162,40 @@ export class ObsidianIngestionService {
       }
     }
 
-    if (current) chunks.push(current);
+    if (current.trim()) chunks.push(current);
 
     return chunks;
+  }
+
+  private splitParagraphsRespectingCodeBlocks(text: string): string[] {
+    const result: string[] = [];
+    const codeBlockRegex = /```[\s\S]*?```/g;
+    let lastIndex = 0;
+
+    for (const match of text.matchAll(codeBlockRegex)) {
+      const before = text.slice(lastIndex, match.index);
+      if (before.trim()) {
+        result.push(
+          ...before
+            .split(/\n{2,}/)
+            .map(p => p.trim())
+            .filter(Boolean),
+        );
+      }
+      result.push(match[0].trim());
+      lastIndex = (match.index ?? 0) + match[0].length;
+    }
+
+    const remaining = text.slice(lastIndex);
+    if (remaining.trim()) {
+      result.push(
+        ...remaining
+          .split(/\n{2,}/)
+          .map(p => p.trim())
+          .filter(Boolean),
+      );
+    }
+
+    return result;
   }
 }
