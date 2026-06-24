@@ -6,6 +6,8 @@ import * as path from 'path';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { EmbeddingService } from '../embedding/embedding.service';
 import { toPgVectorLiteral } from '../embedding/vector.util';
+import { collectVaultFiles } from './lib/collect-vault-files.util';
+import { computeFileHash } from './lib/file-hash.util';
 
 const CHUNK_SIZE = 500;
 const CHUNK_OVERLAP = 50;
@@ -22,7 +24,7 @@ export interface NoteFrontmatter {
 @Injectable()
 export class ObsidianIngestionService {
   private readonly logger = new Logger(ObsidianIngestionService.name);
-  private readonly vaultPath: string;
+  readonly vaultPath: string;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -33,71 +35,52 @@ export class ObsidianIngestionService {
   }
 
   async ingestAll(): Promise<IngestResult> {
-    const files = this.collectMarkdownFiles(this.vaultPath);
+    const files = collectVaultFiles(this.vaultPath);
     this.logger.log(`Found ${files.length} markdown files in vault`);
-
     let chunksProcessed = 0;
 
     for (const filePath of files) {
       const raw = fs.readFileSync(filePath, 'utf-8');
-      const { text, frontmatter } = this.extractFrontmatter(raw);
-      const chunks = this.chunkText(text);
+      const fileHash = computeFileHash(raw);
       const relativeSource = path.relative(this.vaultPath, filePath);
-      const metadataJson = JSON.stringify(frontmatter);
 
-      for (const chunk of chunks) {
-        if (!chunk.trim()) continue;
+      await this.prisma.$executeRaw`DELETE FROM knowledge_chunk WHERE source = ${relativeSource}`;
 
-        try {
-          const vector = await this.embeddingService.embedText(chunk);
-          const vectorLiteral = toPgVectorLiteral(vector);
-
-          await this.prisma.$executeRaw`
-            INSERT INTO knowledge_chunk (id, source, content, embedding, metadata, created_at)
-            VALUES (gen_random_uuid(), ${relativeSource}, ${chunk}, ${vectorLiteral}::vector, ${metadataJson}::jsonb, NOW())
-            ON CONFLICT DO NOTHING
-          `;
-
-          chunksProcessed++;
-        } catch (error) {
-          this.logger.error(
-            `Failed to embed chunk from ${relativeSource}`,
-            error instanceof Error ? error.message : String(error),
-          );
-        }
-      }
-
-      this.logger.log(
-        `Ingested ${chunks.length} chunks from ${relativeSource}`,
-      );
+      const count = await this.ingestFile(filePath, fileHash);
+      chunksProcessed += count;
+      this.logger.log(`Ingested ${count} chunks from ${relativeSource}`);
     }
 
     return { filesProcessed: files.length, chunksProcessed };
   }
 
-  private collectMarkdownFiles(dir: string): string[] {
-    const results: string[] = [];
+  async ingestFile(filePath: string, fileHash: string): Promise<number> {
+    const raw = fs.readFileSync(filePath, 'utf-8');
+    const { text, frontmatter } = this.extractFrontmatter(raw);
+    const chunks = this.chunkText(text);
+    const relativeSource = path.relative(this.vaultPath, filePath);
+    const metadataJson = JSON.stringify(frontmatter);
+    let count = 0;
 
-    if (!fs.existsSync(dir)) {
-      this.logger.warn(`Obsidian vault path does not exist: ${dir}`);
-      return results;
-    }
+    for (const chunk of chunks) {
+      if (!chunk.trim()) continue;
+      try {
+        const vector = await this.embeddingService.embedText(chunk);
+        const vectorLiteral = toPgVectorLiteral(vector);
 
-    const entries = fs.readdirSync(dir, { withFileTypes: true });
-
-    for (const entry of entries) {
-      if (entry.name.startsWith('.')) continue;
-
-      const fullPath = path.join(dir, entry.name);
-
-      if (entry.isDirectory()) {
-        results.push(...this.collectMarkdownFiles(fullPath));
-      } else if (entry.isFile() && entry.name.endsWith('.md')) {
-        results.push(fullPath);
+        await this.prisma.$executeRaw`
+          INSERT INTO knowledge_chunk (id, source, content, embedding, metadata, file_hash, created_at)
+          VALUES (gen_random_uuid(), ${relativeSource}, ${chunk}, ${vectorLiteral}::vector, ${metadataJson}::jsonb, ${fileHash}, NOW())
+        `;
+        count++;
+      } catch (error) {
+        this.logger.error(
+          `Failed to embed chunk from ${relativeSource}`,
+          error instanceof Error ? error.message : String(error),
+        );
       }
     }
-
-    return results;
+    return count;
   }
 
   private extractFrontmatter(raw: string): {
@@ -171,11 +154,7 @@ export class ObsidianIngestionService {
           const overlap = current.slice(-CHUNK_OVERLAP);
           current = overlap ? `${overlap}\n\n${paragraph}` : paragraph;
         } else {
-          for (
-            let i = 0;
-            i < paragraph.length;
-            i += CHUNK_SIZE - CHUNK_OVERLAP
-          ) {
+          for (let i = 0; i < paragraph.length; i += CHUNK_SIZE - CHUNK_OVERLAP) {
             chunks.push(paragraph.slice(i, i + CHUNK_SIZE));
           }
           current = '';
