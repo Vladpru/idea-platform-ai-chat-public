@@ -631,8 +631,11 @@ model KnowledgeChunk {
   source    String
   content   String                      @db.Text
   embedding Unsupported("vector(768)")?
+  metadata  Json                        @default("{}")
+  fileHash  String?                     @map("file_hash")
   createdAt DateTime                    @default(now()) @map("created_at")
 
+  @@index([source])
   @@map("knowledge_chunk")
 }
 
