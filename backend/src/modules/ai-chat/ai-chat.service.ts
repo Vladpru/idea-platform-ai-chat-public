@@ -6,7 +6,13 @@ import { KnowledgeRetrievalService } from '../rag/knowledge-retrieval.service';
 import type { ChatResponseDto } from './dto/chat-response.dto';
 
 const HISTORY_LIMIT = 10;
+const REFORMULATION_HISTORY_LIMIT = 4;
 const RAG_TOP_K = 5;
+const REFORMULATION_MAX_CHARS = 120;
+const CONTEXT_PRONOUNS =
+  /\b(it|its|this|that|these|those|they|them|their|he|she|here|there|same|such)\b/i;
+const FOLLOWUP_WORDS =
+  /\b(also|too|as well|another|more|else|other|and what|what about|how about)\b/i;
 
 @Injectable()
 export class AiChatService {
@@ -17,12 +23,11 @@ export class AiChatService {
   ) {}
 
   async sendMessage(userId: string, message: string): Promise<ChatResponseDto> {
-    const [user, ragChunks, history] = await Promise.all([
+    const [user, history] = await Promise.all([
       this.prisma.user.findUniqueOrThrow({
         where: { id: userId },
         select: { firstName: true, lastName: true, email: true },
       }),
-      this.retrieval.retrieve(message, RAG_TOP_K),
       this.prisma.chatMessage.findMany({
         where: { userId },
         orderBy: { createdAt: 'desc' },
@@ -32,6 +37,17 @@ export class AiChatService {
     ]);
 
     const orderedHistory = history.reverse();
+
+    const retrievalQuery =
+      orderedHistory.length > 0 && this.needsReformulation(message)
+        ? ((await this.gemini.reformulateQuery(
+            message,
+            orderedHistory.slice(-REFORMULATION_HISTORY_LIMIT),
+          )) ?? message)
+        : message;
+
+    const ragChunks = await this.retrieval.retrieve(retrievalQuery, RAG_TOP_K);
+
     const prompt = this.buildPrompt({
       user,
       ragChunks,
@@ -64,6 +80,11 @@ export class AiChatService {
         { role: 'assistant' as const, content: answer },
       ],
     };
+  }
+
+  private needsReformulation(message: string): boolean {
+    if (message.length > REFORMULATION_MAX_CHARS) return false;
+    return CONTEXT_PRONOUNS.test(message) || FOLLOWUP_WORDS.test(message);
   }
 
   private buildPrompt({

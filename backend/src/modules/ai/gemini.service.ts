@@ -380,6 +380,38 @@ export class GeminiService implements AiProvider {
     return text;
   }
 
+  async reformulateQuery(
+    message: string,
+    history: { role: string; content: string }[],
+  ): Promise<string | null> {
+    const historyText = history
+      .map(h => `${h.role === 'user' ? 'User' : 'Assistant'}: ${h.content}`)
+      .join('\n');
+
+    const prompt = [
+      'Given the conversation history below, rewrite the last user message as a short, self-contained search query.',
+      'Resolve all pronouns and references. Output only the rewritten query, nothing else.',
+      '',
+      '== Conversation History ==',
+      historyText,
+      '',
+      `== Last User Message ==`,
+      message,
+    ].join('\n');
+
+    try {
+      const models = buildModelsToTry(this.configuredModel);
+      const result = await this.runWithAggregateTimeout(
+        aggregateSignal =>
+          this.runChatAnswerModelFallback(models, prompt, aggregateSignal),
+        this.timeoutMs,
+      );
+      return result?.trim() || null;
+    } catch {
+      return null;
+    }
+  }
+
   async generateChatAnswer(prompt: string): Promise<string> {
     const models = buildModelsToTry(this.configuredModel);
     const totalTimeoutMs = this.timeoutMs * models.length;
