@@ -15,6 +15,10 @@ export interface IngestResult {
   chunksProcessed: number;
 }
 
+export interface NoteFrontmatter {
+  [key: string]: unknown;
+}
+
 @Injectable()
 export class ObsidianIngestionService {
   private readonly logger = new Logger(ObsidianIngestionService.name);
@@ -36,9 +40,10 @@ export class ObsidianIngestionService {
 
     for (const filePath of files) {
       const raw = fs.readFileSync(filePath, 'utf-8');
-      const text = this.stripFrontmatter(raw);
+      const { text, frontmatter } = this.extractFrontmatter(raw);
       const chunks = this.chunkText(text);
       const relativeSource = path.relative(this.vaultPath, filePath);
+      const metadataJson = JSON.stringify(frontmatter);
 
       for (const chunk of chunks) {
         if (!chunk.trim()) continue;
@@ -48,8 +53,8 @@ export class ObsidianIngestionService {
           const vectorLiteral = toPgVectorLiteral(vector);
 
           await this.prisma.$executeRaw`
-            INSERT INTO knowledge_chunk (id, source, content, embedding, created_at)
-            VALUES (gen_random_uuid(), ${relativeSource}, ${chunk}, ${vectorLiteral}::vector, NOW())
+            INSERT INTO knowledge_chunk (id, source, content, embedding, metadata, created_at)
+            VALUES (gen_random_uuid(), ${relativeSource}, ${chunk}, ${vectorLiteral}::vector, ${metadataJson}::jsonb, NOW())
             ON CONFLICT DO NOTHING
           `;
 
@@ -95,11 +100,27 @@ export class ObsidianIngestionService {
     return results;
   }
 
-  private stripFrontmatter(text: string): string {
-    if (!text.startsWith('---')) return text;
-    const end = text.indexOf('\n---', 3);
-    if (end === -1) return text;
-    return text.slice(end + 4).trimStart();
+  private extractFrontmatter(raw: string): {
+    text: string;
+    frontmatter: NoteFrontmatter;
+  } {
+    if (!raw.startsWith('---')) return { text: raw, frontmatter: {} };
+    const end = raw.indexOf('\n---', 3);
+    if (end === -1) return { text: raw, frontmatter: {} };
+
+    const yamlBlock = raw.slice(3, end).trim();
+    const text = raw.slice(end + 4).trimStart();
+    const frontmatter: NoteFrontmatter = {};
+
+    for (const line of yamlBlock.split('\n')) {
+      const colon = line.indexOf(':');
+      if (colon === -1) continue;
+      const key = line.slice(0, colon).trim();
+      const value = line.slice(colon + 1).trim();
+      if (key) frontmatter[key] = value;
+    }
+
+    return { text, frontmatter };
   }
 
   private chunkText(text: string): string[] {

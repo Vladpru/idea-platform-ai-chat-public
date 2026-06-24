@@ -73,7 +73,12 @@ export class AiChatService {
     message,
   }: {
     user: { firstName: string | null; lastName: string | null; email: string };
-    ragChunks: { source: string; content: string; relevance: number }[];
+    ragChunks: {
+      source: string;
+      content: string;
+      relevance: number;
+      metadata: Record<string, unknown>;
+    }[];
     history: { role: string; content: string }[];
     message: string;
   }): string {
@@ -82,7 +87,13 @@ export class AiChatService {
 
     const knowledgeSection = ragChunks.length
       ? ragChunks
-          .map((c, i) => `[${i + 1}] ${c.content}\n    Source: ${c.source}`)
+          .map((c, i) => {
+            const meta = Object.entries(c.metadata)
+              .map(([k, v]) => `${k}: ${String(v)}`)
+              .join(', ');
+            const metaLine = meta ? `\n    Metadata: ${meta}` : '';
+            return `[${i + 1}] ${c.content}\n    Source: ${c.source}${metaLine}`;
+          })
           .join('\n\n')
       : 'No relevant knowledge base excerpts found.';
 
