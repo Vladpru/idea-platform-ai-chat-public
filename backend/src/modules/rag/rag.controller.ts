@@ -1,4 +1,4 @@
-import { Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { Controller, HttpCode, HttpStatus, Inject, Post } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOkResponse,
@@ -8,13 +8,14 @@ import {
 
 import { JwtAuth } from '../../shared/decorators/jwt-auth.decorator';
 import { IngestResponseDto } from './dto/ingest-response.dto';
-import { ObsidianIngestionService } from './obsidian-ingestion.service';
+import { IIngestionService, INGESTION_SERVICE } from './ingestion.interface';
 
 @ApiTags('rag')
 @Controller('rag')
 export class RagController {
   constructor(
-    private readonly obsidianIngestionService: ObsidianIngestionService,
+    @Inject(INGESTION_SERVICE)
+    private readonly ingestionService: IIngestionService,
   ) {}
 
   @Post('ingest')
@@ -22,10 +23,10 @@ export class RagController {
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Ingest Obsidian vault into the RAG knowledge base',
+    summary: 'Ingest knowledge source into the RAG knowledge base',
   })
   @ApiOkResponse({ type: IngestResponseDto })
   async ingest(): Promise<IngestResponseDto> {
-    return this.obsidianIngestionService.ingestAll();
+    return this.ingestionService.ingestAll();
   }
 }

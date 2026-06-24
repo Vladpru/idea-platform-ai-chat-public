@@ -66,4 +66,4 @@ CLAUDE.md
 /graphify-out
 # Claude Code local session data
 .claude/
-*.md
+.md

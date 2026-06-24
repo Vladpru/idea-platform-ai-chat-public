@@ -11,10 +11,14 @@
             "id": "cf65f8a84282c076",
             "type": "leaf",
             "state": {
-              "type": "graph",
-              "state": {},
-              "icon": "lucide-git-fork",
-              "title": "Graph view"
+              "type": "markdown",
+              "state": {
+                "file": "Guides/faq.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "faq"
             }
           }
         ]
@@ -178,11 +182,12 @@
   },
   "active": "cf65f8a84282c076",
   "lastOpenFiles": [
-    "Policies/community-rules.md",
+    "Untitled.base",
+    "Guides/faq.md",
     "Policies/access-policy.md",
+    "Policies/community-rules.md",
     "Untitled 1.canvas",
     "Guides/how-to-submit-idea.md",
-    "Untitled.canvas",
-    "Guides/faq.md"
+    "Untitled.canvas"
   ]
 }

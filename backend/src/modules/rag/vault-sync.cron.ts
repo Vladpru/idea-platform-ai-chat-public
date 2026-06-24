@@ -9,9 +9,10 @@ export class VaultSyncCron {
 
   constructor(private readonly vaultSyncService: VaultSyncService) {}
 
-  @Cron(CronExpression.EVERY_5_MINUTES)
+  @Cron(CronExpression.EVERY_30_MINUTES)
   async handleCron(): Promise<void> {
     try {
+      this.logger.log('Vault sync started');
       const result = await this.vaultSyncService.syncVault();
       this.logger.log(
         `Vault sync — added: ${result.added}, updated: ${result.updated}, removed: ${result.removed}, skipped: ${result.skipped}`,

@@ -6,6 +6,7 @@ import * as path from 'path';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { EmbeddingService } from '../embedding/embedding.service';
 import { toPgVectorLiteral } from '../embedding/vector.util';
+import type { IIngestionService } from './ingestion.interface';
 import { collectVaultFiles } from './lib/collect-vault-files.util';
 import { computeFileHash } from './lib/file-hash.util';
 
@@ -22,7 +23,7 @@ export interface NoteFrontmatter {
 }
 
 @Injectable()
-export class ObsidianIngestionService {
+export class ObsidianIngestionService implements IIngestionService {
   private readonly logger = new Logger(ObsidianIngestionService.name);
   readonly vaultPath: string;
 
@@ -44,7 +45,8 @@ export class ObsidianIngestionService {
       const fileHash = computeFileHash(raw);
       const relativeSource = path.relative(this.vaultPath, filePath);
 
-      await this.prisma.$executeRaw`DELETE FROM knowledge_chunk WHERE source = ${relativeSource}`;
+      await this.prisma
+        .$executeRaw`DELETE FROM knowledge_chunk WHERE source = ${relativeSource}`;
 
       const count = await this.ingestFile(filePath, fileHash);
       chunksProcessed += count;
@@ -154,7 +156,11 @@ export class ObsidianIngestionService {
           const overlap = current.slice(-CHUNK_OVERLAP);
           current = overlap ? `${overlap}\n\n${paragraph}` : paragraph;
         } else {
-          for (let i = 0; i < paragraph.length; i += CHUNK_SIZE - CHUNK_OVERLAP) {
+          for (
+            let i = 0;
+            i < paragraph.length;
+            i += CHUNK_SIZE - CHUNK_OVERLAP
+          ) {
             chunks.push(paragraph.slice(i, i + CHUNK_SIZE));
           }
           current = '';
