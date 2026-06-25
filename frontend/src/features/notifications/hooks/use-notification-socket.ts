@@ -2,7 +2,6 @@ import { BADGE_EARNED_MESSAGES } from '@/features/achievements/lib/badge-icons';
 import { BadgeToast } from '@/features/achievements/ui/BadgeToast';
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import { notificationQueryKeys } from '@/features/notifications/lib/notification-query-keys';
-import { getStoredAuthToken } from '@/shared/lib/auth-token';
 import { useQueryClient } from '@tanstack/react-query';
 import { createElement, useEffect, useRef } from 'react';
 import { type Socket, io } from 'socket.io-client';
@@ -32,11 +31,11 @@ type PdfReadyPayload = {
 
 export function useNotificationSocket(): void {
   const queryClient = useQueryClient();
-  const accessToken = useAuthSessionStore(state => state.accessToken);
+  const userId = useAuthSessionStore(state => state.user?.id ?? null);
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    if (!accessToken) {
+    if (!userId) {
       socketRef.current?.disconnect();
       return;
     }
@@ -45,14 +44,6 @@ export function useNotificationSocket(): void {
       socketRef.current = io(getSocketBaseUrl(), {
         autoConnect: false,
         withCredentials: true,
-        auth: (cb: (data: object) => void) => {
-          cb({
-            token:
-              getStoredAuthToken() ??
-              useAuthSessionStore.getState().accessToken ??
-              '',
-          });
-        },
         transports: ['websocket', 'polling'],
       });
     }
@@ -115,5 +106,5 @@ export function useNotificationSocket(): void {
       socket.off('pdf:failed', handlePdfFailed);
       socket.disconnect();
     };
-  }, [accessToken, queryClient]);
+  }, [userId, queryClient]);
 }

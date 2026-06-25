@@ -54,6 +54,8 @@ async function bootstrap() {
 
   app.enableShutdownHooks();
 
+  app.use(cookieParser());
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -65,8 +67,6 @@ async function bootstrap() {
     origin: [config.getOrThrow<string>('FRONTEND_URL')],
     credentials: true,
   });
-
-  app.use(cookieParser());
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Idea platform api')

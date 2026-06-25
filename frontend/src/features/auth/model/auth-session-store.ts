@@ -2,10 +2,6 @@ import posthog from 'posthog-js';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import {
-  clearStoredAuthToken,
-  setStoredAuthToken,
-} from '@/shared/lib/auth-token';
 import { clearAuthenticatedQueryCache } from '@/shared/lib/query-client';
 import { extractThemePreference } from '@/shared/lib/theme-storage';
 import { formatUserDisplayName } from '@/shared/lib/user-display';
@@ -23,9 +19,9 @@ export type SessionUser = {
 
 type AuthSessionState = {
   user: SessionUser | null;
-  accessToken: string | null;
-  setSession: (apiUser: unknown, accessToken: string) => void;
-  setAccessToken: (accessToken: string) => void;
+  isHydrating: boolean;
+  setSession: (apiUser: unknown) => void;
+  setHydrating: (status: boolean) => void;
   clearSession: () => void;
 };
 
@@ -66,25 +62,16 @@ export const useAuthSessionStore = create<AuthSessionState>()(
       _set = set;
       return {
         user: null,
-        accessToken: null,
-        setSession: (apiUser, accessToken) => {
-          const user = parseSessionUser(apiUser);
-          if (!user) {
-            clearStoredAuthToken();
-            set({ user: null, accessToken: null });
-            return;
-          }
-          set({ user, accessToken });
-          setStoredAuthToken(accessToken);
+        isHydrating: true,
+        setSession: apiUser => {
+          set({ user: parseSessionUser(apiUser) });
         },
-        setAccessToken: accessToken => {
-          set({ accessToken });
-          setStoredAuthToken(accessToken);
+        setHydrating: status => {
+          set({ isHydrating: status });
         },
         clearSession: () => {
-          clearStoredAuthToken();
           clearAuthenticatedQueryCache();
-          set({ user: null, accessToken: null });
+          set({ user: null });
           void useAuthSessionStore.persist.clearStorage();
         },
       };
@@ -92,17 +79,15 @@ export const useAuthSessionStore = create<AuthSessionState>()(
     {
       name: 'auth-session',
       storage: createJSONStorage(() => localStorage),
-      partialize: s => ({ user: s.user, accessToken: s.accessToken }),
+      partialize: s => ({ user: s.user }),
       onRehydrateStorage: () => state => {
-        if (state?.accessToken && state.user?.id) {
-          setStoredAuthToken(state.accessToken);
+        if (state?.user?.id) {
           posthog.identify(state.user.id, {
             email: state.user.email,
             name: state.user.name,
           });
         } else if (state) {
-          clearStoredAuthToken();
-          _set({ user: null, accessToken: null });
+          _set({ user: null });
         }
       },
     },
@@ -110,8 +95,8 @@ export const useAuthSessionStore = create<AuthSessionState>()(
 );
 
 export function hasValidSession(): boolean {
-  const { accessToken, user } = useAuthSessionStore.getState();
-  return Boolean(accessToken && user?.id);
+  const { user } = useAuthSessionStore.getState();
+  return Boolean(user?.id);
 }
 
 export function nameInitial(name: string): string {

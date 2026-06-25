@@ -81,18 +81,25 @@ export async function resolveUserIdFromSocket(
   jwt: JwtService,
   refreshCookieName: string,
 ): Promise<string | null> {
-  const bearerToken = extractBearerToken(client);
-  if (bearerToken) {
-    const id = await verifyTokenAndExtractId(bearerToken, jwt);
-    if (id) return id;
-  }
-
   const cookieHeader = readHandshakeHeaderValue(
     client.handshake.headers.cookie,
   );
+
+  const accessToken = extractCookieValue(cookieHeader, 'accessToken');
+  if (accessToken) {
+    const id = await verifyTokenAndExtractId(accessToken, jwt);
+    if (id) return id;
+  }
+
   const refreshToken = extractCookieValue(cookieHeader, refreshCookieName);
   if (refreshToken) {
-    return verifyTokenAndExtractId(refreshToken, jwt);
+    const id = await verifyTokenAndExtractId(refreshToken, jwt);
+    if (id) return id;
+  }
+
+  const bearerToken = extractBearerToken(client);
+  if (bearerToken) {
+    return verifyTokenAndExtractId(bearerToken, jwt);
   }
 
   return null;
