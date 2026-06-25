@@ -109,6 +109,15 @@ export function MobileMenu({ triggerClassName }: MobileMenuProps) {
                 >
                   Statistics
                 </Link>
+                <Link
+                  to={ROUTES.aiChat}
+                  className={navLinkClass}
+                  activeProps={{
+                    className: 'bg-accent text-primary font-semibold',
+                  }}
+                >
+                  AI Chat
+                </Link>
               </AccordionContent>
             </AccordionItem>
             <AccordionItem

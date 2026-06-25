@@ -30,5 +30,7 @@ export const ROUTES = {
   profileProblems: '/profile/problems',
   liveChats: '/live-chats',
   liveChatRoom: (id: string) => `/live-chats/${id}`,
+  aiChat: '/ai-chat',
+  aiChatSession: (id: string) => `/ai-chat/${id}`,
   authCallback: '/auth/callback',
 } as const;
