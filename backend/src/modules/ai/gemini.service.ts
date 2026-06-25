@@ -493,7 +493,7 @@ export class GeminiService implements AiProvider {
     if (!response.ok) {
       this.analytics.captureAiGeneration({
         model,
-        operation: 'entity-summary',
+        operation: 'chat-answer',
         latencyMs: Date.now() - callStart,
         error: response.message,
         httpStatus: response.status,
@@ -511,7 +511,7 @@ export class GeminiService implements AiProvider {
 
     this.analytics.captureAiGeneration({
       model,
-      operation: 'entity-summary',
+      operation: 'chat-answer',
       latencyMs: Date.now() - callStart,
       inputTokens: response.inputTokens,
       outputTokens: response.outputTokens,
@@ -982,7 +982,8 @@ export class GeminiService implements AiProvider {
       | 'idea-prefill'
       | 'tag-suggestions'
       | 'entity-summary'
-      | 'document-extract',
+      | 'document-extract'
+      | 'chat-answer',
     model: string,
     options?: { jsonMode?: boolean; tagCount?: number },
   ): void {

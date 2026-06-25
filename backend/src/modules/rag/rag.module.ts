@@ -13,8 +13,8 @@ import { VaultSyncService } from './vault-sync.service';
   imports: [PrismaModule, EmbeddingModule],
   controllers: [RagController],
   providers: [
-    { provide: INGESTION_SERVICE, useClass: ObsidianIngestionService },
     ObsidianIngestionService,
+    { provide: INGESTION_SERVICE, useExisting: ObsidianIngestionService },
     KnowledgeRetrievalService,
     VaultSyncService,
     VaultSyncCron,

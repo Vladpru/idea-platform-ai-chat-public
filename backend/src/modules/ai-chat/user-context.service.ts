@@ -22,7 +22,6 @@ export class UserContextService {
         select: {
           firstName: true,
           lastName: true,
-          email: true,
           role: true,
           createdAt: true,
         },
@@ -31,7 +30,7 @@ export class UserContextService {
     ]);
 
     const name =
-      [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
+      [user.firstName, user.lastName].filter(Boolean).join(' ') || 'Anonymous';
 
     const memberSinceDays = Math.floor(
       (Date.now() - user.createdAt.getTime()) / (1000 * 60 * 60 * 24),

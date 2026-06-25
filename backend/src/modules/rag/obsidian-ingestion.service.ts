@@ -45,10 +45,7 @@ export class ObsidianIngestionService implements IIngestionService {
       const fileHash = computeFileHash(raw);
       const relativeSource = path.relative(this.vaultPath, filePath);
 
-      await this.prisma
-        .$executeRaw`DELETE FROM knowledge_chunk WHERE source = ${relativeSource}`;
-
-      const count = await this.ingestFile(filePath, fileHash);
+      const count = await this.ingestFile(filePath, fileHash, raw);
       chunksProcessed += count;
       this.logger.log(`Ingested ${count} chunks from ${relativeSource}`);
     }
@@ -56,25 +53,23 @@ export class ObsidianIngestionService implements IIngestionService {
     return { filesProcessed: files.length, chunksProcessed };
   }
 
-  async ingestFile(filePath: string, fileHash: string): Promise<number> {
-    const raw = fs.readFileSync(filePath, 'utf-8');
+  async ingestFile(
+    filePath: string,
+    fileHash: string,
+    rawContent?: string,
+  ): Promise<number> {
+    const raw = rawContent ?? fs.readFileSync(filePath, 'utf-8');
     const { text, frontmatter } = this.extractFrontmatter(raw);
     const chunks = this.chunkText(text);
     const relativeSource = path.relative(this.vaultPath, filePath);
     const metadataJson = JSON.stringify(frontmatter);
-    let count = 0;
 
+    const embedded: { chunk: string; vectorLiteral: string }[] = [];
     for (const chunk of chunks) {
       if (!chunk.trim()) continue;
       try {
         const vector = await this.embeddingService.embedText(chunk);
-        const vectorLiteral = toPgVectorLiteral(vector);
-
-        await this.prisma.$executeRaw`
-          INSERT INTO knowledge_chunk (id, source, content, embedding, metadata, file_hash, created_at)
-          VALUES (gen_random_uuid(), ${relativeSource}, ${chunk}, ${vectorLiteral}::vector, ${metadataJson}::jsonb, ${fileHash}, NOW())
-        `;
-        count++;
+        embedded.push({ chunk, vectorLiteral: toPgVectorLiteral(vector) });
       } catch (error) {
         this.logger.error(
           `Failed to embed chunk from ${relativeSource}`,
@@ -82,7 +77,18 @@ export class ObsidianIngestionService implements IIngestionService {
         );
       }
     }
-    return count;
+
+    await this.prisma.$transaction(async tx => {
+      await tx.$executeRaw`DELETE FROM knowledge_chunk WHERE source = ${relativeSource}`;
+      for (const { chunk, vectorLiteral } of embedded) {
+        await tx.$executeRaw`
+          INSERT INTO knowledge_chunk (id, source, content, embedding, metadata, file_hash, created_at)
+          VALUES (gen_random_uuid(), ${relativeSource}, ${chunk}, ${vectorLiteral}::vector, ${metadataJson}::jsonb, ${fileHash}, NOW())
+        `;
+      }
+    });
+
+    return embedded.length;
   }
 
   private extractFrontmatter(raw: string): {

@@ -10,6 +10,7 @@ const HISTORY_LIMIT = 10;
 const REFORMULATION_HISTORY_LIMIT = 4;
 const RAG_TOP_K = 5;
 const REFORMULATION_MAX_CHARS = 120;
+const MAX_HISTORY_CONTENT_CHARS = 8000;
 const CONTEXT_PRONOUNS =
   /\b(it|its|this|that|these|those|they|them|their|he|she|here|there|same|such)\b/i;
 const FOLLOWUP_WORDS =
@@ -123,8 +124,17 @@ export class AiChatService {
           .join('\n\n')
       : 'No relevant knowledge base excerpts found.';
 
-    const historySection = history.length
-      ? history
+    const truncatedHistory: typeof history = [];
+    let historyChars = 0;
+    for (let i = history.length - 1; i >= 0; i--) {
+      const line = `${history[i].role === 'user' ? 'User' : 'Assistant'}: ${history[i].content}`;
+      if (historyChars + line.length > MAX_HISTORY_CONTENT_CHARS) break;
+      truncatedHistory.unshift(history[i]);
+      historyChars += line.length;
+    }
+
+    const historySection = truncatedHistory.length
+      ? truncatedHistory
           .map(h => `${h.role === 'user' ? 'User' : 'Assistant'}: ${h.content}`)
           .join('\n')
       : 'No prior conversation.';

@@ -7,6 +7,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
 
 import { JwtAuth } from '../../shared/decorators/jwt-auth.decorator';
@@ -24,6 +25,7 @@ export class AiChatController {
 
   @Post()
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @ApiOperation({ summary: 'Send a message to the AI assistant' })
   @ApiOkResponse({
     description: 'AI answer with sources and conversation history',
