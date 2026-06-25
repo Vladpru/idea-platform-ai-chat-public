@@ -22,7 +22,7 @@ import {
   patchRoomActiveCallInList,
 } from '@/features/live-chat/lib/merge-video-call-cache';
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
-import { getStoredAuthToken } from '@/shared/lib/auth-token';
+import { fetchRealtimeAuthToken } from '@/shared/api/realtime-token';
 import { uuidv7 } from '@/shared/offline/id';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef } from 'react';
@@ -55,7 +55,7 @@ function getRealtimeEdgeUrl(): string {
 
 export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
   const queryClient = useQueryClient();
-  const accessToken = useAuthSessionStore(state => state.accessToken);
+  const userId = useAuthSessionStore(state => state.user?.id ?? null);
   const socketRef = useRef<Socket | null>(null);
   const joinedRoomIdRef = useRef<string | null>(null);
   const joinApprovedRef = useRef(false);
@@ -112,7 +112,7 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
   }, []);
 
   useEffect(() => {
-    if (!enabled || !accessToken || !roomId) {
+    if (!enabled || !userId || !roomId) {
       if (socketRef.current?.connected) {
         socketRef.current.disconnect();
       }
@@ -124,12 +124,9 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
         autoConnect: false,
         withCredentials: true,
         auth: (cb: (data: object) => void) => {
-          cb({
-            token:
-              getStoredAuthToken() ??
-              useAuthSessionStore.getState().accessToken ??
-              '',
-          });
+          fetchRealtimeAuthToken()
+            .then(token => cb({ token }))
+            .catch(() => cb({ token: '' }));
         },
         transports: ['websocket'],
       });
@@ -252,7 +249,7 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
       joinedRoomIdRef.current = null;
       joinApprovedRef.current = false;
     };
-  }, [accessToken, enabled, flushPending, queryClient, roomId]);
+  }, [userId, enabled, flushPending, queryClient, roomId]);
 
   const sendMessage = useCallback(
     async (content: string, attachment?: LiveChatAttachmentPayload | null) => {

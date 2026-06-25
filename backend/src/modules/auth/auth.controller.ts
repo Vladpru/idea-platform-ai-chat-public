@@ -24,6 +24,7 @@ export class AuthController {
   ) {
     const { user, accessToken, refreshToken } =
       await this.authService.register(dto);
+    this.tokenService.addAccessTokenToCookie(res, accessToken);
     this.tokenService.addRefreshTokenToCookie(res, refreshToken);
     return { user, accessToken };
   }
@@ -36,6 +37,7 @@ export class AuthController {
   ) {
     const { user, accessToken, refreshToken } =
       await this.authService.login(dto);
+    this.tokenService.addAccessTokenToCookie(res, accessToken);
     this.tokenService.addRefreshTokenToCookie(res, refreshToken);
     return { user, accessToken };
   }
@@ -49,6 +51,7 @@ export class AuthController {
     const token = body?.token ?? body?.credential;
     const { user, accessToken, refreshToken } =
       await this.authService.googleLogin(token);
+    this.tokenService.addAccessTokenToCookie(res, accessToken);
     this.tokenService.addRefreshTokenToCookie(res, refreshToken);
     return { user, accessToken };
   }

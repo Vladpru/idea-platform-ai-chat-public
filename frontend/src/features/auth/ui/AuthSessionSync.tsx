@@ -8,21 +8,20 @@ import { useEffect } from 'react';
  * (e.g. after Google login or profile edits in another tab).
  */
 export function AuthSessionSync() {
-  const accessToken = useAuthSessionStore(s => s.accessToken);
+  const userId = useAuthSessionStore(s => s.user?.id);
 
   const { data: remoteUser } = useQuery({
     queryKey: ['users', 'me'],
     queryFn: fetchCurrentUser,
-    enabled: Boolean(accessToken),
+    enabled: Boolean(userId),
     staleTime: 60_000,
   });
 
   useEffect(() => {
     if (!remoteUser) return;
 
-    const { accessToken: token, user: localUser } =
-      useAuthSessionStore.getState();
-    if (!token) return;
+    const { user: localUser } = useAuthSessionStore.getState();
+    if (!localUser) return;
 
     const unchanged =
       localUser?.id === remoteUser.id &&
@@ -34,7 +33,7 @@ export function AuthSessionSync() {
 
     if (unchanged) return;
 
-    useAuthSessionStore.getState().setSession(remoteUser, token);
+    useAuthSessionStore.getState().setSession(remoteUser);
   }, [remoteUser]);
 
   return null;

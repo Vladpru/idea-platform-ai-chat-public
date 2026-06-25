@@ -136,9 +136,9 @@ function SettingsAppearanceSection() {
 }
 
 function SettingsNotificationsSection() {
-  const accessToken = useAuthSessionStore(s => s.accessToken);
+  const userId = useAuthSessionStore(s => s.user?.id);
   const { data: user, isLoading } = useCurrentUserQuery({
-    enabled: Boolean(accessToken),
+    enabled: Boolean(userId),
   });
   const updatePreferences = useUpdateNotificationPreferences();
   const channels = user?.notificationPreferences;
