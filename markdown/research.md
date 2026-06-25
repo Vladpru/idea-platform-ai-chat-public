@@ -92,3 +92,32 @@ rrf_score = 1/(k + rank_semantic) + 1/(k + rank_keyword)
 Short follow-up messages ("what about this?", "and permissions?") rely on context from previous turns. Sending them directly to the retriever produces poor results.
 
 `AiChatService.needsReformulation()` detects pronoun and follow-up patterns. If triggered, `GeminiService.reformulateQuery()` rewrites the question into a standalone form before retrieval.
+
+---
+
+## Structured User Context
+
+The LLM receives structured facts about the user alongside document chunks. These come exclusively from the database — never from the knowledge base.
+
+| Field | Source | Purpose |
+|---|---|---|
+| `name` | `user.firstName + lastName` | Personalise the response |
+| `role` | `user.role` (ADMIN \| MEMBER) | Controls which chunks the user can see |
+| `memberSinceDays` | `Date.now() - user.createdAt` | Signals experience level to the LLM |
+| `contributionScore` | Count of ideas + problems + likes received | Signals engagement level |
+
+`UserContextService.getContext()` fetches all of this in parallel (user lookup + 4 count queries) and returns a single `UserContext` object. If the contribution count fails, it defaults to 0 rather than crashing the request.
+
+---
+
+## Role-Based Access Control
+
+Some knowledge base documents are sensitive (internal policies, admin guides). Marking a note with `access: admin` in its Obsidian frontmatter tags its chunks in the `metadata` jsonb column.
+
+When `KnowledgeRetrievalService.retrieve()` is called with `role = 'MEMBER'`, both the semantic and keyword search CTEs add:
+
+```sql
+AND (metadata->>'access' IS NULL OR metadata->>'access' != 'admin')
+```
+
+This is injected via `Prisma.sql` tagged template composition — no raw string interpolation, no SQL injection risk. Admin users receive an empty fragment and see all chunks. The LLM never receives chunks the user is not allowed to see.

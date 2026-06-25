@@ -16,8 +16,9 @@ These two sources never mix until the orchestration layer assembles the final pr
 ```
 backend/src/modules/
 ├── ai-chat/                  # Orchestration layer
-│   ├── ai-chat.controller.ts  POST /ai/chat
-│   └── ai-chat.service.ts     sendMessage() — merges DB + RAG + LLM
+│   ├── ai-chat.controller.ts    POST /ai/chat
+│   ├── ai-chat.service.ts       sendMessage() — merges DB + RAG + LLM
+│   └── user-context.service.ts  getContext() → name, role, seniority, score
 │
 ├── rag/                      # Knowledge pipeline
 │   ├── ingestion.interface.ts         IIngestionService (swappable)
@@ -78,15 +79,21 @@ POST /ai/chat  { message }
         ├──────────────────────────────────────────── parallel
         │                                              │
         ▼                                              ▼
-DB lookup                                   Query reformulation (if needed)
-user { firstName, lastName, email }         GeminiService.reformulateQuery()
-chatMessage[] (last 10)                     → standalone question
+UserContextService.getContext()             chatMessage[] (last 10)
+→ { name, role, memberSinceDays,
+    contributionScore }
+        │
+        ├──────────────────────────────────────────── query reformulation (if needed)
+        │                                              GeminiService.reformulateQuery()
+        │                                              → standalone question
         │                                              │
         │                                              ▼
-        │                                   KnowledgeRetrievalService.retrieve()
+        │                                   KnowledgeRetrievalService.retrieve(query, topK, role)
         │                                    ├─ embed query → vector
         │                                    ├─ semantic: HNSW top 50
+        │                                    │   (+ filter access:admin if MEMBER)
         │                                    ├─ keyword:  GIN/FTS top 50
+        │                                    │   (+ filter access:admin if MEMBER)
         │                                    └─ RRF fusion → top 5 chunks
         │                                              │
         └──────────────────────── merge ───────────────┘
@@ -94,7 +101,7 @@ chatMessage[] (last 10)                     → standalone question
                                     ▼
                            buildPrompt()
                      system instruction
-                     + user name
+                     + user name, role, seniority, contribution score
                      + knowledge chunks (content + source + metadata)
                      + conversation history
                      + current question
@@ -123,6 +130,13 @@ chatMessage[] (last 10)                     → standalone question
 | `file_hash` | `text` | SHA-256 of the source file; used for dedup |
 | `created_at` | `timestamp` | Ingestion time |
 
+### `user` (relevant fields)
+
+| Column | Type | Notes |
+|---|---|---|
+| `role` | `UserRole` enum | `ADMIN` or `MEMBER` (default); controls RAG chunk visibility |
+| `created_at` | `timestamp` | Used to compute `memberSinceDays` |
+
 ### `chat_message`
 
 | Column | Type | Notes |
@@ -143,7 +157,8 @@ chatMessage[] (last 10)                     → standalone question
 | **Swappable source** | `IIngestionService` + `INGESTION_SERVICE` token. Swap `useClass` in `RagModule` to change the knowledge source. |
 | **Separate concerns** | Ingestion, retrieval, and generation are independent NestJS modules with no circular imports. |
 | **RAG transparency** | Every `ChatResponseDto` includes `sources: [{ title, relevance }]`. |
-| **DB ≠ RAG** | DB data (user profile, history) and RAG chunks are fetched independently and merged only inside `buildPrompt()`. |
+| **DB ≠ RAG** | DB data (role, seniority, score, history) and RAG chunks are fetched independently and merged only inside `buildPrompt()`. |
+| **Role-based access** | Chunks tagged `access: admin` in Obsidian frontmatter are filtered at SQL level for MEMBER users — the LLM never sees restricted content. |
 
 ---
 
