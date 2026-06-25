@@ -30,13 +30,16 @@ export function AiChatSessionItem({ session, isActive, onDeleted }: Props) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       className={cn(
-        'group flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm transition-colors',
+        'flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-all duration-150',
         isActive
-          ? 'bg-brand-dark-blue/10 text-foreground border-brand-dark-blue border-l-2 font-medium'
-          : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+          ? 'bg-accent text-foreground font-medium'
+          : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
       )}
     >
-      <span className="min-w-0 flex-1 truncate">
+      {isActive && (
+        <div className="h-4 w-0.5 shrink-0 rounded-full bg-brand-dark-blue" />
+      )}
+      <span className={cn('min-w-0 flex-1 truncate', !isActive && 'pl-1')}>
         {session.title ?? 'New conversation'}
       </span>
       {(hovered || isPending) && (
@@ -44,7 +47,7 @@ export function AiChatSessionItem({ session, isActive, onDeleted }: Props) {
           type="button"
           onClick={handleDelete}
           disabled={isPending}
-          className="text-muted-foreground hover:text-destructive shrink-0 transition-colors"
+          className="shrink-0 rounded p-0.5 text-muted-foreground/50 transition-colors hover:text-destructive"
           aria-label="Delete session"
         >
           <Trash2 size={13} />

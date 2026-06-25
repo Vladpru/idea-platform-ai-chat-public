@@ -11,11 +11,16 @@ export function AiChatMessageList({ messages }: { messages: ChatMessage[] }) {
   }, [messages]);
 
   return (
-    <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
-      {messages.map(message => (
-        <AiChatMessage key={message.id} message={message} />
-      ))}
-      <div ref={bottomRef} />
+    <div className="flex flex-1 flex-col overflow-y-auto">
+      <div className="flex-1" />
+      <div className="w-full px-4 py-6 sm:px-6">
+        <div className="mx-auto flex max-w-3xl flex-col gap-5">
+          {messages.map(message => (
+            <AiChatMessage key={message.id} message={message} />
+          ))}
+          <div ref={bottomRef} />
+        </div>
+      </div>
     </div>
   );
 }

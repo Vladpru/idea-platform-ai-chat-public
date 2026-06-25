@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, MessageSquarePlus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { useNavigate, useParams } from '@tanstack/react-router';
 
 import { cn } from '@/shared/lib/utils';
@@ -60,58 +60,76 @@ export function AiChatSidebar({ isOpen, onToggle }: Props) {
   return (
     <aside
       className={cn(
-        'border-border bg-background flex flex-col border-r transition-all duration-200',
-        isOpen ? 'w-60' : 'w-12',
+        'flex flex-col border-r border-border bg-card transition-all duration-300 ease-in-out',
+        isOpen ? 'w-64' : 'w-13',
       )}
     >
-      <div className={cn('flex items-center p-2', isOpen ? 'justify-between' : 'justify-center')}>
-        {isOpen && (
-          <button
-            type="button"
-            onClick={() => createSession()}
-            disabled={isPending}
-            className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-muted"
-          >
-            <MessageSquarePlus size={15} />
-            <span>New Chat</span>
-          </button>
+      <div
+        className={cn(
+          'flex h-14 shrink-0 items-center border-b border-border',
+          isOpen ? 'gap-1.5 px-3' : 'flex-col justify-center gap-1 py-2',
         )}
-        {!isOpen && (
-          <button
-            type="button"
-            onClick={() => createSession()}
-            disabled={isPending}
-            className="text-muted-foreground hover:text-foreground rounded-lg p-1.5 transition-colors hover:bg-muted"
-            aria-label="New chat"
-          >
-            <MessageSquarePlus size={16} />
-          </button>
+      >
+        {isOpen ? (
+          <>
+            <button
+              type="button"
+              onClick={() => createSession()}
+              disabled={isPending}
+              className="flex flex-1 items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:opacity-50"
+            >
+              <Plus size={15} className="text-brand-dark-blue shrink-0" />
+              New Chat
+            </button>
+            <button
+              type="button"
+              onClick={onToggle}
+              className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              aria-label="Collapse sidebar"
+            >
+              <ChevronLeft size={15} />
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={onToggle}
+              className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              aria-label="Expand sidebar"
+            >
+              <ChevronRight size={15} />
+            </button>
+            <button
+              type="button"
+              onClick={() => createSession()}
+              disabled={isPending}
+              className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+              aria-label="New chat"
+            >
+              <Plus size={15} />
+            </button>
+          </>
         )}
-        <button
-          type="button"
-          onClick={onToggle}
-          className="text-muted-foreground hover:text-foreground rounded-lg p-1.5 transition-colors hover:bg-muted"
-          aria-label={isOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-        >
-          {isOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
-        </button>
       </div>
 
       {isOpen && (
-        <div className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 pb-4">
+        <div className="flex flex-1 flex-col overflow-y-auto py-3">
           {groups.map(group => (
-            <div key={group.label}>
-              <p className="text-muted-foreground px-2 py-1 text-xs font-medium uppercase tracking-wider">
+            <div key={group.label} className="mb-2">
+              <p className="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
                 {group.label}
               </p>
-              {group.items.map(session => (
-                <AiChatSessionItem
-                  key={session.id}
-                  session={session}
-                  isActive={session.id === activeSessionId}
-                  onDeleted={() => handleDeleted(session.id)}
-                />
-              ))}
+              <div className="flex flex-col gap-0.5 px-2">
+                {group.items.map(session => (
+                  <AiChatSessionItem
+                    key={session.id}
+                    session={session}
+                    isActive={session.id === activeSessionId}
+                    onDeleted={() => handleDeleted(session.id)}
+                  />
+                ))}
+              </div>
             </div>
           ))}
         </div>

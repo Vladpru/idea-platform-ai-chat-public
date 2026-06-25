@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
 import { ArrowUp, Loader2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 import { cn } from '@/shared/lib/utils';
-import { Button } from '@/shared/ui/button';
 
 type Props = {
   onSend: (message: string) => void;
@@ -44,43 +43,57 @@ export function AiChatInput({ onSend, isStreaming, restoredValue }: Props) {
     onSend(trimmed);
   };
 
+  const canSend = !!value.trim() && !isStreaming;
+
   return (
-    <div className="border-border bg-background border-t px-4 py-3">
-      <div className="border-border bg-muted flex items-end gap-2 rounded-xl border px-3 py-2">
-        <textarea
-          ref={textareaRef}
-          value={value}
-          onChange={e => {
-            setValue(e.target.value);
-            autoResize();
-          }}
-          onKeyDown={handleKeyDown}
-          placeholder="Ask anything about the platform..."
-          disabled={isStreaming}
-          rows={1}
+    <div className="shrink-0 px-4 pt-2 pb-4 sm:px-6">
+      <div className="mx-auto max-w-3xl">
+        <div
           className={cn(
-            'flex-1 resize-none bg-transparent text-sm outline-none placeholder:text-muted-foreground',
-            'disabled:opacity-50',
+            'border-border bg-card flex items-end gap-3 rounded-2xl border px-4 py-3 shadow-lg',
+            'focus-within:border-brand-dark-blue/50 transition-colors',
           )}
-          style={{ maxHeight: 140 }}
-        />
-        <Button
-          type="button"
-          size="icon"
-          className="bg-brand-dark-blue hover:bg-brand-dark-blue/90 h-8 w-8 shrink-0 rounded-lg"
-          disabled={!value.trim() || isStreaming}
-          onClick={submit}
         >
-          {isStreaming ? (
-            <Loader2 size={14} className="animate-spin text-white" />
-          ) : (
-            <ArrowUp size={14} className="text-white" />
-          )}
-        </Button>
+          <textarea
+            ref={textareaRef}
+            value={value}
+            onChange={e => {
+              setValue(e.target.value);
+              autoResize();
+            }}
+            onKeyDown={handleKeyDown}
+            placeholder="Ask anything about the platform…"
+            disabled={isStreaming}
+            rows={1}
+            className={cn(
+              'text-foreground flex-1 resize-none bg-transparent text-sm leading-relaxed outline-none',
+              'placeholder:text-muted-foreground/50 disabled:opacity-40',
+            )}
+            style={{ maxHeight: 140 }}
+          />
+          <button
+            type="button"
+            onClick={submit}
+            disabled={!canSend}
+            className={cn(
+              'flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all duration-150',
+              canSend
+                ? 'bg-brand-dark-blue text-white shadow-sm hover:opacity-90 active:scale-95'
+                : 'bg-muted text-muted-foreground/40 cursor-not-allowed',
+            )}
+          >
+            {isStreaming ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <ArrowUp size={14} />
+            )}
+          </button>
+        </div>
+        <p className="text-muted-foreground/40 mt-1.5 text-center text-[11px]">
+          Responses are automated based on internal knowledge bases and may
+          contain inaccuracies
+        </p>
       </div>
-      <p className="text-muted-foreground mt-1.5 text-center text-xs">
-        Enter to send · Shift+Enter for new line
-      </p>
     </div>
   );
 }

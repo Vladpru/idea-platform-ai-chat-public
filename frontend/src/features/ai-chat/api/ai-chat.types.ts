@@ -5,10 +5,16 @@ export type ChatSession = {
   updatedAt: string;
 };
 
+export type ChatMessageSource = {
+  title: string;
+  relevance: number;
+};
+
 export type ChatMessage = {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  sources?: ChatMessageSource[];
   createdAt: string;
   pending?: boolean;
   streaming?: boolean;

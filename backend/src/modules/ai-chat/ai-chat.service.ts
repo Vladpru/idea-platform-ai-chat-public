@@ -65,11 +65,12 @@ export class AiChatService {
       where: { id: sessionId, userId },
     });
     if (!session) throw new NotFoundException('Session not found');
-    return this.prisma.chatMessage.findMany({
+    const rows = await this.prisma.chatMessage.findMany({
       where: { sessionId },
       orderBy: { createdAt: 'asc' },
-      select: { id: true, role: true, content: true, createdAt: true },
+      select: { id: true, role: true, content: true, sources: true, createdAt: true },
     });
+    return rows as unknown as import('./dto/chat-session.dto').ChatMessageResponseDto[];
   }
 
   async streamMessage(

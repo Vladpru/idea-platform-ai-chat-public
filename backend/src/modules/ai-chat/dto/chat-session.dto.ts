@@ -14,6 +14,14 @@ export class ChatSessionDto {
   updatedAt: Date;
 }
 
+export class ChatMessageSourceDto {
+  @ApiProperty()
+  title: string;
+
+  @ApiProperty()
+  relevance: number;
+}
+
 export class ChatMessageResponseDto {
   @ApiProperty()
   id: string;
@@ -23,6 +31,9 @@ export class ChatMessageResponseDto {
 
   @ApiProperty()
   content: string;
+
+  @ApiProperty({ type: [ChatMessageSourceDto] })
+  sources: ChatMessageSourceDto[];
 
   @ApiProperty()
   createdAt: Date;
