@@ -27,6 +27,8 @@ import { RedisModule } from './core/redis/redis.module';
 import { SearchModule } from './modules/search/search.module';
 import { SimilarityModule } from './modules/similarity/similarity.module';
 import { AchievementModule } from './modules/achievement/achievement.module';
+import { AiChatModule } from './modules/ai-chat/ai-chat.module';
+import { RagModule } from './modules/rag/rag.module';
 import { StatisticsModule } from './modules/statistics/statistics.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { TagModule } from './modules/tag/tag.module';
@@ -81,6 +83,8 @@ import { UserModule } from './modules/user/user.module';
     SimilarityModule,
     StatisticsModule,
     AchievementModule,
+    RagModule,
+    AiChatModule,
     TagModule,
   ],
   providers: [

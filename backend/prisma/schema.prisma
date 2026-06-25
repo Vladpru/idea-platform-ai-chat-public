@@ -83,6 +83,11 @@ enum ConferenceInviteType {
   EXTERNAL_EMAIL
 }
 
+enum UserRole {
+  ADMIN
+  MEMBER
+}
+
 model User {
   id                      String                @id @default(uuid())
   email                   String                @unique
@@ -93,6 +98,7 @@ model User {
   updatedAt               DateTime              @updatedAt @map("updated_at")
   avatarUrl               String?               @map("avatar_url")
   themePreference         ThemePreference       @default(SYSTEM) @map("theme_preference")
+  role                    UserRole              @default(MEMBER)
   notificationPreferences Json                  @default("{}") @map("notification_preferences")
   passwordResetTokens     PasswordResetToken[]
   ideas                   Idea[]                @relation("IdeaAuthor")
@@ -119,6 +125,8 @@ model User {
   conferenceInvitesRecv   ConferenceInvite[]    @relation("ConferenceInviteRecipient")
 
   userAchievements UserAchievement[]
+  chatMessages     ChatMessage[]
+
   @@map("user")
 }
 
@@ -622,4 +630,31 @@ model LiveChatMessage {
   @@unique([authorId, clientMessageId], map: "live_chat_message_author_id_client_message_id_key")
   @@index([roomId, createdAt])
   @@map("live_chat_message")
+}
+
+model KnowledgeChunk {
+  id        String                      @id @default(uuid())
+  source    String
+  content   String                      @db.Text
+  embedding Unsupported("vector(768)")?
+  metadata  Json                        @default("{}")
+  fileHash  String?                     @map("file_hash")
+  createdAt DateTime                    @default(now()) @map("created_at")
+
+  @@index([source])
+  @@map("knowledge_chunk")
+}
+
+model ChatMessage {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  role      String
+  content   String   @db.Text
+  sources   Json     @default("[]")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("chat_message")
 }
