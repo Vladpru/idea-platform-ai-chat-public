@@ -414,6 +414,7 @@ export async function generateIdeaPrefill(
   const { data } = await api.post<{ data: IdeaAIPrefillResponse }>(
     IDEAS_ROUTES.prefill,
     payload,
+    { timeout: 60_000 },
   );
   return data.data;
 }

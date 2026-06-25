@@ -14,13 +14,13 @@ function getApiBaseUrl(): string {
 export const api = axios.create({
   baseURL: getApiBaseUrl(),
   withCredentials: true,
-  timeout: 10_000,
+  timeout: 15_000,
 });
 
 const cleanApi = axios.create({
   baseURL: getApiBaseUrl(),
   withCredentials: true,
-  timeout: 10_000,
+  timeout: 15_000,
 });
 
 const AUTH_ROUTE_PATH =
