@@ -11,13 +11,14 @@ import {
 import type { SettingsTab } from '@/features/settings/lib/settings-tab';
 import { SettingsAccountSection } from '@/features/settings/ui/SettingsAccountSection';
 import { useThemeSync } from '@/hooks/useThemeSync';
-import { Monitor, Moon, Sun } from 'lucide-react';
+import { ArrowLeft, Monitor, Moon, Sun } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 
 import { cn } from '@/shared/lib/utils';
 import { Switch } from '@/shared/ui';
 import { Tabs, TabsList, TabsTrigger } from '@/shared/ui/tabs';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { useNavigate, useRouter, useSearch } from '@tanstack/react-router';
+import { Button } from '@/shared/ui/button';
 import { ConfirmModal } from '@/shared/ui/confirm-modal';
 
 type NotificationItem = {
@@ -254,6 +255,7 @@ function SettingsNotificationsSection() {
 
 export function SettingsPanel() {
   const navigate = useNavigate();
+  const router = useRouter();
   const { tab } = useSearch({ from: '/_auth/settings' });
   const [isDirty, setIsDirty] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
@@ -292,6 +294,16 @@ export function SettingsPanel() {
   return (
     <main className="bg-brand-neutral dark:bg-background min-h-[calc(100vh-72px)]">
       <section className="bg-card text-card-foreground mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-9">
+        <Button
+          variant="ghost"
+          size="sm"
+          leftIcon={<ArrowLeft className="size-4" />}
+          onClick={() => router.history.back()}
+          className="text-brand-gray-700 -ml-3 mb-4"
+        >
+          Back
+        </Button>
+
         <h1
           className={cn(pageTitleClass, 'text-foreground text-3xl sm:text-4xl')}
         >

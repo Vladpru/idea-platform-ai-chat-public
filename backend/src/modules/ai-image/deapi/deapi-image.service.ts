@@ -39,7 +39,7 @@ import type {
 
 const DEFAULT_IMAGE_TIMEOUT_MS = 120_000;
 const DEFAULT_POLL_INTERVAL_MS = 2_000;
-const DEFAULT_PROMPT_ENHANCEMENT_TIMEOUT_MS = 15_000;
+const DEFAULT_PROMPT_ENHANCEMENT_TIMEOUT_MS = 25_000;
 
 class DeapiImageTimeoutError extends Error {
   override readonly name = 'DeapiImageTimeoutError';

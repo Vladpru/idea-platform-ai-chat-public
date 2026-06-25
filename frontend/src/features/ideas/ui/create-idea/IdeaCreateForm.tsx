@@ -264,7 +264,14 @@ export function IdeaCreateForm({
   const handleSaveDraft = async (): Promise<boolean> => {
     const wasEditing = isEditing;
     const result = await onSaveDraft();
-    if (!result.success) return false;
+    if (!result.success) {
+      if (result.firstInvalidField) {
+        focusPublishField(result.firstInvalidField, {
+          problemId: problemSelectRef.current,
+        });
+      }
+      return false;
+    }
 
     posthog.capture('idea_draft_saved', { idea_id: result.ideaId, is_editing: wasEditing });
 

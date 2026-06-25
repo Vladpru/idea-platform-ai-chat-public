@@ -456,9 +456,10 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
           </div>
         ) : (
           <>
-            <AnimatePresence>
+            <AnimatePresence initial={false}>
               {!isScrolled ? (
                 <motion.div
+                  key="expanded-header"
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
@@ -474,16 +475,35 @@ export function IdeaDetailsView({ ideaId }: IdeaDetailsViewProps) {
                       Back
                     </button>
                   </div>
+                  <IdeaHeader
+                    idea={idea}
+                    isAuthor={isAuthor}
+                    isEditing={false}
+                    isCompact={false}
+                    variant="full"
+                    showProjectActions={true}
+                    onStartEdit={() => handleStartEdit(idea)}
+                    onScheduleConference={() => setIsScheduleConferenceOpen(true)}
+                    onDeleteSuccess={() => {
+                      void navigate({
+                        to: ROUTES.ideas,
+                        search: { sort: 'newest' },
+                      });
+                    }}
+                    onTeamClick={() => setIsTeamModalOpen(true)}
+                    onBackClick={handleBackClick}
+                  />
                 </motion.div>
               ) : null}
             </AnimatePresence>
 
-            <div className="bg-card sticky top-0 z-30 -mx-4 px-4 py-2 shadow-none transition-all duration-300 sm:-mx-6 sm:px-6">
+            <div className="bg-card sticky top-0 z-30 -mx-4 px-4 py-2 shadow-none sm:-mx-6 sm:px-6" style={{ marginTop: 0 }}>
               <IdeaHeader
                 idea={idea}
                 isAuthor={isAuthor}
                 isEditing={false}
                 isCompact={isScrolled}
+                variant="compact-only"
                 showProjectActions={true}
                 onStartEdit={() => handleStartEdit(idea)}
                 onScheduleConference={() => setIsScheduleConferenceOpen(true)}

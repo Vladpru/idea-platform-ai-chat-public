@@ -58,8 +58,8 @@ export const ideaCreateDraftSchema = z.object({
   problemId: z.string().optional(),
   title: z
     .string()
-    .max(200, 'Title cannot exceed 200 characters')
-    .optional(),
+    .min(1, 'Title is required')
+    .max(200, 'Title cannot exceed 200 characters'),
   description: z
     .string()
     .max(5000, 'Description cannot exceed 5000 characters')

@@ -43,6 +43,7 @@ type IdeaHeaderProps = {
   isAuthor?: boolean;
   isEditing?: boolean;
   isCompact?: boolean;
+  variant?: 'full' | 'compact-only';
   showProjectActions?: boolean;
   onStartEdit?: () => void;
   onScheduleConference?: () => void;
@@ -169,6 +170,7 @@ export function IdeaHeader({
   isAuthor = false,
   isEditing = false,
   isCompact = false,
+  variant = 'full',
   showProjectActions = true,
   onStartEdit,
   onScheduleConference,
@@ -196,43 +198,58 @@ export function IdeaHeader({
     <header className="relative min-w-0">
       <motion.div
         initial={false}
-        animate={{
-          opacity: isCompact ? 1 : 0,
-          pointerEvents: isCompact ? 'auto' : 'none',
-          y: isCompact ? 0 : -10,
-        }}
-        transition={{ duration: 0.2 }}
-        className="absolute top-0 right-0 left-0 z-10 flex min-w-0 items-center gap-2 py-2"
-      >
-        <button
-          type="button"
-          onClick={onBackClick}
-          className="text-primary hover:text-primary/80 inline-flex shrink-0 cursor-pointer items-center gap-1 text-xs font-bold tracking-wide uppercase transition-colors"
-        >
-          <ArrowLeft className="size-4" />
-          Back
-        </button>
-        {isEditing ? (
-          <p className="text-brand-gray-600 line-clamp-1 min-w-0 flex-1 text-xs font-semibold tracking-wide uppercase">
-            Editing idea
-          </p>
-        ) : (
-          <h1 className="text-brand-black line-clamp-1 min-w-0 flex-1 text-sm font-bold">
-            {title}
-          </h1>
+        animate={
+          variant === 'compact-only'
+            ? {
+                opacity: isCompact ? 1 : 0,
+                pointerEvents: isCompact ? 'auto' : 'none',
+                height: isCompact ? 36 : 0,
+              }
+            : {
+                opacity: isCompact ? 1 : 0,
+                pointerEvents: isCompact ? 'auto' : 'none',
+                y: isCompact ? 0 : -10,
+              }
+        }
+        transition={{ duration: 0.2, ease: 'easeOut' }}
+        className={cn(
+          'z-10 overflow-hidden',
+          variant === 'compact-only'
+            ? 'relative'
+            : 'absolute top-0 right-0 left-0 py-2 flex min-w-0 items-center gap-2',
         )}
-        <ManageDropdown
-          isAuthor={isAuthor}
-          isEditing={isEditing}
-          isCompact={true}
-          ideaId={idea.id}
-          onStartEdit={onStartEdit}
-          onScheduleConference={onScheduleConference}
-          onDeleteClick={() => setDeleteModalOpen(true)}
-        />
+      >
+        <div className={cn(variant === 'compact-only' && 'flex min-w-0 items-center gap-2 py-2')}>
+          <button
+            type="button"
+            onClick={onBackClick}
+            className="text-primary hover:text-primary/80 inline-flex shrink-0 cursor-pointer items-center gap-1 text-xs font-bold tracking-wide uppercase transition-colors"
+          >
+            <ArrowLeft className="size-4" />
+            Back
+          </button>
+          {isEditing ? (
+            <p className="text-brand-gray-600 line-clamp-1 min-w-0 flex-1 text-xs font-semibold tracking-wide uppercase">
+              Editing idea
+            </p>
+          ) : (
+            <h1 className="text-brand-black line-clamp-1 min-w-0 flex-1 text-sm font-bold">
+              {title}
+            </h1>
+          )}
+          <ManageDropdown
+            isAuthor={isAuthor}
+            isEditing={isEditing}
+            isCompact={true}
+            ideaId={idea.id}
+            onStartEdit={onStartEdit}
+            onScheduleConference={onScheduleConference}
+            onDeleteClick={() => setDeleteModalOpen(true)}
+          />
+        </div>
       </motion.div>
 
-      <motion.div
+      {variant !== 'compact-only' && <motion.div
         initial={false}
         animate={{
           opacity: isCompact ? 0 : 1,
@@ -359,7 +376,7 @@ export function IdeaHeader({
             </div>
           </div>
         </div>
-      </motion.div>
+      </motion.div>}
 
       {isAuthor ? (
         <ConfirmModal

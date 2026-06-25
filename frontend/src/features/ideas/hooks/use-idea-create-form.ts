@@ -51,7 +51,7 @@ export type IdeaPublishResult =
 
 export type IdeaSaveDraftResult =
   | { success: true; ideaId: string }
-  | { success: false };
+  | { success: false; firstInvalidField?: keyof IdeaCreateFormValues };
 
 export function useIdeaCreateForm() {
   const { ideaId: urlIdeaId } = useSearch({ from: '/_auth/ideas/new' });
@@ -179,7 +179,21 @@ export function useIdeaCreateForm() {
   const onSaveDraft = async (): Promise<IdeaSaveDraftResult> => {
     const values = form.getValues();
     const result = ideaCreateDraftSchema.safeParse(values);
-    if (!result.success) return { success: false };
+    if (!result.success) {
+      for (const issue of result.error.issues) {
+        const field = issue.path[0];
+        if (typeof field === 'string') {
+          form.setError(field as keyof IdeaCreateFormValues, {
+            type: 'manual',
+            message: issue.message,
+          });
+        }
+      }
+      return {
+        success: false,
+        firstInvalidField: getFirstPublishErrorField(result.error.issues),
+      };
+    }
 
     setError(null);
 

@@ -9,12 +9,11 @@ import {
 import { ConfigService } from '@nestjs/config';
 
 import { AnalyticsService } from '../../core/analytics/analytics.service';
-
-import type { EntitySummaryContent } from '../ai-summary/summary.types';
 import {
   DEFAULT_EMBEDDING_MODEL,
   EMBEDDING_DIMENSIONS,
 } from '../../core/config/embedding.config';
+import type { EntitySummaryContent } from '../ai-summary/summary.types';
 import { buildDocumentExtractPrompt } from './document/document-extract-prompt.util';
 import {
   normalizeIdeaDocumentExtractResponse,
@@ -83,7 +82,7 @@ export class GeminiService implements AiProvider {
     this.configuredModel =
       this.config.get<string>('GEMINI_MODEL')?.trim() || DEFAULT_GEMINI_MODEL;
 
-    this.timeoutMs = this.resolveTimeoutMs('GEMINI_TIMEOUT_MS', 10_000);
+    this.timeoutMs = this.resolveTimeoutMs('GEMINI_TIMEOUT_MS', 20_000);
     this.tagSuggestionsTotalTimeoutMs = this.resolveTimeoutMs(
       'GEMINI_TAG_SUGGESTIONS_TIMEOUT_MS',
       DEFAULT_TAG_SUGGESTIONS_TOTAL_TIMEOUT_MS,
@@ -875,13 +874,12 @@ export class GeminiService implements AiProvider {
       return 'continue';
     }
 
-    return this.buildGeminiModelFailureOutcome(
-      status === 404 ? 'retry' : 'fatal',
-      {
-        lastProviderMessage: message,
-        lastStatus: status,
-      },
-    );
+    const kind =
+      status === 404 || status === 503 || status === 429 ? 'retry' : 'fatal';
+    return this.buildGeminiModelFailureOutcome(kind, {
+      lastProviderMessage: message,
+      lastStatus: status,
+    });
   }
 
   private buildGeminiRetryOutcome(
