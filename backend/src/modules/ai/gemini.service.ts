@@ -34,6 +34,7 @@ import { buildGeminiTagPrompt } from './gemini/gemini-tag-prompt.util';
 import {
   generateGeminiJsonContent,
   generateGeminiPrefillContent,
+  streamGeminiContent,
 } from './gemini/gemini.client';
 import {
   DEFAULT_GEMINI_MODEL,
@@ -436,6 +437,20 @@ export class GeminiService implements AiProvider {
       this.logger.error('Gemini chat answer failed', error as Error);
       throw new InternalServerErrorException('Unable to generate AI answer');
     }
+  }
+
+  async streamChatAnswer(
+    prompt: string,
+    onToken: (token: string) => void,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    await streamGeminiContent({
+      client: this.client,
+      model: this.configuredModel,
+      prompt,
+      signal,
+      onToken,
+    });
   }
 
   private async runChatAnswerModelFallback(

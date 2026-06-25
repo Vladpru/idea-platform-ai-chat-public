@@ -82,3 +82,30 @@ export async function generateGeminiPrefillContent({
     throw error;
   }
 }
+
+export async function streamGeminiContent({
+  client,
+  model,
+  prompt,
+  signal,
+  onToken,
+}: {
+  client: GoogleGenAI;
+  model: string;
+  prompt: string;
+  signal?: AbortSignal;
+  onToken: (token: string) => void;
+}): Promise<void> {
+  const stream = await client.models.generateContentStream({
+    model,
+    contents: prompt,
+    config: { abortSignal: signal },
+  });
+
+  for await (const chunk of stream) {
+    const text = chunk.text ?? '';
+    if (text) {
+      onToken(text);
+    }
+  }
+}
