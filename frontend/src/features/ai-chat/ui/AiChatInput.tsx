@@ -10,12 +10,8 @@ type Props = {
 };
 
 export function AiChatInput({ onSend, isStreaming, restoredValue }: Props) {
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState(restoredValue ?? '');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    if (restoredValue !== undefined) setValue(restoredValue);
-  }, [restoredValue]);
 
   useEffect(() => {
     textareaRef.current?.focus();
