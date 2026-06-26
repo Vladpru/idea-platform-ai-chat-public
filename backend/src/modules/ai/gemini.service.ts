@@ -444,13 +444,36 @@ export class GeminiService implements AiProvider {
     onToken: (token: string) => void,
     signal?: AbortSignal,
   ): Promise<void> {
-    await streamGeminiContent({
-      client: this.client,
-      model: this.configuredModel,
-      prompt,
-      signal,
-      onToken,
-    });
+    const models = buildModelsToTry(this.configuredModel);
+    let lastMessage = 'AI generation failed';
+
+    for (const model of models) {
+      this.logger.log(`Trying Gemini model for stream-chat: ${model}`);
+      const result = await streamGeminiContent({
+        client: this.client,
+        model,
+        prompt,
+        signal,
+        onToken,
+      });
+
+      if (result.ok) return;
+
+      lastMessage = result.message;
+      this.logger.warn(
+        `Stream model ${model} failed (${result.status}): ${result.message}`,
+      );
+
+      if (
+        result.status === 400 ||
+        result.status === 401 ||
+        result.status === 403
+      ) {
+        throw new Error(lastMessage);
+      }
+    }
+
+    throw new Error(lastMessage);
   }
 
   private async runChatAnswerModelFallback(

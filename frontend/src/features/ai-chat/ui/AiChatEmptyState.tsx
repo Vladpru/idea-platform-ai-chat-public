@@ -1,40 +1,54 @@
-import { Sparkles } from 'lucide-react';
-
 import { cn } from '@/shared/lib/utils';
+
+import { NetworkIntelligence } from '../assets/SidebarIcons';
 
 type Props = {
   onNewChat: () => void;
   isLoading?: boolean;
 };
 
+const suggestions = [
+  'What ideas are currently in prototyping?',
+  'Summarize the top problems this month',
+  'Which ideas have the most engagement?',
+  'Find ideas related to customer experience',
+];
+
 export function AiChatEmptyState({ onNewChat, isLoading }: Props) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-7 p-8 text-center">
-      <div className="relative">
-        <div className="absolute inset-0 scale-150 rounded-full bg-brand-dark-blue/15 blur-3xl" />
-        <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl bg-brand-dark-blue shadow-lg">
-          <Sparkles size={36} className="text-white" />
+    <div className="flex flex-1 flex-col items-center justify-center gap-8 p-8">
+      <div className="flex flex-col items-center gap-4 text-center">
+        <div className="bg-brand-dark-blue flex h-14 w-14 items-center justify-center rounded-2xl shadow-md">
+          <NetworkIntelligence className="size-8 text-white" />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <h2 className="text-lg font-semibold text-foreground">
+            Ask about your ideas &amp; problems
+          </h2>
+          <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
+            Search across your team's knowledge base, get summaries, or explore
+            trends across ideas and problems.
+          </p>
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <h2 className="text-xl font-semibold text-foreground">AI Assistant</h2>
-        <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
-          Ask anything about ideas, problems, workflows, or team stats on the Idea Platform.
-        </p>
+      <div className="flex w-full max-w-sm flex-col gap-2">
+        {suggestions.map(suggestion => (
+          <button
+            key={suggestion}
+            type="button"
+            onClick={onNewChat}
+            disabled={isLoading}
+            className={cn(
+              'border-border bg-card hover:border-brand-dark-blue/30 hover:bg-brand-dark-blue/4',
+              'rounded-xl border px-4 py-2.5 text-left text-sm text-muted-foreground',
+              'transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50',
+            )}
+          >
+            {suggestion}
+          </button>
+        ))}
       </div>
-
-      <button
-        type="button"
-        onClick={onNewChat}
-        disabled={isLoading}
-        className={cn(
-          'rounded-xl bg-brand-dark-blue px-6 py-2.5 text-sm font-medium text-white shadow-md',
-          'transition-all duration-150 hover:opacity-90 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed',
-        )}
-      >
-        Start a conversation
-      </button>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { Response } from 'express';
 
 import { PrismaService } from '../../core/prisma/prisma.service';
@@ -27,6 +27,8 @@ function sseEvent(payload: object): string {
 
 @Injectable()
 export class AiChatService {
+  private readonly logger = new Logger(AiChatService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly gemini: GeminiService,
@@ -127,8 +129,10 @@ export class AiChatService {
         fullAnswer += token;
         res.write(sseEvent({ type: 'token', content: token }));
       });
-    } catch {
-      res.write(sseEvent({ type: 'error', message: 'AI generation failed' }));
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      this.logger.error(`Gemini stream failed for session ${sessionId}: ${detail}`, err instanceof Error ? err.stack : undefined);
+      res.write(sseEvent({ type: 'error', message: 'AI generation failed', detail }));
       res.end();
       return;
     }

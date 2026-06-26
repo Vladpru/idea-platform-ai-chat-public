@@ -6,21 +6,18 @@ export function AiChatSources({ sources }: { sources: ChatMessageSource[] }) {
   if (!sources.length) return null;
 
   return (
-    <div className="mt-3 flex flex-col gap-2">
-      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
-        Sources
-      </p>
-      <div className="flex flex-wrap gap-2">
+    <div className="mt-3 border-t border-border/50 pt-2.5">
+      <div className="flex flex-wrap gap-1.5">
         {sources.map((source, i) => (
           <div
             key={i}
-            className="flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5"
+            className="flex items-center gap-1.5 rounded-full border border-border bg-background px-2.5 py-1 transition-colors hover:border-brand-dark-blue/30"
           >
-            <FileText size={13} className="shrink-0 text-brand-orange" />
-            <span className="max-w-[180px] truncate text-xs text-foreground">
+            <FileText size={11} className="shrink-0 text-muted-foreground" />
+            <span className="max-w-40 truncate text-xs text-foreground/80">
               {source.title}
             </span>
-            <span className="rounded-full border border-brand-orange/30 bg-brand-orange/10 px-2 py-0.5 text-[10px] font-semibold text-brand-orange">
+            <span className="text-[10px] tabular-nums text-muted-foreground/70">
               {Math.round(source.relevance * 100)}%
             </span>
           </div>

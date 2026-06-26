@@ -46,11 +46,12 @@ export function AiChatInput({ onSend, isStreaming, restoredValue }: Props) {
       <div className="mx-auto max-w-3xl">
         <div
           className={cn(
-            'border-border bg-card flex items-end gap-3 rounded-2xl border px-4 py-3 shadow-lg',
+            'border-border bg-card flex items-center gap-3 rounded-2xl border px-4 py-3',
             'focus-within:border-brand-dark-blue/50 transition-colors',
           )}
         >
           <textarea
+            id="ai-chat-input"
             ref={textareaRef}
             value={value}
             onChange={e => {
@@ -58,7 +59,7 @@ export function AiChatInput({ onSend, isStreaming, restoredValue }: Props) {
               autoResize();
             }}
             onKeyDown={handleKeyDown}
-            placeholder="Ask anything about the platform…"
+            placeholder="What can I help you with?"
             disabled={isStreaming}
             rows={1}
             className={cn(
@@ -74,7 +75,7 @@ export function AiChatInput({ onSend, isStreaming, restoredValue }: Props) {
             className={cn(
               'flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all duration-150',
               canSend
-                ? 'bg-brand-dark-blue text-white shadow-sm hover:opacity-90 active:scale-95'
+                ? 'bg-brand-dark-blue cursor-pointer text-white shadow-sm hover:opacity-90 active:scale-95'
                 : 'bg-muted text-muted-foreground/40 cursor-not-allowed',
             )}
           >

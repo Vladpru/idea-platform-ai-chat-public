@@ -83,6 +83,10 @@ export async function generateGeminiPrefillContent({
   }
 }
 
+export type GeminiStreamResult =
+  | { ok: true }
+  | { ok: false; status: number; message: string };
+
 export async function streamGeminiContent({
   client,
   model,
@@ -95,17 +99,27 @@ export async function streamGeminiContent({
   prompt: string;
   signal?: AbortSignal;
   onToken: (token: string) => void;
-}): Promise<void> {
-  const stream = await client.models.generateContentStream({
-    model,
-    contents: prompt,
-    config: { abortSignal: signal },
-  });
+}): Promise<GeminiStreamResult> {
+  let tokensEmitted = 0;
+  try {
+    const stream = await client.models.generateContentStream({
+      model,
+      contents: prompt,
+      config: { abortSignal: signal },
+    });
 
-  for await (const chunk of stream) {
-    const text = chunk.text ?? '';
-    if (text) {
-      onToken(text);
+    for await (const chunk of stream) {
+      const text = chunk.text ?? '';
+      if (text) {
+        tokensEmitted++;
+        onToken(text);
+      }
     }
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof ApiError && tokensEmitted === 0) {
+      return { ok: false, status: error.status, message: error.message };
+    }
+    throw error;
   }
 }

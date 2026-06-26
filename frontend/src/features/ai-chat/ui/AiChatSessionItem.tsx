@@ -44,14 +44,11 @@ export function AiChatSessionItem({ session, isActive, onDeleted }: Props) {
         className={cn(
           'flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-all duration-150',
           isActive
-            ? 'bg-accent text-foreground font-medium'
+            ? 'bg-brand-dark-blue/8 dark:bg-brand-dark-blue/20 text-foreground font-medium'
             : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
         )}
       >
-        {isActive && (
-          <div className="h-4 w-0.5 shrink-0 rounded-full bg-brand-dark-blue" />
-        )}
-        <span className={cn('min-w-0 flex-1 truncate', !isActive && 'pl-1')}>
+        <span className="min-w-0 flex-1 truncate">
           {session.title ?? 'New conversation'}
         </span>
         {(hovered || isPending) && (

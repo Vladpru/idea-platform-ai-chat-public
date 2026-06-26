@@ -144,7 +144,7 @@ export function AiChatSidebar({ isOpen, onToggle }: Props) {
         <div className="flex flex-1 flex-col overflow-y-auto py-3">
           {groups.map(group => (
             <div key={group.label} className="mb-2">
-              <p className="text-muted-foreground/50 px-4 py-1.5 text-[10px] font-semibold tracking-widest uppercase">
+              <p className="text-muted-foreground/60 px-4 py-1 text-[11px]">
                 {group.label}
               </p>
               <div className="flex flex-col gap-0.5 px-2">

@@ -23,4 +23,4 @@ export type ChatMessage = {
 export type StreamEvent =
   | { type: 'token'; content: string }
   | { type: 'done'; messageId: string }
-  | { type: 'error'; message: string };
+  | { type: 'error'; message: string; detail?: string };
