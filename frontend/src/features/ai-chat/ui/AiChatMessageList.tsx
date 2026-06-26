@@ -1,0 +1,26 @@
+import { useEffect, useRef } from 'react';
+
+import type { ChatMessage } from '../api/ai-chat.types';
+import { AiChatMessage } from './AiChatMessage';
+
+export function AiChatMessageList({ messages }: { messages: ChatMessage[] }) {
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  return (
+    <div className="flex flex-1 flex-col overflow-y-auto">
+      <div className="flex-1" />
+      <div className="w-full px-4 py-6 sm:px-6">
+        <div className="mx-auto flex max-w-3xl flex-col gap-5">
+          {messages.map(message => (
+            <AiChatMessage key={message.id} message={message} />
+          ))}
+          <div ref={bottomRef} />
+        </div>
+      </div>
+    </div>
+  );
+}

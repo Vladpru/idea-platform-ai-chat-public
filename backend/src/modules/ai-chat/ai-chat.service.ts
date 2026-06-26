@@ -1,9 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import type { Response } from 'express';
 
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { GeminiService } from '../ai/gemini.service';
 import { KnowledgeRetrievalService } from '../rag/knowledge-retrieval.service';
-import type { ChatResponseDto } from './dto/chat-response.dto';
+import type {
+  ChatMessageResponseDto,
+  ChatSessionDto,
+} from './dto/chat-session.dto';
 import { UserContextService } from './user-context.service';
 
 const HISTORY_LIMIT = 10;
@@ -11,13 +15,20 @@ const REFORMULATION_HISTORY_LIMIT = 4;
 const RAG_TOP_K = 5;
 const REFORMULATION_MAX_CHARS = 120;
 const MAX_HISTORY_CONTENT_CHARS = 8000;
+const SESSION_TITLE_MAX_CHARS = 60;
 const CONTEXT_PRONOUNS =
   /\b(it|its|this|that|these|those|they|them|their|he|she|here|there|same|such)\b/i;
 const FOLLOWUP_WORDS =
   /\b(also|too|as well|another|more|else|other|and what|what about|how about)\b/i;
 
+function sseEvent(payload: object): string {
+  return `data: ${JSON.stringify(payload)}\n\n`;
+}
+
 @Injectable()
 export class AiChatService {
+  private readonly logger = new Logger(AiChatService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly gemini: GeminiService,
@@ -25,11 +36,64 @@ export class AiChatService {
     private readonly userContextService: UserContextService,
   ) {}
 
-  async sendMessage(userId: string, message: string): Promise<ChatResponseDto> {
+  async listSessions(userId: string): Promise<ChatSessionDto[]> {
+    return await this.prisma.chatSession.findMany({
+      where: { userId },
+      orderBy: { updatedAt: 'desc' },
+      select: { id: true, title: true, createdAt: true, updatedAt: true },
+    });
+  }
+
+  async createSession(userId: string): Promise<ChatSessionDto> {
+    return await this.prisma.chatSession.create({
+      data: { userId },
+      select: { id: true, title: true, createdAt: true, updatedAt: true },
+    });
+  }
+
+  async deleteSession(userId: string, sessionId: string): Promise<void> {
+    const session = await this.prisma.chatSession.findFirst({
+      where: { id: sessionId, userId },
+    });
+    if (!session) throw new NotFoundException('Session not found');
+    await this.prisma.chatSession.delete({ where: { id: sessionId } });
+  }
+
+  async getSessionMessages(
+    userId: string,
+    sessionId: string,
+  ): Promise<ChatMessageResponseDto[]> {
+    const session = await this.prisma.chatSession.findFirst({
+      where: { id: sessionId, userId },
+    });
+    if (!session) throw new NotFoundException('Session not found');
+    const rows = await this.prisma.chatMessage.findMany({
+      where: { sessionId },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true, role: true, content: true, sources: true, createdAt: true },
+    });
+    return rows as unknown as import('./dto/chat-session.dto').ChatMessageResponseDto[];
+  }
+
+  async streamMessage(
+    userId: string,
+    sessionId: string,
+    message: string,
+    res: Response,
+  ): Promise<void> {
+    const session = await this.prisma.chatSession.findFirst({
+      where: { id: sessionId, userId },
+    });
+    if (!session) {
+      res.write(sseEvent({ type: 'error', message: 'Session not found' }));
+      res.end();
+      return;
+    }
+
     const [userContext, history] = await Promise.all([
       this.userContextService.getContext(userId),
       this.prisma.chatMessage.findMany({
-        where: { userId },
+        where: { sessionId },
         orderBy: { createdAt: 'desc' },
         take: HISTORY_LIMIT,
         select: { role: true, content: true },
@@ -58,32 +122,61 @@ export class AiChatService {
       history: orderedHistory,
       message,
     });
-    const answer = await this.gemini.generateChatAnswer(prompt);
+
+    let fullAnswer = '';
+    try {
+      await this.gemini.streamChatAnswer(prompt, token => {
+        fullAnswer += token;
+        res.write(sseEvent({ type: 'token', content: token }));
+      });
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      this.logger.error(`Gemini stream failed for session ${sessionId}: ${detail}`, err instanceof Error ? err.stack : undefined);
+      res.write(sseEvent({ type: 'error', message: 'AI generation failed', detail }));
+      res.end();
+      return;
+    }
 
     const sources = ragChunks.map(c => ({
       title: c.source,
       relevance: c.relevance,
     }));
 
-    await this.prisma.chatMessage.createMany({
-      data: [
-        { userId, role: 'user', content: message, sources: [] },
-        { userId, role: 'assistant', content: answer, sources },
-      ],
-    });
+    const [, assistantMessage] = await this.prisma.$transaction([
+      this.prisma.chatMessage.create({
+        data: {
+          userId,
+          sessionId,
+          role: 'user',
+          content: message,
+          sources: [],
+        },
+      }),
+      this.prisma.chatMessage.create({
+        data: {
+          userId,
+          sessionId,
+          role: 'assistant',
+          content: fullAnswer,
+          sources,
+        },
+      }),
+    ]);
 
-    return {
-      answer,
-      sources,
-      history: [
-        ...orderedHistory.map(h => ({
-          role: h.role as 'user' | 'assistant',
-          content: h.content,
-        })),
-        { role: 'user' as const, content: message },
-        { role: 'assistant' as const, content: answer },
-      ],
-    };
+    if (!session.title) {
+      await this.prisma.chatSession.update({
+        where: { id: sessionId },
+        data: { title: message.slice(0, SESSION_TITLE_MAX_CHARS) },
+      });
+    } else {
+      await this.prisma.chatSession.update({
+        where: { id: sessionId },
+        data: { updatedAt: new Date() },
+      });
+    }
+
+    res.write(sseEvent({ type: 'done', messageId: assistantMessage.id }));
+    res.end();
   }
 
   private needsReformulation(message: string): boolean {

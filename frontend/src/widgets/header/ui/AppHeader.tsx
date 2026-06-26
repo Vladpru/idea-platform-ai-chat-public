@@ -81,6 +81,7 @@ export function AppHeader() {
             search={{ sort: 'newest' }}
           />
           <NavLink to={ROUTES.statistics} label="Statistics" />
+          <NavLink to={ROUTES.aiChat} label="AI Chat" fuzzy />
         </nav>
       </div>
 

@@ -126,6 +126,7 @@ model User {
 
   userAchievements UserAchievement[]
   chatMessages     ChatMessage[]
+  chatSessions     ChatSession[]
 
   @@map("user")
 }
@@ -646,15 +647,30 @@ model KnowledgeChunk {
 }
 
 model ChatMessage {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
+  id        String      @id @default(uuid())
+  sessionId String      @map("session_id")
+  userId    String      @map("user_id")
   role      String
-  content   String   @db.Text
-  sources   Json     @default("[]")
-  createdAt DateTime @default(now()) @map("created_at")
+  content   String      @db.Text
+  sources   Json        @default("[]")
+  createdAt DateTime    @default(now()) @map("created_at")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId, createdAt])
+  @@index([sessionId, createdAt])
   @@map("chat_message")
+}
+
+model ChatSession {
+  id        String        @id @default(cuid())
+  title     String?
+  userId    String        @map("user_id")
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  ChatMessage[]
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+
+  @@index([userId, updatedAt])
+  @@map("chat_session")
 }
