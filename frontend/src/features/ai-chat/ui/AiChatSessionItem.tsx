@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Trash2 } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
+import { Trash2 } from 'lucide-react';
+import { useState } from 'react';
 
 import { cn } from '@/shared/lib/utils';
 import { ConfirmDeleteModal } from '@/shared/ui/confirm-delete-modal';
@@ -56,10 +56,10 @@ export function AiChatSessionItem({ session, isActive, onDeleted }: Props) {
             type="button"
             onClick={handleDeleteClick}
             disabled={isPending}
-            className="shrink-0 rounded p-0.5 text-muted-foreground/50 transition-colors hover:text-destructive"
+            className="text-muted-foreground/50 hover:text-destructive shrink-0 rounded p-0.5 transition-colors"
             aria-label="Delete session"
           >
-            <Trash2 size={13} />
+            <Trash2 size={14} />
           </button>
         )}
       </Link>

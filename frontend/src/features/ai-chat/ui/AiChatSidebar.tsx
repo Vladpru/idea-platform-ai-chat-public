@@ -1,11 +1,10 @@
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { Plus } from 'lucide-react';
-import { useState } from 'react';
 
 import { cn } from '@/shared/lib/utils';
 
 import type { ChatSession } from '../api/ai-chat.types';
-import { DockToLeftIcon, LeftPanelCloseIcon, LeftPanelOpenIcon } from '../assets/SidebarIcons';
+import { LeftPanelCloseIcon, LeftPanelOpenIcon } from '../assets/SidebarIcons';
 import { useCreateSessionMutation } from '../hooks/mutations/use-create-session-mutation';
 import { useSessionsQuery } from '../hooks/queries/use-sessions-query';
 import { AiChatSessionItem } from './AiChatSessionItem';
@@ -45,31 +44,14 @@ function SidebarToggleButton({
   isOpen: boolean;
   onToggle: () => void;
 }) {
-  const [hovered, setHovered] = useState(false);
-
-  const iconClass = cn(
-    'transition-colors',
-    hovered ? 'text-foreground' : 'text-muted-foreground',
-  );
-
   return (
     <button
       type="button"
       onClick={onToggle}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      className="rounded-lg p-2 transition-colors hover:bg-accent"
+      className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-lg p-2 transition-colors"
       aria-label={isOpen ? 'Collapse sidebar' : 'Expand sidebar'}
     >
-      {hovered ? (
-        isOpen ? (
-          <LeftPanelCloseIcon className={iconClass} />
-        ) : (
-          <LeftPanelOpenIcon className={iconClass} />
-        )
-      ) : (
-        <DockToLeftIcon className={iconClass} />
-      )}
+      {isOpen ? <LeftPanelCloseIcon /> : <LeftPanelOpenIcon />}
     </button>
   );
 }
@@ -107,8 +89,10 @@ export function AiChatSidebar({ isOpen, onToggle }: Props) {
     >
       <div
         className={cn(
-          'border-border flex h-14 shrink-0 items-center border-b',
-          isOpen ? 'gap-1.5 px-3' : 'flex-col justify-center gap-1 py-2',
+          'border-border flex shrink-0 items-center border-b',
+          isOpen
+            ? 'h-14 gap-1.5 px-3'
+            : 'h-20 flex-col justify-center gap-1 py-2',
         )}
       >
         {isOpen ? (
@@ -117,7 +101,7 @@ export function AiChatSidebar({ isOpen, onToggle }: Props) {
               type="button"
               onClick={() => createSession()}
               disabled={isPending}
-              className="text-foreground hover:bg-accent flex flex-1 items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors disabled:opacity-50"
+              className="text-foreground hover:bg-accent hover:text-foreground/90 flex flex-1 items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors disabled:opacity-50"
             >
               <Plus size={15} className="text-brand-dark-blue shrink-0" />
               New Chat

@@ -87,8 +87,7 @@ export function AiChatInput({ onSend, isStreaming, restoredValue }: Props) {
           </button>
         </div>
         <p className="text-muted-foreground/40 mt-1.5 text-center text-[11px]">
-          Responses are automated based on internal knowledge bases and may
-          contain inaccuracies
+          AI-generated · may contain inaccuracies
         </p>
       </div>
     </div>

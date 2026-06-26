@@ -10,7 +10,8 @@ import { AiChatThinkingAnimation } from './AiChatThinkingAnimation';
 
 export function AiChatMessage({ message }: { message: ChatMessage }) {
   const isUser = message.role === 'user';
-  const sources = !isUser && message.sources?.length ? message.sources : [];
+  const isCannotAnswer = !isUser && /cannot answer your question/i.test(message.content ?? '');
+  const sources = !isUser && !isCannotAnswer && message.sources?.length ? message.sources : [];
   const isThinking = message.streaming && !message.content;
 
   const aiHtml = !isUser && message.content

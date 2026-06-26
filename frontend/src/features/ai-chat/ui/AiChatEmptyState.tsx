@@ -21,15 +21,9 @@ export function AiChatEmptyState({ onNewChat, isLoading }: Props) {
         <div className="bg-brand-dark-blue flex h-14 w-14 items-center justify-center rounded-2xl shadow-md">
           <NetworkIntelligence className="size-8 text-white" />
         </div>
-        <div className="flex flex-col gap-1.5">
-          <h2 className="text-lg font-semibold text-foreground">
-            Ask about your ideas &amp; problems
-          </h2>
-          <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
-            Search across your team's knowledge base, get summaries, or explore
-            trends across ideas and problems.
-          </p>
-        </div>
+        <h2 className="text-lg font-semibold text-foreground">
+          Ask about your ideas &amp; problems
+        </h2>
       </div>
 
       <div className="flex w-full max-w-sm flex-col gap-2">
