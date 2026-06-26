@@ -9,6 +9,7 @@ import { aiChatQueryKeys } from '../model/ai-chat-query-keys';
 export function useChatStream(sessionId: string) {
   const queryClient = useQueryClient();
   const [isStreaming, setIsStreaming] = useState(false);
+  const isStreamingRef = useRef(false);
   const [optimisticMessages, setOptimisticMessages] = useState<ChatMessage[]>([]);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -20,13 +21,10 @@ export function useChatStream(sessionId: string) {
 
   const send = useCallback(
     async (message: string) => {
-      if (isStreaming) return;
+      if (isStreamingRef.current) return;
+      isStreamingRef.current = true;
       setIsStreaming(true);
 
-      // Await before creating the AbortController so that React Strict Mode's
-      // effect cleanup (which runs synchronously between mount/unmount/remount)
-      // fires while abortRef.current is still null — preventing it from aborting
-      // a stream that hasn't started yet.
       await queryClient.cancelQueries({ queryKey: aiChatQueryKeys.messages(sessionId) });
 
       const controller = new AbortController();
@@ -47,7 +45,6 @@ export function useChatStream(sessionId: string) {
         streaming: true,
       };
 
-      // Keep optimistic messages in local state so query refetches can't overwrite them
       setOptimisticMessages([optimisticUser, optimisticAi]);
 
       try {
@@ -62,7 +59,7 @@ export function useChatStream(sessionId: string) {
               ),
             );
           },
-          onDone: () => {
+          onDone: (_messageId: string) => {
             setOptimisticMessages([]);
             queryClient.invalidateQueries({
               queryKey: aiChatQueryKeys.messages(sessionId),
@@ -82,11 +79,12 @@ export function useChatStream(sessionId: string) {
           toast.error('Connection error. Please try again.');
         }
       } finally {
+        isStreamingRef.current = false;
         setIsStreaming(false);
         abortRef.current = null;
       }
     },
-    [sessionId, isStreaming, queryClient],
+    [sessionId, queryClient],
   );
 
   const abort = useCallback(() => {

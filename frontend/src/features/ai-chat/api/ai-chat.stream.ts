@@ -38,8 +38,6 @@ export async function streamChatMessage({
   });
 
   if (!res.ok || !res.body) {
-    const text = await res.text().catch(() => '');
-    if (import.meta.env.DEV) console.error('[AI Chat] HTTP error', res.status, text);
     onError('Failed to connect to AI');
     return;
   }
@@ -61,11 +59,9 @@ export async function streamChatMessage({
         if (event.type === 'token') onToken(event.content);
         else if (event.type === 'done') onDone(event.messageId);
         else if (event.type === 'error') {
-          if (import.meta.env.DEV) console.error('[AI Chat] Stream error from server:', event.message, event.detail ?? '');
           onError(event.message);
         }
-      } catch (parseErr) {
-        if (import.meta.env.DEV) console.warn('[AI Chat] Failed to parse SSE line:', line, parseErr);
+      } catch {
       }
     }
   }

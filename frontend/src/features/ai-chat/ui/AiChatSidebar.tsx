@@ -131,8 +131,7 @@ export function AiChatSidebar({ isOpen, onToggle }: Props) {
               {group.label}
             </p>
             <div className="flex flex-col gap-0.5 px-2">
-              {groups.length > 0 &&
-                group.items.map(session => (
+              {group.items.map(session => (
                   <AiChatSessionItem
                     key={session.id}
                     session={session}
