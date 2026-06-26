@@ -1,20 +1,24 @@
 import { cn } from '@/shared/lib/utils';
 
+import { useCreateSessionMutation } from '../hooks/mutations/use-create-session-mutation';
 import { NetworkIntelligence } from '../assets/SidebarIcons';
 
 type Props = {
-  onNewChat: () => void;
+  onSuggestion: (text: string) => void;
+  showNewChat?: boolean;
   isLoading?: boolean;
 };
 
 const suggestions = [
-  'What ideas are currently in prototyping?',
-  'Summarize the top problems this month',
-  'Which ideas have the most engagement?',
-  'Find ideas related to customer experience',
+  'What is the difference between a problem and an idea?',
+  'What AI tools are available when creating an idea?',
+  'Can two people collaborate on an idea?',
+  'What happens when I archive an idea?',
 ];
 
-export function AiChatEmptyState({ onNewChat, isLoading }: Props) {
+export function AiChatEmptyState({ onSuggestion, showNewChat, isLoading }: Props) {
+  const { mutate: createSession, isPending } = useCreateSessionMutation();
+
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-8 p-8">
       <div className="flex flex-col items-center gap-4 text-center">
@@ -31,7 +35,7 @@ export function AiChatEmptyState({ onNewChat, isLoading }: Props) {
           <button
             key={suggestion}
             type="button"
-            onClick={onNewChat}
+            onClick={() => onSuggestion(suggestion)}
             disabled={isLoading}
             className={cn(
               'border-border bg-card hover:border-brand-dark-blue/30 hover:bg-brand-dark-blue/4',
@@ -42,6 +46,21 @@ export function AiChatEmptyState({ onNewChat, isLoading }: Props) {
             {suggestion}
           </button>
         ))}
+
+        {showNewChat && (
+          <button
+            type="button"
+            onClick={() => createSession(undefined)}
+            disabled={isPending || isLoading}
+            className={cn(
+              'border-border bg-card hover:border-brand-dark-blue/30 hover:bg-brand-dark-blue/4',
+              'mt-2 rounded-xl border px-4 py-2.5 text-center text-sm font-medium text-muted-foreground',
+              'transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50',
+            )}
+          >
+            + New chat
+          </button>
+        )}
       </div>
     </div>
   );

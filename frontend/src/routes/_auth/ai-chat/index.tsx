@@ -24,7 +24,8 @@ function AiChatIndexPage() {
 
   return (
     <AiChatEmptyState
-      onNewChat={() => createSession()}
+      onSuggestion={text => createSession({ initialMessage: text })}
+      showNewChat
       isLoading={isPending}
     />
   );

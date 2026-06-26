@@ -9,6 +9,7 @@ import { aiChatQueryKeys } from '../model/ai-chat-query-keys';
 export function useChatStream(sessionId: string) {
   const queryClient = useQueryClient();
   const [isStreaming, setIsStreaming] = useState(false);
+  const [optimisticMessages, setOptimisticMessages] = useState<ChatMessage[]>([]);
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -20,10 +21,16 @@ export function useChatStream(sessionId: string) {
   const send = useCallback(
     async (message: string) => {
       if (isStreaming) return;
+      setIsStreaming(true);
+
+      // Await before creating the AbortController so that React Strict Mode's
+      // effect cleanup (which runs synchronously between mount/unmount/remount)
+      // fires while abortRef.current is still null — preventing it from aborting
+      // a stream that hasn't started yet.
+      await queryClient.cancelQueries({ queryKey: aiChatQueryKeys.messages(sessionId) });
 
       const controller = new AbortController();
       abortRef.current = controller;
-      setIsStreaming(true);
 
       const optimisticUser: ChatMessage = {
         id: 'optimistic-user',
@@ -40,18 +47,8 @@ export function useChatStream(sessionId: string) {
         streaming: true,
       };
 
-      queryClient.setQueryData(
-        aiChatQueryKeys.messages(sessionId),
-        (prev: ChatMessage[] = []) => [...prev, optimisticUser, optimisticAi],
-      );
-
-      const rollback = () => {
-        queryClient.setQueryData(
-          aiChatQueryKeys.messages(sessionId),
-          (prev: ChatMessage[] = []) =>
-            prev.filter(m => m.id !== 'optimistic-user' && m.id !== 'optimistic-ai'),
-        );
-      };
+      // Keep optimistic messages in local state so query refetches can't overwrite them
+      setOptimisticMessages([optimisticUser, optimisticAi]);
 
       try {
         await streamChatMessage({
@@ -59,18 +56,14 @@ export function useChatStream(sessionId: string) {
           message,
           signal: controller.signal,
           onToken: token => {
-            queryClient.setQueryData(
-              aiChatQueryKeys.messages(sessionId),
-              (prev: ChatMessage[] = []) =>
-                prev.map(m =>
-                  m.id === 'optimistic-ai'
-                    ? { ...m, content: m.content + token }
-                    : m,
-                ),
+            setOptimisticMessages(prev =>
+              prev.map(m =>
+                m.id === 'optimistic-ai' ? { ...m, content: m.content + token } : m,
+              ),
             );
           },
           onDone: () => {
-            rollback();
+            setOptimisticMessages([]);
             queryClient.invalidateQueries({
               queryKey: aiChatQueryKeys.messages(sessionId),
             });
@@ -79,13 +72,13 @@ export function useChatStream(sessionId: string) {
             });
           },
           onError: errorMessage => {
-            rollback();
+            setOptimisticMessages([]);
             toast.error(errorMessage ?? 'AI response failed. Please try again.');
           },
         });
       } catch (err) {
         if (!controller.signal.aborted) {
-          rollback();
+          setOptimisticMessages([]);
           toast.error('Connection error. Please try again.');
         }
       } finally {
@@ -100,5 +93,5 @@ export function useChatStream(sessionId: string) {
     abortRef.current?.abort();
   }, []);
 
-  return { send, isStreaming, abort };
+  return { send, isStreaming, abort, optimisticMessages };
 }

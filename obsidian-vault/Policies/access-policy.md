@@ -12,9 +12,9 @@ status: published
 
 All users on the Idea Platform are assigned one of the following roles:
 
-- **Admin** — full access to all ideas, problems, and user management
-- **Member** — can create and publish ideas and problems, comment, vote
-- **Guest** — read-only access to published content only
+- **Admin** — full access to all ideas, problems, and user management; can delete any content and manage accounts
+- **Member** — can create and publish ideas and problems, comment, vote, and join ideas/problems
+- **Guest** — read-only access to published content only; cannot submit ideas, problems, or comments
 
 ## Content Access Rules
 
@@ -24,18 +24,23 @@ Draft content is only visible to its author and platform admins.
 
 Archived content is read-only and visible to all authenticated users.
 
-## Age Restrictions
+## Editing Rules
 
-Users must be 18 or older to access restricted content categories.
+Members can edit their own ideas and problems within 24 hours of publishing. After that window closes, contact an admin to request an edit.
 
-Users under 18 may browse published ideas and problems but cannot submit content flagged as sensitive.
-
-Parental consent is required for users under 16 to register an account.
+Admins can edit any content at any time.
 
 ## Permissions by Role
 
-Admins can delete any content and manage user accounts.
-
-Members can edit their own ideas and problems within 24 hours of publishing.
-
-Guests cannot submit ideas, problems, or comments.
+| Action | Guest | Member | Admin |
+|---|---|---|---|
+| View published ideas & problems | ✓ | ✓ | ✓ |
+| Create and publish ideas | — | ✓ | ✓ |
+| Create and publish problems | — | ✓ | ✓ |
+| Comment and vote | — | ✓ | ✓ |
+| Join an idea or problem | — | ✓ | ✓ |
+| Edit own content (within 24 h) | — | ✓ | ✓ |
+| Edit any content | — | — | ✓ |
+| Delete any content | — | — | ✓ |
+| Manage user accounts | — | — | ✓ |
+| Assign ideas/problems to users | — | — | ✓ |

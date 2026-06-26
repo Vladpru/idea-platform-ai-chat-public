@@ -5,6 +5,8 @@ import type { ChatMessageSource } from '../api/ai-chat.types';
 export function AiChatSources({ sources }: { sources: ChatMessageSource[] }) {
   if (!sources.length) return null;
 
+  const maxRelevance = Math.max(...sources.map(s => s.relevance));
+
   return (
     <div className="mt-3 border-t border-border/50 pt-2.5">
       <div className="flex flex-wrap gap-1.5">
@@ -18,7 +20,7 @@ export function AiChatSources({ sources }: { sources: ChatMessageSource[] }) {
               {source.title}
             </span>
             <span className="text-[10px] tabular-nums text-muted-foreground/70">
-              {Math.round(source.relevance * 100)}%
+              {maxRelevance > 0 ? Math.round((source.relevance / maxRelevance) * 100) : 0}%
             </span>
           </div>
         ))}
