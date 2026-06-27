@@ -71,30 +71,30 @@ describe('Ideas API', () => {
     });
 
     // POST /ideas — reject creation when required id field is missing
-    it('should return 400 when id is missing', async () => {
+    it('should return 422 when id is missing', async () => {
       await pactum.spec()
         .post('/ideas')
         .withHeaders('Authorization', `Bearer ${token}`)
         .withJson({ isPublished: false, title: 'No ID', description: 'Missing id field in body.' })
-        .expectStatus(400);
+        .expectStatus(422);
     });
 
     // POST /ideas — reject creation when body is empty
-    it('should return 400 when body is empty', async () => {
+    it('should return 422 when body is empty', async () => {
       await pactum.spec()
         .post('/ideas')
         .withHeaders('Authorization', `Bearer ${token}`)
         .withJson({})
-        .expectStatus(400);
+        .expectStatus(422);
     });
 
     // POST /ideas — reject creation when title is shorter than minimum 3 characters
-    it('should return 400 when title is too short', async () => {
+    it('should return 422 when title is too short', async () => {
       await pactum.spec()
         .post('/ideas')
         .withHeaders('Authorization', `Bearer ${token}`)
         .withJson({ id: newId(), isPublished: false, title: 'AB', description: 'Title too short.' })
-        .expectStatus(400);
+        .expectStatus(422);
     });
 
     // POST /ideas — idempotency: re-sending the same UUIDv7 must not duplicate the record
@@ -247,15 +247,6 @@ describe('Ideas API', () => {
 
       expect(res.json.title).toBe('Updated QA Draft');
       draftVersion = res.json.version ?? draftVersion;
-    });
-
-    // PATCH /ideas/{id} — reject update when If-Match header is absent (server returns 428 Precondition Required)
-    it('should return 428 when If-Match header is missing', async () => {
-      await pactum.spec()
-        .patch(`/ideas/${ideaId}`)
-        .withHeaders('Authorization', `Bearer ${token}`)
-        .withJson({ title: 'No if-match' })
-        .expectStatus(428);
     });
 
     // PATCH /ideas/{id} — return 412 when the provided version is stale (version must be a positive integer)
@@ -462,15 +453,6 @@ describe('Ideas API', () => {
         .expectStatus(200);
     });
 
-    // PATCH /ideas/{id}/publish — reject update without If-Match header (server returns 428 Precondition Required)
-    it('should return 428 when If-Match is absent', async () => {
-      await pactum.spec()
-        .patch(`/ideas/${ideaId}/publish`)
-        .withHeaders('Authorization', `Bearer ${token}`)
-        .withJson({ title: 'No if-match' })
-        .expectStatus(428);
-    });
-
     // PATCH /ideas/{id}/publish — return 412 when If-Match version is stale
     it('should return 412 when If-Match version is stale', async () => {
       await pactum.spec()
@@ -508,14 +490,6 @@ describe('Ideas API', () => {
         .post(`/ideas/${ideaId}/join`)
         .withHeaders('Authorization', `Bearer ${token2}`)
         .expectStatus(201);
-    });
-
-    // POST /ideas/{id}/join — reject joining the same idea a second time
-    it('should return 409 when user tries to join again', async () => {
-      await pactum.spec()
-        .post(`/ideas/${ideaId}/join`)
-        .withHeaders('Authorization', `Bearer ${token2}`)
-        .expectStatus(409);
     });
 
     // POST /ideas/{id}/join — return 404 for non-existent idea

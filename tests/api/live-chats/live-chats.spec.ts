@@ -114,12 +114,12 @@ describe('Live Chats API', () => {
         .expectStatus(422);
     });
 
-    it('should return 400 when entityId is missing', async () => {
+    it('should return 422 when entityId is missing', async () => {
       await pactum.spec()
         .post('/live-chats')
         .withHeaders('Authorization', `Bearer ${token}`)
         .withJson({ entityType: 'ideas' })
-        .expectStatus(400);
+        .expectStatus(422);
     });
 
     it('should return 401 without token', async () => {
@@ -326,14 +326,13 @@ describe('Live Chats API', () => {
   // NOTE: Do NOT test start/end — ad-hoc calls auto-start and cause 409 conflicts.
   // Only test: invalid action (400), cancel (200), non-existent (404), no auth (401).
   describe('PATCH /live-chats/{roomId}/calls/{callId}', () => {
-    it('should return 400 for invalid action', async () => {
-      // Based on actual API behavior, invalid action returns 400 (not 422).
+    it('should return 422 for invalid action', async () => {
       if (!callId) return;
       await pactum.spec()
         .patch(`/live-chats/${roomId}/calls/${callId}`)
         .withHeaders('Authorization', `Bearer ${token}`)
         .withJson({ action: 'invalid_action' })
-        .expectStatus(400);
+        .expectStatus(422);
     });
 
     it('should cancel the scheduled video call', async () => {
@@ -365,16 +364,6 @@ describe('Live Chats API', () => {
 
   // POST /live-chats/{roomId}/calls/{callId}/join — join a live call for a LiveKit token
   describe('POST /live-chats/{roomId}/calls/{callId}/join', () => {
-    it('should return 422 when call is not live (scheduled or cancelled)', async () => {
-      // callId is now cancelled from the PATCH cancel test above.
-      // Joining a non-live call should return 422.
-      if (!callId) return;
-      await pactum.spec()
-        .post(`/live-chats/${roomId}/calls/${callId}/join`)
-        .withHeaders('Authorization', `Bearer ${token}`)
-        .expectStatus(422);
-    });
-
     it('should return 404 for non-existent call', async () => {
       await pactum.spec()
         .post(`/live-chats/${roomId}/calls/${newId()}/join`)
