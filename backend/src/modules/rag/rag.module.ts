@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { PrismaModule } from '../../core/prisma/prisma.module';
 import { EmbeddingModule } from '../embedding/embedding.module';
+import { EntityChunkSyncService } from './entity-chunk-sync.service';
 import { INGESTION_SERVICE } from './ingestion.interface';
 import { KnowledgeRetrievalService } from './knowledge-retrieval.service';
 import { ObsidianIngestionService } from './obsidian-ingestion.service';
@@ -18,7 +19,8 @@ import { VaultSyncService } from './vault-sync.service';
     KnowledgeRetrievalService,
     VaultSyncService,
     VaultSyncCron,
+    EntityChunkSyncService,
   ],
-  exports: [KnowledgeRetrievalService],
+  exports: [KnowledgeRetrievalService, EntityChunkSyncService],
 })
 export class RagModule {}
