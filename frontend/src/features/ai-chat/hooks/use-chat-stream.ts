@@ -1,34 +1,38 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { streamChatMessage } from '../api/ai-chat.stream';
 import type { ChatMessage } from '../api/ai-chat.types';
 import { aiChatQueryKeys } from '../model/ai-chat-query-keys';
+import {
+  EMPTY_SESSION,
+  useChatStreamStore,
+  deleteStreamController,
+  getStreamController,
+  setStreamController,
+} from '../model/chat-stream-store';
 
 export function useChatStream(sessionId: string) {
   const queryClient = useQueryClient();
-  const [isStreaming, setIsStreaming] = useState(false);
-  const isStreamingRef = useRef(false);
-  const [optimisticMessages, setOptimisticMessages] = useState<ChatMessage[]>([]);
-  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    return () => {
-      abortRef.current?.abort();
-    };
+    useChatStreamStore.getState().initSession(sessionId);
   }, [sessionId]);
+
+  const session = useChatStreamStore(state => state.sessions[sessionId] ?? EMPTY_SESSION);
 
   const send = useCallback(
     async (message: string) => {
-      if (isStreamingRef.current) return;
-      isStreamingRef.current = true;
-      setIsStreaming(true);
+      const storeState = useChatStreamStore.getState();
+      if (storeState.sessions[sessionId]?.isStreaming) return;
+
+      storeState.setStreaming(sessionId, true);
 
       await queryClient.cancelQueries({ queryKey: aiChatQueryKeys.messages(sessionId) });
 
       const controller = new AbortController();
-      abortRef.current = controller;
+      setStreamController(sessionId, controller);
 
       const optimisticUser: ChatMessage = {
         id: 'optimistic-user',
@@ -45,7 +49,7 @@ export function useChatStream(sessionId: string) {
         streaming: true,
       };
 
-      setOptimisticMessages([optimisticUser, optimisticAi]);
+      storeState.setOptimisticMessages(sessionId, [optimisticUser, optimisticAi]);
 
       try {
         await streamChatMessage({
@@ -53,43 +57,44 @@ export function useChatStream(sessionId: string) {
           message,
           signal: controller.signal,
           onToken: token => {
-            setOptimisticMessages(prev =>
-              prev.map(m =>
-                m.id === 'optimistic-ai' ? { ...m, content: m.content + token } : m,
-              ),
-            );
+            useChatStreamStore
+              .getState()
+              .updateOptimisticMessage(sessionId, 'optimistic-ai', m => ({
+                ...m,
+                content: m.content + token,
+              }));
           },
           onDone: (_messageId: string) => {
-            setOptimisticMessages([]);
-            queryClient.invalidateQueries({
-              queryKey: aiChatQueryKeys.messages(sessionId),
-            });
-            queryClient.invalidateQueries({
-              queryKey: aiChatQueryKeys.sessions(),
-            });
+            deleteStreamController(sessionId);
+            useChatStreamStore.getState().clearSession(sessionId);
+            queryClient.invalidateQueries({ queryKey: aiChatQueryKeys.messages(sessionId) });
+            queryClient.invalidateQueries({ queryKey: aiChatQueryKeys.sessions() });
           },
           onError: errorMessage => {
-            setOptimisticMessages([]);
+            deleteStreamController(sessionId);
+            useChatStreamStore.getState().clearSession(sessionId);
             toast.error(errorMessage ?? 'AI response failed. Please try again.');
           },
         });
-      } catch (err) {
+      } catch {
+        deleteStreamController(sessionId);
+        useChatStreamStore.getState().clearSession(sessionId);
         if (!controller.signal.aborted) {
-          setOptimisticMessages([]);
           toast.error('Connection error. Please try again.');
         }
-      } finally {
-        isStreamingRef.current = false;
-        setIsStreaming(false);
-        abortRef.current = null;
       }
     },
     [sessionId, queryClient],
   );
 
   const abort = useCallback(() => {
-    abortRef.current?.abort();
-  }, []);
+    getStreamController(sessionId)?.abort();
+  }, [sessionId]);
 
-  return { send, isStreaming, abort, optimisticMessages };
+  return {
+    send,
+    isStreaming: session.isStreaming,
+    abort,
+    optimisticMessages: session.optimisticMessages,
+  };
 }
