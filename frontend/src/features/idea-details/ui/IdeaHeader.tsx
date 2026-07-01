@@ -203,7 +203,7 @@ export function IdeaHeader({
             ? {
                 opacity: isCompact ? 1 : 0,
                 pointerEvents: isCompact ? 'auto' : 'none',
-                height: isCompact ? 36 : 0,
+                y: isCompact ? 0 : -4,
               }
             : {
                 opacity: isCompact ? 1 : 0,
@@ -215,7 +215,7 @@ export function IdeaHeader({
         className={cn(
           'z-10 overflow-hidden',
           variant === 'compact-only'
-            ? 'relative'
+            ? 'relative h-9'
             : 'absolute top-0 right-0 left-0 py-2 flex min-w-0 items-center gap-2',
         )}
       >
