@@ -16,6 +16,8 @@ export async function streamChatMessage({
   onToken,
   onDone,
   onError,
+  onSuggestions,
+  onIntent,
 }: {
   sessionId: string;
   message: string;
@@ -23,6 +25,8 @@ export async function streamChatMessage({
   onToken: (token: string) => void;
   onDone: (messageId: string) => void;
   onError: (message: string) => void;
+  onSuggestions?: (suggestions: string[]) => void;
+  onIntent?: (intent: string, entityHint: string | null) => void;
 }): Promise<void> {
   const token = getStoredAuthToken();
   const url = `${getApiBaseUrl()}${AI_CHAT_ROUTES.stream(sessionId)}`;
@@ -58,9 +62,9 @@ export async function streamChatMessage({
         const event = JSON.parse(line.slice(6)) as StreamEvent;
         if (event.type === 'token') onToken(event.content);
         else if (event.type === 'done') onDone(event.messageId);
-        else if (event.type === 'error') {
-          onError(event.message);
-        }
+        else if (event.type === 'error') onError(event.message);
+        else if (event.type === 'suggestions') onSuggestions?.(event.suggestions);
+        else if (event.type === 'intent') onIntent?.(event.intent, event.entityHint);
       } catch {
       }
     }
