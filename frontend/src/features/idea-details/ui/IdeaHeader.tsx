@@ -186,7 +186,7 @@ export function IdeaHeader({
   const { deleteIdea, isPending: isDeletePending } = useDeleteIdea();
   const exportPdf = useExportIdeaPdfMutation();
   const exportingIds = usePdfExportStore(state => state.exportingIds);
-  const isPdfExporting = exportingIds.has(idea.id);
+  const isPdfExporting = exportingIds[idea.id] === true;
 
   const handleConfirmDelete = () => {
     deleteIdea(idea.id, {

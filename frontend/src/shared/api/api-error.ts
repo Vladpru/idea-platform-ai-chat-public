@@ -211,7 +211,7 @@ export function getApiErrorMessage(
   const wrongCreds = options?.invalidCredentialsMessage ?? INVALID_CREDENTIALS;
 
   if (axios.isAxiosError(error)) {
-    if (!error.response && (error.code === 'ERR_NETWORK' || error.message === 'Network Error')) {
+    if (!error.response && error.code === 'ERR_NETWORK') {
       return 'No internet connection. Please check your network and try again.';
     }
 

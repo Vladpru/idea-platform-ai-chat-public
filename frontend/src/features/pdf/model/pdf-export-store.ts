@@ -1,25 +1,20 @@
 import { create } from 'zustand';
 
 type PdfExportState = {
-  exportingIds: Set<string>;
+  exportingIds: Record<string, boolean>;
   startExport: (entityId: string) => void;
   finishExport: (entityId: string) => void;
 };
 
 export const usePdfExportStore = create<PdfExportState>()(set => ({
-  exportingIds: new Set(),
+  exportingIds: {},
   startExport: (entityId: string) =>
     set(state => ({
-      exportingIds: new Set([...state.exportingIds, entityId]),
+      exportingIds: { ...state.exportingIds, [entityId]: true },
     })),
   finishExport: (entityId: string) =>
     set(state => {
-      const next = new Set(state.exportingIds);
-      next.delete(entityId);
-      return { exportingIds: next };
+      const { [entityId]: _, ...rest } = state.exportingIds;
+      return { exportingIds: rest };
     }),
 }));
-
-export function isExportingPdf(entityId: string): boolean {
-  return usePdfExportStore.getState().exportingIds.has(entityId);
-}

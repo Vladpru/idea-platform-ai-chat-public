@@ -174,7 +174,7 @@ export function ProblemHeader({
   const deleteMutation = useDeleteProblemMutation();
   const exportPdf = useExportProblemPdfMutation();
   const exportingIds = usePdfExportStore(state => state.exportingIds);
-  const isPdfExporting = exportingIds.has(problem.id);
+  const isPdfExporting = exportingIds[problem.id] === true;
   const isDraft = problem.status === 'DRAFT';
   const title = problem.title || 'Untitled problem';
 

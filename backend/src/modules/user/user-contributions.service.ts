@@ -228,14 +228,6 @@ export class UserContributionsService {
   }
 
   async getUserStatistics(userId: string): Promise<UserStatistics> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true },
-    });
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
     const [ideaStats, problemStats] = await Promise.all([
       this.prisma.idea.aggregate({
         where: { authorId: userId, status: 'PUBLISHED' },
