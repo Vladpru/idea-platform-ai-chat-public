@@ -14,6 +14,7 @@ export function useExportProblemPdfMutation() {
     mutationFn: (problemId: string) => exportProblemPdf(problemId),
     onSuccess: (_data, problemId) => {
       startExport(problemId);
+      setTimeout(() => finishExport(problemId), 5 * 60 * 1000);
       toast.info("Generating your PDF — you'll be notified when it's ready");
     },
     onError: (error, problemId) => {
