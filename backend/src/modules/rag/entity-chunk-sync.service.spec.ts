@@ -2,17 +2,15 @@ import { Test } from '@nestjs/testing';
 
 import { EntityChunkSyncService } from './entity-chunk-sync.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { EmbeddingService } from '../embedding/embedding.service';
 
 const mockExecuteRaw = jest.fn().mockResolvedValue(undefined);
-const mockTransaction = jest
-  .fn()
-  .mockImplementation((calls: Promise<unknown>[]) => Promise.all(calls));
 const mockIdeaFindUnique = jest.fn();
 const mockProblemFindUnique = jest.fn();
+const mockEmbedText = jest.fn().mockResolvedValue([0.1, 0.2, 0.3]);
 
 const mockPrisma = {
   $executeRaw: mockExecuteRaw,
-  $transaction: mockTransaction,
   idea: { findUnique: mockIdeaFindUnique },
   problem: { findUnique: mockProblemFindUnique },
 };
@@ -49,54 +47,55 @@ describe('EntityChunkSyncService', () => {
       providers: [
         EntityChunkSyncService,
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: EmbeddingService, useValue: { embedText: mockEmbedText } },
       ],
     }).compile();
     service = module.get(EntityChunkSyncService);
   });
 
-  it('upserts a knowledge_chunk for a published idea', async () => {
+  it('upserts a knowledge_chunk with embedding for a published idea', async () => {
     mockIdeaFindUnique.mockResolvedValue(publishedIdea);
 
     await service.syncEntity('idea', 'idea-1');
 
-    expect(mockTransaction).toHaveBeenCalledTimes(1);
-    expect(mockExecuteRaw).toHaveBeenCalledTimes(2); // DELETE + INSERT inside transaction
+    expect(mockEmbedText).toHaveBeenCalledTimes(1);
+    expect(mockExecuteRaw).toHaveBeenCalledTimes(2); // DELETE + INSERT
   });
 
-  it('skips a non-published idea', async () => {
+  it('deletes chunk when idea transitions to non-published', async () => {
     mockIdeaFindUnique.mockResolvedValue({ ...publishedIdea, status: 'DRAFT' });
 
     await service.syncEntity('idea', 'idea-1');
 
-    expect(mockExecuteRaw).not.toHaveBeenCalled();
-    expect(mockTransaction).not.toHaveBeenCalled();
+    expect(mockEmbedText).not.toHaveBeenCalled();
+    expect(mockExecuteRaw).toHaveBeenCalledTimes(1); // DELETE only
   });
 
-  it('deletes chunk when idea is not found (deleted)', async () => {
+  it('deletes chunk when idea is not found', async () => {
     mockIdeaFindUnique.mockResolvedValue(null);
 
     await service.syncEntity('idea', 'idea-1');
 
-    expect(mockExecuteRaw).toHaveBeenCalledTimes(1); // only DELETE, no transaction
-    expect(mockTransaction).not.toHaveBeenCalled();
+    expect(mockEmbedText).not.toHaveBeenCalled();
+    expect(mockExecuteRaw).toHaveBeenCalledTimes(1);
   });
 
-  it('upserts a knowledge_chunk for a published problem', async () => {
+  it('upserts a knowledge_chunk with embedding for a published problem', async () => {
     mockProblemFindUnique.mockResolvedValue(publishedProblem);
 
     await service.syncEntity('problem', 'prob-1');
 
-    expect(mockTransaction).toHaveBeenCalledTimes(1);
-    expect(mockExecuteRaw).toHaveBeenCalledTimes(2); // DELETE + INSERT inside transaction
+    expect(mockEmbedText).toHaveBeenCalledTimes(1);
+    expect(mockExecuteRaw).toHaveBeenCalledTimes(2);
   });
 
-  it('skips a non-published problem', async () => {
+  it('deletes chunk when problem transitions to non-published', async () => {
     mockProblemFindUnique.mockResolvedValue({ ...publishedProblem, status: 'ARCHIVED' });
 
     await service.syncEntity('problem', 'prob-1');
 
-    expect(mockExecuteRaw).not.toHaveBeenCalled();
-    expect(mockTransaction).not.toHaveBeenCalled();
+    expect(mockEmbedText).not.toHaveBeenCalled();
+    expect(mockExecuteRaw).toHaveBeenCalledTimes(1); // DELETE only
   });
 
   it('deletes chunk when problem is not found (deleted)', async () => {
@@ -104,7 +103,16 @@ describe('EntityChunkSyncService', () => {
 
     await service.syncEntity('problem', 'prob-1');
 
-    expect(mockExecuteRaw).toHaveBeenCalledTimes(1); // only DELETE, no transaction
-    expect(mockTransaction).not.toHaveBeenCalled();
+    expect(mockEmbedText).not.toHaveBeenCalled();
+    expect(mockExecuteRaw).toHaveBeenCalledTimes(1);
+  });
+
+  it('still deletes chunk when embedding fails', async () => {
+    mockIdeaFindUnique.mockResolvedValue(publishedIdea);
+    mockEmbedText.mockRejectedValueOnce(new Error('Gemini down'));
+
+    await service.syncEntity('idea', 'idea-1');
+
+    expect(mockExecuteRaw).toHaveBeenCalledTimes(1); // DELETE runs, INSERT is skipped
   });
 });

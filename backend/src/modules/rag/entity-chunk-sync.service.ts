@@ -6,12 +6,17 @@ import {
   EMBEDDING_EVENTS,
   type EmbeddingSyncedEvent,
 } from '../embedding/embedding.events';
+import { EmbeddingService } from '../embedding/embedding.service';
+import { toPgVectorLiteral } from '../embedding/vector.util';
 
 @Injectable()
 export class EntityChunkSyncService {
   private readonly logger = new Logger(EntityChunkSyncService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly embeddingService: EmbeddingService,
+  ) {}
 
   @OnEvent(EMBEDDING_EVENTS.SYNCED)
   async handleEmbeddingSynced(event: EmbeddingSyncedEvent): Promise<void> {
@@ -41,17 +46,35 @@ export class EntityChunkSyncService {
       .$executeRaw`DELETE FROM knowledge_chunk WHERE source = ${source}`;
   }
 
-  private async upsertChunk(
+  private async insertChunk(
     source: string,
     content: string,
     metadata: string,
+    vectorLiteral: string,
   ): Promise<void> {
-    await this.prisma.$transaction([
-      this.prisma
-        .$executeRaw`DELETE FROM knowledge_chunk WHERE source = ${source}`,
-      this.prisma
-        .$executeRaw`INSERT INTO knowledge_chunk (id, source, content, embedding, metadata, file_hash, created_at) VALUES (gen_random_uuid(), ${source}, ${content}, NULL, ${metadata}::jsonb, NULL, NOW())`,
-    ]);
+    await this.prisma
+      .$executeRaw`INSERT INTO knowledge_chunk (id, source, content, embedding, metadata, file_hash, created_at) VALUES (gen_random_uuid(), ${source}, ${content}, ${vectorLiteral}::vector, ${metadata}::jsonb, NULL, NOW())`;
+  }
+
+  private async embedAndSync(
+    source: string,
+    content: string,
+    metadata: string,
+    entityLabel: string,
+  ): Promise<void> {
+    let vectorLiteral: string | null = null;
+    try {
+      const vector = await this.embeddingService.embedText(content);
+      vectorLiteral = toPgVectorLiteral(vector);
+    } catch (error) {
+      this.logger.error(
+        `Failed to embed ${entityLabel}, chunk removed`,
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+    await this.deleteChunk(source);
+    if (!vectorLiteral) return;
+    await this.insertChunk(source, content, metadata, vectorLiteral);
   }
 
   private async syncIdea(ideaId: string): Promise<void> {
@@ -76,6 +99,7 @@ export class EntityChunkSyncService {
     }
 
     if (idea.status !== 'PUBLISHED') {
+      await this.deleteChunk(source);
       return;
     }
 
@@ -102,7 +126,7 @@ export class EntityChunkSyncService {
       authorName: authorName || null,
     });
 
-    await this.upsertChunk(source, content, metadata);
+    await this.embedAndSync(source, content, metadata, `idea ${ideaId}`);
   }
 
   private async syncProblem(problemId: string): Promise<void> {
@@ -130,6 +154,7 @@ export class EntityChunkSyncService {
     }
 
     if (problem.status !== 'PUBLISHED') {
+      await this.deleteChunk(source);
       return;
     }
 
@@ -161,6 +186,6 @@ export class EntityChunkSyncService {
       authorName: authorName || null,
     });
 
-    await this.upsertChunk(source, content, metadata);
+    await this.embedAndSync(source, content, metadata, `problem ${problemId}`);
   }
 }
