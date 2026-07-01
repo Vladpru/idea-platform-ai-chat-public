@@ -51,6 +51,10 @@ export function useNotificationSocket(): void {
     const socket = socketRef.current;
 
     const handleNotification = () => {
+      queryClient.setQueryData<{ count: number }>(
+        notificationQueryKeys.unreadCount(),
+        prev => (prev ? { count: prev.count + 1 } : { count: 1 }),
+      );
       void queryClient.invalidateQueries({
         queryKey: notificationQueryKeys.all,
       });

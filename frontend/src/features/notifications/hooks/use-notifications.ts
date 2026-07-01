@@ -323,7 +323,7 @@ export function useDeleteNotificationMutation() {
     },
     onSettled: () => {
       void queryClient.invalidateQueries({
-        queryKey: notificationQueryKeys.all,
+        queryKey: notificationQueryKeys.unreadCount(),
       });
     },
   });
