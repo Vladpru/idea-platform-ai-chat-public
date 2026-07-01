@@ -1,5 +1,5 @@
-import { NotificationDropdown } from '@/features/notifications/ui/NotificationDropdown';
 import { useUnreadNotificationCount } from '@/features/notifications/hooks/use-notifications';
+import { NotificationDropdown } from '@/features/notifications/ui/NotificationDropdown';
 import { HEADER_ACTION_BUTTON_CLASS } from '@/widgets/header/lib/header-action-button-class';
 import { useLocation } from '@tanstack/react-router';
 import { Bell, X } from 'lucide-react';
@@ -102,7 +102,7 @@ export function NotificationBell() {
       <DropdownMenuTrigger asChild>{triggerButton}</DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        sideOffset={8}
+        sideOffset={14}
         className="w-auto border-0 bg-transparent p-0 shadow-none"
         onCloseAutoFocus={event => event.preventDefault()}
       >

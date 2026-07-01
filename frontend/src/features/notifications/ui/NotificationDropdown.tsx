@@ -153,7 +153,7 @@ export function NotificationDropdown({
         'bg-card text-card-foreground flex flex-col overflow-hidden',
         variant === 'sheet'
           ? 'min-h-0 w-full flex-1'
-          : 'h-[590px] w-[480px] max-w-[100vw] rounded-md border shadow-lg',
+          : 'h-[590px] w-[480px] max-w-[100vw] rounded-md shadow-lg',
       )}
     >
       <div className="border-border h-12 shrink-0 border-b px-4">
