@@ -5,6 +5,7 @@ import type { ProblemDetails } from '@/features/problem-details/model/problem-de
 import { ProblemProjectActions } from '@/features/problem-details/ui/ProblemProjectActions';
 import { useExportProblemPdfMutation } from '@/features/problems/hooks/use-export-problem-pdf';
 import { useDeleteProblemMutation } from '@/features/problems/hooks/use-problem-mutations';
+import { usePdfExportStore } from '@/features/pdf/model/pdf-export-store';
 import { useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ChevronDown, Download } from 'lucide-react';
@@ -172,6 +173,8 @@ export function ProblemHeader({
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const deleteMutation = useDeleteProblemMutation();
   const exportPdf = useExportProblemPdfMutation();
+  const exportingIds = usePdfExportStore(state => state.exportingIds);
+  const isPdfExporting = exportingIds.has(problem.id);
   const isDraft = problem.status === 'DRAFT';
   const title = problem.title || 'Untitled problem';
 
@@ -229,7 +232,7 @@ export function ProblemHeader({
             onScheduleConference={onScheduleConference}
             onDeleteClick={() => setDeleteModalOpen(true)}
             onExportPdf={() => exportPdf.mutate(problem.id)}
-            isExportPending={exportPdf.isPending}
+            isExportPending={exportPdf.isPending || isPdfExporting}
           />
         </div>
       </motion.div>
@@ -318,8 +321,8 @@ export function ProblemHeader({
                           outlineBtnClass,
                           'h-10 shrink-0 gap-1.5 rounded-sm border px-3 text-xs font-bold uppercase tracking-wide',
                         )}
-                        disabled={exportPdf.isPending}
-                        isLoading={exportPdf.isPending}
+                        disabled={exportPdf.isPending || isPdfExporting}
+                        isLoading={exportPdf.isPending || isPdfExporting}
                         onClick={() => exportPdf.mutate(problem.id)}
                       >
                         <Download className="size-4" />
@@ -342,7 +345,7 @@ export function ProblemHeader({
                       onScheduleConference={onScheduleConference}
                       onDeleteClick={() => setDeleteModalOpen(true)}
                       onExportPdf={() => exportPdf.mutate(problem.id)}
-          isExportPending={exportPdf.isPending}
+                      isExportPending={exportPdf.isPending || isPdfExporting}
                     />
                   </div>
                 </div>

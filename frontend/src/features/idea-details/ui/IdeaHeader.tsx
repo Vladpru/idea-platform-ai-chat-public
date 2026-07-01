@@ -9,6 +9,7 @@ import {
 } from '@/features/ideas/lib/modals/copy';
 import { outlineBtnClass, pageTitleClass } from '@/features/ideas/lib/styles';
 import { EntityLiveChatAction } from '@/features/live-chat/ui/EntityLiveChatAction';
+import { usePdfExportStore } from '@/features/pdf/model/pdf-export-store';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft,
@@ -60,6 +61,7 @@ function ManageDropdown({
   isEditing,
   isCompact,
   ideaId,
+  isPdfExporting,
   onStartEdit,
   onScheduleConference,
   onDeleteClick,
@@ -68,6 +70,7 @@ function ManageDropdown({
   isEditing: boolean;
   isCompact: boolean;
   ideaId: string;
+  isPdfExporting: boolean;
   onStartEdit?: () => void;
   onScheduleConference?: () => void;
   onDeleteClick: () => void;
@@ -140,7 +143,7 @@ function ManageDropdown({
 
         <DropdownMenuItem
           className="focus:bg-brand-blue-700/10 hover:bg-brand-blue-700/10 cursor-pointer px-3 py-2 text-sm font-normal"
-          disabled={exportPdf.isPending}
+          disabled={exportPdf.isPending || isPdfExporting}
           onSelect={event => {
             event.preventDefault();
             exportPdf.mutate(ideaId);
@@ -182,6 +185,8 @@ export function IdeaHeader({
 
   const { deleteIdea, isPending: isDeletePending } = useDeleteIdea();
   const exportPdf = useExportIdeaPdfMutation();
+  const exportingIds = usePdfExportStore(state => state.exportingIds);
+  const isPdfExporting = exportingIds.has(idea.id);
 
   const handleConfirmDelete = () => {
     deleteIdea(idea.id, {
@@ -242,6 +247,7 @@ export function IdeaHeader({
             isEditing={isEditing}
             isCompact={true}
             ideaId={idea.id}
+            isPdfExporting={isPdfExporting}
             onStartEdit={onStartEdit}
             onScheduleConference={onScheduleConference}
             onDeleteClick={() => setDeleteModalOpen(true)}
@@ -336,6 +342,7 @@ export function IdeaHeader({
                       isEditing={isEditing}
                       isCompact={false}
                       ideaId={idea.id}
+                      isPdfExporting={isPdfExporting}
                       onStartEdit={onStartEdit}
                       onScheduleConference={onScheduleConference}
                       onDeleteClick={() => setDeleteModalOpen(true)}
@@ -357,8 +364,8 @@ export function IdeaHeader({
                           outlineBtnClass,
                           'h-10 shrink-0 gap-1.5 rounded-sm border px-3 text-xs font-bold tracking-wide uppercase',
                         )}
-                        disabled={exportPdf.isPending}
-                        isLoading={exportPdf.isPending}
+                        disabled={exportPdf.isPending || isPdfExporting}
+                        isLoading={exportPdf.isPending || isPdfExporting}
                         onClick={() => exportPdf.mutate(idea.id)}
                       >
                         <Download className="size-4" />

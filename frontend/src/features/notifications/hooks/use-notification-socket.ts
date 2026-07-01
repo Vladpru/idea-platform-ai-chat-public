@@ -3,6 +3,7 @@ import { BadgeToast } from '@/features/achievements/ui/BadgeToast';
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import { notificationQueryKeys } from '@/features/notifications/lib/notification-query-keys';
 import { useNotificationUiStore } from '@/features/notifications/model/notification-ui-store';
+import { usePdfExportStore } from '@/features/pdf/model/pdf-export-store';
 import { useQueryClient } from '@tanstack/react-query';
 import { createElement, useEffect, useRef } from 'react';
 import { type Socket, io } from 'socket.io-client';
@@ -30,6 +31,11 @@ type PdfReadyPayload = {
   title: string;
 };
 
+type PdfFailedPayload = {
+  entity_type: string;
+  entity_id: string;
+};
+
 export function useNotificationSocket(): void {
   const queryClient = useQueryClient();
   const userId = useAuthSessionStore(state => state.user?.id ?? null);
@@ -52,6 +58,7 @@ export function useNotificationSocket(): void {
     const socket = socketRef.current;
     const setHasNewNotification =
       useNotificationUiStore.getState().setHasNewNotification;
+    const finishExport = usePdfExportStore.getState().finishExport;
 
     const handleNotification = () => {
       setHasNewNotification(true);
@@ -82,6 +89,7 @@ export function useNotificationSocket(): void {
     };
 
     const handlePdfReady = (payload: PdfReadyPayload) => {
+      finishExport(payload.entity_id);
       toast.success(`Your PDF is ready: "${payload.title}"`, {
         duration: 10000,
         action: {
@@ -93,7 +101,8 @@ export function useNotificationSocket(): void {
       });
     };
 
-    const handlePdfFailed = (payload: { entity_type: string }) => {
+    const handlePdfFailed = (payload: PdfFailedPayload) => {
+      finishExport(payload.entity_id);
       toast.error(
         `PDF generation failed for your ${payload.entity_type}. Please try again later.`,
         { duration: 8000 },
