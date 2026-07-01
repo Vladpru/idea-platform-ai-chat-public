@@ -16,7 +16,14 @@ export function AiChatMessageList({ messages }: { messages: ChatMessage[] }) {
       <div className="w-full px-4 py-6 sm:px-6">
         <div className="mx-auto flex max-w-3xl flex-col gap-5">
           {messages.map(message => (
-            <AiChatMessage key={message.id} message={message} />
+            <div className="flex w-full flex-col">
+              <AiChatMessage key={message.id} message={message} />
+              {/* {message.streaming && (
+                <span className="text-brand-gray-100 mt-0.5 inline-block animate-pulse">
+                  <AiChatThinkingAnimation />
+                </span>
+              )} */}
+            </div>
           ))}
           <div ref={bottomRef} />
         </div>
