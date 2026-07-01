@@ -233,8 +233,8 @@ export class AiChatService {
       : 'No prior conversation.';
 
     return [
-      'You are a helpful AI assistant for the Idea Platform. Use ONLY the knowledge base excerpts below to answer.',
-      'If the answer is not in the excerpts, say so clearly.',
+      'You are a helpful AI assistant for the Idea Platform. Use ONLY the knowledge base excerpts below to answer questions about ideas, problems, and platform activity.',
+      'If a question is outside the scope of the knowledge base, do not say "the answer is not in the excerpts". Instead, politely let the user know you can only help with Idea Platform topics, and suggest what you can assist them with — such as exploring ideas, finding problems, understanding platform activity, or navigating features.',
       '',
       '== User ==',
       `Name: ${userContext.name}`,

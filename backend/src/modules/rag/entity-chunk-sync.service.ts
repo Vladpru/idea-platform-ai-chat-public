@@ -77,6 +77,63 @@ export class EntityChunkSyncService {
     await this.insertChunk(source, content, metadata, vectorLiteral);
   }
 
+  async reconcileAll(): Promise<{ synced: number; removed: number }> {
+    const [ideas, problems] = await Promise.all([
+      this.prisma.idea.findMany({
+        where: { status: { in: ['PUBLISHED', 'DRAFT'] } },
+        select: { id: true },
+      }),
+      this.prisma.problem.findMany({
+        where: { status: { in: ['PUBLISHED', 'DRAFT'] } },
+        select: { id: true },
+      }),
+    ]);
+
+    const activeSourceSet = new Set<string>([
+      ...ideas.map(i => `idea:${i.id}`),
+      ...problems.map(p => `problem:${p.id}`),
+    ]);
+
+    const existingRows = await this.prisma.$queryRaw<Array<{ source: string }>>`
+      SELECT DISTINCT source FROM knowledge_chunk
+      WHERE source LIKE 'idea:%' OR source LIKE 'problem:%'
+    `;
+
+    let removed = 0;
+    for (const { source } of existingRows) {
+      if (!activeSourceSet.has(source)) {
+        await this.deleteChunk(source);
+        removed++;
+      }
+    }
+
+    let synced = 0;
+    for (const idea of ideas) {
+      try {
+        await this.syncIdea(idea.id);
+        synced++;
+      } catch (error) {
+        this.logger.error(
+          `Reconcile failed for idea ${idea.id}`,
+          error instanceof Error ? error.stack : String(error),
+        );
+      }
+    }
+    for (const problem of problems) {
+      try {
+        await this.syncProblem(problem.id);
+        synced++;
+      } catch (error) {
+        this.logger.error(
+          `Reconcile failed for problem ${problem.id}`,
+          error instanceof Error ? error.stack : String(error),
+        );
+      }
+    }
+
+    return { synced, removed };
+  }
+
   private async syncIdea(ideaId: string): Promise<void> {
     const idea = await this.prisma.idea.findUnique({
       where: { id: ideaId },
@@ -98,7 +155,7 @@ export class EntityChunkSyncService {
       return;
     }
 
-    if (idea.status !== 'PUBLISHED') {
+    if (idea.status !== 'PUBLISHED' && idea.status !== 'DRAFT') {
       await this.deleteChunk(source);
       return;
     }
@@ -124,6 +181,7 @@ export class EntityChunkSyncService {
       stage: idea.stage,
       status: idea.status,
       authorName: authorName || null,
+      access: idea.status === 'DRAFT' ? 'admin' : 'public',
     });
 
     await this.embedAndSync(source, content, metadata, `idea ${ideaId}`);
@@ -153,7 +211,7 @@ export class EntityChunkSyncService {
       return;
     }
 
-    if (problem.status !== 'PUBLISHED') {
+    if (problem.status !== 'PUBLISHED' && problem.status !== 'DRAFT') {
       await this.deleteChunk(source);
       return;
     }
@@ -184,6 +242,7 @@ export class EntityChunkSyncService {
       stage: problem.stage,
       status: problem.status,
       authorName: authorName || null,
+      access: problem.status === 'DRAFT' ? 'admin' : 'public',
     });
 
     await this.embedAndSync(source, content, metadata, `problem ${problemId}`);
