@@ -1,5 +1,4 @@
 import { Test } from '@nestjs/testing';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 
 import { EntityChunkSyncService } from './entity-chunk-sync.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
@@ -22,7 +21,7 @@ const publishedIdea = {
   description: 'Sensors for parking lots',
   stage: 'IDEATION',
   status: 'PUBLISHED',
-  author: { name: 'Alice' },
+  author: { firstName: 'Alice', lastName: 'Smith' },
   tags: [{ tag: { name: 'proptech' } }, { tag: { name: 'iot' } }],
 };
 
@@ -35,7 +34,7 @@ const publishedProblem = {
   impact: 'High',
   stage: 'IDEATION',
   status: 'PUBLISHED',
-  author: { name: 'Bob' },
+  author: { firstName: 'Bob', lastName: 'Jones' },
   tags: [{ tag: { name: 'mobility' } }],
 };
 
@@ -49,7 +48,6 @@ describe('EntityChunkSyncService', () => {
         EntityChunkSyncService,
         { provide: PrismaService, useValue: mockPrisma },
         { provide: EmbeddingService, useValue: { embedText: mockEmbedText } },
-        { provide: EventEmitter2, useValue: { on: jest.fn() } },
       ],
     }).compile();
     service = module.get(EntityChunkSyncService);
@@ -61,16 +59,16 @@ describe('EntityChunkSyncService', () => {
     await service.syncEntity('idea', 'idea-1');
 
     expect(mockEmbedText).toHaveBeenCalledTimes(1);
-    expect(mockExecuteRaw).toHaveBeenCalledTimes(2);
+    expect(mockExecuteRaw).toHaveBeenCalledTimes(2); // DELETE + INSERT
   });
 
-  it('skips a non-published idea', async () => {
+  it('deletes chunk when idea transitions to non-published', async () => {
     mockIdeaFindUnique.mockResolvedValue({ ...publishedIdea, status: 'DRAFT' });
 
     await service.syncEntity('idea', 'idea-1');
 
     expect(mockEmbedText).not.toHaveBeenCalled();
-    expect(mockExecuteRaw).toHaveBeenCalledTimes(1);
+    expect(mockExecuteRaw).toHaveBeenCalledTimes(1); // DELETE only
   });
 
   it('deletes chunk when idea is not found', async () => {
@@ -91,11 +89,17 @@ describe('EntityChunkSyncService', () => {
     expect(mockExecuteRaw).toHaveBeenCalledTimes(2);
   });
 
-  it('skips a non-published problem', async () => {
-    mockProblemFindUnique.mockResolvedValue({
-      ...publishedProblem,
-      status: 'ARCHIVED',
-    });
+  it('deletes chunk when problem transitions to non-published', async () => {
+    mockProblemFindUnique.mockResolvedValue({ ...publishedProblem, status: 'ARCHIVED' });
+
+    await service.syncEntity('problem', 'prob-1');
+
+    expect(mockEmbedText).not.toHaveBeenCalled();
+    expect(mockExecuteRaw).toHaveBeenCalledTimes(1); // DELETE only
+  });
+
+  it('deletes chunk when problem is not found (deleted)', async () => {
+    mockProblemFindUnique.mockResolvedValue(null);
 
     await service.syncEntity('problem', 'prob-1');
 
@@ -103,12 +107,12 @@ describe('EntityChunkSyncService', () => {
     expect(mockExecuteRaw).toHaveBeenCalledTimes(1);
   });
 
-  it('only deletes chunk when embedding fails', async () => {
+  it('still deletes chunk when embedding fails', async () => {
     mockIdeaFindUnique.mockResolvedValue(publishedIdea);
     mockEmbedText.mockRejectedValueOnce(new Error('Gemini down'));
 
     await service.syncEntity('idea', 'idea-1');
 
-    expect(mockExecuteRaw).toHaveBeenCalledTimes(1);
+    expect(mockExecuteRaw).toHaveBeenCalledTimes(1); // DELETE runs, INSERT is skipped
   });
 });

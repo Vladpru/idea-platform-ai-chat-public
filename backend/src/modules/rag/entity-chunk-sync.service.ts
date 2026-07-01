@@ -41,6 +41,99 @@ export class EntityChunkSyncService {
     }
   }
 
+  private async deleteChunk(source: string): Promise<void> {
+    await this.prisma
+      .$executeRaw`DELETE FROM knowledge_chunk WHERE source = ${source}`;
+  }
+
+  private async insertChunk(
+    source: string,
+    content: string,
+    metadata: string,
+    vectorLiteral: string,
+  ): Promise<void> {
+    await this.prisma
+      .$executeRaw`INSERT INTO knowledge_chunk (id, source, content, embedding, metadata, file_hash, created_at) VALUES (gen_random_uuid(), ${source}, ${content}, ${vectorLiteral}::vector, ${metadata}::jsonb, NULL, NOW())`;
+  }
+
+  private async embedAndSync(
+    source: string,
+    content: string,
+    metadata: string,
+    entityLabel: string,
+  ): Promise<void> {
+    let vectorLiteral: string | null = null;
+    try {
+      const vector = await this.embeddingService.embedText(content);
+      vectorLiteral = toPgVectorLiteral(vector);
+    } catch (error) {
+      this.logger.error(
+        `Failed to embed ${entityLabel}, chunk removed`,
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+    await this.deleteChunk(source);
+    if (!vectorLiteral) return;
+    await this.insertChunk(source, content, metadata, vectorLiteral);
+  }
+
+  async reconcileAll(): Promise<{ synced: number; removed: number }> {
+    const [ideas, problems] = await Promise.all([
+      this.prisma.idea.findMany({
+        where: { status: { in: ['PUBLISHED', 'DRAFT'] } },
+        select: { id: true },
+      }),
+      this.prisma.problem.findMany({
+        where: { status: { in: ['PUBLISHED', 'DRAFT'] } },
+        select: { id: true },
+      }),
+    ]);
+
+    const activeSourceSet = new Set<string>([
+      ...ideas.map(i => `idea:${i.id}`),
+      ...problems.map(p => `problem:${p.id}`),
+    ]);
+
+    const existingRows = await this.prisma.$queryRaw<Array<{ source: string }>>`
+      SELECT DISTINCT source FROM knowledge_chunk
+      WHERE source LIKE 'idea:%' OR source LIKE 'problem:%'
+    `;
+
+    let removed = 0;
+    for (const { source } of existingRows) {
+      if (!activeSourceSet.has(source)) {
+        await this.deleteChunk(source);
+        removed++;
+      }
+    }
+
+    let synced = 0;
+    for (const idea of ideas) {
+      try {
+        await this.syncIdea(idea.id);
+        synced++;
+      } catch (error) {
+        this.logger.error(
+          `Reconcile failed for idea ${idea.id}`,
+          error instanceof Error ? error.stack : String(error),
+        );
+      }
+    }
+    for (const problem of problems) {
+      try {
+        await this.syncProblem(problem.id);
+        synced++;
+      } catch (error) {
+        this.logger.error(
+          `Reconcile failed for problem ${problem.id}`,
+          error instanceof Error ? error.stack : String(error),
+        );
+      }
+    }
+
+    return { synced, removed };
+  }
+
   private async syncIdea(ideaId: string): Promise<void> {
     const idea = await this.prisma.idea.findUnique({
       where: { id: ideaId },
@@ -50,21 +143,27 @@ export class EntityChunkSyncService {
         description: true,
         stage: true,
         status: true,
-        author: { select: { name: true } },
-        tags: { include: { tag: true } },
+        author: { select: { firstName: true, lastName: true } },
+        tags: { select: { tag: { select: { name: true } } } },
       },
     });
 
     const source = `idea:${ideaId}`;
 
-    if (!idea || idea.status !== 'PUBLISHED') {
-      await this.prisma.$executeRaw`
-        DELETE FROM knowledge_chunk WHERE source = ${source}
-      `;
+    if (!idea) {
+      await this.deleteChunk(source);
       return;
     }
 
-    const tagNames = idea.tags.map((t) => t.tag.name);
+    if (idea.status !== 'PUBLISHED' && idea.status !== 'DRAFT') {
+      await this.deleteChunk(source);
+      return;
+    }
+
+    const tagNames = idea.tags.map(t => t.tag.name);
+    const authorName = idea.author
+      ? [idea.author.firstName, idea.author.lastName].filter(Boolean).join(' ')
+      : '';
     const content = [
       `Type: Idea`,
       `Title: ${idea.title ?? ''}`,
@@ -72,7 +171,7 @@ export class EntityChunkSyncService {
       `Tags: ${tagNames.join(', ')}`,
       `Stage: ${idea.stage ?? ''}`,
       `Status: ${idea.status}`,
-      `Author: ${idea.author?.name ?? ''}`,
+      `Author: ${authorName}`,
     ].join('\n');
 
     const metadata = JSON.stringify({
@@ -81,30 +180,11 @@ export class EntityChunkSyncService {
       tags: tagNames,
       stage: idea.stage,
       status: idea.status,
-      authorName: idea.author?.name ?? null,
+      authorName: authorName || null,
+      access: idea.status === 'DRAFT' ? 'admin' : 'public',
     });
 
-    let vectorLiteral: string | null = null;
-    try {
-      const vector = await this.embeddingService.embedText(content);
-      vectorLiteral = toPgVectorLiteral(vector);
-    } catch (error) {
-      this.logger.error(
-        `Failed to embed idea ${ideaId}, skipping insert`,
-        error instanceof Error ? error.message : String(error),
-      );
-    }
-
-    await this.prisma.$executeRaw`
-      DELETE FROM knowledge_chunk WHERE source = ${source}
-    `;
-
-    if (!vectorLiteral) return;
-
-    await this.prisma.$executeRaw`
-      INSERT INTO knowledge_chunk (id, source, content, embedding, metadata, file_hash, created_at)
-      VALUES (gen_random_uuid(), ${source}, ${content}, ${vectorLiteral}::vector, ${metadata}::jsonb, NULL, NOW())
-    `;
+    await this.embedAndSync(source, content, metadata, `idea ${ideaId}`);
   }
 
   private async syncProblem(problemId: string): Promise<void> {
@@ -119,21 +199,29 @@ export class EntityChunkSyncService {
         impact: true,
         stage: true,
         status: true,
-        author: { select: { name: true } },
-        tags: { include: { tag: true } },
+        author: { select: { firstName: true, lastName: true } },
+        tags: { select: { tag: { select: { name: true } } } },
       },
     });
 
     const source = `problem:${problemId}`;
 
-    if (!problem || problem.status !== 'PUBLISHED') {
-      await this.prisma.$executeRaw`
-        DELETE FROM knowledge_chunk WHERE source = ${source}
-      `;
+    if (!problem) {
+      await this.deleteChunk(source);
       return;
     }
 
-    const tagNames = problem.tags.map((t) => t.tag.name);
+    if (problem.status !== 'PUBLISHED' && problem.status !== 'DRAFT') {
+      await this.deleteChunk(source);
+      return;
+    }
+
+    const tagNames = problem.tags.map(t => t.tag.name);
+    const authorName = problem.author
+      ? [problem.author.firstName, problem.author.lastName]
+          .filter(Boolean)
+          .join(' ')
+      : '';
     const content = [
       `Type: Problem`,
       `Title: ${problem.title ?? ''}`,
@@ -144,7 +232,7 @@ export class EntityChunkSyncService {
       `Tags: ${tagNames.join(', ')}`,
       `Stage: ${problem.stage ?? ''}`,
       `Status: ${problem.status}`,
-      `Author: ${problem.author?.name ?? ''}`,
+      `Author: ${authorName}`,
     ].join('\n');
 
     const metadata = JSON.stringify({
@@ -153,29 +241,10 @@ export class EntityChunkSyncService {
       tags: tagNames,
       stage: problem.stage,
       status: problem.status,
-      authorName: problem.author?.name ?? null,
+      authorName: authorName || null,
+      access: problem.status === 'DRAFT' ? 'admin' : 'public',
     });
 
-    let vectorLiteral: string | null = null;
-    try {
-      const vector = await this.embeddingService.embedText(content);
-      vectorLiteral = toPgVectorLiteral(vector);
-    } catch (error) {
-      this.logger.error(
-        `Failed to embed problem ${problemId}, skipping insert`,
-        error instanceof Error ? error.message : String(error),
-      );
-    }
-
-    await this.prisma.$executeRaw`
-      DELETE FROM knowledge_chunk WHERE source = ${source}
-    `;
-
-    if (!vectorLiteral) return;
-
-    await this.prisma.$executeRaw`
-      INSERT INTO knowledge_chunk (id, source, content, embedding, metadata, file_hash, created_at)
-      VALUES (gen_random_uuid(), ${source}, ${content}, ${vectorLiteral}::vector, ${metadata}::jsonb, NULL, NOW())
-    `;
+    await this.embedAndSync(source, content, metadata, `problem ${problemId}`);
   }
 }

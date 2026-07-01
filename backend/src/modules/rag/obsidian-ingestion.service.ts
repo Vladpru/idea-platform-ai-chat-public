@@ -11,7 +11,7 @@ import { collectVaultFiles } from './lib/collect-vault-files.util';
 import { computeFileHash } from './lib/file-hash.util';
 
 const CHUNK_SIZE = 500;
-const CHUNK_OVERLAP = 50;
+const CHUNK_OVERLAP = 150;
 
 export interface IngestResult {
   filesProcessed: number;

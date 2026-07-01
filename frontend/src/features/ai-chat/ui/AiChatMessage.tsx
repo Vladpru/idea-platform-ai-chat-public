@@ -5,13 +5,10 @@ import { markdownToHtml } from '@/shared/lib/rich-text/markdown-to-html';
 
 import type { ChatMessage } from '../api/ai-chat.types';
 import { NetworkIntelligence } from '../assets/SidebarIcons';
-import { AiChatSources } from './AiChatSources';
 import { AiChatThinkingAnimation } from './AiChatThinkingAnimation';
 
 export function AiChatMessage({ message }: { message: ChatMessage }) {
   const isUser = message.role === 'user';
-  const isCannotAnswer = !isUser && /cannot answer (this|your) question/i.test(message.content ?? '');
-  const sources = !isUser && !isCannotAnswer && message.sources?.length ? message.sources : [];
   const isThinking = message.streaming && !message.content;
 
   const aiHtml = !isUser && message.content
@@ -59,7 +56,6 @@ export function AiChatMessage({ message }: { message: ChatMessage }) {
             {message.streaming && (
               <span className="text-brand-orange mt-0.5 inline-block animate-pulse">▋</span>
             )}
-            {!!sources.length && <AiChatSources sources={sources} />}
           </>
         )}
       </div>
