@@ -6,12 +6,17 @@ import {
   EMBEDDING_EVENTS,
   type EmbeddingSyncedEvent,
 } from '../embedding/embedding.events';
+import { EmbeddingService } from '../embedding/embedding.service';
+import { toPgVectorLiteral } from '../embedding/vector.util';
 
 @Injectable()
 export class EntityChunkSyncService {
   private readonly logger = new Logger(EntityChunkSyncService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly embeddingService: EmbeddingService,
+  ) {}
 
   @OnEvent(EMBEDDING_EVENTS.SYNCED)
   async handleEmbeddingSynced(event: EmbeddingSyncedEvent): Promise<void> {
@@ -79,12 +84,26 @@ export class EntityChunkSyncService {
       authorName: idea.author?.name ?? null,
     });
 
+    let vectorLiteral: string | null = null;
+    try {
+      const vector = await this.embeddingService.embedText(content);
+      vectorLiteral = toPgVectorLiteral(vector);
+    } catch (error) {
+      this.logger.error(
+        `Failed to embed idea ${ideaId}, skipping insert`,
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+
     await this.prisma.$executeRaw`
       DELETE FROM knowledge_chunk WHERE source = ${source}
     `;
+
+    if (!vectorLiteral) return;
+
     await this.prisma.$executeRaw`
       INSERT INTO knowledge_chunk (id, source, content, embedding, metadata, file_hash, created_at)
-      VALUES (gen_random_uuid(), ${source}, ${content}, NULL, ${metadata}::jsonb, NULL, NOW())
+      VALUES (gen_random_uuid(), ${source}, ${content}, ${vectorLiteral}::vector, ${metadata}::jsonb, NULL, NOW())
     `;
   }
 
@@ -137,12 +156,26 @@ export class EntityChunkSyncService {
       authorName: problem.author?.name ?? null,
     });
 
+    let vectorLiteral: string | null = null;
+    try {
+      const vector = await this.embeddingService.embedText(content);
+      vectorLiteral = toPgVectorLiteral(vector);
+    } catch (error) {
+      this.logger.error(
+        `Failed to embed problem ${problemId}, skipping insert`,
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+
     await this.prisma.$executeRaw`
       DELETE FROM knowledge_chunk WHERE source = ${source}
     `;
+
+    if (!vectorLiteral) return;
+
     await this.prisma.$executeRaw`
       INSERT INTO knowledge_chunk (id, source, content, embedding, metadata, file_hash, created_at)
-      VALUES (gen_random_uuid(), ${source}, ${content}, NULL, ${metadata}::jsonb, NULL, NOW())
+      VALUES (gen_random_uuid(), ${source}, ${content}, ${vectorLiteral}::vector, ${metadata}::jsonb, NULL, NOW())
     `;
   }
 }

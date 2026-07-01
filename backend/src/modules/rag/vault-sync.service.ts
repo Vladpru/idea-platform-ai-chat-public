@@ -30,7 +30,9 @@ export class VaultSyncService {
 
   async syncVault(): Promise<VaultSyncResult> {
     const files = collectVaultFiles(this.vaultPath);
-    const fileRelPaths = new Set(files.map(f => path.relative(this.vaultPath, f)));
+    const fileRelPaths = new Set(
+      files.map(f => path.relative(this.vaultPath, f)),
+    );
 
     const existingSources = await this.getExistingSources();
     const existingSourceSet = new Set(existingSources);
@@ -38,13 +40,16 @@ export class VaultSyncService {
     let removed = 0;
     for (const source of existingSources) {
       if (!fileRelPaths.has(source)) {
-        await this.prisma.$executeRaw`DELETE FROM knowledge_chunk WHERE source = ${source}`;
+        await this.prisma
+          .$executeRaw`DELETE FROM knowledge_chunk WHERE source = ${source}`;
         this.logger.log(`Removed chunks for deleted file: ${source}`);
         removed++;
       }
     }
 
-    let added = 0, updated = 0, skipped = 0;
+    let added = 0,
+      updated = 0,
+      skipped = 0;
 
     for (const filePath of files) {
       const raw = fs.readFileSync(filePath, 'utf-8');
@@ -61,7 +66,8 @@ export class VaultSyncService {
         continue;
       }
 
-      await this.prisma.$executeRaw`DELETE FROM knowledge_chunk WHERE source = ${relSource}`;
+      await this.prisma
+        .$executeRaw`DELETE FROM knowledge_chunk WHERE source = ${relSource}`;
       await this.ingestionService.ingestFile(filePath, fileHash);
 
       if (existingSourceSet.has(relSource)) {

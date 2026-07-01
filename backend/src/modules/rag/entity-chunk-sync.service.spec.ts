@@ -3,10 +3,12 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 
 import { EntityChunkSyncService } from './entity-chunk-sync.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { EmbeddingService } from '../embedding/embedding.service';
 
 const mockExecuteRaw = jest.fn().mockResolvedValue(undefined);
 const mockIdeaFindUnique = jest.fn();
 const mockProblemFindUnique = jest.fn();
+const mockEmbedText = jest.fn().mockResolvedValue([0.1, 0.2, 0.3]);
 
 const mockPrisma = {
   $executeRaw: mockExecuteRaw,
@@ -46,17 +48,19 @@ describe('EntityChunkSyncService', () => {
       providers: [
         EntityChunkSyncService,
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: EmbeddingService, useValue: { embedText: mockEmbedText } },
         { provide: EventEmitter2, useValue: { on: jest.fn() } },
       ],
     }).compile();
     service = module.get(EntityChunkSyncService);
   });
 
-  it('upserts a knowledge_chunk for a published idea', async () => {
+  it('upserts a knowledge_chunk with embedding for a published idea', async () => {
     mockIdeaFindUnique.mockResolvedValue(publishedIdea);
 
     await service.syncEntity('idea', 'idea-1');
 
+    expect(mockEmbedText).toHaveBeenCalledTimes(1);
     expect(mockExecuteRaw).toHaveBeenCalledTimes(2);
   });
 
@@ -65,22 +69,25 @@ describe('EntityChunkSyncService', () => {
 
     await service.syncEntity('idea', 'idea-1');
 
-    expect(mockExecuteRaw).not.toHaveBeenCalled();
+    expect(mockEmbedText).not.toHaveBeenCalled();
+    expect(mockExecuteRaw).toHaveBeenCalledTimes(1);
   });
 
-  it('deletes chunk when idea is not found (deleted)', async () => {
+  it('deletes chunk when idea is not found', async () => {
     mockIdeaFindUnique.mockResolvedValue(null);
 
     await service.syncEntity('idea', 'idea-1');
 
+    expect(mockEmbedText).not.toHaveBeenCalled();
     expect(mockExecuteRaw).toHaveBeenCalledTimes(1);
   });
 
-  it('upserts a knowledge_chunk for a published problem', async () => {
+  it('upserts a knowledge_chunk with embedding for a published problem', async () => {
     mockProblemFindUnique.mockResolvedValue(publishedProblem);
 
     await service.syncEntity('problem', 'prob-1');
 
+    expect(mockEmbedText).toHaveBeenCalledTimes(1);
     expect(mockExecuteRaw).toHaveBeenCalledTimes(2);
   });
 
@@ -92,6 +99,16 @@ describe('EntityChunkSyncService', () => {
 
     await service.syncEntity('problem', 'prob-1');
 
-    expect(mockExecuteRaw).not.toHaveBeenCalled();
+    expect(mockEmbedText).not.toHaveBeenCalled();
+    expect(mockExecuteRaw).toHaveBeenCalledTimes(1);
+  });
+
+  it('only deletes chunk when embedding fails', async () => {
+    mockIdeaFindUnique.mockResolvedValue(publishedIdea);
+    mockEmbedText.mockRejectedValueOnce(new Error('Gemini down'));
+
+    await service.syncEntity('idea', 'idea-1');
+
+    expect(mockExecuteRaw).toHaveBeenCalledTimes(1);
   });
 });
