@@ -7,6 +7,7 @@ import { ConfirmDeleteModal } from '@/shared/ui/confirm-delete-modal';
 
 import type { ChatSession } from '../api/ai-chat.types';
 import { useDeleteSessionMutation } from '../hooks/mutations/use-delete-session-mutation';
+import { useChatStreamStore } from '../model/chat-stream-store';
 
 type Props = {
   session: ChatSession;
@@ -18,6 +19,7 @@ export function AiChatSessionItem({ session, isActive, onDeleted }: Props) {
   const [hovered, setHovered] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const { mutate: deleteSession, isPending } = useDeleteSessionMutation();
+  const isStreaming = useChatStreamStore(state => state.sessions[session.id]?.isStreaming ?? false);
 
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -51,7 +53,18 @@ export function AiChatSessionItem({ session, isActive, onDeleted }: Props) {
         <span className="min-w-0 flex-1 truncate">
           {session.title ?? 'New conversation'}
         </span>
-        {(hovered || isPending) && (
+        {isStreaming && !isActive && (
+          <span className="flex shrink-0 items-center gap-0.5" aria-label="AI is responding">
+            {[0, 1, 2].map(i => (
+              <span
+                key={i}
+                className="bg-brand-dark-blue/60 size-1 rounded-full animate-bounce"
+                style={{ animationDelay: `${i * 150}ms` }}
+              />
+            ))}
+          </span>
+        )}
+        {(hovered || isPending) && !isStreaming && (
           <button
             type="button"
             onClick={handleDeleteClick}
