@@ -1,4 +1,5 @@
 import { useUnreadNotificationCount } from '@/features/notifications/hooks/use-notifications';
+import { useNotificationUiStore } from '@/features/notifications/model/notification-ui-store';
 import { NotificationDropdown } from '@/features/notifications/ui/NotificationDropdown';
 import { HEADER_ACTION_BUTTON_CLASS } from '@/widgets/header/lib/header-action-button-class';
 import { useLocation } from '@tanstack/react-router';
@@ -19,6 +20,12 @@ export function NotificationBell() {
   const isMobile = useMediaQuery('(max-width: 639px)');
   const { data } = useUnreadNotificationCount();
   const unreadCount = data?.count ?? 0;
+  const hasNewNotification = useNotificationUiStore(
+    state => state.hasNewNotification,
+  );
+  const setHasNewNotification = useNotificationUiStore(
+    state => state.setHasNewNotification,
+  );
 
   useEffect(() => {
     setOpen(false);
@@ -37,6 +44,12 @@ export function NotificationBell() {
     };
   }, [open, isMobile]);
 
+  useEffect(() => {
+    if (open) {
+      setHasNewNotification(false);
+    }
+  }, [open, setHasNewNotification]);
+
   const triggerButton = (
     <button
       type="button"
@@ -53,6 +66,9 @@ export function NotificationBell() {
       {unreadCount > 0 ? (
         <span className="bg-brand-orange absolute top-1.5 right-1.5 flex min-h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white">
           {unreadCount > 99 ? '99+' : unreadCount}
+          {hasNewNotification ? (
+            <span className="bg-brand-orange absolute inset-0 animate-ping rounded-full opacity-75" />
+          ) : null}
         </span>
       ) : null}
     </button>

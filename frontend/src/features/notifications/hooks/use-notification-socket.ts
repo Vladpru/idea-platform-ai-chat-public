@@ -2,6 +2,7 @@ import { BADGE_EARNED_MESSAGES } from '@/features/achievements/lib/badge-icons';
 import { BadgeToast } from '@/features/achievements/ui/BadgeToast';
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import { notificationQueryKeys } from '@/features/notifications/lib/notification-query-keys';
+import { useNotificationUiStore } from '@/features/notifications/model/notification-ui-store';
 import { useQueryClient } from '@tanstack/react-query';
 import { createElement, useEffect, useRef } from 'react';
 import { type Socket, io } from 'socket.io-client';
@@ -49,8 +50,11 @@ export function useNotificationSocket(): void {
     }
 
     const socket = socketRef.current;
+    const setHasNewNotification =
+      useNotificationUiStore.getState().setHasNewNotification;
 
     const handleNotification = () => {
+      setHasNewNotification(true);
       queryClient.setQueryData<{ count: number }>(
         notificationQueryKeys.unreadCount(),
         prev => (prev ? { count: prev.count + 1 } : { count: 1 }),
