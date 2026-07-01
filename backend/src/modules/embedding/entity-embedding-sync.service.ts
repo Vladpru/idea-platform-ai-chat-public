@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
-import { GeminiService } from '../ai/gemini.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { GeminiService } from '../ai/gemini.service';
 import {
   buildIdeaEmbeddingContent,
   buildProblemEmbeddingContent,
