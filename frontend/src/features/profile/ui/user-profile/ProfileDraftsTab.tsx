@@ -41,7 +41,7 @@ export function ProfileDraftsTab() {
             type="button"
             onClick={() => setDraftType('ideas')}
             className={cn(
-              'px-5 py-2 text-sm font-semibold transition-colors',
+              'w-24 py-2 text-sm font-semibold transition-colors',
               draftType === 'ideas'
                 ? 'bg-brand-dark-blue text-white'
                 : 'text-brand-gray-700 hover:bg-brand-gray-50',
@@ -53,7 +53,7 @@ export function ProfileDraftsTab() {
             type="button"
             onClick={() => setDraftType('problems')}
             className={cn(
-              'border-brand-gray-200 border-l px-5 py-2 text-sm font-semibold transition-colors',
+              'border-brand-gray-200 w-24 border-l py-2 text-sm font-semibold transition-colors',
               draftType === 'problems'
                 ? 'bg-brand-dark-blue text-white'
                 : 'text-brand-gray-700 hover:bg-brand-gray-50',
