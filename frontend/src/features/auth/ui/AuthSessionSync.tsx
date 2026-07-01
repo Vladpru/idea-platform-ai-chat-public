@@ -30,7 +30,8 @@ export function AuthSessionSync() {
       localUser.firstName === (remoteUser.firstName ?? '') &&
       localUser.lastName === (remoteUser.lastName ?? '') &&
       localUser.picture === (remoteUser.avatarUrl ?? null) &&
-      localUser.themePreference === remoteUser.themePreference;
+      localUser.themePreference === remoteUser.themePreference &&
+      localUser.role === remoteUser.role;
 
     if (unchanged) return;
 

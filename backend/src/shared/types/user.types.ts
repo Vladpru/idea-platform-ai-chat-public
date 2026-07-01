@@ -25,6 +25,7 @@ export interface UserPublic {
 
 export interface CurrentUserPublic extends UserPublic {
   hasPassword: boolean;
+  role: 'ADMIN' | 'MEMBER';
 }
 
 export interface UserPublicProfile extends UserPublic {

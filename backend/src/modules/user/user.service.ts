@@ -215,14 +215,16 @@ export class UserService {
       select: {
         ...USER_PUBLIC_SELECT,
         password: true,
+        role: true,
       },
     });
     if (!user) throw new NotFoundException(`User not found`);
 
-    const { password, ...publicFields } = user;
+    const { password, role, ...publicFields } = user;
     return {
       ...toUserPublic(publicFields),
       hasPassword: Boolean(password),
+      role: role as 'ADMIN' | 'MEMBER',
     };
   }
 

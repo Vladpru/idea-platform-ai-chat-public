@@ -19,6 +19,7 @@ export type SessionUser = {
   name: string;
   picture: string | null;
   themePreference: ThemePreference;
+  role: 'ADMIN' | 'MEMBER';
 };
 
 type AuthSessionState = {
@@ -45,6 +46,10 @@ function parseSessionUser(raw: unknown): SessionUser | null {
 
   const name = formatUserDisplayName({ firstName, lastName, email });
   const themePreference = extractThemePreference(raw) ?? 'SYSTEM';
+  const role =
+    u.role === 'ADMIN' || u.role === 'MEMBER'
+      ? (u.role as 'ADMIN' | 'MEMBER')
+      : 'MEMBER';
 
   return {
     id: u.id,
@@ -54,6 +59,7 @@ function parseSessionUser(raw: unknown): SessionUser | null {
     name,
     picture: avatarUrl,
     themePreference,
+    role,
   };
 }
 

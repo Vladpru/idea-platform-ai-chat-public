@@ -45,6 +45,7 @@ export type UserPublic = {
 /** Matches backend `CurrentUserPublic` from `GET /users/me`. */
 export type CurrentUser = UserPublic & {
   hasPassword: boolean;
+  role: 'ADMIN' | 'MEMBER';
 };
 export type UserPublicProfile = UserPublic & {
   subscriberCount: number;
@@ -93,6 +94,7 @@ export function mergeCurrentUser(
     ...previous,
     ...next,
     hasPassword: previous?.hasPassword ?? false,
+    role: previous?.role ?? 'MEMBER',
   };
 }
 
