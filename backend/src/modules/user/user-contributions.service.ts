@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { Prisma } from '../../../generated/prisma/client';
-import { IDEA_FORM_AUTHOR_SELECT } from '../idea/idea.constants';
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { IDEA_FORM_AUTHOR_SELECT } from '../idea/idea.constants';
 import type { GetContributionsQueryDto } from './dto/get-contributions-query.dto';
 import type {
   UserContributionIdeaItem,
@@ -228,6 +228,14 @@ export class UserContributionsService {
   }
 
   async getUserStatistics(userId: string): Promise<UserStatistics> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
     const [ideaStats, problemStats] = await Promise.all([
       this.prisma.idea.aggregate({
         where: { authorId: userId, status: 'PUBLISHED' },
