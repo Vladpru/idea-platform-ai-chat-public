@@ -28,11 +28,11 @@ import {
 import type { Request } from 'express';
 import { memoryStorage } from 'multer';
 
+import { JwtAuth } from '../../shared/decorators/jwt-auth.decorator';
 import {
   ENTITY_LINK_TARGETS,
   type EntityLinkTarget,
 } from '../entity-visibility/entity-target.enum';
-import { JwtAuth } from '../../shared/decorators/jwt-auth.decorator';
 import {
   CreateLiveChatRoomDto,
   CreateVideoCallDto,
@@ -234,6 +234,7 @@ export class LiveChatController {
   @ApiOkResponse({ description: 'LiveKit join credentials' })
   @ApiNotFoundResponse({ description: 'Room or call not found' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiUnprocessableEntityResponse({ description: 'Call is not live' })
   joinVideoCall(
     @Param('roomId', ParseUUIDPipe) roomId: string,
     @Param('callId', ParseUUIDPipe) callId: string,

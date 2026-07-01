@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { Prisma } from '../../../generated/prisma/client';
-import { IDEA_FORM_AUTHOR_SELECT } from '../idea/idea.constants';
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { IDEA_FORM_AUTHOR_SELECT } from '../idea/idea.constants';
 import type { GetContributionsQueryDto } from './dto/get-contributions-query.dto';
 import type {
   UserContributionIdeaItem,

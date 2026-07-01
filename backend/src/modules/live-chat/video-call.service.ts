@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 
 import { VideoCallStatus } from '../../../generated/prisma/client';
@@ -142,11 +143,11 @@ export class VideoCallService {
     }
 
     if (call.status !== VideoCallStatus.ACTIVE) {
-      throw new BadRequestException(VIDEO_CALL_NOT_ACTIVE);
+      throw new UnprocessableEntityException(VIDEO_CALL_NOT_ACTIVE);
     }
 
     if (!call.providerRoomName) {
-      throw new BadRequestException(VIDEO_CALL_NOT_ACTIVE);
+      throw new UnprocessableEntityException(VIDEO_CALL_NOT_ACTIVE);
     }
 
     const participant = await this.videoCallRepository.findUserAuthor(userId);

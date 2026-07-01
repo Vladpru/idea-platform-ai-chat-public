@@ -38,6 +38,7 @@ export class TokenController {
     const { accessToken, refreshToken: newRefresh } =
       await this.tokenService.refreshWithRefreshToken(refreshToken);
     this.tokenService.addRefreshTokenToCookie(res, newRefresh);
+    this.tokenService.addAccessTokenToCookie(res, accessToken);
     return { accessToken };
   }
 }
