@@ -1,12 +1,13 @@
 import { create } from 'zustand';
 
-import type { ChatIntent, ChatMessage } from '../api/ai-chat.types';
+import type { ChatActionPayload, ChatIntent, ChatMessage } from '../api/ai-chat.types';
 
 export type SessionStreamState = {
   optimisticMessages: ChatMessage[];
   isStreaming: boolean;
   suggestions: string[];
   intent: ChatIntent | null;
+  pendingAction: ChatActionPayload | null;
 };
 
 type ChatStreamStore = {
@@ -21,6 +22,7 @@ type ChatStreamStore = {
   ) => void;
   setSuggestions: (sessionId: string, suggestions: string[]) => void;
   setIntent: (sessionId: string, intent: ChatIntent) => void;
+  setPendingAction: (sessionId: string, action: ChatActionPayload | null) => void;
   clearSession: (sessionId: string) => void;
 };
 
@@ -29,6 +31,7 @@ export const EMPTY_SESSION: SessionStreamState = {
   isStreaming: false,
   suggestions: [],
   intent: null,
+  pendingAction: null,
 };
 
 export const useChatStreamStore = create<ChatStreamStore>(set => ({
@@ -87,6 +90,14 @@ export const useChatStreamStore = create<ChatStreamStore>(set => ({
       sessions: {
         ...state.sessions,
         [sessionId]: { ...(state.sessions[sessionId] ?? EMPTY_SESSION), intent },
+      },
+    })),
+
+  setPendingAction: (sessionId, pendingAction) =>
+    set(state => ({
+      sessions: {
+        ...state.sessions,
+        [sessionId]: { ...(state.sessions[sessionId] ?? EMPTY_SESSION), pendingAction },
       },
     })),
 
