@@ -1,6 +1,6 @@
+import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import DOMPurify from 'dompurify';
 
-import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import { markdownToHtml } from '@/shared/lib/rich-text/markdown-to-html';
 import { cn } from '@/shared/lib/utils';
 
@@ -9,11 +9,18 @@ import { NetworkIntelligence } from '../assets/SidebarIcons';
 import { AiChatSources } from './AiChatSources';
 import { AiChatThinkingAnimation } from './AiChatThinkingAnimation';
 
-export function AiChatMessage({ message }: { message: ChatMessage }) {
+export function AiChatMessage({
+  message,
+  isWidget,
+}: {
+  message: ChatMessage;
+  isWidget?: boolean;
+}) {
   const isAdmin = useAuthSessionStore(s => s.user?.role === 'ADMIN');
   const isUser = message.role === 'user';
   const isThinking = message.streaming && !message.content;
-  const sources = !isUser && isAdmin && message.sources?.length ? message.sources : [];
+  const sources =
+    !isUser && isAdmin && message.sources?.length ? message.sources : [];
 
   const aiHtml =
     !isUser && message.content
@@ -27,14 +34,15 @@ export function AiChatMessage({ message }: { message: ChatMessage }) {
         isUser ? 'justify-end' : 'items-start justify-start',
       )}
     >
-      {!isUser && (
+      {!isUser && !isWidget && (
         <div className="bg-brand-dark-blue mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full shadow-md">
           <NetworkIntelligence className="size-6 text-white" />
         </div>
       )}
       <div
         className={cn(
-          'max-w-[72%] text-sm leading-relaxed',
+          'max-w-[72%] leading-relaxed',
+          isWidget ? 'text-xs' : 'text-sm',
           isUser
             ? 'bg-brand-dark-blue rounded-3xl rounded-br-lg px-4 py-3 text-white shadow-md'
             : 'bg-card text-foreground border-border rounded-3xl rounded-bl-lg border px-4 py-3',

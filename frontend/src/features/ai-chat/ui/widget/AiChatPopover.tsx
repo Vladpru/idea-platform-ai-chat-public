@@ -2,14 +2,13 @@ import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 
 import { cn } from '@/shared/lib/utils';
-import { NetworkIntelligence } from '../../assets/SidebarIcons';
-import { AiChatInput } from '../AiChatInput';
 
-const suggestions = [
-  'What is the difference between a problem and an idea?',
-  'What AI tools are available when creating an idea?',
-  'Can two people collaborate on an idea?',
-];
+import type { ChatMessage } from '../../api/ai-chat.types';
+import { NetworkIntelligence } from '../../assets/SidebarIcons';
+import { AiChatEmptyState } from '../AiChatEmptyState';
+import { AiChatInput } from '../AiChatInput';
+import { AiChatMessageList } from '../AiChatMessageList';
+import { AiChatSuggestions } from '../AiChatSuggestions';
 
 const genieVariants = {
   hidden: {
@@ -44,9 +43,21 @@ const genieVariants = {
 
 type Props = {
   onClose: () => void;
+  send: (message: string) => void;
+  isStreaming: boolean;
+  messages: ChatMessage[];
+  suggestions: string[];
 };
 
-export function AiChatPopover({ onClose }: Props) {
+export function AiChatPopover({
+  onClose,
+  send,
+  isStreaming,
+  messages,
+  suggestions,
+}: Props) {
+  const hasMessages = messages.length > 0 || isStreaming;
+
   return (
     <motion.div
       variants={genieVariants}
@@ -55,7 +66,7 @@ export function AiChatPopover({ onClose }: Props) {
       exit="exit"
       style={{ transformOrigin: 'bottom right' }}
       className={cn(
-        'fixed bottom-24 right-6 z-50',
+        'fixed right-6 bottom-24 z-50',
         'flex h-[480px] w-[360px] flex-col',
         'bg-card border-border rounded-2xl border shadow-2xl',
         'overflow-hidden',
@@ -65,7 +76,9 @@ export function AiChatPopover({ onClose }: Props) {
         <div className="bg-brand-dark-blue flex h-7 w-7 items-center justify-center rounded-lg">
           <NetworkIntelligence className="size-4 text-white" />
         </div>
-        <span className="text-foreground flex-1 text-sm font-semibold">AI Assistant</span>
+        <span className="text-foreground flex-1 text-sm font-semibold">
+          AI Assistant
+        </span>
         <button
           type="button"
           onClick={onClose}
@@ -76,32 +89,26 @@ export function AiChatPopover({ onClose }: Props) {
         </button>
       </div>
 
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 overflow-y-auto px-4 py-4">
-        <div className="flex flex-col items-center gap-3 text-center">
-          <div className="bg-brand-dark-blue flex h-10 w-10 items-center justify-center rounded-xl shadow-md">
-            <NetworkIntelligence className="size-6 text-white" />
-          </div>
-          <p className="text-foreground text-sm font-medium">Ask about your ideas &amp; problems</p>
+      {hasMessages ? (
+        <AiChatMessageList messages={messages} isWidget />
+      ) : (
+        <div className="flex flex-1 flex-col overflow-y-auto">
+          <AiChatEmptyState onSuggestion={send} isLoading={isStreaming} />
         </div>
-        <div className="flex w-full flex-col gap-2">
-          {suggestions.map(s => (
-            <button
-              key={s}
-              type="button"
-              className={cn(
-                'border-border bg-card hover:border-brand-dark-blue/30 hover:bg-brand-dark-blue/4',
-                'rounded-xl border px-3 py-2 text-left text-xs text-muted-foreground',
-                'transition-colors duration-150',
-              )}
-            >
-              {s}
-            </button>
-          ))}
+      )}
+
+      {!isStreaming && suggestions.length > 0 && (
+        <div className="shrink-0 px-3 pb-2">
+          <AiChatSuggestions
+            suggestions={suggestions}
+            onSelect={send}
+            isWidget
+          />
         </div>
-      </div>
+      )}
 
       <div className="shrink-0">
-        <AiChatInput onSend={() => {}} isStreaming={false} />
+        <AiChatInput onSend={send} isStreaming={isStreaming} isWidget />
       </div>
     </motion.div>
   );
