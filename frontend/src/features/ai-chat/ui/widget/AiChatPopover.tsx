@@ -3,8 +3,9 @@ import { X } from 'lucide-react';
 
 import { cn } from '@/shared/lib/utils';
 
-import type { ChatMessage } from '../../api/ai-chat.types';
+import type { ChatActionPayload, ChatMessage } from '../../api/ai-chat.types';
 import { NetworkIntelligence } from '../../assets/SidebarIcons';
+import { AiChatCreateCard } from '../AiChatCreateCard';
 import { AiChatEmptyState } from '../AiChatEmptyState';
 import { AiChatInput } from '../AiChatInput';
 import { AiChatMessageList } from '../AiChatMessageList';
@@ -47,6 +48,8 @@ type Props = {
   isStreaming: boolean;
   messages: ChatMessage[];
   suggestions: string[];
+  pendingAction: ChatActionPayload | null;
+  clearPendingAction: () => void;
 };
 
 export function AiChatPopover({
@@ -55,6 +58,8 @@ export function AiChatPopover({
   isStreaming,
   messages,
   suggestions,
+  pendingAction,
+  clearPendingAction,
 }: Props) {
   const hasMessages = messages.length > 0 || isStreaming;
 
@@ -94,6 +99,16 @@ export function AiChatPopover({
       ) : (
         <div className="flex flex-1 flex-col overflow-y-auto">
           <AiChatEmptyState onSuggestion={send} isLoading={isStreaming} />
+        </div>
+      )}
+
+      {!isStreaming && pendingAction && (
+        <div className="shrink-0">
+          <AiChatCreateCard
+            action={pendingAction}
+            onDismiss={clearPendingAction}
+            isWidget
+          />
         </div>
       )}
 

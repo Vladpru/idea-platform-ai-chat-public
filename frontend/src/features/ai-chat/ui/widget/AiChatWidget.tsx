@@ -9,7 +9,7 @@ import { AiChatPopover } from './AiChatPopover';
 export function AiChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = useRouterState({ select: s => s.location.pathname });
-  const { send, isStreaming, messages, suggestions } = useWidgetChat();
+  const { send, isStreaming, messages, suggestions, pendingAction, clearPendingAction } = useWidgetChat();
 
   if (pathname.startsWith('/ai-chat')) return null;
 
@@ -23,6 +23,8 @@ export function AiChatWidget() {
             isStreaming={isStreaming}
             messages={messages}
             suggestions={suggestions}
+            pendingAction={pendingAction}
+            clearPendingAction={clearPendingAction}
           />
         )}
       </AnimatePresence>
