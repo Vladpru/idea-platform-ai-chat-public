@@ -117,8 +117,8 @@ export class TokenService {
       res.cookie(this.refreshCookieName(), refreshToken, {
         httpOnly: true,
         domain,
-        secure: !this.isDevMode(),
-        sameSite: 'lax',
+        secure: true,
+        sameSite: 'none',
         path: '/',
         maxAge,
       });
@@ -143,8 +143,8 @@ export class TokenService {
       res.cookie('accessToken', accessToken, {
         httpOnly: true,
         domain,
-        secure: !this.isDevMode(),
-        sameSite: 'lax',
+        secure: true,
+        sameSite: 'none',
         path: '/',
         maxAge,
       });
@@ -168,8 +168,8 @@ export class TokenService {
         httpOnly: true,
         path: '/',
         domain,
-        secure: !this.isDevMode(),
-        sameSite: 'lax',
+        secure: true,
+        sameSite: 'none',
       });
     } catch {
       throw new BadRequestException('Error logging out');

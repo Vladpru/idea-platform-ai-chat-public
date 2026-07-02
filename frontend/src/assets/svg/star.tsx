@@ -1,4 +1,5 @@
 import type { ComponentPropsWithoutRef } from 'react';
+
 import { cn } from '@/shared/lib/utils';
 
 export type StarIconProps = ComponentPropsWithoutRef<'svg'>;
@@ -7,12 +8,9 @@ export function StarIcon({ className, ...props }: StarIconProps) {
   return (
     <svg
       viewBox="0 0 24 24"
-      fill="none"
+      fill="currentColor"
       xmlns="http://www.w3.org/2000/svg"
-      className={cn(
-        'text-brand-gray-900 dark:text-primary size-5 shrink-0 transition-colors',
-        className,
-      )}
+      className={cn('size-5 shrink-0 transition-colors', className)}
       aria-hidden
       {...props}
     >

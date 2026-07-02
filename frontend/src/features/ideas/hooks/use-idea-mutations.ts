@@ -35,7 +35,7 @@ import {
   publishIdea as publishLocalIdea,
   updateIdea as updateLocalIdea,
 } from '@/shared/offline/repositories';
-import { drain } from '@/shared/offline/sync-engine';
+import { drain, drainBlocking } from '@/shared/offline/sync-engine';
 
 type IdeaEditInput = {
   values: IdeaCreateFormValues;
@@ -275,7 +275,8 @@ export function usePublishIdeaMutation() {
       void drain();
       return { idea: localIdeaToIdeaApi(local), action: 'publish' as const };
     },
-    onSuccess: ({ idea, action }) => {
+    onSuccess: async ({ idea, action }) => {
+      await drainBlocking();
       invalidateIdeaQueries(queryClient, idea.id, {
         invalidateDashboard: true,
       });

@@ -3,16 +3,11 @@ import { useUnlinkIdeaFromProblemMutation } from '@/features/problem-details/lib
 import { LinkExistingIdeaModal } from '@/features/problem-details/modals/LinkExistingIdeaModal';
 import type { ProblemDetails } from '@/features/problem-details/model/problem-details.types';
 import { Link } from '@tanstack/react-router';
-import {
-  Eye,
-  Heart,
-  MessageCircle,
-  MoreVertical,
-  Sparkles,
-} from 'lucide-react';
+import { MoreVertical, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 
 import { ROUTES } from '@/shared/config/paths';
+import { DashboardCardStats } from '@/shared/dashboard';
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
 import {
@@ -60,28 +55,6 @@ function LinkedIdeasHeader({ onLinkExisting }: LinkedIdeasHeaderProps) {
   );
 }
 
-function LinkedIdeaMicroStats({
-  stats,
-}: {
-  stats: ProblemDetails['linkedIdeas'][number]['stats'];
-}) {
-  return (
-    <div className="text-brand-gray-500 flex flex-wrap items-center gap-4 text-xs">
-      <span className="inline-flex items-center gap-1.5">
-        <Eye className="size-3.5" aria-hidden />
-        <span className="font-medium tabular-nums">{stats.views}</span>
-      </span>
-      <span className="inline-flex items-center gap-1.5">
-        <MessageCircle className="size-3.5" aria-hidden />
-        <span className="font-medium tabular-nums">{stats.comments}</span>
-      </span>
-      <span className="inline-flex items-center gap-1.5">
-        <Heart className="size-3.5" aria-hidden />
-        <span className="font-medium tabular-nums">{stats.likes}</span>
-      </span>
-    </div>
-  );
-}
 
 type LinkedIdeaCardProps = {
   idea: ProblemDetails['linkedIdeas'][number];
@@ -157,7 +130,13 @@ function LinkedIdeaCard({
         </div>
 
         <div className="mt-4 flex justify-end">
-          <LinkedIdeaMicroStats stats={idea.stats} />
+          <DashboardCardStats
+            stats={idea.stats}
+            entityId={idea.id}
+            entityType="IDEA"
+            iconClassName="size-3.5"
+            className="text-brand-gray-500 gap-4"
+          />
         </div>
       </div>
     </article>

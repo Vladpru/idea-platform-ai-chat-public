@@ -1,5 +1,3 @@
-import './instrument';
-
 import { UnprocessableEntityException, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { ValidationError } from 'class-validator';
@@ -9,8 +7,9 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 
-import { RedisIoAdapter } from './core/adapters/redis-io.adapter';
 import { AppModule } from './app.module';
+import { RedisIoAdapter } from './core/adapters/redis-io.adapter';
+import './instrument';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {

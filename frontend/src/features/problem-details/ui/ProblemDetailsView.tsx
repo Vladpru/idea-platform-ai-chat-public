@@ -194,9 +194,10 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
     <main ref={mainRef} className="bg-brand-neutral min-h-[calc(100vh-56px)] px-4 md:px-8 lg:px-12">
       <div className="bg-card mx-auto max-w-5xl space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-8">
         <SyncWarningBanner entity="problem" localId={problemId} />
-        <AnimatePresence>
+        <AnimatePresence initial={false}>
           {!isScrolled ? (
             <motion.div
+              key="expanded-header"
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
@@ -212,15 +213,31 @@ export function ProblemDetailsView({ problemId }: ProblemDetailsViewProps) {
                   Back
                 </button>
               </div>
+              <ProblemHeader
+                problem={problem}
+                isAuthor={isAuthor}
+                isCompact={false}
+                variant="full"
+                onScheduleConference={() => setIsScheduleConferenceOpen(true)}
+                onDeleteSuccess={() => {
+                  void navigate({
+                    to: ROUTES.problems,
+                    search: DEFAULT_PROBLEMS_DASHBOARD_SEARCH,
+                  });
+                }}
+                onBackClick={handleBackClick}
+                onTeamClick={() => setIsTeamModalOpen(true)}
+              />
             </motion.div>
           ) : null}
         </AnimatePresence>
 
-        <div className="bg-card sticky top-0 z-30 -mx-4 px-4 py-3 shadow-none transition-all duration-300 sm:-mx-6 sm:px-6">
+        <div className="bg-card sticky top-0 z-30 -mx-4 px-4 py-3 shadow-none sm:-mx-6 sm:px-6" style={{ marginTop: 0 }}>
           <ProblemHeader
             problem={problem}
             isAuthor={isAuthor}
             isCompact={isScrolled}
+            variant="compact-only"
             onScheduleConference={() => setIsScheduleConferenceOpen(true)}
             onDeleteSuccess={() => {
               void navigate({

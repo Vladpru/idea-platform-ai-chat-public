@@ -6,15 +6,11 @@ import type { IdeaCreateFormValues } from './schema';
 import { parseTags } from './tags';
 
 export function hasCreateIdeaUnsavedProgress(
-  formIsDirty: boolean,
+  _formIsDirty: boolean,
   values: IdeaCreateFormValues,
   remoteMedia: IdeaMediaItem[],
   isEditing = false,
 ): boolean {
-  if (formIsDirty) {
-    return true;
-  }
-
   if (isEditing) {
     return false;
   }

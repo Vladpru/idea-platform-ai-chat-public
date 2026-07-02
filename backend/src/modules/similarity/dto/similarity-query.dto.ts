@@ -19,7 +19,8 @@ export class SimilarityQueryDto {
   @ApiProperty({ enum: ['idea', 'problem'] })
   @IsString()
   @IsIn(['idea', 'problem'])
-  entityType: 'idea' | 'problem';
+  @Validate(SourceXorTextConstraint)
+  entityType!: 'idea' | 'problem';
 
   @ApiPropertyOptional({ default: 3, minimum: 1, maximum: 10 })
   @IsOptional()
@@ -32,7 +33,6 @@ export class SimilarityQueryDto {
   @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()
   @IsUuid()
-  @Validate(SourceXorTextConstraint)
   sourceId?: string;
 
   @ApiPropertyOptional({ minLength: 10, maxLength: 5000 })

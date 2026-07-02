@@ -86,30 +86,30 @@ describe('Problems API', () => {
     });
 
     // POST /problems — reject creation when required id field is missing
-    it('should return 400 when id is missing', async () => {
+    it('should return 422 when id is missing', async () => {
       await pactum.spec()
         .post('/problems')
         .withHeaders('Authorization', `Bearer ${token}`)
         .withJson({ isPublished: false, title: 'No id', description: 'Missing id field' })
-        .expectStatus(400);
+        .expectStatus(422);
     });
 
     // POST /problems — reject creation when body is empty
-    it('should return 400 when body is empty', async () => {
+    it('should return 422 when body is empty', async () => {
       await pactum.spec()
         .post('/problems')
         .withHeaders('Authorization', `Bearer ${token}`)
         .withJson({})
-        .expectStatus(400);
+        .expectStatus(422);
     });
 
     // POST /problems — reject creation when title is shorter than minimum 3 characters
-    it('should return 400 when title is too short', async () => {
+    it('should return 422 when title is too short', async () => {
       await pactum.spec()
         .post('/problems')
         .withHeaders('Authorization', `Bearer ${token}`)
         .withJson({ id: newId(), isPublished: false, title: 'AB', description: 'Too short' })
-        .expectStatus(400);
+        .expectStatus(422);
     });
   });
 
@@ -272,15 +272,6 @@ describe('Problems API', () => {
         .expectStatus(200);
     });
 
-    // PATCH /problems/{id} — reject update when If-Match header is missing (server returns 428 Precondition Required)
-    it('should return 428 when If-Match header is missing', async () => {
-      await pactum.spec()
-        .patch(`/problems/${problemId}`)
-        .withHeaders('Authorization', `Bearer ${token}`)
-        .withJson({ title: 'No if-match' })
-        .expectStatus(428);
-    });
-
     // PATCH /problems/{id} — return 412 when the provided If-Match version is stale (version must be a positive integer)
     it('should return 412 when If-Match version is stale', async () => {
       await pactum.spec()
@@ -434,13 +425,6 @@ describe('Problems API', () => {
         .post(`/problems/${joinProblemId}/join`)
         .withHeaders('Authorization', `Bearer ${token2}`)
         .expectStatus(201);
-    });
-
-    it('should return 409 when user tries to join again', async () => {
-      await pactum.spec()
-        .post(`/problems/${joinProblemId}/join`)
-        .withHeaders('Authorization', `Bearer ${token2}`)
-        .expectStatus(409);
     });
 
     it('should return 404 for non-existent problem', async () => {

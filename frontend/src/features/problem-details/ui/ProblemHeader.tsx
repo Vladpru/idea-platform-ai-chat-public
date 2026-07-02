@@ -5,6 +5,7 @@ import type { ProblemDetails } from '@/features/problem-details/model/problem-de
 import { ProblemProjectActions } from '@/features/problem-details/ui/ProblemProjectActions';
 import { useExportProblemPdfMutation } from '@/features/problems/hooks/use-export-problem-pdf';
 import { useDeleteProblemMutation } from '@/features/problems/hooks/use-problem-mutations';
+import { usePdfExportStore } from '@/features/pdf/model/pdf-export-store';
 import { useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ChevronDown, Download } from 'lucide-react';
@@ -34,6 +35,7 @@ type ProblemHeaderProps = {
   problem: ProblemDetails;
   isAuthor?: boolean;
   isCompact?: boolean;
+  variant?: 'full' | 'compact-only';
   onScheduleConference?: () => void;
   onDeleteSuccess?: () => void;
   onBackClick?: (event: MouseEvent<HTMLButtonElement>) => void;
@@ -162,6 +164,7 @@ export function ProblemHeader({
   problem,
   isAuthor = false,
   isCompact = false,
+  variant = 'full',
   onScheduleConference,
   onDeleteSuccess,
   onBackClick,
@@ -170,6 +173,8 @@ export function ProblemHeader({
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const deleteMutation = useDeleteProblemMutation();
   const exportPdf = useExportProblemPdfMutation();
+  const exportingIds = usePdfExportStore(state => state.exportingIds);
+  const isPdfExporting = exportingIds[problem.id] === true;
   const isDraft = problem.status === 'DRAFT';
   const title = problem.title || 'Untitled problem';
 
@@ -186,38 +191,53 @@ export function ProblemHeader({
     <header className="relative min-w-0">
       <motion.div
         initial={false}
-        animate={{
-          opacity: isCompact ? 1 : 0,
-          pointerEvents: isCompact ? 'auto' : 'none',
-          y: isCompact ? 0 : -10,
-        }}
-        transition={{ duration: 0.2 }}
-        className="absolute top-0 right-0 left-0 z-10 flex min-w-0 items-center gap-2 py-2"
+        animate={
+          variant === 'compact-only'
+            ? {
+                opacity: isCompact ? 1 : 0,
+                pointerEvents: isCompact ? 'auto' : 'none',
+                y: isCompact ? 0 : -4,
+              }
+            : {
+                opacity: isCompact ? 1 : 0,
+                pointerEvents: isCompact ? 'auto' : 'none',
+                y: isCompact ? 0 : -10,
+              }
+        }
+        transition={{ duration: 0.2, ease: 'easeOut' }}
+        className={cn(
+          'z-10 overflow-hidden',
+          variant === 'compact-only'
+            ? 'relative h-9'
+            : 'absolute top-0 right-0 left-0 py-2 flex min-w-0 items-center gap-2',
+        )}
       >
-        <button
-          type="button"
-          onClick={onBackClick}
-          className="text-primary hover:text-primary/80 inline-flex shrink-0 cursor-pointer items-center gap-1 text-xs font-bold tracking-wide uppercase transition-colors"
-        >
-          <ArrowLeft className="size-4" />
-          Back
-        </button>
-        <h1 className="text-brand-black ml-5 line-clamp-1 min-w-0 flex-1 text-base font-bold">
-          {title}
-        </h1>
-        <ManageDropdown
-          isAuthor={isAuthor}
-          isCompact={true}
-          isDraft={isDraft}
-          problemId={problem.id}
-          onScheduleConference={onScheduleConference}
-          onDeleteClick={() => setDeleteModalOpen(true)}
-          onExportPdf={() => exportPdf.mutate(problem.id)}
-          isExportPending={exportPdf.isPending}
-        />
+        <div className={cn(variant === 'compact-only' && 'flex min-w-0 items-center gap-2 py-2')}>
+          <button
+            type="button"
+            onClick={onBackClick}
+            className="text-primary hover:text-primary/80 inline-flex shrink-0 cursor-pointer items-center gap-1 text-xs font-bold tracking-wide uppercase transition-colors"
+          >
+            <ArrowLeft className="size-4" />
+            Back
+          </button>
+          <h1 className="text-brand-black ml-5 line-clamp-1 min-w-0 flex-1 text-base font-bold">
+            {title}
+          </h1>
+          <ManageDropdown
+            isAuthor={isAuthor}
+            isCompact={true}
+            isDraft={isDraft}
+            problemId={problem.id}
+            onScheduleConference={onScheduleConference}
+            onDeleteClick={() => setDeleteModalOpen(true)}
+            onExportPdf={() => exportPdf.mutate(problem.id)}
+            isExportPending={exportPdf.isPending || isPdfExporting}
+          />
+        </div>
       </motion.div>
 
-      <motion.div
+      {variant !== 'compact-only' && <motion.div
         initial={false}
         animate={{
           opacity: isCompact ? 0 : 1,
@@ -301,8 +321,8 @@ export function ProblemHeader({
                           outlineBtnClass,
                           'h-10 shrink-0 gap-1.5 rounded-sm border px-3 text-xs font-bold uppercase tracking-wide',
                         )}
-                        disabled={exportPdf.isPending}
-                        isLoading={exportPdf.isPending}
+                        disabled={exportPdf.isPending || isPdfExporting}
+                        isLoading={exportPdf.isPending || isPdfExporting}
                         onClick={() => exportPdf.mutate(problem.id)}
                       >
                         <Download className="size-4" />
@@ -325,7 +345,7 @@ export function ProblemHeader({
                       onScheduleConference={onScheduleConference}
                       onDeleteClick={() => setDeleteModalOpen(true)}
                       onExportPdf={() => exportPdf.mutate(problem.id)}
-          isExportPending={exportPdf.isPending}
+                      isExportPending={exportPdf.isPending || isPdfExporting}
                     />
                   </div>
                 </div>
@@ -333,7 +353,7 @@ export function ProblemHeader({
             </div>
           </div>
         </div>
-      </motion.div>
+      </motion.div>}
 
       {isAuthor ? (
         <ConfirmModal

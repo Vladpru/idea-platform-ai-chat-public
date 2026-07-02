@@ -9,6 +9,7 @@ import {
 } from '@/features/ideas/lib/modals/copy';
 import { outlineBtnClass, pageTitleClass } from '@/features/ideas/lib/styles';
 import { EntityLiveChatAction } from '@/features/live-chat/ui/EntityLiveChatAction';
+import { usePdfExportStore } from '@/features/pdf/model/pdf-export-store';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft,
@@ -43,6 +44,7 @@ type IdeaHeaderProps = {
   isAuthor?: boolean;
   isEditing?: boolean;
   isCompact?: boolean;
+  variant?: 'full' | 'compact-only';
   showProjectActions?: boolean;
   onStartEdit?: () => void;
   onScheduleConference?: () => void;
@@ -59,6 +61,7 @@ function ManageDropdown({
   isEditing,
   isCompact,
   ideaId,
+  isPdfExporting,
   onStartEdit,
   onScheduleConference,
   onDeleteClick,
@@ -67,6 +70,7 @@ function ManageDropdown({
   isEditing: boolean;
   isCompact: boolean;
   ideaId: string;
+  isPdfExporting: boolean;
   onStartEdit?: () => void;
   onScheduleConference?: () => void;
   onDeleteClick: () => void;
@@ -139,7 +143,7 @@ function ManageDropdown({
 
         <DropdownMenuItem
           className="focus:bg-brand-blue-700/10 hover:bg-brand-blue-700/10 cursor-pointer px-3 py-2 text-sm font-normal"
-          disabled={exportPdf.isPending}
+          disabled={exportPdf.isPending || isPdfExporting}
           onSelect={event => {
             event.preventDefault();
             exportPdf.mutate(ideaId);
@@ -169,6 +173,7 @@ export function IdeaHeader({
   isAuthor = false,
   isEditing = false,
   isCompact = false,
+  variant = 'full',
   showProjectActions = true,
   onStartEdit,
   onScheduleConference,
@@ -180,6 +185,8 @@ export function IdeaHeader({
 
   const { deleteIdea, isPending: isDeletePending } = useDeleteIdea();
   const exportPdf = useExportIdeaPdfMutation();
+  const exportingIds = usePdfExportStore(state => state.exportingIds);
+  const isPdfExporting = exportingIds[idea.id] === true;
 
   const handleConfirmDelete = () => {
     deleteIdea(idea.id, {
@@ -196,43 +203,59 @@ export function IdeaHeader({
     <header className="relative min-w-0">
       <motion.div
         initial={false}
-        animate={{
-          opacity: isCompact ? 1 : 0,
-          pointerEvents: isCompact ? 'auto' : 'none',
-          y: isCompact ? 0 : -10,
-        }}
-        transition={{ duration: 0.2 }}
-        className="absolute top-0 right-0 left-0 z-10 flex min-w-0 items-center gap-2 py-2"
-      >
-        <button
-          type="button"
-          onClick={onBackClick}
-          className="text-primary hover:text-primary/80 inline-flex shrink-0 cursor-pointer items-center gap-1 text-xs font-bold tracking-wide uppercase transition-colors"
-        >
-          <ArrowLeft className="size-4" />
-          Back
-        </button>
-        {isEditing ? (
-          <p className="text-brand-gray-600 line-clamp-1 min-w-0 flex-1 text-xs font-semibold tracking-wide uppercase">
-            Editing idea
-          </p>
-        ) : (
-          <h1 className="text-brand-black line-clamp-1 min-w-0 flex-1 text-sm font-bold">
-            {title}
-          </h1>
+        animate={
+          variant === 'compact-only'
+            ? {
+                opacity: isCompact ? 1 : 0,
+                pointerEvents: isCompact ? 'auto' : 'none',
+                y: isCompact ? 0 : -4,
+              }
+            : {
+                opacity: isCompact ? 1 : 0,
+                pointerEvents: isCompact ? 'auto' : 'none',
+                y: isCompact ? 0 : -10,
+              }
+        }
+        transition={{ duration: 0.2, ease: 'easeOut' }}
+        className={cn(
+          'z-10 overflow-hidden',
+          variant === 'compact-only'
+            ? 'relative h-9'
+            : 'absolute top-0 right-0 left-0 py-2 flex min-w-0 items-center gap-2',
         )}
-        <ManageDropdown
-          isAuthor={isAuthor}
-          isEditing={isEditing}
-          isCompact={true}
-          ideaId={idea.id}
-          onStartEdit={onStartEdit}
-          onScheduleConference={onScheduleConference}
-          onDeleteClick={() => setDeleteModalOpen(true)}
-        />
+      >
+        <div className={cn(variant === 'compact-only' && 'flex min-w-0 items-center gap-2 py-2')}>
+          <button
+            type="button"
+            onClick={onBackClick}
+            className="text-primary hover:text-primary/80 inline-flex shrink-0 cursor-pointer items-center gap-1 text-xs font-bold tracking-wide uppercase transition-colors"
+          >
+            <ArrowLeft className="size-4" />
+            Back
+          </button>
+          {isEditing ? (
+            <p className="text-brand-gray-600 line-clamp-1 min-w-0 flex-1 text-xs font-semibold tracking-wide uppercase">
+              Editing idea
+            </p>
+          ) : (
+            <h1 className="text-brand-black line-clamp-1 min-w-0 flex-1 text-sm font-bold">
+              {title}
+            </h1>
+          )}
+          <ManageDropdown
+            isAuthor={isAuthor}
+            isEditing={isEditing}
+            isCompact={true}
+            ideaId={idea.id}
+            isPdfExporting={isPdfExporting}
+            onStartEdit={onStartEdit}
+            onScheduleConference={onScheduleConference}
+            onDeleteClick={() => setDeleteModalOpen(true)}
+          />
+        </div>
       </motion.div>
 
-      <motion.div
+      {variant !== 'compact-only' && <motion.div
         initial={false}
         animate={{
           opacity: isCompact ? 0 : 1,
@@ -319,6 +342,7 @@ export function IdeaHeader({
                       isEditing={isEditing}
                       isCompact={false}
                       ideaId={idea.id}
+                      isPdfExporting={isPdfExporting}
                       onStartEdit={onStartEdit}
                       onScheduleConference={onScheduleConference}
                       onDeleteClick={() => setDeleteModalOpen(true)}
@@ -340,8 +364,8 @@ export function IdeaHeader({
                           outlineBtnClass,
                           'h-10 shrink-0 gap-1.5 rounded-sm border px-3 text-xs font-bold tracking-wide uppercase',
                         )}
-                        disabled={exportPdf.isPending}
-                        isLoading={exportPdf.isPending}
+                        disabled={exportPdf.isPending || isPdfExporting}
+                        isLoading={exportPdf.isPending || isPdfExporting}
                         onClick={() => exportPdf.mutate(idea.id)}
                       >
                         <Download className="size-4" />
@@ -359,7 +383,7 @@ export function IdeaHeader({
             </div>
           </div>
         </div>
-      </motion.div>
+      </motion.div>}
 
       {isAuthor ? (
         <ConfirmModal
