@@ -3,6 +3,8 @@ import { useNavigate, useParams } from '@tanstack/react-router';
 
 import { useSessionMessagesQuery } from '../hooks/queries/use-session-messages-query';
 import { useChatStream } from '../hooks/use-chat-stream';
+import { useChatStreamStore } from '../model/chat-stream-store';
+import { AiChatCreateCard } from './AiChatCreateCard';
 import { AiChatEmptyState } from './AiChatEmptyState';
 import { AiChatInput } from './AiChatInput';
 import { AiChatMessageList } from './AiChatMessageList';
@@ -14,7 +16,7 @@ export function AiChatSession({ initialMessage }: Props) {
   const { sessionId } = useParams({ from: '/_auth/ai-chat/$sessionId' });
   const navigate = useNavigate();
   const { data: serverMessages = [] } = useSessionMessagesQuery(sessionId);
-  const { send, isStreaming, optimisticMessages, suggestions } = useChatStream(sessionId);
+  const { send, isStreaming, optimisticMessages, suggestions, pendingAction } = useChatStream(sessionId);
   const sentRef = useRef(false);
 
   const messages = optimisticMessages.length > 0 ? [...serverMessages, ...optimisticMessages] : serverMessages;
@@ -35,12 +37,19 @@ export function AiChatSession({ initialMessage }: Props) {
     }
   }, [initialMessage, sessionId, send, navigate]);
 
+  function handleDismissAction() {
+    useChatStreamStore.getState().setPendingAction(sessionId, null);
+  }
+
   return (
     <div className="flex h-full flex-col">
       {showEmptyState ? (
         <AiChatEmptyState onSuggestion={send} isLoading={isStreaming} />
       ) : (
         <AiChatMessageList messages={messages} />
+      )}
+      {!isStreaming && pendingAction && (
+        <AiChatCreateCard action={pendingAction} onDismiss={handleDismissAction} />
       )}
       {!isStreaming && suggestions.length > 0 && (
         <div className="mx-auto w-full max-w-3xl px-4 pb-2 sm:px-6">
