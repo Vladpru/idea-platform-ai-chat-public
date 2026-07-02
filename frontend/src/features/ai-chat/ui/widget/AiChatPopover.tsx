@@ -98,7 +98,11 @@ export function AiChatPopover({
         <AiChatMessageList messages={messages} isWidget />
       ) : (
         <div className="flex flex-1 flex-col overflow-y-auto">
-          <AiChatEmptyState onSuggestion={send} isLoading={isStreaming} />
+          <AiChatEmptyState
+            onSuggestion={send}
+            isLoading={isStreaming}
+            isWidget
+          />
         </div>
       )}
 
@@ -112,17 +116,16 @@ export function AiChatPopover({
         </div>
       )}
 
-      {!isStreaming && suggestions.length > 0 && (
-        <div className="shrink-0 px-3 pb-2">
-          <AiChatSuggestions
-            suggestions={suggestions}
-            onSelect={send}
-            isWidget
-          />
-        </div>
-      )}
-
-      <div className="shrink-0">
+      <div className="relative shrink-0">
+        {!isStreaming && suggestions.length > 0 && (
+          <div className="absolute right-0 bottom-full left-0 px-3 pb-1">
+            <AiChatSuggestions
+              suggestions={suggestions}
+              onSelect={send}
+              isWidget
+            />
+          </div>
+        )}
         <AiChatInput onSend={send} isStreaming={isStreaming} isWidget />
       </div>
     </motion.div>

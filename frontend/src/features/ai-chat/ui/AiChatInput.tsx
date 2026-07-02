@@ -10,7 +10,12 @@ type Props = {
   isWidget?: boolean;
 };
 
-export function AiChatInput({ onSend, isStreaming, restoredValue, isWidget }: Props) {
+export function AiChatInput({
+  onSend,
+  isStreaming,
+  restoredValue,
+  isWidget,
+}: Props) {
   const [value, setValue] = useState(restoredValue ?? '');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -43,7 +48,9 @@ export function AiChatInput({ onSend, isStreaming, restoredValue, isWidget }: Pr
   const canSend = !!value.trim() && !isStreaming;
 
   return (
-    <div className={cn('shrink-0 pt-2 pb-4', isWidget ? 'px-3' : 'px-4 sm:px-6')}>
+    <div
+      className={cn('shrink-0 pt-2 pb-4', isWidget ? 'px-3' : 'px-4 sm:px-6')}
+    >
       <div className="mx-auto max-w-3xl">
         <div
           className={cn(
@@ -67,7 +74,7 @@ export function AiChatInput({ onSend, isStreaming, restoredValue, isWidget }: Pr
             className={cn(
               'text-foreground flex-1 resize-none bg-transparent leading-relaxed outline-none',
               'placeholder:text-muted-foreground/50 disabled:opacity-40',
-              isWidget ? 'text-xs' : 'text-sm',
+              'text-sm',
             )}
             style={{ maxHeight: 140 }}
           />

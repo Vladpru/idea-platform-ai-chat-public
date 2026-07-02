@@ -18,7 +18,7 @@ export function AiChatSuggestions({ suggestions, onSelect, isWidget }: Props) {
           key={i}
           type="button"
           onClick={() => onSelect(s)}
-          className="border-border text-foreground/70 hover:border-brand-dark-blue/40 hover:text-foreground hover:bg-accent flex items-center gap-1.5 rounded-full border bg-transparent px-3 py-1.5 text-xs transition-colors"
+          className="border-border text-foreground/70 hover:border-brand-dark-blue/40 hover:text-foreground bg-card/60 hover:bg-card/80 flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs backdrop-blur-md transition-colors"
         >
           <Sparkles className="text-brand-dark-blue size-3 shrink-0" />
           {s}
