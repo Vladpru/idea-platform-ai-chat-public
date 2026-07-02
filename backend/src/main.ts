@@ -1,7 +1,8 @@
 import './instrument';
 
-import { ValidationPipe } from '@nestjs/common';
+import { UnprocessableEntityException, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import type { ValidationError } from 'class-validator';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -60,6 +61,31 @@ async function bootstrap() {
     new ValidationPipe({
       whitelist: true,
       transform: true,
+      exceptionFactory: (errors: ValidationError[]) => {
+        const formatErrors = (validationErrors: ValidationError[], parentProperty = '') => {
+          const formattedErrors: Record<string, string[]> = {};
+          
+          validationErrors.forEach((error) => {
+            const propertyPath = parentProperty ? `${parentProperty}.${error.property}` : error.property;
+            
+            if (error.constraints) {
+              formattedErrors[propertyPath] = Object.values(error.constraints);
+            }
+            
+            if (error.children && error.children.length > 0) {
+              Object.assign(formattedErrors, formatErrors(error.children, propertyPath));
+            }
+          });
+          
+          return formattedErrors;
+        };
+
+        return new UnprocessableEntityException({
+          statusCode: 422,
+          error: 'Unprocessable Entity',
+          message: formatErrors(errors),
+        });
+      },
     }),
   );
 
