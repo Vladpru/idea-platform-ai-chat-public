@@ -1,5 +1,6 @@
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import DOMPurify from 'dompurify';
+import { useRef } from 'react';
 
 import { markdownToHtml } from '@/shared/lib/rich-text/markdown-to-html';
 import { cn } from '@/shared/lib/utils';
@@ -22,10 +23,30 @@ export function AiChatMessage({
   const sources =
     !isUser && isAdmin && message.sources?.length ? message.sources : [];
 
-  const aiHtml =
-    !isUser && message.content
-      ? DOMPurify.sanitize(markdownToHtml(message.content))
-      : '';
+  const prevLenRef = useRef(0);
+  const animKeyRef = useRef(0);
+
+  let settledText = '';
+  let delta = '';
+  let animKey = animKeyRef.current;
+  const finalHtml = !isUser && message.content && !message.streaming
+    ? DOMPurify.sanitize(markdownToHtml(message.content))
+    : '';
+
+  if (!isUser && message.content && message.streaming) {
+    const prev = prevLenRef.current;
+    const curr = message.content.length;
+    if (curr > prev) {
+      delta = message.content.slice(prev);
+      animKey = ++animKeyRef.current;
+      prevLenRef.current = curr;
+    }
+    settledText = message.content.slice(0, curr - delta.length);
+  }
+
+  if (!message.streaming) {
+    prevLenRef.current = 0;
+  }
 
   return (
     <div
@@ -64,8 +85,26 @@ export function AiChatMessage({
                 'prose-code:rounded prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:text-xs',
                 'prose-pre:bg-muted prose-pre:text-xs',
               )}
-              dangerouslySetInnerHTML={{ __html: aiHtml }}
-            />
+            >
+              {message.streaming ? (
+                <p className="my-0 whitespace-pre-wrap">
+                  {settledText}
+                  {delta && (
+                    <span
+                      key={animKey}
+                      style={{
+                        display: 'inline',
+                        animation: 'token-appear 180ms cubic-bezier(0.16, 1, 0.3, 1) both',
+                      }}
+                    >
+                      {delta}
+                    </span>
+                  )}
+                </p>
+              ) : (
+                <div dangerouslySetInnerHTML={{ __html: finalHtml }} />
+              )}
+            </div>
             {!!sources.length && <AiChatSources sources={sources} />}
           </>
         )}
