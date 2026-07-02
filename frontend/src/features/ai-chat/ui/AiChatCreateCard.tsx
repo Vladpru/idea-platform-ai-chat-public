@@ -1,11 +1,11 @@
-import { CheckCircle2, Lightbulb, TriangleAlert } from 'lucide-react';
-import { useState } from 'react';
-import { useNavigate } from '@tanstack/react-router';
-
 import { createIdeaDraft } from '@/features/ideas/api/ideas.api';
 import { createProblemDraft } from '@/features/problems/api/problems.api';
-import { Button } from '@/shared/ui/button';
+import { useNavigate } from '@tanstack/react-router';
+import { CheckCircle2, Lightbulb, TriangleAlert } from 'lucide-react';
+import { useState } from 'react';
+
 import { cn } from '@/shared/lib/utils';
+import { Button } from '@/shared/ui/button';
 
 import type { ChatActionPayload } from '../api/ai-chat.types';
 
@@ -59,8 +59,10 @@ export function AiChatCreateCard({ action, onDismiss, isWidget }: Props) {
   return (
     <div
       className={cn(
-        'border-border bg-card rounded-xl border shadow-sm',
-        isWidget ? 'mx-3 mb-2 p-3' : 'mx-auto mb-3 w-full max-w-3xl px-4 sm:px-6',
+        'border-border bg-card rounded-xl border',
+        isWidget
+          ? 'mx-3 mb-2 p-3'
+          : 'mx-auto mb-3 w-full max-w-3xl px-4 sm:px-6',
       )}
     >
       <div className={cn('flex flex-col gap-3', isWidget ? 'p-0' : 'py-3')}>
@@ -73,7 +75,7 @@ export function AiChatCreateCard({ action, onDismiss, isWidget }: Props) {
           />
           <span
             className={cn(
-              'font-semibold text-foreground',
+              'text-foreground font-semibold',
               isWidget ? 'text-xs' : 'text-sm',
             )}
           >
@@ -82,11 +84,18 @@ export function AiChatCreateCard({ action, onDismiss, isWidget }: Props) {
         </div>
 
         {cardState !== 'success' && (
-          <div className={cn('flex flex-col gap-1.5', isWidget ? 'text-xs' : 'text-sm')}>
+          <div
+            className={cn(
+              'flex flex-col gap-1.5',
+              isWidget ? 'text-xs' : 'text-sm',
+            )}
+          >
             {action.title && (
               <div>
                 <span className="text-muted-foreground">Title: </span>
-                <span className="text-foreground font-medium">{action.title}</span>
+                <span className="text-foreground font-medium">
+                  {action.title}
+                </span>
               </div>
             )}
             {action.description && (
@@ -95,18 +104,20 @@ export function AiChatCreateCard({ action, onDismiss, isWidget }: Props) {
                 <span className="text-foreground">{action.description}</span>
               </div>
             )}
-            {action.type === 'create_idea' && action.tags && action.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1 pt-0.5">
-                {action.tags.map(tag => (
-                  <span
-                    key={tag}
-                    className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-xs"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
+            {action.type === 'create_idea' &&
+              action.tags &&
+              action.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1 pt-0.5">
+                  {action.tags.map(tag => (
+                    <span
+                      key={tag}
+                      className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-xs"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
             {action.type === 'create_problem' && (
               <div className="text-muted-foreground flex items-center gap-1 pt-0.5 text-xs">
                 <TriangleAlert className="size-3 shrink-0" />
@@ -117,14 +128,21 @@ export function AiChatCreateCard({ action, onDismiss, isWidget }: Props) {
         )}
 
         {cardState === 'success' && (
-          <div className={cn('flex items-center gap-2 text-green-600', isWidget ? 'text-xs' : 'text-sm')}>
+          <div
+            className={cn(
+              'flex items-center gap-2 text-green-600',
+              isWidget ? 'text-xs' : 'text-sm',
+            )}
+          >
             <CheckCircle2 className="size-4 shrink-0" />
             <span>Draft created!</span>
           </div>
         )}
 
         {cardState === 'error' && (
-          <p className={cn('text-destructive', isWidget ? 'text-xs' : 'text-sm')}>
+          <p
+            className={cn('text-destructive', isWidget ? 'text-xs' : 'text-sm')}
+          >
             {errorMessage}
           </p>
         )}

@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "bounce-easing",
+        "value": "cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+        "reason": "Pre-existing like-pop animation, intentional elastic feel for gamified like button interaction",
+        "createdAt": "2026-07-02T11:27:48.372Z"
+      }
+    ]
+  }
+}
