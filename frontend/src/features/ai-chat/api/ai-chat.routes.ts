@@ -3,4 +3,5 @@ export const AI_CHAT_ROUTES = {
   session: (id: string) => `/ai/chat/sessions/${id}`,
   messages: (id: string) => `/ai/chat/sessions/${id}/messages`,
   stream: (id: string) => `/ai/chat/sessions/${id}/stream`,
+  kbStats: '/ai/chat/kb-stats',
 } as const;

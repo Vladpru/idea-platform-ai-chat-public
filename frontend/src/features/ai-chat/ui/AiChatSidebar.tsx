@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from '@tanstack/react-router';
 
+import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import { cn } from '@/shared/lib/utils';
 
 import type { ChatSession } from '../api/ai-chat.types';
@@ -11,6 +12,7 @@ import {
 import { useCreateSessionMutation } from '../hooks/mutations/use-create-session-mutation';
 import { useSessionsQuery } from '../hooks/queries/use-sessions-query';
 import { AiChatSessionItem } from './AiChatSessionItem';
+import { KbStatsPanel } from './KbStatsPanel';
 
 type Props = {
   isOpen: boolean;
@@ -61,6 +63,7 @@ function SidebarToggleButton({
 
 export function AiChatSidebar({ isOpen, onToggle }: Props) {
   const { data: sessions = [] } = useSessionsQuery();
+  const isAdmin = useAuthSessionStore(s => s.user?.role === 'ADMIN');
   const { mutate: createSession, isPending } = useCreateSessionMutation();
   const navigate = useNavigate();
 
@@ -132,17 +135,19 @@ export function AiChatSidebar({ isOpen, onToggle }: Props) {
             </p>
             <div className="flex flex-col gap-0.5 px-2">
               {group.items.map(session => (
-                  <AiChatSessionItem
-                    key={session.id}
-                    session={session}
-                    isActive={session.id === activeSessionId}
-                    onDeleted={() => handleDeleted(session.id)}
-                  />
-                ))}
+                <AiChatSessionItem
+                  key={session.id}
+                  session={session}
+                  isActive={session.id === activeSessionId}
+                  onDeleted={() => handleDeleted(session.id)}
+                />
+              ))}
             </div>
           </div>
         ))}
       </div>
+
+      {isOpen && isAdmin && <KbStatsPanel />}
     </aside>
   );
 }

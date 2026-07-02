@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { streamChatMessage } from '../api/ai-chat.stream';
-import type { ChatMessage } from '../api/ai-chat.types';
+import type { ChatIntent, ChatMessage } from '../api/ai-chat.types';
 import { aiChatQueryKeys } from '../model/ai-chat-query-keys';
 import {
   EMPTY_SESSION,
@@ -28,6 +28,7 @@ export function useChatStream(sessionId: string) {
       if (storeState.sessions[sessionId]?.isStreaming) return;
 
       storeState.setStreaming(sessionId, true);
+      storeState.setSuggestions(sessionId, []);
 
       await queryClient.cancelQueries({ queryKey: aiChatQueryKeys.messages(sessionId) });
 
@@ -66,7 +67,8 @@ export function useChatStream(sessionId: string) {
           },
           onDone: (_messageId: string) => {
             deleteStreamController(sessionId);
-            useChatStreamStore.getState().clearSession(sessionId);
+            useChatStreamStore.getState().setStreaming(sessionId, false);
+            useChatStreamStore.getState().setOptimisticMessages(sessionId, []);
             queryClient.invalidateQueries({ queryKey: aiChatQueryKeys.messages(sessionId) });
             queryClient.invalidateQueries({ queryKey: aiChatQueryKeys.sessions() });
           },
@@ -74,6 +76,12 @@ export function useChatStream(sessionId: string) {
             deleteStreamController(sessionId);
             useChatStreamStore.getState().clearSession(sessionId);
             toast.error(errorMessage ?? 'AI response failed. Please try again.');
+          },
+          onSuggestions: suggestions => {
+            useChatStreamStore.getState().setSuggestions(sessionId, suggestions);
+          },
+          onIntent: (intent) => {
+            useChatStreamStore.getState().setIntent(sessionId, intent as ChatIntent);
           },
         });
       } catch {
@@ -96,5 +104,7 @@ export function useChatStream(sessionId: string) {
     isStreaming: session.isStreaming,
     abort,
     optimisticMessages: session.optimisticMessages,
+    suggestions: session.suggestions,
+    intent: session.intent,
   };
 }

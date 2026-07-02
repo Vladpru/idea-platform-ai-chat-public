@@ -439,6 +439,36 @@ export class GeminiService implements AiProvider {
     }
   }
 
+  async generateFollowUpSuggestions(
+    userMessage: string,
+    assistantAnswer: string,
+  ): Promise<string[]> {
+    const prompt = [
+      'Given the user question and the AI answer below, generate exactly 3 short follow-up questions the user might want to ask next.',
+      'Each question must be relevant to the Idea Platform context (ideas, problems, team activity).',
+      'Reply with a JSON array of 3 strings, no markdown, no extra text.',
+      'Example: ["Which of these are in prototype stage?","Who authored the PropTech Hub idea?","Show me similar problems"]',
+      '',
+      `User question: ${userMessage}`,
+      `AI answer: ${assistantAnswer.slice(0, 800)}`,
+    ].join('\n');
+
+    try {
+      const raw = await this.generateChatAnswer(prompt);
+      const cleaned = raw
+        .trim()
+        .replace(/^```json|```$/g, '')
+        .trim();
+      const parsed = JSON.parse(cleaned) as unknown;
+      if (Array.isArray(parsed) && parsed.every(s => typeof s === 'string')) {
+        return (parsed as string[]).slice(0, 3);
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  }
+
   async streamChatAnswer(
     prompt: string,
     onToken: (token: string) => void,

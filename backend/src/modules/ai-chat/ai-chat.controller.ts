@@ -21,6 +21,7 @@ import type {
   ChatMessageResponseDto,
   ChatSessionDto,
 } from './dto/chat-session.dto';
+import { KbStatsDto } from './dto/kb-stats.dto';
 
 type AuthenticatedRequest = Request & { user: { id: string } };
 
@@ -29,6 +30,13 @@ type AuthenticatedRequest = Request & { user: { id: string } };
 @Controller('ai/chat')
 export class AiChatController {
   constructor(private readonly aiChatService: AiChatService) {}
+
+  @Get('kb-stats')
+  @ApiOperation({ summary: 'Get real-time knowledge base statistics' })
+  @ApiOkResponse({ type: KbStatsDto })
+  getKbStats(): Promise<KbStatsDto> {
+    return this.aiChatService.getKbStats();
+  }
 
   @Get('sessions')
   @ApiOperation({ summary: 'List all chat sessions for the current user' })

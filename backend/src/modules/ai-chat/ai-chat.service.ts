@@ -3,11 +3,18 @@ import type { Response } from 'express';
 
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { GeminiService } from '../ai/gemini.service';
-import { KnowledgeRetrievalService } from '../rag/knowledge-retrieval.service';
+import {
+  type KbStats,
+  KnowledgeRetrievalService,
+} from '../rag/knowledge-retrieval.service';
 import type {
   ChatMessageResponseDto,
   ChatSessionDto,
 } from './dto/chat-session.dto';
+import {
+  type ChatIntent,
+  IntentClassifierService,
+} from './intent-classifier.service';
 import { UserContextService } from './user-context.service';
 
 const HISTORY_LIMIT = 10;
@@ -25,6 +32,19 @@ function sseEvent(payload: object): string {
   return `data: ${JSON.stringify(payload)}\n\n`;
 }
 
+const INTENT_SYSTEM_OVERRIDES: Partial<Record<ChatIntent, string>> = {
+  search:
+    'The user wants to search or list items. Scan ALL knowledge base excerpts and list every matching idea or problem with its title, status, stage, and a one-sentence description. Never say you cannot search.',
+  explain:
+    'The user wants a detailed explanation. Provide a thorough, structured answer using the knowledge base excerpts. Use headings and bullet points where helpful.',
+  compare:
+    'The user wants to compare items. Present a structured side-by-side comparison using the knowledge base excerpts. Use a table or parallel bullet points.',
+  summarize:
+    'The user wants a summary. Synthesise the knowledge base excerpts into a concise summary covering key themes, active stages, and notable authors.',
+  navigate:
+    'The user wants help navigating the platform. Explain the relevant platform features clearly. If the knowledge base has no relevant info, describe how the platform generally works.',
+};
+
 @Injectable()
 export class AiChatService {
   private readonly logger = new Logger(AiChatService.name);
@@ -34,6 +54,7 @@ export class AiChatService {
     private readonly gemini: GeminiService,
     private readonly retrieval: KnowledgeRetrievalService,
     private readonly userContextService: UserContextService,
+    private readonly intentClassifier: IntentClassifierService,
   ) {}
 
   async listSessions(userId: string): Promise<ChatSessionDto[]> {
@@ -70,9 +91,19 @@ export class AiChatService {
     const rows = await this.prisma.chatMessage.findMany({
       where: { sessionId },
       orderBy: { createdAt: 'asc' },
-      select: { id: true, role: true, content: true, sources: true, createdAt: true },
+      select: {
+        id: true,
+        role: true,
+        content: true,
+        sources: true,
+        createdAt: true,
+      },
     });
     return rows as unknown as import('./dto/chat-session.dto').ChatMessageResponseDto[];
+  }
+
+  async getKbStats(): Promise<KbStats> {
+    return await this.retrieval.getStats();
   }
 
   async streamMessage(
@@ -90,7 +121,7 @@ export class AiChatService {
       return;
     }
 
-    const [userContext, history] = await Promise.all([
+    const [userContext, history, classified] = await Promise.all([
       this.userContextService.getContext(userId),
       this.prisma.chatMessage.findMany({
         where: { sessionId },
@@ -98,7 +129,16 @@ export class AiChatService {
         take: HISTORY_LIMIT,
         select: { role: true, content: true },
       }),
+      this.intentClassifier.classify(message),
     ]);
+
+    res.write(
+      sseEvent({
+        type: 'intent',
+        intent: classified.intent,
+        entityHint: classified.entityHint,
+      }),
+    );
 
     const orderedHistory = history.reverse();
 
@@ -121,6 +161,7 @@ export class AiChatService {
       ragChunks,
       history: orderedHistory,
       message,
+      intent: classified.intent,
     });
 
     let fullAnswer = '';
@@ -131,10 +172,23 @@ export class AiChatService {
       });
     } catch (err) {
       const detail = err instanceof Error ? err.message : String(err);
-      this.logger.error(`Gemini stream failed for session ${sessionId}: ${detail}`, err instanceof Error ? err.stack : undefined);
-      res.write(sseEvent({ type: 'error', message: 'AI generation failed', detail }));
+      this.logger.error(
+        `Gemini stream failed for session ${sessionId}: ${detail}`,
+        err instanceof Error ? err.stack : undefined,
+      );
+      res.write(
+        sseEvent({ type: 'error', message: 'AI generation failed', detail }),
+      );
       res.end();
       return;
+    }
+
+    const suggestions = await this.gemini.generateFollowUpSuggestions(
+      message,
+      fullAnswer,
+    );
+    if (suggestions.length > 0) {
+      res.write(sseEvent({ type: 'suggestions', suggestions }));
     }
 
     const sources = ragChunks.map(c => ({
@@ -189,6 +243,7 @@ export class AiChatService {
     ragChunks,
     history,
     message,
+    intent,
   }: {
     userContext: {
       name: string;
@@ -204,6 +259,7 @@ export class AiChatService {
     }[];
     history: { role: string; content: string }[];
     message: string;
+    intent: ChatIntent;
   }): string {
     const knowledgeSection = ragChunks.length
       ? ragChunks
@@ -232,9 +288,15 @@ export class AiChatService {
           .join('\n')
       : 'No prior conversation.';
 
+    const intentInstruction =
+      INTENT_SYSTEM_OVERRIDES[intent] ??
+      'Answer helpfully using the knowledge base excerpts below.';
+
     return [
-      'You are a helpful AI assistant for the Idea Platform. Use ONLY the knowledge base excerpts below to answer questions about ideas, problems, and platform activity.',
-      'If a question is outside the scope of the knowledge base, do not say "the answer is not in the excerpts". Instead, politely let the user know you can only help with Idea Platform topics, and suggest what you can assist them with — such as exploring ideas, finding problems, understanding platform activity, or navigating features.',
+      'You are a helpful AI assistant for the Idea Platform — an innovation hub where teams submit ideas and problems.',
+      intentInstruction,
+      'If no excerpts match the query, say clearly that no matching ideas or problems were found in the knowledge base at this time, and suggest the user browse the platform directly.',
+      'Only decline to answer if the question is entirely unrelated to the Idea Platform (e.g. general coding questions, weather, etc.).',
       '',
       '== User ==',
       `Name: ${userContext.name}`,

@@ -1,19 +1,24 @@
 import DOMPurify from 'dompurify';
 
-import { cn } from '@/shared/lib/utils';
+import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import { markdownToHtml } from '@/shared/lib/rich-text/markdown-to-html';
+import { cn } from '@/shared/lib/utils';
 
 import type { ChatMessage } from '../api/ai-chat.types';
 import { NetworkIntelligence } from '../assets/SidebarIcons';
+import { AiChatSources } from './AiChatSources';
 import { AiChatThinkingAnimation } from './AiChatThinkingAnimation';
 
 export function AiChatMessage({ message }: { message: ChatMessage }) {
+  const isAdmin = useAuthSessionStore(s => s.user?.role === 'ADMIN');
   const isUser = message.role === 'user';
   const isThinking = message.streaming && !message.content;
+  const sources = !isUser && isAdmin && message.sources?.length ? message.sources : [];
 
-  const aiHtml = !isUser && message.content
-    ? DOMPurify.sanitize(markdownToHtml(message.content))
-    : '';
+  const aiHtml =
+    !isUser && message.content
+      ? DOMPurify.sanitize(markdownToHtml(message.content))
+      : '';
 
   return (
     <div
@@ -53,9 +58,7 @@ export function AiChatMessage({ message }: { message: ChatMessage }) {
               )}
               dangerouslySetInnerHTML={{ __html: aiHtml }}
             />
-            {message.streaming && (
-              <span className="text-brand-orange mt-0.5 inline-block animate-pulse">▋</span>
-            )}
+            {!!sources.length && <AiChatSources sources={sources} />}
           </>
         )}
       </div>

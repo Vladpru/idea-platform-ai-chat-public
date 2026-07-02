@@ -16,6 +16,15 @@ export interface ChunkResult {
   metadata: Record<string, unknown>;
 }
 
+export interface KbStats {
+  totalChunks: number;
+  ideaChunks: number;
+  problemChunks: number;
+  vaultChunks: number;
+  lastSyncedAt: Date | null;
+  embeddingCoveragePercent: number;
+}
+
 @Injectable()
 export class KnowledgeRetrievalService {
   private readonly logger = new Logger(KnowledgeRetrievalService.name);
@@ -140,5 +149,45 @@ export class KnowledgeRetrievalService {
       relevance: Number(row.relevance),
       metadata: (row.metadata as Record<string, unknown>) ?? {},
     }));
+  }
+
+  async getStats(): Promise<KbStats> {
+    const [totals, lastSyncedRow] = await Promise.all([
+      this.prisma.$queryRaw<
+        {
+          total: bigint;
+          idea_chunks: bigint;
+          problem_chunks: bigint;
+          vault_chunks: bigint;
+          with_embedding: bigint;
+        }[]
+      >`
+        SELECT
+          COUNT(*)                                                        AS total,
+          COUNT(*) FILTER (WHERE source LIKE 'idea:%')                   AS idea_chunks,
+          COUNT(*) FILTER (WHERE source LIKE 'problem:%')                AS problem_chunks,
+          COUNT(*) FILTER (WHERE source NOT LIKE 'idea:%'
+                             AND source NOT LIKE 'problem:%')            AS vault_chunks,
+          COUNT(*) FILTER (WHERE embedding IS NOT NULL)                  AS with_embedding
+        FROM knowledge_chunk
+      `,
+      this.prisma.$queryRaw<{ created_at: Date }[]>`
+        SELECT created_at FROM knowledge_chunk ORDER BY created_at DESC LIMIT 1
+      `,
+    ]);
+
+    const row = totals[0];
+    const total = Number(row.total);
+    const withEmbedding = Number(row.with_embedding);
+
+    return {
+      totalChunks: total,
+      ideaChunks: Number(row.idea_chunks),
+      problemChunks: Number(row.problem_chunks),
+      vaultChunks: Number(row.vault_chunks),
+      lastSyncedAt: lastSyncedRow[0]?.created_at ?? null,
+      embeddingCoveragePercent:
+        total > 0 ? Math.round((withEmbedding / total) * 100) : 0,
+    };
   }
 }
