@@ -14,7 +14,7 @@
               "type": "markdown",
               "state": {
                 "file": "Guides/faq.md",
-                "mode": "preview",
+                "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
@@ -182,9 +182,9 @@
   },
   "active": "cf65f8a84282c076",
   "lastOpenFiles": [
+    "Guides/faq.md",
     "Policies/community-rules.md",
     "Policies/access-policy.md",
-    "Guides/faq.md",
     "Untitled.base",
     "Untitled 1.canvas",
     "Guides/how-to-submit-idea.md",
