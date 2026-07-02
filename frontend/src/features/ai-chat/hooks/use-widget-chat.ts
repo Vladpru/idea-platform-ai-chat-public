@@ -15,7 +15,7 @@ export function useWidgetChat() {
   const creatingRef = useRef(false);
 
   const activeId = sessionId ?? PLACEHOLDER_ID;
-  const { send: streamSend, isStreaming, suggestions } = useChatStream(activeId);
+  const { send: streamSend, isStreaming, suggestions, pendingAction } = useChatStream(activeId);
 
   const { data: serverMessages = [] } = useQuery({
     queryKey: aiChatQueryKeys.messages(sessionId ?? ''),
@@ -55,5 +55,17 @@ export function useWidgetChat() {
     await streamSend(message);
   }, [sessionId, streamSend]);
 
-  return { send, isStreaming, messages, suggestions, sessionId };
+  const clearPendingAction = useCallback(() => {
+    useChatStreamStore.getState().setPendingAction(activeId, null);
+  }, [activeId]);
+
+  return {
+    send,
+    isStreaming,
+    messages,
+    suggestions,
+    sessionId,
+    pendingAction,
+    clearPendingAction,
+  };
 }
