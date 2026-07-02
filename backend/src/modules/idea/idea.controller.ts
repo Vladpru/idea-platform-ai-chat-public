@@ -219,7 +219,7 @@ export class IdeaController {
       required: ['file'],
     },
   })
-  @ApiOkResponse({ description: 'Attachment uploaded' })
+  @ApiCreatedResponse({ description: 'Attachment uploaded' })
   @ApiNotFoundResponse({ description: 'Idea not found' })
   @UseInterceptors(
     FileInterceptor('file', {
@@ -284,6 +284,7 @@ export class IdeaController {
   @ApiNotFoundResponse({ description: 'Idea not found' })
   @ApiUnprocessableEntityResponse({ description: 'Publish validation failed' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @HttpCode(HttpStatus.OK)
   publish(
     @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticatedRequest,
