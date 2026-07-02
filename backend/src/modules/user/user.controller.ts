@@ -4,6 +4,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -68,6 +70,7 @@ export class UserController {
   }
 
   @Post('me/avatar')
+  @HttpCode(HttpStatus.OK)
   @JwtAuth()
   @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
@@ -91,12 +94,13 @@ export class UserController {
   }
 
   @Delete('me/avatar')
+  @HttpCode(HttpStatus.NO_CONTENT)
   @JwtAuth()
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Remove current user avatar' })
   @ApiNoContentResponse({ description: 'Avatar removed' })
-  removeMyAvatar(@Req() req: AuthenticatedRequest) {
-    return this.userService.removeAvatar(req.user.id);
+  async removeMyAvatar(@Req() req: AuthenticatedRequest): Promise<void> {
+    await this.userService.removeAvatar(req.user.id);
   }
 
   @Patch('me/theme')
