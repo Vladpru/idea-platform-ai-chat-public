@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Post, Query, Req } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiBearerAuth,
   ApiForbiddenResponse,
   ApiOkResponse,
@@ -33,7 +34,7 @@ export class ConferenceInviteController {
   @Get('preview')
   @ApiOperation({ summary: 'Preview an external conference invite' })
   @ApiOkResponse({ description: 'Conference invite preview metadata' })
-  @ApiUnprocessableEntityResponse({ description: 'Validation failed' })
+  @ApiBadRequestResponse({ description: 'Invalid or missing token' })
   previewInvite(
     @Query() query: PreviewConferenceInviteQueryDto,
   ): Promise<ConferenceInvitePreviewDto> {
