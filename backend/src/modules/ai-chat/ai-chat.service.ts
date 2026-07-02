@@ -34,15 +34,19 @@ function sseEvent(payload: object): string {
 
 const INTENT_SYSTEM_OVERRIDES: Partial<Record<ChatIntent, string>> = {
   search:
-    'The user wants to search or list items. Scan ALL knowledge base excerpts and list every matching idea or problem with its title, status, stage, and a one-sentence description. Never say you cannot search.',
+    `The user wants to search or list items. Scan ALL knowledge base excerpts and list every matching idea or problem with its title, status, stage, and a one-sentence description. Never say you cannot search.`,
   explain:
-    'The user wants a detailed explanation. Provide a thorough, structured answer using the knowledge base excerpts. Use headings and bullet points where helpful.',
+    `The user wants a detailed explanation. Provide a thorough, structured answer using the knowledge base excerpts. Use headings and bullet points where helpful.`,
   compare:
-    'The user wants to compare items. Present a structured side-by-side comparison using the knowledge base excerpts. Use a table or parallel bullet points.',
+    `The user wants to compare items. Present a structured side-by-side comparison using the knowledge base excerpts. Use a table or parallel bullet points.`,
   summarize:
-    'The user wants a summary. Synthesise the knowledge base excerpts into a concise summary covering key themes, active stages, and notable authors.',
+    `The user wants a summary. Synthesise the knowledge base excerpts into a concise summary covering key themes, active stages, and notable authors.`,
   navigate:
-    'The user wants help navigating the platform. Explain the relevant platform features clearly. If the knowledge base has no relevant info, describe how the platform generally works.',
+    `The user wants help navigating the platform. Explain the relevant platform features clearly. If the knowledge base has no relevant info, describe how the platform generally works.`,
+  create_idea:
+    `The user wants to create a new idea. Write a short, friendly confirmation (2-3 sentences) summarising what you understood and confirming you will draft an idea for them. Do not ask for more information. End your message with "Here's what I'll draft for you:".`,
+  create_problem:
+    `The user wants to create a new problem. Write a short, friendly confirmation (2-3 sentences) summarising the problem you understood. Remind the user it will be saved as a draft and they can edit it before publishing.`,
 };
 
 @Injectable()
