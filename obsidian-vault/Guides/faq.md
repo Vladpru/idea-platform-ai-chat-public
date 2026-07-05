@@ -48,7 +48,7 @@ You can add up to 5 tags. You can select from existing tags already used on the 
 A problem describes a challenge or pain point. An idea describes a proposed solution. When creating an idea you must link it to one or more existing problems.
 
 **Who can submit a problem?**
-Any authenticated user with a Member or Admin role can submit a problem.
+Any authenticated user can submit a problem.
 
 **Can I use AI when writing a problem?**
 Yes. The problem submission form has **Generate title from description**, **Write description with AI prompt**, and **Write value proposition with AI prompt** buttons to help you draft content faster.

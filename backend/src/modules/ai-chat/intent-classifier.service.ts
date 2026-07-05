@@ -49,7 +49,7 @@ const INTENT_PROMPT = `Classify the user message into exactly one intent and ext
   Message: "thanks!" → {"intent":"general","entityHint":null}
   Message: "create an idea about smart parking" → {"intent":"create_idea","entityHint":"{\"title\":\"Smart Parking\",\"description\":\"A system to manage parking spaces using IoT sensors.\",\"tags\":[\"mobility\",\"IoT\"]}"}
   Message: "I want to submit a problem about slow onboarding" → {"intent":"create_problem","entityHint":"{\"title\":\"Slow Onboarding\",\"description\":\"New users face a steep learning curve when joining the platform.\"}"}
-
+ 
   Message: `;
 
 @Injectable()
@@ -63,7 +63,10 @@ export class IntentClassifierService {
       const raw = await this.gemini.generateChatAnswer(
         INTENT_PROMPT + JSON.stringify(message),
       );
-      const cleaned = raw.trim().replace(/^```json|```$/g, '').trim();
+      const cleaned = raw
+        .trim()
+        .replace(/^```json|```$/g, '')
+        .trim();
       const parsed = JSON.parse(cleaned) as {
         intent: ChatIntent;
         entityHint: string | null;

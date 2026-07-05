@@ -107,7 +107,7 @@ export function AiChatPopover({
       )}
 
       {!isStreaming && pendingAction && (
-        <div className="shrink-0">
+        <div className="mb-8 shrink-0">
           <AiChatCreateCard
             action={pendingAction}
             onDismiss={clearPendingAction}

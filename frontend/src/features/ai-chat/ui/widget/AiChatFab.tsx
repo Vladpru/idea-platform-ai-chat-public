@@ -1,7 +1,6 @@
-import { X } from 'lucide-react';
+import { MessageSquareText, X } from 'lucide-react';
 
 import { cn } from '@/shared/lib/utils';
-import { NetworkIntelligence } from '../../assets/SidebarIcons';
 
 type Props = {
   isOpen: boolean;
@@ -15,7 +14,7 @@ export function AiChatFab({ isOpen, onClick }: Props) {
       onClick={onClick}
       aria-label={isOpen ? 'Close AI chat' : 'Open AI chat'}
       className={cn(
-        'fixed bottom-6 right-6 z-50',
+        'fixed right-6 bottom-6 z-50',
         'flex h-14 w-14 items-center justify-center rounded-full',
         'bg-brand-dark-blue text-white shadow-lg',
         'transition-all duration-200 hover:opacity-90 active:scale-95',
@@ -35,8 +34,9 @@ export function AiChatFab({ isOpen, onClick }: Props) {
           isOpen ? '-rotate-90 opacity-0' : 'rotate-0 opacity-100',
         )}
       >
-        <NetworkIntelligence className="size-7 text-white" />
+        <MessageSquareText className="text-white" />
       </span>
     </button>
   );
 }
+pendingAction;
