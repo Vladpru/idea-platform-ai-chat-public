@@ -188,7 +188,8 @@ export class AiChatService {
       return;
     }
 
-    const FIELD_ACTION_REGEX = /<field_action field="(tags|linked_problems)" values='(\[.*?\])'\/>/;
+    const FIELD_ACTION_REGEX =
+      /<field_action field="(tags|linked_problems)" values='(\[.*?\])'\/>/;
     const fieldActionMatch = FIELD_ACTION_REGEX.exec(fullAnswer);
     const cleanAnswer = fullAnswer.replace(FIELD_ACTION_REGEX, '').trimEnd();
 
@@ -197,8 +198,7 @@ export class AiChatService {
         const field = fieldActionMatch[1] as 'tags' | 'linked_problems';
         const values = JSON.parse(fieldActionMatch[2]) as string[];
         res.write(sseEvent({ type: 'field_action', field, values }));
-      } catch {
-      }
+      } catch {}
     }
 
     const suggestions = await this.gemini.generateFollowUpSuggestions(
@@ -320,13 +320,22 @@ export class AiChatService {
 
     let pageContextSection = '';
     if (pageContext) {
-      const lines = ['The user is currently editing a draft. Use this context to answer questions about it.'];
-      lines.push(`Type: ${pageContext.type === 'idea_form' ? 'Idea draft' : 'Problem draft'}`);
+      const lines = [
+        'The user is currently editing a draft. Use this context to answer questions about it.',
+      ];
+      lines.push(
+        `Type: ${pageContext.type === 'idea_form' ? 'Idea draft' : 'Problem draft'}`,
+      );
       if (pageContext.title) lines.push(`Title: "${pageContext.title}"`);
-      if (pageContext.description) lines.push(`Description: "${pageContext.description.slice(0, 500)}"`);
+      if (pageContext.description)
+        lines.push(`Description: "${pageContext.description.slice(0, 500)}"`);
       if (pageContext.type === 'idea_form') {
-        if (pageContext.tags?.length) lines.push(`Tags: [${pageContext.tags.join(', ')}]`);
-        if (pageContext.linkedProblemIds?.length) lines.push(`Linked problem IDs: [${pageContext.linkedProblemIds.join(', ')}]`);
+        if (pageContext.tags?.length)
+          lines.push(`Tags: [${pageContext.tags.join(', ')}]`);
+        if (pageContext.linkedProblemIds?.length)
+          lines.push(
+            `Linked problem IDs: [${pageContext.linkedProblemIds.join(', ')}]`,
+          );
       }
       lines.push(
         'If the user asks for tag suggestions, end your response with exactly: <field_action field="tags" values=\'["tag1","tag2"]\'/> — replace with real tag strings, no markdown. Only include this when the user explicitly requests tag suggestions.',
@@ -355,7 +364,9 @@ export class AiChatService {
       '',
       '== Conversation History ==',
       historySection,
-      ...(pageContextSection ? ['', '== Current Page Context ==', pageContextSection] : []),
+      ...(pageContextSection
+        ? ['', '== Current Page Context ==', pageContextSection]
+        : []),
       '',
       '== Question ==',
       message,
