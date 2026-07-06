@@ -1,6 +1,6 @@
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import DOMPurify from 'dompurify';
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { markdownToHtml } from '@/shared/lib/rich-text/markdown-to-html';
 import { cn } from '@/shared/lib/utils';
@@ -25,28 +25,39 @@ export function AiChatMessage({
 
   const prevLenRef = useRef(0);
   const animKeyRef = useRef(0);
+  const [streamState, setStreamState] = useState({
+    settledText: '',
+    delta: '',
+    animKey: 0,
+  });
 
-  let settledText = '';
-  let delta = '';
-  let animKey = animKeyRef.current;
-  const finalHtml = !isUser && message.content && !message.streaming
-    ? DOMPurify.sanitize(markdownToHtml(message.content))
-    : '';
-
-  if (!isUser && message.content && message.streaming) {
-    const prev = prevLenRef.current;
-    const curr = message.content.length;
-    if (curr > prev) {
-      delta = message.content.slice(prev);
-      animKey = ++animKeyRef.current;
-      prevLenRef.current = curr;
+  useEffect(() => {
+    if (!isUser && message.content && message.streaming) {
+      const prev = prevLenRef.current;
+      const curr = message.content.length;
+      if (curr > prev) {
+        const newDelta = message.content.slice(prev);
+        const newAnimKey = ++animKeyRef.current;
+        prevLenRef.current = curr;
+        setStreamState({
+          settledText: message.content.slice(0, curr - newDelta.length),
+          delta: newDelta,
+          animKey: newAnimKey,
+        });
+      }
     }
-    settledText = message.content.slice(0, curr - delta.length);
-  }
+    if (!message.streaming) {
+      prevLenRef.current = 0;
+      setStreamState({ settledText: '', delta: '', animKey: 0 });
+    }
+  }, [message.content, message.streaming, isUser]);
 
-  if (!message.streaming) {
-    prevLenRef.current = 0;
-  }
+  const { settledText, delta, animKey } = streamState;
+
+  const finalHtml =
+    !isUser && message.content && !message.streaming
+      ? DOMPurify.sanitize(markdownToHtml(message.content))
+      : '';
 
   return (
     <div
@@ -62,8 +73,8 @@ export function AiChatMessage({
       )}
       <div
         className={cn(
-          'max-w-[72%] leading-relaxed',
-          isWidget ? 'text-xs' : 'text-sm',
+          'text-sm leading-relaxed',
+          isWidget ? 'max-w-[82%]' : 'max-w-[72%]',
           isUser
             ? 'bg-brand-dark-blue rounded-3xl rounded-br-lg px-4 py-3 text-white shadow-md'
             : 'bg-card text-foreground border-border rounded-3xl rounded-bl-lg border px-4 py-3',
@@ -87,20 +98,27 @@ export function AiChatMessage({
               )}
             >
               {message.streaming ? (
-                <p className="my-0 whitespace-pre-wrap">
-                  {settledText}
+                <>
+                  {settledText && (
+                    <div
+                      dangerouslySetInnerHTML={{
+                        __html: DOMPurify.sanitize(markdownToHtml(settledText)),
+                      }}
+                    />
+                  )}
                   {delta && (
                     <span
                       key={animKey}
                       style={{
                         display: 'inline',
-                        animation: 'token-appear 180ms cubic-bezier(0.16, 1, 0.3, 1) both',
+                        animation:
+                          'token-appear 180ms cubic-bezier(0.16, 1, 0.3, 1) both',
                       }}
                     >
                       {delta}
                     </span>
                   )}
-                </p>
+                </>
               ) : (
                 <div dangerouslySetInnerHTML={{ __html: finalHtml }} />
               )}

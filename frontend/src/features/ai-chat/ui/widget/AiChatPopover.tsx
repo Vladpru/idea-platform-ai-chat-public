@@ -72,7 +72,7 @@ export function AiChatPopover({
       style={{ transformOrigin: 'bottom right' }}
       className={cn(
         'fixed right-6 bottom-24 z-50',
-        'flex h-[480px] w-[360px] flex-col',
+        'flex h-[500px] w-[360px] flex-col',
         'bg-card border-border rounded-2xl border shadow-2xl',
         'overflow-hidden',
       )}

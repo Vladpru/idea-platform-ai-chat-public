@@ -39,4 +39,3 @@ export function AiChatFab({ isOpen, onClick }: Props) {
     </button>
   );
 }
-pendingAction;

@@ -33,11 +33,11 @@ function sseEvent(payload: object): string {
 }
 
 const INTENT_SYSTEM_OVERRIDES: Partial<Record<ChatIntent, string>> = {
-  search: `The user wants to search or list items. Scan ALL knowledge base excerpts and list every matching idea or problem with its title, status, stage, and a one-sentence description. Never say you cannot search.`,
-  explain: `The user wants a detailed explanation. Provide a thorough, structured answer using the knowledge base excerpts. Use headings and bullet points where helpful.`,
-  compare: `The user wants to compare items. Present a structured side-by-side comparison using the knowledge base excerpts. Use a table or parallel bullet points.`,
-  summarize: `The user wants a summary. Synthesise the knowledge base excerpts into a concise summary covering key themes, active stages, and notable authors.`,
-  navigate: `The user wants help navigating the platform. Explain the relevant platform features clearly. If the knowledge base has no relevant info, describe how the platform generally works.`,
+  search: `The user wants to search or list items. First check the conversation history — if the answer is already there (e.g. an idea was just drafted or discussed), answer from history. Otherwise scan ALL knowledge base excerpts and list every matching idea or problem with its title, status, stage, and a one-sentence description. Never say you cannot search.`,
+  explain: `The user wants a detailed explanation. First check the conversation history for relevant context — if an idea or problem was recently discussed or drafted, use that. Then enrich with knowledge base excerpts. Provide a thorough, structured answer using headings and bullet points where helpful.`,
+  compare: `The user wants to compare items. First check the conversation history — items discussed earlier in this session are valid candidates for comparison. Then use knowledge base excerpts. Present a structured side-by-side comparison using a table or parallel bullet points.`,
+  summarize: `The user wants a summary. First check the conversation history for context about what was discussed or created in this session. Then synthesise the knowledge base excerpts into a concise summary covering key themes, active stages, and notable authors.`,
+  navigate: `The user wants help navigating the platform. First check the conversation history for any relevant context. Then explain the relevant platform features clearly. If the knowledge base has no relevant info, describe how the platform generally works.`,
   create_idea: `The user wants to create a new idea. Write a short, friendly confirmation (2-3 sentences) summarising what you understood and confirming you will draft an idea for them. Do not ask for more information. End your message with "Here's what I'll draft for you:".`,
   create_problem: `The user wants to create a new problem. Write a short, friendly confirmation (2-3 sentences) summarising the problem you understood. Remind the user it will be saved as a draft and they can edit it before publishing.`,
 };
@@ -292,8 +292,9 @@ export class AiChatService {
     return [
       'You are a helpful AI assistant for the Idea Platform — an innovation hub where teams submit ideas and problems.',
       intentInstruction,
-      'If no excerpts match the query, say clearly that no matching ideas or problems were found in the knowledge base at this time, and suggest the user browse the platform directly.',
+      'If no excerpts match the query but the conversation history contains relevant context (e.g. an idea or problem was just drafted or discussed), use that context to answer. Only tell the user nothing was found if neither the knowledge base nor the conversation history has relevant information.',
       'Only decline to answer if the question is entirely unrelated to the Idea Platform (e.g. general coding questions, weather, etc.).',
+      'IMPORTANT: Never mention sources, file names, document names, or knowledge base references in your response. Do not write things like "(Source: ...)", "[1]", "according to faq.md", or any similar attribution. Respond as if the knowledge comes from you directly.',
       '',
       '== User ==',
       `Name: ${userContext.name}`,

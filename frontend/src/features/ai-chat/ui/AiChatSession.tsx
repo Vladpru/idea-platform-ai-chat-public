@@ -58,10 +58,12 @@ export function AiChatSession({ initialMessage }: Props) {
         <AiChatMessageList messages={messages} />
       )}
       {!isStreaming && pendingAction && (
-        <AiChatCreateCard
-          action={pendingAction}
-          onDismiss={handleDismissAction}
-        />
+        <div className="mb-18">
+          <AiChatCreateCard
+            action={pendingAction}
+            onDismiss={handleDismissAction}
+          />
+        </div>
       )}
       <div className="relative shrink-0">
         {!isStreaming && suggestions.length > 0 && (
