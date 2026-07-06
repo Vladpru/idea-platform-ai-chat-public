@@ -2,6 +2,7 @@ import { useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 
+import type { PageContext } from '@/shared/model/page-context-store';
 import { streamChatMessage } from '../api/ai-chat.stream';
 import type { ChatActionPayload, ChatIntent, ChatMessage } from '../api/ai-chat.types';
 import { aiChatQueryKeys } from '../model/ai-chat-query-keys';
@@ -23,7 +24,7 @@ export function useChatStream(sessionId: string) {
   const session = useChatStreamStore(state => state.sessions[sessionId] ?? EMPTY_SESSION);
 
   const send = useCallback(
-    async (message: string) => {
+    async (message: string, pageContext?: PageContext) => {
       const storeState = useChatStreamStore.getState();
       if (storeState.sessions[sessionId]?.isStreaming) return;
 
@@ -57,6 +58,7 @@ export function useChatStream(sessionId: string) {
         await streamChatMessage({
           sessionId,
           message,
+          pageContext,
           signal: controller.signal,
           onToken: token => {
             useChatStreamStore
@@ -94,6 +96,18 @@ export function useChatStream(sessionId: string) {
             }
             useChatStreamStore.getState().setIntent(sessionId, intent as ChatIntent);
           },
+          onFieldAction: (field, values) => {
+            const ctx = useChatStreamStore.getState().sessions[sessionId];
+            const existing =
+              field === 'tags'
+                ? (pageContext?.type === 'idea_form' ? pageContext.tags : [])
+                : (pageContext?.type === 'idea_form' ? pageContext.linkedProblemIds : []);
+            useChatStreamStore.getState().setPendingFieldAction(sessionId, {
+              field,
+              suggested: values,
+              existing: existing ?? [],
+            });
+          },
         });
       } catch {
         deleteStreamController(sessionId);
@@ -118,5 +132,6 @@ export function useChatStream(sessionId: string) {
     suggestions: session.suggestions,
     intent: session.intent,
     pendingAction: session.pendingAction,
+    pendingFieldAction: session.pendingFieldAction,
   };
 }
