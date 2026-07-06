@@ -22,6 +22,8 @@ import type {
   ChatSessionDto,
 } from './dto/chat-session.dto';
 import { KbStatsDto } from './dto/kb-stats.dto';
+import { NudgeResponseDto } from './dto/nudge.dto';
+import { NudgeService } from './nudge.service';
 
 type AuthenticatedRequest = Request & { user: { id: string } };
 
@@ -29,13 +31,24 @@ type AuthenticatedRequest = Request & { user: { id: string } };
 @JwtAuth()
 @Controller('ai/chat')
 export class AiChatController {
-  constructor(private readonly aiChatService: AiChatService) {}
+  constructor(
+    private readonly aiChatService: AiChatService,
+    private readonly nudgeService: NudgeService,
+  ) {}
 
   @Get('kb-stats')
   @ApiOperation({ summary: 'Get real-time knowledge base statistics' })
   @ApiOkResponse({ type: KbStatsDto })
   getKbStats(): Promise<KbStatsDto> {
     return this.aiChatService.getKbStats();
+  }
+
+  @Get('nudge')
+  @ApiOperation({ summary: 'Get proactive nudge items for the current user' })
+  @ApiOkResponse({ type: NudgeResponseDto })
+  async getNudge(@Req() req: AuthenticatedRequest): Promise<NudgeResponseDto> {
+    const items = await this.nudgeService.getNudgeItems(req.user.id);
+    return { items };
   }
 
   @Get('sessions')
