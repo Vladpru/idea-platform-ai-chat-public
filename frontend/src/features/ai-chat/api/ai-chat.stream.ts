@@ -1,4 +1,5 @@
 import { getStoredAuthToken } from '@/shared/lib/auth-token';
+import type { PageContext } from '@/shared/model/page-context-store';
 
 import { AI_CHAT_ROUTES } from './ai-chat.routes';
 import type { StreamEvent } from './ai-chat.types';
@@ -12,21 +13,25 @@ function getApiBaseUrl(): string {
 export async function streamChatMessage({
   sessionId,
   message,
+  pageContext,
   signal,
   onToken,
   onDone,
   onError,
   onSuggestions,
   onIntent,
+  onFieldAction,
 }: {
   sessionId: string;
   message: string;
+  pageContext?: PageContext;
   signal: AbortSignal;
   onToken: (token: string) => void;
   onDone: (messageId: string) => void;
   onError: (message: string) => void;
   onSuggestions?: (suggestions: string[]) => void;
   onIntent?: (intent: string, entityHint: string | null) => void;
+  onFieldAction?: (field: 'tags' | 'linked_problems', values: string[]) => void;
 }): Promise<void> {
   const token = getStoredAuthToken();
   const url = `${getApiBaseUrl()}${AI_CHAT_ROUTES.stream(sessionId)}`;
@@ -37,7 +42,7 @@ export async function streamChatMessage({
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({ message, pageContext: pageContext ?? null }),
     signal,
   });
 
@@ -65,6 +70,7 @@ export async function streamChatMessage({
         else if (event.type === 'error') onError(event.message);
         else if (event.type === 'suggestions') onSuggestions?.(event.suggestions);
         else if (event.type === 'intent') onIntent?.(event.intent, event.entityHint);
+        else if (event.type === 'field_action') onFieldAction?.(event.field, event.values);
       } catch {
       }
     }
