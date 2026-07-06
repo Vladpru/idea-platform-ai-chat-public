@@ -3,6 +3,7 @@ import { useIdeaCreateAiAssist } from '@/features/ideas/hooks/use-idea-create-ai
 import { useIdeaCreateForm } from '@/features/ideas/hooks/use-idea-create-form';
 import { focusPublishField } from '@/features/ideas/lib/create-idea';
 import { IDEA_STAGES } from '@/features/ideas/lib/stages';
+import { parseProblemIds } from '@/features/ideas/lib/problems/mock-problems';
 import {
   outlineBtnClass,
   publishBtnClass,
@@ -18,6 +19,7 @@ import { Controller } from 'react-hook-form';
 
 import { ROUTES } from '@/shared/config/paths';
 import { useCreateFormLeaveGuard } from '@/shared/hooks/use-create-form-leave-guard';
+import { useRegisterPageContext } from '@/shared/hooks/use-register-page-context';
 import { useDocumentAutoFill } from '@/shared/hooks/use-document-auto-fill';
 import {
   SAVE_IDEA_PROGRESS_DESCRIPTION,
@@ -110,6 +112,16 @@ export function IdeaCreateForm({
 
   const titleValue = watch('title') || '';
   const descriptionValue = watch('description') || '';
+  const watchedTags = watch('tags') ?? '';
+  const watchedProblemId = watch('problemId') ?? '';
+
+  useRegisterPageContext({
+    type: 'idea_form',
+    title: titleValue,
+    description: descriptionValue,
+    tags: watchedTags ? watchedTags.split(',').map(t => t.trim()).filter(Boolean) : [],
+    linkedProblemIds: parseProblemIds(watchedProblemId),
+  });
   const trimmedTitle = titleValue.trim();
   const trimmedDescription = descriptionValue.trim();
 

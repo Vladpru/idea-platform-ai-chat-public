@@ -22,6 +22,7 @@ import { Controller } from 'react-hook-form';
 
 import { ROUTES } from '@/shared/config/paths';
 import { useCreateFormLeaveGuard } from '@/shared/hooks/use-create-form-leave-guard';
+import { useRegisterPageContext } from '@/shared/hooks/use-register-page-context';
 import { useDocumentAutoFill } from '@/shared/hooks/use-document-auto-fill';
 import { useMediaQuery } from '@/shared/hooks/use-media-query';
 import {
@@ -96,6 +97,12 @@ export function SubmitProblemForm({
 
   const titleValue = watch('title') || '';
   const descriptionValue = watch('description') || '';
+
+  useRegisterPageContext({
+    type: 'problem_form',
+    title: titleValue,
+    description: descriptionValue,
+  });
   const valuePropositionValue = watch('valueProposition') || '';
   const trimmedTitle = titleValue.trim();
   const trimmedDescription = descriptionValue.trim();
