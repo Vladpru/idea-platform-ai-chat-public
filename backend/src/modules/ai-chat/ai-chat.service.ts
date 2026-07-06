@@ -108,6 +108,13 @@ export class AiChatService {
     sessionId: string,
     message: string,
     res: Response,
+    pageContext?: {
+      type: 'idea_form' | 'problem_form';
+      title?: string;
+      description?: string;
+      tags?: string[];
+      linkedProblemIds?: string[];
+    } | null,
   ): Promise<void> {
     const session = await this.prisma.chatSession.findFirst({
       where: { id: sessionId, userId },
@@ -159,6 +166,7 @@ export class AiChatService {
       history: orderedHistory,
       message,
       intent: classified.intent,
+      pageContext: pageContext ?? null,
     });
 
     let fullAnswer = '';
@@ -180,9 +188,22 @@ export class AiChatService {
       return;
     }
 
+    const FIELD_ACTION_REGEX = /<field_action field="(tags|linked_problems)" values='(\[.*?\])'\/>/;
+    const fieldActionMatch = FIELD_ACTION_REGEX.exec(fullAnswer);
+    const cleanAnswer = fullAnswer.replace(FIELD_ACTION_REGEX, '').trimEnd();
+
+    if (fieldActionMatch) {
+      try {
+        const field = fieldActionMatch[1] as 'tags' | 'linked_problems';
+        const values = JSON.parse(fieldActionMatch[2]) as string[];
+        res.write(sseEvent({ type: 'field_action', field, values }));
+      } catch {
+      }
+    }
+
     const suggestions = await this.gemini.generateFollowUpSuggestions(
       message,
-      fullAnswer,
+      cleanAnswer,
     );
     if (suggestions.length > 0) {
       res.write(sseEvent({ type: 'suggestions', suggestions }));
@@ -208,7 +229,7 @@ export class AiChatService {
           userId,
           sessionId,
           role: 'assistant',
-          content: fullAnswer,
+          content: cleanAnswer,
           sources,
         },
       }),
@@ -241,6 +262,7 @@ export class AiChatService {
     history,
     message,
     intent,
+    pageContext,
   }: {
     userContext: {
       name: string;
@@ -257,6 +279,13 @@ export class AiChatService {
     history: { role: string; content: string }[];
     message: string;
     intent: ChatIntent;
+    pageContext?: {
+      type: 'idea_form' | 'problem_form';
+      title?: string;
+      description?: string;
+      tags?: string[];
+      linkedProblemIds?: string[];
+    } | null;
   }): string {
     const knowledgeSection = ragChunks.length
       ? ragChunks
@@ -289,6 +318,25 @@ export class AiChatService {
       INTENT_SYSTEM_OVERRIDES[intent] ??
       'Answer helpfully using the knowledge base excerpts below.';
 
+    let pageContextSection = '';
+    if (pageContext) {
+      const lines = ['The user is currently editing a draft. Use this context to answer questions about it.'];
+      lines.push(`Type: ${pageContext.type === 'idea_form' ? 'Idea draft' : 'Problem draft'}`);
+      if (pageContext.title) lines.push(`Title: "${pageContext.title}"`);
+      if (pageContext.description) lines.push(`Description: "${pageContext.description.slice(0, 500)}"`);
+      if (pageContext.type === 'idea_form') {
+        if (pageContext.tags?.length) lines.push(`Tags: [${pageContext.tags.join(', ')}]`);
+        if (pageContext.linkedProblemIds?.length) lines.push(`Linked problem IDs: [${pageContext.linkedProblemIds.join(', ')}]`);
+      }
+      lines.push(
+        'If the user asks for tag suggestions, end your response with exactly: <field_action field="tags" values=\'["tag1","tag2"]\'/> — replace with real tag strings, no markdown. Only include this when the user explicitly requests tag suggestions.',
+      );
+      lines.push(
+        'If the user asks to suggest problems to link, end your response with exactly: <field_action field="linked_problems" values=\'["id1","id2"]\'/> — replace with real problem IDs. Only include this when the user explicitly requests problem suggestions.',
+      );
+      pageContextSection = lines.join('\n');
+    }
+
     return [
       'You are a helpful AI assistant for the Idea Platform — an innovation hub where teams submit ideas and problems.',
       intentInstruction,
@@ -307,6 +355,7 @@ export class AiChatService {
       '',
       '== Conversation History ==',
       historySection,
+      ...(pageContextSection ? ['', '== Current Page Context ==', pageContextSection] : []),
       '',
       '== Question ==',
       message,

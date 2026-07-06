@@ -92,6 +92,7 @@ export class AiChatController {
       sessionId,
       dto.message,
       res,
+      dto.pageContext,
     );
   }
 }
