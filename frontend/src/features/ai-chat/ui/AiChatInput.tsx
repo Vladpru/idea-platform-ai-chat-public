@@ -7,9 +7,15 @@ type Props = {
   onSend: (message: string) => void;
   isStreaming: boolean;
   restoredValue?: string;
+  isWidget?: boolean;
 };
 
-export function AiChatInput({ onSend, isStreaming, restoredValue }: Props) {
+export function AiChatInput({
+  onSend,
+  isStreaming,
+  restoredValue,
+  isWidget,
+}: Props) {
   const [value, setValue] = useState(restoredValue ?? '');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -42,12 +48,15 @@ export function AiChatInput({ onSend, isStreaming, restoredValue }: Props) {
   const canSend = !!value.trim() && !isStreaming;
 
   return (
-    <div className="shrink-0 px-4 pt-2 pb-4 sm:px-6">
+    <div
+      className={cn('shrink-0 pt-2 pb-4', isWidget ? 'px-3' : 'px-4 sm:px-6')}
+    >
       <div className="mx-auto max-w-3xl">
         <div
           className={cn(
-            'border-border bg-card flex items-center gap-3 rounded-2xl border px-4 py-3',
-            'focus-within:border-brand-dark-blue/50 transition-colors',
+            'border-border bg-card flex items-center gap-3 rounded-2xl border transition-colors',
+            'focus-within:border-brand-dark-blue/50',
+            isWidget ? 'px-3 py-2' : 'px-4 py-3',
           )}
         >
           <textarea
@@ -63,8 +72,9 @@ export function AiChatInput({ onSend, isStreaming, restoredValue }: Props) {
             disabled={isStreaming}
             rows={1}
             className={cn(
-              'text-foreground flex-1 resize-none bg-transparent text-sm leading-relaxed outline-none',
+              'text-foreground flex-1 resize-none bg-transparent leading-relaxed outline-none',
               'placeholder:text-muted-foreground/50 disabled:opacity-40',
+              'text-sm',
             )}
             style={{ maxHeight: 140 }}
           />

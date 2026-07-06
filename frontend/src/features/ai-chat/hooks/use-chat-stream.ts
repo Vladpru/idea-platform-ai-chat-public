@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { streamChatMessage } from '../api/ai-chat.stream';
-import type { ChatIntent, ChatMessage } from '../api/ai-chat.types';
+import type { ChatActionPayload, ChatIntent, ChatMessage } from '../api/ai-chat.types';
 import { aiChatQueryKeys } from '../model/ai-chat-query-keys';
 import {
   EMPTY_SESSION,
@@ -29,6 +29,7 @@ export function useChatStream(sessionId: string) {
 
       storeState.setStreaming(sessionId, true);
       storeState.setSuggestions(sessionId, []);
+      storeState.setPendingAction(sessionId, null);
 
       await queryClient.cancelQueries({ queryKey: aiChatQueryKeys.messages(sessionId) });
 
@@ -80,7 +81,17 @@ export function useChatStream(sessionId: string) {
           onSuggestions: suggestions => {
             useChatStreamStore.getState().setSuggestions(sessionId, suggestions);
           },
-          onIntent: (intent) => {
+          onIntent: (intent, entityHint) => {
+            if (intent === 'create_idea' || intent === 'create_problem') {
+              try {
+                const fields = JSON.parse(entityHint ?? '{}') as Omit<ChatActionPayload, 'type'>;
+                useChatStreamStore.getState().setPendingAction(sessionId, {
+                  type: intent,
+                  ...fields,
+                } as ChatActionPayload);
+              } catch {
+              }
+            }
             useChatStreamStore.getState().setIntent(sessionId, intent as ChatIntent);
           },
         });
@@ -106,5 +117,6 @@ export function useChatStream(sessionId: string) {
     optimisticMessages: session.optimisticMessages,
     suggestions: session.suggestions,
     intent: session.intent,
+    pendingAction: session.pendingAction,
   };
 }

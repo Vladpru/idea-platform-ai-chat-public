@@ -1,4 +1,5 @@
 import { AuthSessionSync } from '@/features/auth';
+import { AiChatWidget } from '@/features/ai-chat';
 import { hasValidSession } from '@/features/auth/model/auth-session-store';
 import { NotificationSocketProvider } from '@/features/notifications';
 import { NotFoundPage } from '@/pages/not-found';
@@ -21,6 +22,7 @@ function AuthLayout() {
         <Outlet />
       </div>
       <OfflineIndicator />
+      <AiChatWidget />
     </div>
   );
 }

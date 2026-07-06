@@ -26,7 +26,13 @@ export type ChatIntent =
   | 'compare'
   | 'summarize'
   | 'navigate'
+  | 'create_idea'
+  | 'create_problem'
   | 'general';
+
+export type ChatActionPayload =
+  | { type: 'create_idea'; title?: string; description?: string; tags?: string[] }
+  | { type: 'create_problem'; title?: string; description?: string };
 
 export type KbStats = {
   totalChunks: number;
