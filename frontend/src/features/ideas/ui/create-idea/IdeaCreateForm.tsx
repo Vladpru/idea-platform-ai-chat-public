@@ -3,7 +3,7 @@ import { useIdeaCreateAiAssist } from '@/features/ideas/hooks/use-idea-create-ai
 import { useIdeaCreateForm } from '@/features/ideas/hooks/use-idea-create-form';
 import { focusPublishField } from '@/features/ideas/lib/create-idea';
 import { IDEA_STAGES } from '@/features/ideas/lib/stages';
-import { parseProblemIds } from '@/features/ideas/lib/problems/mock-problems';
+import { formatProblemIds, parseProblemIds } from '@/features/ideas/lib/problems/mock-problems';
 import {
   outlineBtnClass,
   publishBtnClass,
@@ -19,7 +19,7 @@ import { Controller } from 'react-hook-form';
 
 import { ROUTES } from '@/shared/config/paths';
 import { useCreateFormLeaveGuard } from '@/shared/hooks/use-create-form-leave-guard';
-import { useRegisterPageContext } from '@/shared/hooks/use-register-page-context';
+import { useRegisterPageContext } from '@/shared/hooks/use-register-page-context';\nimport { setFieldActionHandler } from '@/shared/model/page-context-store';
 import { useDocumentAutoFill } from '@/shared/hooks/use-document-auto-fill';
 import {
   SAVE_IDEA_PROGRESS_DESCRIPTION,
@@ -122,6 +122,18 @@ export function IdeaCreateForm({
     tags: watchedTags ? watchedTags.split(',').map(t => t.trim()).filter(Boolean) : [],
     linkedProblemIds: parseProblemIds(watchedProblemId),
   });
+  useEffect(() => {
+    setFieldActionHandler((field, merged) => {
+      if (field === 'tags') {
+        form.setValue('tags', merged.join(','), { shouldDirty: true });
+      } else if (field === 'linked_problems') {
+        form.setValue('problemId', formatProblemIds(merged), { shouldDirty: true });
+      }
+    });
+    return () => {
+      setFieldActionHandler(null);
+    };
+  }, [form]);
   const trimmedTitle = titleValue.trim();
   const trimmedDescription = descriptionValue.trim();
 

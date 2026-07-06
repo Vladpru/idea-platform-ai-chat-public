@@ -1,16 +1,13 @@
 import { useRouterState } from '@tanstack/react-router';
 import { AnimatePresence } from 'framer-motion';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 
+import { useFieldActionHandler } from '@/shared/model/page-context-store';
 import { useWidgetChat } from '../../hooks/use-widget-chat';
 import { AiChatFab } from './AiChatFab';
 import { AiChatPopover } from './AiChatPopover';
 
-type Props = {
-  onApplyFieldAction?: (field: 'tags' | 'linked_problems', merged: string[]) => void;
-};
-
-export function AiChatWidget({ onApplyFieldAction }: Props) {
+export function AiChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = useRouterState({ select: s => s.location.pathname });
   const {
@@ -25,12 +22,7 @@ export function AiChatWidget({ onApplyFieldAction }: Props) {
     pageContext,
   } = useWidgetChat();
 
-  const handleApplyFieldAction = useCallback(
-    (field: 'tags' | 'linked_problems', merged: string[]) => {
-      onApplyFieldAction?.(field, merged);
-    },
-    [onApplyFieldAction],
-  );
+  const fieldActionHandler = useFieldActionHandler();
 
   if (pathname.startsWith('/ai-chat')) return null;
 
@@ -47,7 +39,7 @@ export function AiChatWidget({ onApplyFieldAction }: Props) {
             pendingAction={pendingAction}
             clearPendingAction={clearPendingAction}
             pendingFieldAction={pendingFieldAction}
-            onApplyFieldAction={handleApplyFieldAction}
+            onApplyFieldAction={(field, merged) => fieldActionHandler?.(field, merged)}
             clearPendingFieldAction={clearPendingFieldAction}
             pageContext={pageContext}
           />
