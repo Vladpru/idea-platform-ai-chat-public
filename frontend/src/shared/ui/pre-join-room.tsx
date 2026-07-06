@@ -117,12 +117,12 @@ export function PreJoinRoom({ onJoin, onCancel, className }: PreJoinRoomProps) {
   return (
     <div
       className={cn(
-        'flex min-h-0 flex-1 items-center justify-center bg-white dark:bg-zinc-950 p-6',
+        'flex min-h-0 flex-1 flex-col items-center overflow-y-auto bg-white dark:bg-zinc-950 p-6 sm:flex-row sm:justify-center sm:overflow-hidden',
         className,
       )}
     >
       <div className="flex w-full max-w-4xl flex-col gap-8 sm:flex-row sm:items-center">
-        <div className="min-h-0 flex-1">
+        <div className="w-full shrink-0 sm:min-h-0 sm:flex-1">
           <div className="aspect-video w-full overflow-hidden rounded-2xl">
             <LocalVideoPreview track={videoPreview.localTrack} />
           </div>

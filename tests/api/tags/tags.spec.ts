@@ -18,7 +18,7 @@ describe('Tags API', () => {
       expect(Array.isArray(res.json)).toBe(true);
     });
 
-    it('each tag should have id, name fields', async () => {
+    it('each tag should have id, name, label fields', async () => {
       const res = await pactum.spec()
         .get('/tag')
         .withHeaders('Authorization', `Bearer ${token}`)
@@ -26,10 +26,11 @@ describe('Tags API', () => {
       if (Array.isArray(res.json) && res.json.length > 0) {
         expect(res.json[0]).toHaveProperty('id');
         expect(res.json[0]).toHaveProperty('name');
+        expect(res.json[0]).toHaveProperty('label');
       }
     });
 
-    it('tag id should be a string', async () => {
+    it('tag fields should be strings', async () => {
       const res = await pactum.spec()
         .get('/tag')
         .withHeaders('Authorization', `Bearer ${token}`)
@@ -37,6 +38,8 @@ describe('Tags API', () => {
       if (Array.isArray(res.json) && res.json.length > 0) {
         expect(typeof res.json[0].id).toBe('string');
         expect(typeof res.json[0].name).toBe('string');
+        // label is nullable per Swagger (TagResponseDto: nullable: true)
+        expect(res.json[0].label === null || typeof res.json[0].label === 'string').toBe(true);
       }
     });
 

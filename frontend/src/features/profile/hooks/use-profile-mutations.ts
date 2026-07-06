@@ -14,13 +14,8 @@ import {
 } from '../api/profile.api';
 
 function applyUserToSession(user: UserPublic) {
-  const state = useAuthSessionStore.getState();
-  if (!state.accessToken) return;
-  const existingRole = state.user?.role;
-  state.setSession(
-    existingRole ? { ...user, role: existingRole } : user,
-    state.accessToken,
-  );
+  if (!useAuthSessionStore.getState().user) return;
+  useAuthSessionStore.getState().setSession(user);
 }
 
 export function usePatchUserMutation() {

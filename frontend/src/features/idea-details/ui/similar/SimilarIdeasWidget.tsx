@@ -2,21 +2,15 @@ import type {
   SimilarIdeaCard,
   SimilarIdeasSubTab,
 } from '@/features/idea-details/model/idea-details.types';
-
 import { Globe } from 'lucide-react';
-
 import { useState } from 'react';
 
 import { ROUTES } from '@/shared/config/paths';
-
 import { cn } from '@/shared/lib/utils';
-
 import { StarsIcon } from '@/shared/ui/icons';
-
 import { AnimatedTabUnderline } from '@/shared/ui/motion';
 
 import { SimilarIdeasRowSkeleton } from '../skeletons/SimilarIdeasRowSkeleton';
-
 import { SimilarEntityCard } from './SimilarEntityCard';
 
 type SimilarIdeasWidgetProps = {
@@ -58,16 +52,6 @@ export function SimilarIdeasWidget({
       icon: <StarsIcon className="size-3.5" />,
 
       count: similarIdeas.length,
-    },
-
-    {
-      id: 'FOUND_ON_WEB',
-
-      label: 'Found on Web',
-
-      icon: <Globe className="size-3.5" />,
-
-      count: 0,
     },
   ];
 

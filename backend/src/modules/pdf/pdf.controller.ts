@@ -10,7 +10,6 @@ import {
 import {
   ApiAcceptedResponse,
   ApiBearerAuth,
-  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOperation,
   ApiTags,
@@ -33,7 +32,6 @@ export class PdfController {
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({ summary: 'Trigger PDF export for an idea' })
   @ApiAcceptedResponse({ description: 'PDF generation queued' })
-  @ApiForbiddenResponse({ description: 'Export not available for this idea' })
   @ApiNotFoundResponse({ description: 'Idea not found' })
   async exportIdea(
     @Param('id', ParseUUIDPipe) id: string,
@@ -49,9 +47,6 @@ export class PdfController {
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({ summary: 'Trigger PDF export for a problem' })
   @ApiAcceptedResponse({ description: 'PDF generation queued' })
-  @ApiForbiddenResponse({
-    description: 'Export not available for this problem',
-  })
   @ApiNotFoundResponse({ description: 'Problem not found' })
   async exportProblem(
     @Param('id', ParseUUIDPipe) id: string,

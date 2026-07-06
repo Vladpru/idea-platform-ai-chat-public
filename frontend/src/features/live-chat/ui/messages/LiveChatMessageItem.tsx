@@ -130,7 +130,7 @@ export function LiveChatMessageItem({ message }: LiveChatMessageItemProps) {
               'flex max-w-full flex-col rounded-lg px-3 py-2 text-sm transition-opacity',
               isOwnMessage
                 ? 'bg-brand-orange text-white'
-                : 'text-brand-black bg-white',
+                : 'bg-card text-brand-black',
               message.pending && 'opacity-70',
             )}
           >
@@ -146,7 +146,7 @@ export function LiveChatMessageItem({ message }: LiveChatMessageItemProps) {
             {message.content.length > 0 && (
               <p
                 className={cn(
-                  'wrap-break-word whitespace-pre-wrap',
+                  '[overflow-wrap:anywhere] break-words whitespace-pre-wrap',
                   hasAttachment && 'mt-1',
                 )}
               >

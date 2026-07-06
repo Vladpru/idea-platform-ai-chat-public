@@ -11,11 +11,11 @@ import type { JwtPayload } from 'jsonwebtoken';
 
 import { isDev } from '../../shared/utils/is-dev.util';
 
-function decodeRefreshPayload(
+function decodeTokenExpPayload(
   jwt: JwtService,
-  refreshToken: string,
+  token: string,
 ): JwtPayload | null {
-  const decodedUnknown: unknown = jwt.decode(refreshToken);
+  const decodedUnknown: unknown = jwt.decode(token);
   if (
     decodedUnknown === null ||
     typeof decodedUnknown !== 'object' ||
@@ -87,9 +87,23 @@ export class TokenService {
     }
   }
 
+  issueWsToken(userId: string): string {
+    try {
+      return this.jwt.sign(
+        { id: userId },
+        {
+          expiresIn: (this.config.get<string>('WS_TOKEN_EXPIRE') ??
+            '60s') as JwtSignOptions['expiresIn'],
+        },
+      );
+    } catch {
+      throw new BadRequestException("Couldn't issue ws token");
+    }
+  }
+
   addRefreshTokenToCookie(res: Response, refreshToken: string) {
     try {
-      const decoded = decodeRefreshPayload(this.jwt, refreshToken);
+      const decoded = decodeTokenExpPayload(this.jwt, refreshToken);
       const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
       const maxAge =
         decoded?.exp !== undefined
@@ -103,8 +117,34 @@ export class TokenService {
       res.cookie(this.refreshCookieName(), refreshToken, {
         httpOnly: true,
         domain,
-        secure: !this.isDevMode(),
-        sameSite: 'lax',
+        secure: true,
+        sameSite: 'none',
+        path: '/',
+        maxAge,
+      });
+    } catch {
+      throw new BadRequestException();
+    }
+  }
+
+  addAccessTokenToCookie(res: Response, accessToken: string) {
+    try {
+      const decoded = decodeTokenExpPayload(this.jwt, accessToken);
+      const fifteenMinutesMs = 15 * 60 * 1000;
+      const maxAge =
+        decoded?.exp !== undefined
+          ? Math.max(0, decoded.exp * 1000 - Date.now()) + 1000
+          : fifteenMinutesMs;
+
+      const domain = this.isDevMode()
+        ? undefined
+        : this.config.get<string>('SERVER_DOMAIN');
+
+      res.cookie('accessToken', accessToken, {
+        httpOnly: true,
+        domain,
+        secure: true,
+        sameSite: 'none',
         path: '/',
         maxAge,
       });
@@ -128,8 +168,8 @@ export class TokenService {
         httpOnly: true,
         path: '/',
         domain,
-        secure: !this.isDevMode(),
-        sameSite: 'lax',
+        secure: true,
+        sameSite: 'none',
       });
     } catch {
       throw new BadRequestException('Error logging out');

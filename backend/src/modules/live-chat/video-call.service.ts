@@ -1,9 +1,9 @@
 import {
-  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 
 import { VideoCallStatus } from '../../../generated/prisma/client';
@@ -121,7 +121,7 @@ export class VideoCallService {
       case 'cancel':
         return this.cancelCall(call, userId);
       default:
-        throw new BadRequestException('Invalid video call action');
+        throw new UnprocessableEntityException('Invalid video call action');
     }
   }
 
@@ -142,11 +142,11 @@ export class VideoCallService {
     }
 
     if (call.status !== VideoCallStatus.ACTIVE) {
-      throw new BadRequestException(VIDEO_CALL_NOT_ACTIVE);
+      throw new UnprocessableEntityException(VIDEO_CALL_NOT_ACTIVE);
     }
 
     if (!call.providerRoomName) {
-      throw new BadRequestException(VIDEO_CALL_NOT_ACTIVE);
+      throw new UnprocessableEntityException(VIDEO_CALL_NOT_ACTIVE);
     }
 
     const participant = await this.videoCallRepository.findUserAuthor(userId);
@@ -200,11 +200,11 @@ export class VideoCallService {
     const scheduledDate = new Date(scheduledFor);
 
     if (Number.isNaN(scheduledDate.getTime())) {
-      throw new BadRequestException(VIDEO_CALL_SCHEDULED_FOR_PAST);
+      throw new UnprocessableEntityException(VIDEO_CALL_SCHEDULED_FOR_PAST);
     }
 
     if (scheduledDate.getTime() <= Date.now()) {
-      throw new BadRequestException(VIDEO_CALL_SCHEDULED_FOR_PAST);
+      throw new UnprocessableEntityException(VIDEO_CALL_SCHEDULED_FOR_PAST);
     }
 
     const call = await this.videoCallRepository.createVideoCall({
@@ -285,7 +285,7 @@ export class VideoCallService {
     }
 
     if (call.status !== VideoCallStatus.SCHEDULED) {
-      throw new BadRequestException(VIDEO_CALL_NOT_SCHEDULED);
+      throw new UnprocessableEntityException(VIDEO_CALL_NOT_SCHEDULED);
     }
 
     const existingActive =
@@ -347,7 +347,7 @@ export class VideoCallService {
     this.assertHost(call, userId);
 
     if (call.status !== VideoCallStatus.ACTIVE) {
-      throw new BadRequestException(VIDEO_CALL_NOT_ACTIVE);
+      throw new UnprocessableEntityException(VIDEO_CALL_NOT_ACTIVE);
     }
 
     if (call.providerRoomName) {
@@ -381,7 +381,7 @@ export class VideoCallService {
     this.assertHost(call, userId);
 
     if (call.status !== VideoCallStatus.SCHEDULED) {
-      throw new BadRequestException(VIDEO_CALL_NOT_SCHEDULED);
+      throw new UnprocessableEntityException(VIDEO_CALL_NOT_SCHEDULED);
     }
 
     const updatedCall = await this.videoCallRepository.updateVideoCall(

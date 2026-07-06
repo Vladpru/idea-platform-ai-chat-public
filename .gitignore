@@ -66,6 +66,11 @@ CLAUDE.md
 /graphify-out
 # Claude Code local session data
 .claude/
+<<<<<<< HEAD
 .md
 .superpowers
 PRODUCT.md.worktrees/
+=======
+.playwright-mcp
+*.png
+>>>>>>> upstream/develop

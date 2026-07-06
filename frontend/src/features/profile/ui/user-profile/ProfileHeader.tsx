@@ -281,9 +281,7 @@ export function ProfileHeader({
         </div>
       </div>
 
-      <div className="flex justify-center sm:justify-start">
-        <ProfileStats profileId={profile.id} />
-      </div>
+      <ProfileStats profileId={profile.id} />
     </div>
   );
 }

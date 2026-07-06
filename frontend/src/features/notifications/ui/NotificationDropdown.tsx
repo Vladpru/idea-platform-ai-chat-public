@@ -1,10 +1,9 @@
 import { groupNotificationsByDate } from '@/features/notifications/lib/group-notifications-by-date';
-import { ROUTES } from '@/shared/config/paths';
 import { useNavigate } from '@tanstack/react-router';
 import { MoreVertical } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
-import { flushSync } from 'react-dom';
 
+import { ROUTES } from '@/shared/config/paths';
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
 import {
@@ -65,9 +64,7 @@ function NotificationTabButton({
         <span
           className={cn(
             'inline-flex min-h-5 min-w-5 items-center justify-center rounded-sm px-1.5 py-0.5 text-[10px] font-bold tabular-nums',
-            badge > 0
-              ? 'bg-muted text-muted-foreground'
-              : 'invisible',
+            badge > 0 ? 'bg-muted text-muted-foreground' : 'invisible',
           )}
           aria-hidden={badge === 0}
         >
@@ -134,16 +131,18 @@ export function NotificationDropdown({
     deleteAll.mutate();
   };
 
-  const handleNotificationSettingsClick = useCallback(() => {
-    flushSync(() => {
+  const handleNotificationSettingsClick = useCallback(
+    (event: Event) => {
+      event.preventDefault();
       setActionsMenuOpen(false);
       onClose?.();
-    });
-    void navigate({
-      to: ROUTES.settings,
-      search: { tab: 'notifications' },
-    });
-  }, [navigate, onClose]);
+      void navigate({
+        to: ROUTES.settings,
+        search: { tab: 'notifications' },
+      });
+    },
+    [navigate, onClose],
+  );
 
   const emptyStateMinHeight =
     variant === 'sheet' ? 'min-h-0 flex-1' : 'min-h-[400px]';
@@ -153,8 +152,8 @@ export function NotificationDropdown({
       className={cn(
         'bg-card text-card-foreground flex flex-col overflow-hidden',
         variant === 'sheet'
-          ? 'min-h-0 flex-1 w-full'
-          : 'h-[590px] w-[480px] max-w-[100vw] rounded-md border shadow-lg',
+          ? 'min-h-0 w-full flex-1'
+          : 'h-[590px] w-[480px] max-w-[100vw] rounded-md shadow-lg',
       )}
     >
       <div className="border-border h-12 shrink-0 border-b px-4">
@@ -176,7 +175,11 @@ export function NotificationDropdown({
             />
           </nav>
 
-          <DropdownMenu open={actionsMenuOpen} onOpenChange={setActionsMenuOpen}>
+          <DropdownMenu
+            open={actionsMenuOpen}
+            onOpenChange={setActionsMenuOpen}
+            modal={false}
+          >
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
@@ -258,7 +261,7 @@ export function NotificationDropdown({
                 <h3 className="text-muted-foreground px-4 py-3 text-xs font-medium tracking-wide">
                   {group.label}
                 </h3>
-                <div className="divide-border divide-y">
+                <div className="divide-border max-w-[480px] divide-y">
                   {group.items.map((notification: NotificationDto) => (
                     <NotificationItem
                       key={notification.id}

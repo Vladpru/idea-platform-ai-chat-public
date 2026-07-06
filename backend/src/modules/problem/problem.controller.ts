@@ -190,6 +190,7 @@ export class ProblemController {
   @ApiPreconditionFailedResponse({
     description: 'Version conflict — current entity returned',
   })
+  @ApiUnprocessableEntityResponse({ description: 'Validation failed' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -212,7 +213,7 @@ export class ProblemController {
       required: ['file'],
     },
   })
-  @ApiOkResponse({ description: 'Attachment uploaded' })
+  @ApiCreatedResponse({ description: 'Attachment uploaded' })
   @ApiNotFoundResponse({ description: 'Problem not found' })
   @UseInterceptors(
     FileInterceptor('file', {

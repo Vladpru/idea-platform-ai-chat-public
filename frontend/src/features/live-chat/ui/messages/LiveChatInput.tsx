@@ -10,13 +10,7 @@ import { compressImage } from '@/shared/offline/media-utils';
 import { useFileHandler } from '@/shared/hooks/use-file-handler';
 import { cn } from '@/shared/lib/utils';
 import { MessageComposer } from '@/shared/ui/message-composer';
-import {
-  type ChangeEvent,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { type ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Paperclip, X } from 'lucide-react';
 
@@ -133,10 +127,7 @@ export function LiveChatInput({
 
     setIsSending(true);
     try {
-      console.log('Sending message...');
-
       const sent = await onSend(trimmed, attachment);
-      console.log('Message sent:', sent);
       if (sent) {
         setContent('');
         setPendingAttachment(null);

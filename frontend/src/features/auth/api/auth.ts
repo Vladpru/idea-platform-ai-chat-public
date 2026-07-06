@@ -20,7 +20,7 @@ export async function login<TUser = unknown>(dto: AuthDto): Promise<TUser> {
     const { data } = await api.post<AuthResponse<TUser>>('/auth/login', dto, {
       skipAuthRefresh: true,
     });
-    useAuthSessionStore.getState().setSession(data.user, data.accessToken);
+    useAuthSessionStore.getState().setSession(data.user);
     return data.user;
   });
 }
@@ -31,7 +31,7 @@ export async function register<TUser = unknown>(dto: AuthDto): Promise<TUser> {
     const { data } = await api.post<AuthResponse<TUser>>('/auth/register', dto, {
       skipAuthRefresh: true,
     });
-    useAuthSessionStore.getState().setSession(data.user, data.accessToken);
+    useAuthSessionStore.getState().setSession(data.user);
     return data.user;
   });
 }
@@ -48,7 +48,7 @@ export async function loginWithGoogleAccessToken<TUser = unknown>(
       },
       { skipAuthRefresh: true },
     );
-    useAuthSessionStore.getState().setSession(data.user, data.accessToken);
+    useAuthSessionStore.getState().setSession(data.user);
     return data.user;
   });
 }

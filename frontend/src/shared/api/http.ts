@@ -1,8 +1,6 @@
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import axios, { type InternalAxiosRequestConfig } from 'axios';
 
-import { getStoredAuthToken } from '@/shared/lib/auth-token';
-
 function getApiBaseUrl(): string {
   const base = import.meta.env.VITE_API_URL;
   if (typeof base !== 'string' || base.length === 0) {
@@ -14,13 +12,13 @@ function getApiBaseUrl(): string {
 export const api = axios.create({
   baseURL: getApiBaseUrl(),
   withCredentials: true,
-  timeout: 10_000,
+  timeout: 15_000,
 });
 
 const cleanApi = axios.create({
   baseURL: getApiBaseUrl(),
   withCredentials: true,
-  timeout: 10_000,
+  timeout: 15_000,
 });
 
 const AUTH_ROUTE_PATH =
@@ -73,28 +71,15 @@ function shouldSkipAuthRefresh(
   );
 }
 
-api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  if (!isAuthRouteRequest(config)) {
-    const token = getStoredAuthToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-  }
-  return config;
-});
-
 export type RefreshResponse = { accessToken: string };
 
-let refreshInFlight: Promise<string> | null = null;
+let refreshInFlight: Promise<void> | null = null;
 
-export async function refreshAccessToken(): Promise<string> {
+export async function refreshAccessToken(): Promise<void> {
   if (!refreshInFlight) {
     refreshInFlight = cleanApi
       .post<RefreshResponse>('/token/refresh')
-      .then(({ data }) => {
-        useAuthSessionStore.getState().setAccessToken(data.accessToken);
-        return data.accessToken;
-      })
+      .then(() => undefined)
       .catch(error => {
         useAuthSessionStore.getState().clearSession();
         if (!isPublicAuthPage()) {

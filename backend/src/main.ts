@@ -1,15 +1,15 @@
-import './instrument';
-
-import { ValidationPipe } from '@nestjs/common';
+import { UnprocessableEntityException, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import type { ValidationError } from 'class-validator';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 
-import { RedisIoAdapter } from './core/adapters/redis-io.adapter';
 import { AppModule } from './app.module';
+import { RedisIoAdapter } from './core/adapters/redis-io.adapter';
+import './instrument';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -54,10 +54,37 @@ async function bootstrap() {
 
   app.enableShutdownHooks();
 
+  app.use(cookieParser());
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       transform: true,
+      exceptionFactory: (errors: ValidationError[]) => {
+        const formatErrors = (validationErrors: ValidationError[], parentProperty = '') => {
+          const formattedErrors: Record<string, string[]> = {};
+          
+          validationErrors.forEach((error) => {
+            const propertyPath = parentProperty ? `${parentProperty}.${error.property}` : error.property;
+            
+            if (error.constraints) {
+              formattedErrors[propertyPath] = Object.values(error.constraints);
+            }
+            
+            if (error.children && error.children.length > 0) {
+              Object.assign(formattedErrors, formatErrors(error.children, propertyPath));
+            }
+          });
+          
+          return formattedErrors;
+        };
+
+        return new UnprocessableEntityException({
+          statusCode: 422,
+          error: 'Unprocessable Entity',
+          message: formatErrors(errors),
+        });
+      },
     }),
   );
 
@@ -65,8 +92,6 @@ async function bootstrap() {
     origin: [config.getOrThrow<string>('FRONTEND_URL')],
     credentials: true,
   });
-
-  app.use(cookieParser());
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Idea platform api')
