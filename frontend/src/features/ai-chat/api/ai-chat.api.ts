@@ -1,7 +1,7 @@
 import { api } from '@/shared/api/http';
 
 import { AI_CHAT_ROUTES } from './ai-chat.routes';
-import type { ChatMessage, ChatSession, KbStats } from './ai-chat.types';
+import type { ChatMessage, ChatSession, KbStats, NudgeResponse } from './ai-chat.types';
 
 export async function fetchSessions(): Promise<ChatSession[]> {
   const { data } = await api.get<ChatSession[]>(AI_CHAT_ROUTES.sessions);
@@ -24,5 +24,10 @@ export async function fetchSessionMessages(id: string): Promise<ChatMessage[]> {
 
 export async function fetchKbStats(): Promise<KbStats> {
   const { data } = await api.get<KbStats>(AI_CHAT_ROUTES.kbStats);
+  return data;
+}
+
+export async function fetchNudge(): Promise<NudgeResponse> {
+  const { data } = await api.get<NudgeResponse>(AI_CHAT_ROUTES.nudge);
   return data;
 }
