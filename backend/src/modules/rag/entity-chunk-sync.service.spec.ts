@@ -1,8 +1,8 @@
 import { Test } from '@nestjs/testing';
 
-import { EntityChunkSyncService } from './entity-chunk-sync.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { EmbeddingService } from '../embedding/embedding.service';
+import { EntityChunkSyncService } from './entity-chunk-sync.service';
 
 const mockExecuteRaw = jest.fn().mockResolvedValue(undefined);
 const mockIdeaFindUnique = jest.fn();
@@ -21,6 +21,7 @@ const publishedIdea = {
   description: 'Sensors for parking lots',
   stage: 'IDEATION',
   status: 'PUBLISHED',
+  authorId: 'author-a',
   author: { firstName: 'Alice', lastName: 'Smith' },
   tags: [{ tag: { name: 'proptech' } }, { tag: { name: 'iot' } }],
 };
@@ -34,9 +35,12 @@ const publishedProblem = {
   impact: 'High',
   stage: 'IDEATION',
   status: 'PUBLISHED',
+  authorId: 'author-b',
   author: { firstName: 'Bob', lastName: 'Jones' },
   tags: [{ tag: { name: 'mobility' } }],
 };
+
+const draftIdea = { ...publishedIdea, id: 'idea-2', status: 'DRAFT' };
 
 describe('EntityChunkSyncService', () => {
   let service: EntityChunkSyncService;
@@ -63,7 +67,10 @@ describe('EntityChunkSyncService', () => {
   });
 
   it('deletes chunk when idea transitions to non-published', async () => {
-    mockIdeaFindUnique.mockResolvedValue({ ...publishedIdea, status: 'DRAFT' });
+    mockIdeaFindUnique.mockResolvedValue({
+      ...publishedIdea,
+      status: 'ARCHIVED',
+    });
 
     await service.syncEntity('idea', 'idea-1');
 
@@ -90,7 +97,10 @@ describe('EntityChunkSyncService', () => {
   });
 
   it('deletes chunk when problem transitions to non-published', async () => {
-    mockProblemFindUnique.mockResolvedValue({ ...publishedProblem, status: 'ARCHIVED' });
+    mockProblemFindUnique.mockResolvedValue({
+      ...publishedProblem,
+      status: 'ARCHIVED',
+    });
 
     await service.syncEntity('problem', 'prob-1');
 
@@ -114,5 +124,58 @@ describe('EntityChunkSyncService', () => {
     await service.syncEntity('idea', 'idea-1');
 
     expect(mockExecuteRaw).toHaveBeenCalledTimes(1); // DELETE runs, INSERT is skipped
+  });
+
+  function insertedMetadata(): Record<string, unknown> {
+    const insertCall = mockExecuteRaw.mock.calls.find(call =>
+      (call[0] as TemplateStringsArray)
+        .join('')
+        .includes('INSERT INTO knowledge_chunk'),
+    );
+    const metadataJson = insertCall!
+      .slice(1)
+      .find(
+        value => typeof value === 'string' && value.startsWith('{"type"'),
+      ) as string;
+    return JSON.parse(metadataJson) as Record<string, unknown>;
+  }
+
+  it('stores authorId, title and status in idea chunk metadata without access', async () => {
+    mockIdeaFindUnique.mockResolvedValue(publishedIdea);
+
+    await service.syncEntity('idea', 'idea-1');
+
+    const metadata = insertedMetadata();
+    expect(metadata).toMatchObject({
+      type: 'idea',
+      id: 'idea-1',
+      title: 'Smart Parking',
+      status: 'PUBLISHED',
+      authorId: 'author-a',
+    });
+    expect(metadata).not.toHaveProperty('access');
+  });
+
+  it('stores authorId for draft ideas so the author can still find them', async () => {
+    mockIdeaFindUnique.mockResolvedValue(draftIdea);
+
+    await service.syncEntity('idea', 'idea-2');
+
+    expect(insertedMetadata()).toMatchObject({
+      status: 'DRAFT',
+      authorId: 'author-a',
+    });
+  });
+
+  it('stores authorId and title in problem chunk metadata', async () => {
+    mockProblemFindUnique.mockResolvedValue(publishedProblem);
+
+    await service.syncEntity('problem', 'prob-1');
+
+    expect(insertedMetadata()).toMatchObject({
+      type: 'problem',
+      title: 'Traffic Congestion',
+      authorId: 'author-b',
+    });
   });
 });

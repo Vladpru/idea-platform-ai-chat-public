@@ -665,6 +665,8 @@ model ChatMessage {
 model ChatSession {
   id        String        @id @default(cuid())
   title     String?
+  summary             String?  @db.Text
+  summaryMessageCount Int      @default(0) @map("summary_message_count")
   userId    String        @map("user_id")
   user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages  ChatMessage[]

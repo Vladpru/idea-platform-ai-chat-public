@@ -25,6 +25,13 @@ export interface KbStats {
   embeddingCoveragePercent: number;
 }
 
+export interface RetrieveOptions {
+  userId: string;
+  role: 'ADMIN' | 'MEMBER';
+  topK?: number;
+  scope?: 'all' | 'entities';
+}
+
 @Injectable()
 export class KnowledgeRetrievalService {
   private readonly logger = new Logger(KnowledgeRetrievalService.name);
@@ -36,9 +43,10 @@ export class KnowledgeRetrievalService {
 
   async retrieve(
     query: string,
-    topK = DEFAULT_TOP_K,
-    role?: 'ADMIN' | 'MEMBER',
+    options: RetrieveOptions,
   ): Promise<ChunkResult[]> {
+    const topK = options.topK ?? DEFAULT_TOP_K;
+    const accessFilter = this.buildAccessFilter(options);
     let vectorLiteral: string | null = null;
 
     try {
@@ -52,23 +60,34 @@ export class KnowledgeRetrievalService {
     }
 
     if (vectorLiteral) {
-      return this.retrieveHybrid(query, vectorLiteral, topK, role);
+      return this.retrieveHybrid(query, vectorLiteral, topK, accessFilter);
     }
 
-    return this.retrieveKeyword(query, topK, role);
+    return this.retrieveKeyword(query, topK, accessFilter);
+  }
+
+  private buildAccessFilter(options: RetrieveOptions): Prisma.Sql {
+    const vaultCondition =
+      options.scope === 'entities'
+        ? Prisma.sql`FALSE`
+        : options.role === 'MEMBER'
+          ? Prisma.sql`(metadata->>'access' IS NULL OR metadata->>'access' != 'admin')`
+          : Prisma.sql`TRUE`;
+
+    return Prisma.sql`AND (
+      CASE WHEN source LIKE 'idea:%' OR source LIKE 'problem:%'
+        THEN (metadata->>'status' = 'PUBLISHED' OR metadata->>'authorId' = ${options.userId})
+        ELSE ${vaultCondition}
+      END
+    )`;
   }
 
   private async retrieveHybrid(
     query: string,
     vectorLiteral: string,
     topK: number,
-    role?: 'ADMIN' | 'MEMBER',
+    accessFilter: Prisma.Sql,
   ): Promise<ChunkResult[]> {
-    const accessFilter =
-      role === 'MEMBER'
-        ? Prisma.sql`AND (metadata->>'access' IS NULL OR metadata->>'access' != 'admin')`
-        : Prisma.sql``;
-
     const rows = await this.prisma.$queryRaw<
       {
         source: string;
@@ -83,6 +102,7 @@ export class KnowledgeRetrievalService {
         FROM knowledge_chunk
         WHERE embedding IS NOT NULL
         ${accessFilter}
+        ORDER BY rank_row
         LIMIT ${CANDIDATE_LIMIT}
       ),
       keyword_search AS (
@@ -91,6 +111,7 @@ export class KnowledgeRetrievalService {
         FROM knowledge_chunk
         WHERE fts_vector @@ websearch_to_tsquery('simple', ${query})
         ${accessFilter}
+        ORDER BY rank_row
         LIMIT ${CANDIDATE_LIMIT}
       ),
       hybrid AS (
@@ -119,13 +140,8 @@ export class KnowledgeRetrievalService {
   private async retrieveKeyword(
     query: string,
     topK: number,
-    role?: 'ADMIN' | 'MEMBER',
+    accessFilter: Prisma.Sql,
   ): Promise<ChunkResult[]> {
-    const accessFilter =
-      role === 'MEMBER'
-        ? Prisma.sql`AND (metadata->>'access' IS NULL OR metadata->>'access' != 'admin')`
-        : Prisma.sql``;
-
     const rows = await this.prisma.$queryRaw<
       {
         source: string;

@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 import type { PageContext } from '@/shared/model/page-context-store';
 import { streamChatMessage } from '../api/ai-chat.stream';
-import type { ChatActionPayload, ChatIntent, ChatMessage } from '../api/ai-chat.types';
+import type { ChatIntent, ChatMessage } from '../api/ai-chat.types';
 import { aiChatQueryKeys } from '../model/ai-chat-query-keys';
 import {
   EMPTY_SESSION,
@@ -83,18 +83,16 @@ export function useChatStream(sessionId: string) {
           onSuggestions: suggestions => {
             useChatStreamStore.getState().setSuggestions(sessionId, suggestions);
           },
-          onIntent: (intent, entityHint) => {
-            if (intent === 'create_idea' || intent === 'create_problem') {
-              try {
-                const fields = JSON.parse(entityHint ?? '{}') as Omit<ChatActionPayload, 'type'>;
-                useChatStreamStore.getState().setPendingAction(sessionId, {
-                  type: intent,
-                  ...fields,
-                } as ChatActionPayload);
-              } catch {
-              }
-            }
+          onIntent: intent => {
             useChatStreamStore.getState().setIntent(sessionId, intent as ChatIntent);
+          },
+          onDraftProposal: proposal => {
+            useChatStreamStore.getState().setPendingAction(
+              sessionId,
+              proposal.draftType === 'idea'
+                ? { type: 'create_idea', title: proposal.title, description: proposal.description, tags: proposal.tags }
+                : { type: 'create_problem', title: proposal.title, description: proposal.description },
+            );
           },
           onFieldAction: (field, values) => {
             const ctx = useChatStreamStore.getState().sessions[sessionId];
