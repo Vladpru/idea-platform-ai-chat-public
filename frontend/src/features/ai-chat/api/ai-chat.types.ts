@@ -49,7 +49,10 @@ export type StreamEvent =
   | { type: 'error'; message: string; detail?: string }
   | { type: 'intent'; intent: ChatIntent; entityHint: string | null }
   | { type: 'suggestions'; suggestions: string[] }
-  | { type: 'field_action'; field: 'tags' | 'linked_problems'; values: string[] };
+  | { type: 'field_action'; field: 'tags' | 'linked_problems'; values: string[] }
+  | { type: 'draft_proposal'; draftType: 'idea' | 'problem'; title: string; description: string; tags: string[] };
+
+export type DraftProposal = Omit<Extract<StreamEvent, { type: 'draft_proposal' }>, 'type'>;
 
 export type { PageContext } from '@/shared/model/page-context-store';
 
