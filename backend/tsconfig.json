@@ -15,7 +15,12 @@
     "outDir": "./dist",
     "rootDir": "./",
     "skipLibCheck": true,
-    "incremental": true
+    "incremental": true,
+    "paths": {
+      "@langchain/langgraph/prebuilt": [
+        "./node_modules/@langchain/langgraph/dist/prebuilt/index.d.ts"
+      ]
+    }
   },
   "include": [
     "src/**/*.ts",
