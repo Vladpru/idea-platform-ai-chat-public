@@ -143,6 +143,7 @@ export class EntityChunkSyncService {
         description: true,
         stage: true,
         status: true,
+        authorId: true,
         author: { select: { firstName: true, lastName: true } },
         tags: { select: { tag: { select: { name: true } } } },
       },
@@ -177,11 +178,12 @@ export class EntityChunkSyncService {
     const metadata = JSON.stringify({
       type: 'idea',
       id: idea.id,
+      title: idea.title ?? '',
       tags: tagNames,
       stage: idea.stage,
       status: idea.status,
+      authorId: idea.authorId,
       authorName: authorName || null,
-      access: idea.status === 'DRAFT' ? 'admin' : 'public',
     });
 
     await this.embedAndSync(source, content, metadata, `idea ${ideaId}`);
@@ -199,6 +201,7 @@ export class EntityChunkSyncService {
         impact: true,
         stage: true,
         status: true,
+        authorId: true,
         author: { select: { firstName: true, lastName: true } },
         tags: { select: { tag: { select: { name: true } } } },
       },
@@ -238,11 +241,12 @@ export class EntityChunkSyncService {
     const metadata = JSON.stringify({
       type: 'problem',
       id: problem.id,
+      title: problem.title,
       tags: tagNames,
       stage: problem.stage,
       status: problem.status,
+      authorId: problem.authorId,
       authorName: authorName || null,
-      access: problem.status === 'DRAFT' ? 'admin' : 'public',
     });
 
     await this.embedAndSync(source, content, metadata, `problem ${problemId}`);

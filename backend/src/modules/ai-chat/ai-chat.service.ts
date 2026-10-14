@@ -154,11 +154,11 @@ export class AiChatService {
           )) ?? message)
         : message;
 
-    const ragChunks = await this.retrieval.retrieve(
-      retrievalQuery,
-      RAG_TOP_K,
-      userContext.role,
-    );
+    const ragChunks = await this.retrieval.retrieve(retrievalQuery, {
+      topK: RAG_TOP_K,
+      userId,
+      role: userContext.role,
+    });
 
     const prompt = this.buildPrompt({
       userContext,
