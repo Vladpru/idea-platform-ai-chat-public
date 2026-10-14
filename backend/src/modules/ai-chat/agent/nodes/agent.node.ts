@@ -33,6 +33,7 @@ export function createAgentNode(deps: {
         summary: state.summary,
         pageContext: context.pageContext,
         toolsAvailable,
+        referencedItems: state.referencedItems,
       }),
     );
 

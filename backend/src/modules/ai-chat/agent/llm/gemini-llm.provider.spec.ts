@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 
 import { createLlmProvider } from './create-llm-provider';
 import { GeminiLlmProvider } from './gemini-llm.provider';
+import { OpenRouterLlmProvider } from './openrouter-llm.provider';
 
 function configWith(values: Record<string, string | undefined>): ConfigService {
   return {
@@ -85,9 +86,19 @@ describe('createLlmProvider', () => {
     expect(createLlmProvider(configWith({})).name).toBe('gemini');
   });
 
+  it('returns the OpenRouter provider for LLM_PROVIDER=openrouter', () => {
+    const provider = createLlmProvider(
+      configWith({ LLM_PROVIDER: 'openrouter' }),
+    );
+    expect(provider).toBeInstanceOf(OpenRouterLlmProvider);
+    expect(provider.name).toBe('openrouter');
+  });
+
   it('throws on an unsupported provider', () => {
     expect(() =>
       createLlmProvider(configWith({ LLM_PROVIDER: 'claude' })),
-    ).toThrow('Unsupported LLM_PROVIDER "claude". Supported: gemini');
+    ).toThrow(
+      'Unsupported LLM_PROVIDER "claude". Supported: gemini, openrouter',
+    );
   });
 });

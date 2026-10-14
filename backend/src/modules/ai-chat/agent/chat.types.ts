@@ -25,6 +25,12 @@ export interface ChatPageContext {
   linkedProblemIds?: string[];
 }
 
+export interface ChatReferencedItem {
+  type: 'idea' | 'problem';
+  id: string;
+  title: string;
+}
+
 export interface ChatSource {
   type: 'idea' | 'problem' | 'knowledge';
   id?: string;

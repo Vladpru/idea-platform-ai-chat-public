@@ -8,7 +8,7 @@ import type { RunnableConfig } from '@langchain/core/runnables';
 import type { PrismaService } from '../../../../core/prisma/prisma.service';
 import type { UserContextService } from '../../user-context.service';
 import type { ChatStateType, ChatStateUpdate } from '../chat-state';
-import { getRunContext } from '../chat.types';
+import { type ChatReferencedItem, getRunContext } from '../chat.types';
 import { messageText } from '../lib/messages';
 
 export type ChatNode = (
@@ -21,9 +21,7 @@ export const MAX_HISTORY_CHARS = 8000;
 
 type HistoryRow = { role: string; content: string; sources: unknown };
 
-function isEntitySource(
-  value: unknown,
-): value is { type: 'idea' | 'problem'; id: string; title: string } {
+function isReferencedItem(value: unknown): value is ChatReferencedItem {
   const source = value as { type?: unknown; id?: unknown; title?: unknown };
   return (
     typeof value === 'object' &&
@@ -34,18 +32,28 @@ function isEntitySource(
   );
 }
 
-export function referencedLine(sources: unknown): string | null {
-  if (!Array.isArray(sources)) return null;
-  const refs = sources
-    .filter(isEntitySource)
-    .map(source => `${source.type}:${source.id} "${source.title}"`);
-  return refs.length ? `Referenced: ${refs.join(', ')}` : null;
+export function referencedItems(sources: unknown): ChatReferencedItem[] {
+  if (!Array.isArray(sources)) return [];
+  return sources
+    .filter(isReferencedItem)
+    .map(({ type, id, title }) => ({ type, id, title }));
+}
+
+function latestReferencedItems(rows: HistoryRow[]): ChatReferencedItem[] {
+  let fallback: ChatReferencedItem[] = [];
+  for (const row of rows) {
+    if (row.role === 'user') continue;
+    const items = referencedItems(row.sources);
+    if (items.length > 1) return items;
+    if (items.length === 1 && fallback.length === 0) fallback = items;
+  }
+  return fallback;
 }
 
 function toHistoryMessage(row: HistoryRow): BaseMessage {
-  if (row.role === 'user') return new HumanMessage(row.content);
-  const refs = referencedLine(row.sources);
-  return new AIMessage(refs ? `${row.content}\n\n${refs}` : row.content);
+  return row.role === 'user'
+    ? new HumanMessage(row.content)
+    : new AIMessage(row.content);
 }
 
 function trimHistory(messages: BaseMessage[]): BaseMessage[] {
@@ -80,13 +88,15 @@ export function createLoadContextNode(deps: {
       }),
     ]);
 
+    const historyRows = rows as HistoryRow[];
     const history = trimHistory(
-      [...(rows as HistoryRow[])].reverse().map(toHistoryMessage),
+      [...historyRows].reverse().map(toHistoryMessage),
     );
 
     return {
       userContext,
       summary: session?.summary ?? null,
+      referencedItems: latestReferencedItems(historyRows),
       messages: [...history, new HumanMessage(state.question)],
     };
   };

@@ -1,5 +1,9 @@
 import type { UserContext } from '../../user-context.service';
-import type { ChatIntent, ChatPageContext } from '../chat.types';
+import type {
+  ChatIntent,
+  ChatPageContext,
+  ChatReferencedItem,
+} from '../chat.types';
 import { INTENT_INSTRUCTIONS } from './intent.prompts';
 
 export interface SystemPromptInput {
@@ -8,6 +12,7 @@ export interface SystemPromptInput {
   summary: string | null;
   pageContext: ChatPageContext | null;
   toolsAvailable: boolean;
+  referencedItems?: ChatReferencedItem[];
 }
 
 const BASE_RULES = `You are the AI assistant of the Idea Platform, an innovation hub where teams submit problems and ideas that solve them, and move them through stages.
@@ -41,6 +46,18 @@ function formatUser(user: UserContext): string {
     `Role: ${user.role}`,
     `Member for: ${user.memberSinceDays} days`,
     `Contribution score: ${user.contributionScore}`,
+  ].join('\n');
+}
+
+function formatReferencedItems(items: ChatReferencedItem[]): string {
+  const lines = items.map(
+    (item, index) =>
+      `${index + 1}. ${item.type} ${item.id} "${stripDataTags(item.title).replace(/\s+/g, ' ')}"`,
+  );
+  return [
+    '== Items from your previous answer ==',
+    'The user may refer to these by position or by name, for example "the first one" or "that idea". Position follows this list. To answer about one, call get_entity with that ID. Do not ask the user for a name or ID that is listed here.',
+    ...lines,
   ].join('\n');
 }
 
@@ -79,6 +96,9 @@ export function buildSystemPrompt(input: SystemPromptInput): string {
   ];
   if (!input.toolsAvailable) sections.push(NO_TOOLS_NOTE);
   if (input.userContext) sections.push(formatUser(input.userContext));
+  if (input.referencedItems?.length) {
+    sections.push(formatReferencedItems(input.referencedItems));
+  }
   if (input.summary) {
     sections.push(
       `== Earlier conversation ==\n<conversation_summary>\n${stripDataTags(input.summary)}\n</conversation_summary>`,

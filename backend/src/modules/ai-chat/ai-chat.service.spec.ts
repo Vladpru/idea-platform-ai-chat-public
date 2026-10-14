@@ -1,5 +1,6 @@
 import { AIMessage, AIMessageChunk } from '@langchain/core/messages';
 import type { RunnableConfig } from '@langchain/core/runnables';
+import type { ConfigService } from '@nestjs/config';
 import { EventEmitter } from 'events';
 import type { Response } from 'express';
 
@@ -39,7 +40,10 @@ function finalState(overrides: Record<string, unknown> = {}) {
   };
 }
 
-function setup(script: (ctx: ChatRunContext) => Generator<StreamPart>) {
+function setup(
+  script: (ctx: ChatRunContext) => Generator<StreamPart>,
+  env: Record<string, string> = {},
+) {
   const prisma = {
     chatSession: {
       findFirst: jest.fn().mockResolvedValue({ id: 's1', title: null }),
@@ -69,6 +73,7 @@ function setup(script: (ctx: ChatRunContext) => Generator<StreamPart>) {
     {} as KnowledgeRetrievalService,
     graphFactory,
     summary,
+    { get: (key: string) => env[key] } as unknown as ConfigService,
   );
   return { service, prisma, stream, maybeUpdate };
 }
@@ -255,5 +260,40 @@ describe('AiChatService.streamMessage', () => {
       { type: 'error', message: 'Session not found' },
     ]);
     expect(stream).not.toHaveBeenCalled();
+  });
+});
+
+describe('AiChatService.getSessionMessages', () => {
+  const rows = [
+    {
+      id: 'm1',
+      role: 'assistant',
+      content: 'hi',
+      sources: [{ type: 'idea', id: 'i1', title: 'A', relevance: 1 }],
+      createdAt: new Date(0),
+    },
+  ];
+
+  function withRows(env: Record<string, string>) {
+    const harness = setup(function* () {}, env);
+    (harness.prisma as unknown as Record<string, unknown>).chatMessage = {
+      findMany: jest.fn().mockResolvedValue(rows),
+    };
+    return harness.service;
+  }
+
+  it('returns sources by default', async () => {
+    const result = await withRows({}).getSessionMessages('u1', 's1');
+
+    expect(result[0].sources).toEqual(rows[0].sources);
+  });
+
+  it('hides sources when AI_CHAT_SOURCES_ENABLED is false', async () => {
+    const result = await withRows({
+      AI_CHAT_SOURCES_ENABLED: 'false',
+    }).getSessionMessages('u1', 's1');
+
+    expect(result[0].sources).toEqual([]);
+    expect(result[0].content).toBe('hi');
   });
 });

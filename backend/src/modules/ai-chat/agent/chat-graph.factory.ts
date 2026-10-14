@@ -3,10 +3,12 @@ import type { BaseMessage } from '@langchain/core/messages';
 import type { Runnable } from '@langchain/core/runnables';
 import type { StructuredToolInterface } from '@langchain/core/tools';
 import { Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { UserContextService } from '../user-context.service';
 import { type ChatGraph, buildChatGraph } from './chat-graph';
+import { isFlagEnabled } from './lib/env-flag';
 import {
   LLM_PROVIDER,
   type LlmProvider,
@@ -17,7 +19,11 @@ import {
   classificationSchema,
   createClassifyNode,
 } from './nodes/classify.node';
-import { createFollowupsNode, followupsSchema } from './nodes/followups.node';
+import {
+  createFollowupsNode,
+  createNoFollowupsNode,
+  followupsSchema,
+} from './nodes/followups.node';
 import { createLoadContextNode } from './nodes/load-context.node';
 import { ChatToolsProvider } from './tools/chat-tools.provider';
 
@@ -41,6 +47,7 @@ export class ChatGraphFactory {
     toolsProvider: ChatToolsProvider,
     prisma: PrismaService,
     userContext: UserContextService,
+    config: ConfigService,
   ) {
     const agentModels = llm.createChatModels('agent', { temperature: 0.3 });
     const classifier = withModelFallbacks(
@@ -50,13 +57,19 @@ export class ChatGraphFactory {
           name: 'classify_intent',
         }),
     );
-    const followups = withModelFallbacks(
-      llm.createChatModels('light', { temperature: 0.5 }),
-      model =>
-        model.withStructuredOutput(followupsSchema, {
-          name: 'followup_suggestions',
-        }),
-    );
+    const followupsNode = isFlagEnabled(
+      config.get<string>('AI_CHAT_FOLLOWUPS_ENABLED'),
+    )
+      ? createFollowupsNode(
+          withModelFallbacks(
+            llm.createChatModels('light', { temperature: 0.5 }),
+            model =>
+              model.withStructuredOutput(followupsSchema, {
+                name: 'followup_suggestions',
+              }),
+          ),
+        )
+      : createNoFollowupsNode();
     const tools = toolsProvider.tools;
 
     this.graph = buildChatGraph({
@@ -69,7 +82,7 @@ export class ChatGraphFactory {
             bindToolsOrSelf(model, bound),
           ),
       }),
-      followups: createFollowupsNode(followups),
+      followups: followupsNode,
       tools: Object.values(tools),
     });
   }

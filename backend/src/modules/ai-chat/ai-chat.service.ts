@@ -1,4 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import type { Response } from 'express';
 
 import type { Prisma } from '../../../generated/prisma/client';
@@ -15,6 +16,7 @@ import {
   type ChatRunContext,
   type ChatSideEvent,
 } from './agent/chat.types';
+import { isFlagEnabled } from './agent/lib/env-flag';
 import { messageText, toolCallNames } from './agent/lib/messages';
 import { SourceCollector } from './agent/source-collector';
 import { SummaryService } from './agent/summary.service';
@@ -49,6 +51,7 @@ export class AiChatService {
     private readonly retrieval: KnowledgeRetrievalService,
     private readonly graphFactory: ChatGraphFactory,
     private readonly summaryService: SummaryService,
+    private readonly config: ConfigService,
   ) {}
 
   async listSessions(userId: string): Promise<ChatSessionDto[]> {
@@ -93,7 +96,13 @@ export class AiChatService {
         createdAt: true,
       },
     });
-    return rows as unknown as import('./dto/chat-session.dto').ChatMessageResponseDto[];
+    const showSources = isFlagEnabled(
+      this.config.get<string>('AI_CHAT_SOURCES_ENABLED'),
+    );
+    const messages = showSources
+      ? rows
+      : rows.map(row => ({ ...row, sources: [] }));
+    return messages as unknown as ChatMessageResponseDto[];
   }
 
   async getKbStats(): Promise<KbStats> {

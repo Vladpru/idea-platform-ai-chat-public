@@ -1,7 +1,7 @@
 import { Annotation, MessagesAnnotation } from '@langchain/langgraph';
 
 import type { UserContext } from '../user-context.service';
-import type { ChatIntent } from './chat.types';
+import type { ChatIntent, ChatReferencedItem } from './chat.types';
 
 export const MAX_TOOL_ROUNDS = 4;
 
@@ -27,6 +27,10 @@ export const ChatState = Annotation.Root({
   }),
   toolRounds: Annotation<number>({ reducer: replace, default: () => 0 }),
   suggestions: Annotation<string[]>({ reducer: replace, default: () => [] }),
+  referencedItems: Annotation<ChatReferencedItem[]>({
+    reducer: replace,
+    default: () => [],
+  }),
 });
 
 export type ChatStateType = typeof ChatState.State;

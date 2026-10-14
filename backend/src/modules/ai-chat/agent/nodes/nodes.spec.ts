@@ -8,12 +8,13 @@ import { RunnableLambda } from '@langchain/core/runnables';
 
 import type { PrismaService } from '../../../../core/prisma/prisma.service';
 import { ChatState, type ChatStateType, MAX_TOOL_ROUNDS } from '../chat-state';
+import { messageText } from '../lib/messages';
 import type { ChatTools } from '../tool-registry';
 import { createTestContext } from '../tools/test-context';
 import { createAgentNode, routeAfterAgent } from './agent.node';
 import { createClassifyNode } from './classify.node';
-import { createFollowupsNode } from './followups.node';
-import { createLoadContextNode, referencedLine } from './load-context.node';
+import { createFollowupsNode, createNoFollowupsNode } from './followups.node';
+import { createLoadContextNode, referencedItems } from './load-context.node';
 
 function state(overrides: Partial<ChatStateType> = {}): ChatStateType {
   return {
@@ -25,6 +26,7 @@ function state(overrides: Partial<ChatStateType> = {}): ChatStateType {
     entityHint: null,
     toolRounds: 0,
     suggestions: [],
+    referencedItems: [],
     ...overrides,
   };
 }
@@ -91,10 +93,49 @@ describe('load_context node', () => {
     expect(update.userContext).toMatchObject({ name: 'Ann' });
     const messages = update.messages as BaseMessage[];
     expect(messages.map(m => m._getType())).toEqual(['human', 'ai', 'human']);
-    expect(messages[1].content).toBe(
-      'Here are 2 ideas\n\nReferenced: idea:i1 "Parking"',
-    );
+    expect(messages[1].content).toBe('Here are 2 ideas');
     expect(messages[2].content).toBe('tell me more about it');
+    expect(update.referencedItems).toEqual([
+      { type: 'idea', id: 'i1', title: 'Parking' },
+    ]);
+  });
+
+  it('takes referenced items from the newest assistant message that has any', async () => {
+    const prisma = {
+      chatSession: { findUnique: jest.fn().mockResolvedValue(null) },
+      chatMessage: {
+        findMany: jest.fn().mockResolvedValue([
+          { role: 'assistant', content: 'You are welcome', sources: [] },
+          { role: 'user', content: 'thanks', sources: [] },
+          {
+            role: 'assistant',
+            content: 'Two matches',
+            sources: [
+              { type: 'idea', id: 'i1', title: 'First', relevance: 1 },
+              { type: 'problem', id: 'p1', title: 'Second', relevance: 1 },
+              { type: 'knowledge', title: 'faq.md', relevance: 1 },
+            ],
+          },
+          {
+            role: 'assistant',
+            content: 'Older',
+            sources: [{ type: 'idea', id: 'old', title: 'Old', relevance: 1 }],
+          },
+        ]),
+      },
+    };
+    const node = createLoadContextNode({
+      prisma: prisma as unknown as PrismaService,
+      userContext: { getContext: jest.fn().mockResolvedValue(null) },
+    });
+    const { config } = createTestContext();
+
+    const update = await node(state({ question: 'the first one' }), config);
+
+    expect(update.referencedItems).toEqual([
+      { type: 'idea', id: 'i1', title: 'First' },
+      { type: 'problem', id: 'p1', title: 'Second' },
+    ]);
   });
 
   it('drops the oldest history when it exceeds the character budget', async () => {
@@ -122,16 +163,86 @@ describe('load_context node', () => {
     ]);
   });
 
-  it('referencedLine ignores knowledge sources and malformed values', () => {
+  it('keeps the earlier list when the newest answer only covered a single item', async () => {
+    const list = [
+      { type: 'idea', id: 'i1', title: 'First', relevance: 1 },
+      { type: 'idea', id: 'i2', title: 'Second', relevance: 1 },
+      { type: 'idea', id: 'i3', title: 'Third', relevance: 1 },
+    ];
+    const prisma = {
+      chatSession: { findUnique: jest.fn().mockResolvedValue(null) },
+      chatMessage: {
+        findMany: jest.fn().mockResolvedValue([
+          {
+            role: 'assistant',
+            content: 'Details of the first',
+            sources: [list[0]],
+          },
+          {
+            role: 'user',
+            content: 'tell me more about the first one',
+            sources: [],
+          },
+          { role: 'assistant', content: 'Three ideas', sources: list },
+          { role: 'user', content: 'list ideas', sources: [] },
+        ]),
+      },
+    };
+    const node = createLoadContextNode({
+      prisma: prisma as unknown as PrismaService,
+      userContext: { getContext: jest.fn().mockResolvedValue(null) },
+    });
+    const { config } = createTestContext();
+
+    const update = await node(
+      state({ question: 'and the second one?' }),
+      config,
+    );
+
+    expect(update.referencedItems).toEqual([
+      { type: 'idea', id: 'i1', title: 'First' },
+      { type: 'idea', id: 'i2', title: 'Second' },
+      { type: 'idea', id: 'i3', title: 'Third' },
+    ]);
+  });
+
+  it('falls back to a single-item answer when no list exists', async () => {
+    const prisma = {
+      chatSession: { findUnique: jest.fn().mockResolvedValue(null) },
+      chatMessage: {
+        findMany: jest.fn().mockResolvedValue([
+          {
+            role: 'assistant',
+            content: 'Details',
+            sources: [{ type: 'idea', id: 'i1', title: 'Only', relevance: 1 }],
+          },
+        ]),
+      },
+    };
+    const node = createLoadContextNode({
+      prisma: prisma as unknown as PrismaService,
+      userContext: { getContext: jest.fn().mockResolvedValue(null) },
+    });
+    const { config } = createTestContext();
+
+    const update = await node(state({ question: 'it' }), config);
+
+    expect(update.referencedItems).toEqual([
+      { type: 'idea', id: 'i1', title: 'Only' },
+    ]);
+  });
+
+  it('referencedItems ignores knowledge sources and malformed values', () => {
     expect(
-      referencedLine([{ type: 'knowledge', title: 'faq.md', relevance: 1 }]),
-    ).toBeNull();
-    expect(referencedLine('nope')).toBeNull();
+      referencedItems([{ type: 'knowledge', title: 'faq.md', relevance: 1 }]),
+    ).toEqual([]);
+    expect(referencedItems('nope')).toEqual([]);
     expect(
-      referencedLine([
+      referencedItems([
         { type: 'problem', id: 'p1', title: 'Traffic', relevance: 1 },
+        { type: 'idea', title: 'no id' },
       ]),
-    ).toBe('Referenced: problem:p1 "Traffic"');
+    ).toEqual([{ type: 'problem', id: 'p1', title: 'Traffic' }]);
   });
 });
 
@@ -216,6 +327,30 @@ describe('agent node', () => {
     expect(update.toolRounds).toBe(1);
   });
 
+  it('puts items from the previous answer into the system prompt', async () => {
+    const seen: BaseMessage[][] = [];
+    const node = createAgentNode({
+      tools: allTools,
+      createAgentRunnable: () =>
+        RunnableLambda.from((messages: BaseMessage[]) => {
+          seen.push(messages);
+          return new AIMessage('ok');
+        }),
+    });
+    const { config } = createTestContext();
+
+    await node(
+      state({
+        intent: 'explain',
+        referencedItems: [{ type: 'idea', id: 'i1', title: 'Parking' }],
+      }),
+      config,
+    );
+
+    const system = messageText(seen[0][0].content);
+    expect(system).toContain('1. idea i1 "Parking"');
+  });
+
   it('calls the model without tools once the round budget is used up', async () => {
     const seenTools: number[] = [];
     const node = createAgentNode({
@@ -257,6 +392,17 @@ describe('agent node', () => {
 });
 
 describe('followups node', () => {
+  it('the disabled node returns no suggestions without any model call', async () => {
+    const { config } = createTestContext();
+
+    await expect(
+      createNoFollowupsNode()(
+        state({ messages: [new AIMessage('answer')] }),
+        config,
+      ),
+    ).resolves.toEqual({ suggestions: [] });
+  });
+
   it('returns up to 3 suggestions', async () => {
     const generator = RunnableLambda.from(() => ({
       suggestions: ['a', 'b', 'c'],

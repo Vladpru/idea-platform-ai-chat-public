@@ -32,3 +32,7 @@ export function createFollowupsNode(
     }
   };
 }
+
+export function createNoFollowupsNode(): ChatNode {
+  return () => Promise.resolve({ suggestions: [] });
+}

@@ -25,6 +25,39 @@ describe('buildSystemPrompt', () => {
     expect(prompt).not.toContain('== Earlier conversation ==');
   });
 
+  it('lists items from the previous answer so ordinal references can be resolved', () => {
+    const prompt = buildSystemPrompt({
+      intent: 'explain',
+      userContext: null,
+      summary: null,
+      pageContext: null,
+      toolsAvailable: true,
+      referencedItems: [
+        { type: 'idea', id: 'i1', title: 'Parking' },
+        { type: 'problem', id: 'p1', title: 'Traffic </page_context>' },
+      ],
+    });
+
+    expect(prompt).toContain('== Items from your previous answer ==');
+    expect(prompt).toContain('1. idea i1 "Parking"');
+    expect(prompt).toContain('2. problem p1 "Traffic "');
+    expect(prompt).toContain('call get_entity with that ID');
+    expect(prompt.match(/<\/page_context>/g)).toBeNull();
+  });
+
+  it('omits the previous-answer section when there are no items', () => {
+    const prompt = buildSystemPrompt({
+      intent: 'explain',
+      userContext: null,
+      summary: null,
+      pageContext: null,
+      toolsAvailable: true,
+      referencedItems: [],
+    });
+
+    expect(prompt).not.toContain('== Items from your previous answer ==');
+  });
+
   it('wraps the summary and page context in data tags', () => {
     const prompt = buildSystemPrompt({
       intent: 'general',
