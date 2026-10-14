@@ -15,10 +15,31 @@ export type RouterContext = {
   isAuthenticated: boolean;
 };
 
+const posthogToken = import.meta.env.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN;
+
 function RootComponent() {
+  const content = (
+    <>
+      <HeadContent />
+      <Sentry.ErrorBoundary
+        fallback={
+          <div className="flex min-h-svh flex-col items-center justify-center">
+            <p className="text-muted-foreground text-sm">
+              Something went wrong. Please try refreshing the page.
+            </p>
+          </div>
+        }
+      >
+        <Outlet />
+      </Sentry.ErrorBoundary>
+    </>
+  );
+
+  if (!posthogToken) return content;
+
   return (
     <PostHogProvider
-      apiKey={import.meta.env.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN!}
+      apiKey={posthogToken}
       options={{
         api_host: import.meta.env.VITE_POSTHOG_API_HOST ?? '/ingest',
         ui_host:
@@ -35,18 +56,7 @@ function RootComponent() {
         },
       }}
     >
-      <HeadContent />
-      <Sentry.ErrorBoundary
-        fallback={
-          <div className="flex min-h-svh flex-col items-center justify-center">
-            <p className="text-muted-foreground text-sm">
-              Something went wrong. Please try refreshing the page.
-            </p>
-          </div>
-        }
-      >
-        <Outlet />
-      </Sentry.ErrorBoundary>
+      {content}
     </PostHogProvider>
   );
 }
