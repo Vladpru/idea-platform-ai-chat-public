@@ -1,9 +1,10 @@
 import { useProfileView } from '@/features/profile/hooks/use-profile-view';
 import { ProfileDisplayPanel } from '@/features/profile/ui/account/ProfileDisplayPanel';
 import { ProfileEditPanel } from '@/features/profile/ui/account/ProfileEditPanel';
-import { Skeleton } from '@/shared/ui/skeleton';
 import { useEffect, useState } from 'react';
+
 import { ConfirmModal } from '@/shared/ui/confirm-modal';
+import { Skeleton } from '@/shared/ui/skeleton';
 
 type SettingsAccountSectionProps = {
   onDirtyChange?: (isDirty: boolean) => void;
@@ -70,7 +71,7 @@ export function SettingsAccountSection({
         Account
       </h2>
       <p className="text-muted-foreground mt-2 max-w-2xl text-sm">
-        Update your profile photo, name, bio, social links, and password.
+        Update your profile photo, name, bio and social links.
       </p>
 
       <div className="mt-6">

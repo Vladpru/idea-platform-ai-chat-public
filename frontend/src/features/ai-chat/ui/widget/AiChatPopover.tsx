@@ -1,15 +1,18 @@
 import { motion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { Pencil, X } from 'lucide-react';
 
 import { cn } from '@/shared/lib/utils';
 
 import type { ChatActionPayload, ChatMessage } from '../../api/ai-chat.types';
+import type { PageContext } from '@/shared/model/page-context-store';
+import type { PendingFieldAction } from '../../model/chat-stream-store';
 import { NetworkIntelligence } from '../../assets/SidebarIcons';
 import { AiChatCreateCard } from '../AiChatCreateCard';
 import { AiChatEmptyState } from '../AiChatEmptyState';
 import { AiChatInput } from '../AiChatInput';
 import { AiChatMessageList } from '../AiChatMessageList';
 import { AiChatSuggestions } from '../AiChatSuggestions';
+import { FieldActionCard } from './FieldActionCard';
 
 const genieVariants = {
   hidden: {
@@ -50,6 +53,10 @@ type Props = {
   suggestions: string[];
   pendingAction: ChatActionPayload | null;
   clearPendingAction: () => void;
+  pendingFieldAction: PendingFieldAction;
+  onApplyFieldAction: (field: 'tags' | 'linked_problems', merged: string[]) => void;
+  clearPendingFieldAction: () => void;
+  pageContext: PageContext;
 };
 
 export function AiChatPopover({
@@ -60,8 +67,19 @@ export function AiChatPopover({
   suggestions,
   pendingAction,
   clearPendingAction,
+  pendingFieldAction,
+  onApplyFieldAction,
+  clearPendingFieldAction,
+  pageContext,
 }: Props) {
   const hasMessages = messages.length > 0 || isStreaming;
+
+  const contextLabel =
+    pageContext?.type === 'idea_form'
+      ? 'Idea draft'
+      : pageContext?.type === 'problem_form'
+        ? 'Problem draft'
+        : null;
 
   return (
     <motion.div
@@ -84,6 +102,12 @@ export function AiChatPopover({
         <span className="text-foreground flex-1 text-sm font-semibold">
           AI Assistant
         </span>
+        {contextLabel && (
+          <span className="text-muted-foreground flex items-center gap-1 text-xs">
+            <Pencil size={11} />
+            {contextLabel}
+          </span>
+        )}
         <button
           type="button"
           onClick={onClose}
@@ -114,6 +138,17 @@ export function AiChatPopover({
             isWidget
           />
         </div>
+      )}
+
+      {!isStreaming && pendingFieldAction && (
+        <FieldActionCard
+          action={pendingFieldAction}
+          onApply={merged => {
+            onApplyFieldAction(pendingFieldAction.field, merged);
+            clearPendingFieldAction();
+          }}
+          onSkip={clearPendingFieldAction}
+        />
       )}
 
       <div className="relative shrink-0">

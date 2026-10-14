@@ -12,11 +12,11 @@ export function NotificationActorBadge({
   return (
     <span
       className={cn(
-        'bg-muted text-foreground inline-flex max-w-full items-center rounded-full px-2 py-0.5 text-xs font-semibold',
+        'bg-muted text-foreground inline-flex max-w-[10rem] items-center overflow-hidden rounded-full px-2 py-0.5 text-xs font-semibold',
         className,
       )}
     >
-      {name}
+      <span className="truncate">{name}</span>
     </span>
   );
 }

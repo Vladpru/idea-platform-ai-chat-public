@@ -22,7 +22,7 @@ import {
   patchRoomActiveCallInList,
 } from '@/features/live-chat/lib/merge-video-call-cache';
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
-import { getStoredAuthToken } from '@/shared/lib/auth-token';
+import { fetchRealtimeAuthToken } from '@/shared/api/realtime-token';
 import { uuidv7 } from '@/shared/offline/id';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef } from 'react';
@@ -55,7 +55,7 @@ function getRealtimeEdgeUrl(): string {
 
 export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
   const queryClient = useQueryClient();
-  const accessToken = useAuthSessionStore(state => state.accessToken);
+  const userId = useAuthSessionStore(state => state.user?.id ?? null);
   const socketRef = useRef<Socket | null>(null);
   const joinedRoomIdRef = useRef<string | null>(null);
   const joinApprovedRef = useRef(false);
@@ -104,11 +104,6 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
           payload.attachmentName = attachmentName ?? undefined;
           payload.attachmentMimeType = attachmentMimeType ?? undefined;
         }
-        console.log('[ws] EMIT send_message ->', {
-          connected: socket.connected,
-          joinApproved: joinApprovedRef.current,
-          clientMessageId: payload.clientMessageId,
-        });
         socket.emit('send_message', payload);
       }
     } finally {
@@ -117,7 +112,7 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
   }, []);
 
   useEffect(() => {
-    if (!enabled || !accessToken || !roomId) {
+    if (!enabled || !userId || !roomId) {
       if (socketRef.current?.connected) {
         socketRef.current.disconnect();
       }
@@ -129,12 +124,9 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
         autoConnect: false,
         withCredentials: true,
         auth: (cb: (data: object) => void) => {
-          cb({
-            token:
-              getStoredAuthToken() ??
-              useAuthSessionStore.getState().accessToken ??
-              '',
-          });
+          fetchRealtimeAuthToken()
+            .then(token => cb({ token }))
+            .catch(() => cb({ token: '' }));
         },
         transports: ['websocket'],
       });
@@ -143,11 +135,6 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
     const socket = socketRef.current;
 
     const handleMessage = (message: LiveChatMessageDto) => {
-      console.log(
-        '[ws] message received <-',
-        message.clientMessageId,
-        message.content,
-      );
       queryClient.setQueryData<LiveChatMessagesCache>(
         liveChatQueryKeys.messages(message.roomId),
         cache => appendLiveChatMessage(cache, message),
@@ -155,36 +142,24 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
       void saveSyncedMessage(message);
     };
 
-    const handleConnect = () => {
-      console.log('[ws] connect', socket.id);
-    };
-
-    const handleConnectError = (err: Error) => {
-      console.log('[ws] connect_error:', err.message);
-    };
-
     const handleConnectionReady = () => {
-      console.log('[ws] connection_ready -> emit join_room', roomId);
       joinApprovedRef.current = false;
       socket.emit('join_room', { roomId });
     };
 
     const handleJoinApproved = () => {
-      console.log('[ws] JOIN APPROVED', roomId);
       joinApprovedRef.current = true;
       joinedRoomIdRef.current = roomId;
       void flushPending();
     };
 
     const handleJoinDenied = (result: RoomJoinResult) => {
-      console.log('[ws] JOIN DENIED:', result?.reason);
       joinApprovedRef.current = false;
       joinedRoomIdRef.current = null;
       toast.error(result?.reason ?? 'Could not join live chat room');
     };
 
-    const handleDisconnect = (reason: string) => {
-      console.log('[ws] disconnect:', reason);
+    const handleDisconnect = () => {
       joinApprovedRef.current = false;
     };
 
@@ -238,8 +213,6 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
       );
     };
 
-    socket.on('connect', handleConnect);
-    socket.on('connect_error', handleConnectError);
     socket.on('connection_ready', handleConnectionReady);
     socket.on('room:join_approved', handleJoinApproved);
     socket.on('room:join_denied', handleJoinDenied);
@@ -262,8 +235,6 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
       if (joinedRoomId && socket.connected) {
         socket.emit('leave_room', { roomId: joinedRoomId });
       }
-      socket.off('connect', handleConnect);
-      socket.off('connect_error', handleConnectError);
       socket.off('connection_ready', handleConnectionReady);
       socket.off('room:join_approved', handleJoinApproved);
       socket.off('room:join_denied', handleJoinDenied);
@@ -278,7 +249,7 @@ export function useLiveChatSocket(roomId: string | null, enabled: boolean) {
       joinedRoomIdRef.current = null;
       joinApprovedRef.current = false;
     };
-  }, [accessToken, enabled, flushPending, queryClient, roomId]);
+  }, [userId, enabled, flushPending, queryClient, roomId]);
 
   const sendMessage = useCallback(
     async (content: string, attachment?: LiveChatAttachmentPayload | null) => {

@@ -2,6 +2,7 @@ import '@livekit/components-styles';
 import {
   LiveKitRoom,
   ParticipantTile,
+  RoomAudioRenderer,
   useLocalParticipant,
   useParticipants,
   useRemoteParticipants,
@@ -428,6 +429,7 @@ export function VideoCallRoom({
       onMediaDeviceFailure={handleLeave}
       className={cn('flex min-h-0 flex-col overflow-hidden', className)}
     >
+      <RoomAudioRenderer />
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
         <VideoStage />
         <CallControlBar

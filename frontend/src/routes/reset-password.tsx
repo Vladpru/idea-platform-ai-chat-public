@@ -3,7 +3,7 @@ import { pageDocumentHead } from '@/shared/lib/document-head';
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { z } from 'zod';
 
-import { hasStoredAuthToken } from '@/shared/lib/auth-token';
+import { hasValidSession } from '@/features/auth/model/auth-session-store';
 
 const resetPasswordSearchSchema = z.object({
   token: z.string().optional(),
@@ -14,7 +14,7 @@ export const Route = createFileRoute('/reset-password')({
   beforeLoad: ({ search }) => {
     const token =
       typeof search.token === 'string' ? search.token.trim() : '';
-    if (hasStoredAuthToken() && !token) {
+    if (hasValidSession() && !token) {
       throw redirect({ to: '/profile' });
     }
   },

@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 
 import {
@@ -232,11 +233,11 @@ export class ConferenceService {
     }
 
     if (conference.status !== ConferenceStatus.LIVE) {
-      throw new BadRequestException(CONFERENCE_NOT_LIVE);
+      throw new UnprocessableEntityException(CONFERENCE_NOT_LIVE);
     }
 
     if (!conference.providerRoomName) {
-      throw new BadRequestException(CONFERENCE_NOT_LIVE);
+      throw new UnprocessableEntityException(CONFERENCE_NOT_LIVE);
     }
 
     const participant = await this.conferenceRepository.findUserAuthor(userId);
@@ -315,7 +316,7 @@ export class ConferenceService {
       case 'cancel':
         return this.cancelConference(conference);
       default:
-        throw new BadRequestException('Invalid conference action');
+        throw new UnprocessableEntityException('Invalid conference action');
     }
   }
 
@@ -576,7 +577,7 @@ export class ConferenceService {
     const hasEmail = Boolean(dto.email);
 
     if (hasUserId === hasEmail) {
-      throw new BadRequestException(CONFERENCE_INVITE_INVALID_TARGET);
+      throw new UnprocessableEntityException(CONFERENCE_INVITE_INVALID_TARGET);
     }
   }
 

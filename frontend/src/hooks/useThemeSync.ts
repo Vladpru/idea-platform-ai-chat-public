@@ -16,7 +16,6 @@ import { useTheme } from '@/app/providers/theme-context';
 
 export function useThemeSync() {
   const queryClient = useQueryClient();
-  const accessToken = useAuthSessionStore(s => s.accessToken);
   const userId = useAuthSessionStore(s => s.user?.id);
   const themePreference = useAuthSessionStore(s => s.user?.themePreference);
 
@@ -39,7 +38,7 @@ export function useThemeSync() {
 
   const persistTheme = useCallback(
     (pref: ThemePreference) => {
-      if (!useAuthSessionStore.getState().accessToken) {
+      if (!useAuthSessionStore.getState().user?.id) {
         return;
       }
 
@@ -54,9 +53,8 @@ export function useThemeSync() {
               previous => mergeCurrentUser(previous, user),
             );
           }
-          const token = useAuthSessionStore.getState().accessToken;
-          if (token) {
-            useAuthSessionStore.getState().setSession(user, token);
+          if (useAuthSessionStore.getState().user) {
+            useAuthSessionStore.getState().setSession(user);
           }
           lastPersistedPref.current = user.themePreference;
         })
@@ -90,11 +88,11 @@ export function useThemeSync() {
         }));
       }
 
-      if (accessToken) {
+      if (userId) {
         debouncedPersist(themeToPreference(next));
       }
     },
-    [accessToken, debouncedPersist, setContextTheme, userId],
+    [debouncedPersist, setContextTheme, userId],
   );
 
   return { theme, setTheme };

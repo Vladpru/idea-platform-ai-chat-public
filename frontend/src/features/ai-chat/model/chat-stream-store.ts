@@ -2,12 +2,19 @@ import { create } from 'zustand';
 
 import type { ChatActionPayload, ChatIntent, ChatMessage } from '../api/ai-chat.types';
 
+export type PendingFieldAction = {
+  field: 'tags' | 'linked_problems';
+  suggested: string[];
+  existing: string[];
+} | null;
+
 export type SessionStreamState = {
   optimisticMessages: ChatMessage[];
   isStreaming: boolean;
   suggestions: string[];
   intent: ChatIntent | null;
   pendingAction: ChatActionPayload | null;
+  pendingFieldAction: PendingFieldAction;
 };
 
 type ChatStreamStore = {
@@ -23,6 +30,7 @@ type ChatStreamStore = {
   setSuggestions: (sessionId: string, suggestions: string[]) => void;
   setIntent: (sessionId: string, intent: ChatIntent) => void;
   setPendingAction: (sessionId: string, action: ChatActionPayload | null) => void;
+  setPendingFieldAction: (sessionId: string, action: PendingFieldAction) => void;
   clearSession: (sessionId: string) => void;
 };
 
@@ -32,6 +40,7 @@ export const EMPTY_SESSION: SessionStreamState = {
   suggestions: [],
   intent: null,
   pendingAction: null,
+  pendingFieldAction: null,
 };
 
 export const useChatStreamStore = create<ChatStreamStore>(set => ({
@@ -98,6 +107,14 @@ export const useChatStreamStore = create<ChatStreamStore>(set => ({
       sessions: {
         ...state.sessions,
         [sessionId]: { ...(state.sessions[sessionId] ?? EMPTY_SESSION), pendingAction },
+      },
+    })),
+
+  setPendingFieldAction: (sessionId, pendingFieldAction) =>
+    set(state => ({
+      sessions: {
+        ...state.sessions,
+        [sessionId]: { ...(state.sessions[sessionId] ?? EMPTY_SESSION), pendingFieldAction },
       },
     })),
 

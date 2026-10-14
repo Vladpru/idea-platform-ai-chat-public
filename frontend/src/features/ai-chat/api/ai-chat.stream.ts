@@ -1,4 +1,6 @@
-import { getStoredAuthToken } from '@/shared/lib/auth-token';
+import axios from 'axios';
+
+import type { PageContext } from '@/shared/model/page-context-store';
 
 import { AI_CHAT_ROUTES } from './ai-chat.routes';
 import type { StreamEvent } from './ai-chat.types';
@@ -9,64 +11,81 @@ function getApiBaseUrl(): string {
   return base.replace(/\/$/, '');
 }
 
+function parseLines(lines: string[], callbacks: {
+  onToken: (token: string) => void;
+  onDone: (messageId: string) => void;
+  onError: (message: string) => void;
+  onSuggestions?: (suggestions: string[]) => void;
+  onIntent?: (intent: string, entityHint: string | null) => void;
+  onFieldAction?: (field: 'tags' | 'linked_problems', values: string[]) => void;
+}) {
+  for (const line of lines) {
+    if (!line.startsWith('data: ')) continue;
+    try {
+      const event = JSON.parse(line.slice(6)) as StreamEvent;
+      if (event.type === 'token') callbacks.onToken(event.content);
+      else if (event.type === 'done') callbacks.onDone(event.messageId);
+      else if (event.type === 'error') callbacks.onError(event.message);
+      else if (event.type === 'suggestions') callbacks.onSuggestions?.(event.suggestions);
+      else if (event.type === 'intent') callbacks.onIntent?.(event.intent, event.entityHint);
+      else if (event.type === 'field_action') callbacks.onFieldAction?.(event.field, event.values);
+    } catch {}
+  }
+}
+
 export async function streamChatMessage({
   sessionId,
   message,
+  pageContext,
   signal,
   onToken,
   onDone,
   onError,
   onSuggestions,
   onIntent,
+  onFieldAction,
 }: {
   sessionId: string;
   message: string;
+  pageContext?: PageContext;
   signal: AbortSignal;
   onToken: (token: string) => void;
   onDone: (messageId: string) => void;
   onError: (message: string) => void;
   onSuggestions?: (suggestions: string[]) => void;
   onIntent?: (intent: string, entityHint: string | null) => void;
+  onFieldAction?: (field: 'tags' | 'linked_problems', values: string[]) => void;
 }): Promise<void> {
-  const token = getStoredAuthToken();
   const url = `${getApiBaseUrl()}${AI_CHAT_ROUTES.stream(sessionId)}`;
-
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify({ message }),
-    signal,
-  });
-
-  if (!res.ok || !res.body) {
-    onError('Failed to connect to AI');
-    return;
-  }
-
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
+  let processedLength = 0;
   let buffer = '';
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split('\n');
-    buffer = lines.pop() ?? '';
-    for (const line of lines) {
-      if (!line.startsWith('data: ')) continue;
-      try {
-        const event = JSON.parse(line.slice(6)) as StreamEvent;
-        if (event.type === 'token') onToken(event.content);
-        else if (event.type === 'done') onDone(event.messageId);
-        else if (event.type === 'error') onError(event.message);
-        else if (event.type === 'suggestions') onSuggestions?.(event.suggestions);
-        else if (event.type === 'intent') onIntent?.(event.intent, event.entityHint);
-      } catch {
-      }
+  try {
+    await axios.post(url, { message, pageContext: pageContext ?? null }, {
+      headers: { 'Content-Type': 'application/json' },
+      withCredentials: true,
+      responseType: 'text',
+      signal,
+      onDownloadProgress: (progressEvent) => {
+        const raw = progressEvent.event?.target?.responseText as string | undefined;
+        if (!raw) return;
+
+        const newChunk = raw.slice(processedLength);
+        processedLength = raw.length;
+
+        buffer += newChunk;
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+        parseLines(lines, { onToken, onDone, onError, onSuggestions, onIntent, onFieldAction });
+      },
+    });
+
+    if (buffer) {
+      const lines = buffer.split('\n');
+      parseLines(lines, { onToken, onDone, onError, onSuggestions, onIntent, onFieldAction });
     }
+  } catch (err) {
+    if (axios.isCancel(err)) return;
+    onError('Failed to connect to AI');
   }
 }

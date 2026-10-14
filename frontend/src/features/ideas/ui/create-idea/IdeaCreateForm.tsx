@@ -2,6 +2,10 @@ import type { IdeaAIPrefillResponse } from '@/features/ideas/api/ideas-api.types
 import { useIdeaCreateAiAssist } from '@/features/ideas/hooks/use-idea-create-ai-assist';
 import { useIdeaCreateForm } from '@/features/ideas/hooks/use-idea-create-form';
 import { focusPublishField } from '@/features/ideas/lib/create-idea';
+import {
+  formatProblemIds,
+  parseProblemIds,
+} from '@/features/ideas/lib/problems/mock-problems';
 import { IDEA_STAGES } from '@/features/ideas/lib/stages';
 import {
   outlineBtnClass,
@@ -9,8 +13,8 @@ import {
   selectClass,
 } from '@/features/ideas/lib/styles';
 import { SuggestedTagsField } from '@/features/tags/ui/SuggestedTagsField';
-import { useNavigate } from '@tanstack/react-router';
 import { usePostHog } from '@posthog/react';
+import { useNavigate } from '@tanstack/react-router';
 import { Upload } from 'lucide-react';
 import { useEffect, useId, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
@@ -19,12 +23,15 @@ import { Controller } from 'react-hook-form';
 import { ROUTES } from '@/shared/config/paths';
 import { useCreateFormLeaveGuard } from '@/shared/hooks/use-create-form-leave-guard';
 import { useDocumentAutoFill } from '@/shared/hooks/use-document-auto-fill';
+import { useMediaQuery } from '@/shared/hooks/use-media-query';
+import { useRegisterPageContext } from '@/shared/hooks/use-register-page-context';
 import {
   SAVE_IDEA_PROGRESS_DESCRIPTION,
   UNDO_CHANGES_DESCRIPTION,
   UNDO_CHANGES_TITLE,
 } from '@/shared/lib/create-form-leave/copy';
 import { cn } from '@/shared/lib/utils';
+import { setFieldActionHandler } from '@/shared/model/page-context-store';
 import { Button } from '@/shared/ui/button';
 import { ConfirmModal } from '@/shared/ui/confirm-modal';
 import { Input } from '@/shared/ui/input';
@@ -44,7 +51,6 @@ import { FieldError, FieldGroup, FieldLabel } from './Fields';
 import { IdeaCreateAiAssistLink } from './IdeaCreateAiAssistLink';
 import { IdeaFilesField } from './IdeaFilesField';
 import ProblemSelect, { type ProblemSelectHandle } from './ProblemSelect';
-import { useMediaQuery } from '@/shared/hooks/use-media-query';
 
 const ALLOWED_MAIN_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 const INVALID_MAIN_IMAGE_TYPE_MESSAGE = 'Main image must be PNG, JPEG, or WEBP';
@@ -110,6 +116,35 @@ export function IdeaCreateForm({
 
   const titleValue = watch('title') || '';
   const descriptionValue = watch('description') || '';
+  const watchedTags = watch('tags') ?? '';
+  const watchedProblemId = watch('problemId') ?? '';
+
+  useRegisterPageContext({
+    type: 'idea_form',
+    title: titleValue,
+    description: descriptionValue,
+    tags: watchedTags
+      ? watchedTags
+          .split(',')
+          .map(t => t.trim())
+          .filter(Boolean)
+      : [],
+    linkedProblemIds: parseProblemIds(watchedProblemId),
+  });
+  useEffect(() => {
+    setFieldActionHandler((field, merged) => {
+      if (field === 'tags') {
+        form.setValue('tags', merged.join(','), { shouldDirty: true });
+      } else if (field === 'linked_problems') {
+        form.setValue('problemId', formatProblemIds(merged), {
+          shouldDirty: true,
+        });
+      }
+    });
+    return () => {
+      setFieldActionHandler(null);
+    };
+  }, [form]);
   const trimmedTitle = titleValue.trim();
   const trimmedDescription = descriptionValue.trim();
 
@@ -186,7 +221,9 @@ export function IdeaCreateForm({
   const handleDiscardWithTracking = () => {
     posthog.capture('idea_creation_abandoned', {
       fields_filled: getFilledFields(),
-      time_spent_seconds: Math.round((Date.now() - formOpenedAtRef.current) / 1000),
+      time_spent_seconds: Math.round(
+        (Date.now() - formOpenedAtRef.current) / 1000,
+      ),
     });
     handleDiscard();
   };
@@ -264,9 +301,19 @@ export function IdeaCreateForm({
   const handleSaveDraft = async (): Promise<boolean> => {
     const wasEditing = isEditing;
     const result = await onSaveDraft();
-    if (!result.success) return false;
+    if (!result.success) {
+      if (result.firstInvalidField) {
+        focusPublishField(result.firstInvalidField, {
+          problemId: problemSelectRef.current,
+        });
+      }
+      return false;
+    }
 
-    posthog.capture('idea_draft_saved', { idea_id: result.ideaId, is_editing: wasEditing });
+    posthog.capture('idea_draft_saved', {
+      idea_id: result.ideaId,
+      is_editing: wasEditing,
+    });
 
     if (wasEditing) {
       navigateToIdeaDetail(result.ideaId);
@@ -293,7 +340,11 @@ export function IdeaCreateForm({
       return;
     }
 
-    posthog.capture('idea_published', { idea_id: publishResult.ideaId, is_editing: wasEditing, action: publishResult.action });
+    posthog.capture('idea_published', {
+      idea_id: publishResult.ideaId,
+      is_editing: wasEditing,
+      action: publishResult.action,
+    });
 
     if (wasEditing) {
       navigateToIdeaDetail(publishResult.ideaId, {

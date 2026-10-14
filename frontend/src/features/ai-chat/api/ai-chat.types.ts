@@ -48,4 +48,20 @@ export type StreamEvent =
   | { type: 'done'; messageId: string }
   | { type: 'error'; message: string; detail?: string }
   | { type: 'intent'; intent: ChatIntent; entityHint: string | null }
-  | { type: 'suggestions'; suggestions: string[] };
+  | { type: 'suggestions'; suggestions: string[] }
+  | { type: 'field_action'; field: 'tags' | 'linked_problems'; values: string[] };
+
+export type { PageContext } from '@/shared/model/page-context-store';
+
+export type NudgeItem = {
+  type: 'idea' | 'problem';
+  id: string;
+  title: string;
+  reason: 'stale_draft' | 'stage_stagnation';
+  daysSinceUpdate: number;
+  stage?: string;
+};
+
+export type NudgeResponse = {
+  items: NudgeItem[];
+};

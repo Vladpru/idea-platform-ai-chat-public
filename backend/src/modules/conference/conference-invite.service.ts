@@ -152,6 +152,10 @@ export class ConferenceInviteService {
   }
 
   async previewInvite(token: string): Promise<ConferenceInvitePreviewDto> {
+    if (!token) {
+      throw new BadRequestException(CONFERENCE_INVITE_INVALID);
+    }
+
     const invite = await this.findValidPendingExternalInvite(token);
 
     const entityTitle =

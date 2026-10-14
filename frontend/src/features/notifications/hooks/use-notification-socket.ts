@@ -2,7 +2,8 @@ import { BADGE_EARNED_MESSAGES } from '@/features/achievements/lib/badge-icons';
 import { BadgeToast } from '@/features/achievements/ui/BadgeToast';
 import { useAuthSessionStore } from '@/features/auth/model/auth-session-store';
 import { notificationQueryKeys } from '@/features/notifications/lib/notification-query-keys';
-import { getStoredAuthToken } from '@/shared/lib/auth-token';
+import { useNotificationUiStore } from '@/features/notifications/model/notification-ui-store';
+import { usePdfExportStore } from '@/features/pdf/model/pdf-export-store';
 import { useQueryClient } from '@tanstack/react-query';
 import { createElement, useEffect, useRef } from 'react';
 import { type Socket, io } from 'socket.io-client';
@@ -30,13 +31,18 @@ type PdfReadyPayload = {
   title: string;
 };
 
+type PdfFailedPayload = {
+  entity_type: string;
+  entity_id: string;
+};
+
 export function useNotificationSocket(): void {
   const queryClient = useQueryClient();
-  const accessToken = useAuthSessionStore(state => state.accessToken);
+  const userId = useAuthSessionStore(state => state.user?.id ?? null);
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    if (!accessToken) {
+    if (!userId) {
       socketRef.current?.disconnect();
       return;
     }
@@ -45,21 +51,21 @@ export function useNotificationSocket(): void {
       socketRef.current = io(getSocketBaseUrl(), {
         autoConnect: false,
         withCredentials: true,
-        auth: (cb: (data: object) => void) => {
-          cb({
-            token:
-              getStoredAuthToken() ??
-              useAuthSessionStore.getState().accessToken ??
-              '',
-          });
-        },
         transports: ['websocket', 'polling'],
       });
     }
 
     const socket = socketRef.current;
+    const setHasNewNotification =
+      useNotificationUiStore.getState().setHasNewNotification;
+    const finishExport = usePdfExportStore.getState().finishExport;
 
     const handleNotification = () => {
+      setHasNewNotification(true);
+      queryClient.setQueryData<{ count: number }>(
+        notificationQueryKeys.unreadCount(),
+        prev => (prev ? { count: prev.count + 1 } : { count: 1 }),
+      );
       void queryClient.invalidateQueries({
         queryKey: notificationQueryKeys.all,
       });
@@ -83,6 +89,7 @@ export function useNotificationSocket(): void {
     };
 
     const handlePdfReady = (payload: PdfReadyPayload) => {
+      finishExport(payload.entity_id);
       toast.success(`Your PDF is ready: "${payload.title}"`, {
         duration: 10000,
         action: {
@@ -94,7 +101,8 @@ export function useNotificationSocket(): void {
       });
     };
 
-    const handlePdfFailed = (payload: { entity_type: string }) => {
+    const handlePdfFailed = (payload: PdfFailedPayload) => {
+      finishExport(payload.entity_id);
       toast.error(
         `PDF generation failed for your ${payload.entity_type}. Please try again later.`,
         { duration: 8000 },
@@ -115,5 +123,5 @@ export function useNotificationSocket(): void {
       socket.off('pdf:failed', handlePdfFailed);
       socket.disconnect();
     };
-  }, [accessToken, queryClient]);
+  }, [userId, queryClient]);
 }
